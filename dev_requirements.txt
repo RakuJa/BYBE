@@ -1,0 +1,7 @@
+-r requirements.txt
+
+black~=23.3.0
+flake8~=6.0.0
+Flake8-pyproject~=1.2.2
+bandit~=1.7.4
+pre-commit~=3.2.2

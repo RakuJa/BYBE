@@ -1,0 +1,7 @@
+[tool.flake8]
+max-line-length = 90
+exclude = [".git", "__pycache__", "venv/*", "*.ini", "*.log"]
+max-complexity = 10
+
+[tool.bandit]
+exclude_dirs = ["venv/"]
