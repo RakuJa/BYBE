@@ -9,7 +9,7 @@ from app.core.resources.schema.pagination_params import PaginationParams
 logger = logging.getLogger(__name__)
 
 r = redis.StrictRedis(
-    host=config.service_ip, port=config.service_port, db=config.redis_db
+    host=config.redis_ip, port=config.redis_port, db=config.redis_db, username=config.redis_username, password=config.redis_password
 )
 
 

@@ -24,8 +24,16 @@ docker build -t bybe .
 docker run -p 25566:25566 --name bybe-container bybe
 ```
 
-Instead of creating a bybe docker instance you may want to run it directly, gunicorn currenty does not work. Use uvicorn like:
+Instead of creating a bybe docker instance you may want to run it directly.
 
+```
+gunicorn app.controller:app --config app/gunicorn.conf.py
+```
+
+
+Gunicorn will have first class support, but you may use uvicorn like:
 ```
 uvicorn app.controller:app --host 127.0.0.1 --port 25566
 ```
+
+

@@ -23,6 +23,8 @@ class AppConfig(BaseModel):
     redis_ip: str
     redis_port: int
     redis_db: int
+    redis_username: str
+    redis_password: str
 
     @validator("log_level")
     def log_level_must_be_valid(cls, v):
