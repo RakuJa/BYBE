@@ -1,7 +1,7 @@
 import logging
-from typing import Tuple, List
-
 import redis
+import os
+from typing import Tuple, List
 
 from app.core.resources.app_config import config
 from app.core.resources.schema.pagination_params import PaginationParams
@@ -9,7 +9,9 @@ from app.core.resources.schema.pagination_params import PaginationParams
 logger = logging.getLogger(__name__)
 
 r = redis.StrictRedis(
-    host=config.redis_ip, port=config.redis_port, db=config.redis_db, username=config.redis_username, password=config.redis_password
+    host=config.redis_ip,
+    port=config.redis_port,
+    password=os.environ.get('REDIS_KEY')
 )
 
 
@@ -21,7 +23,7 @@ async def is_redis_up() -> bool:
 
 
 async def fetch_keys(
-    cursor: int, page_size: int, pattern: str
+        cursor: int, page_size: int, pattern: str
 ) -> Tuple[int, List[bytes]]:
     keys = r.scan_iter(match=pattern)
     keys_list: List[bytes] = list(keys)
@@ -33,7 +35,7 @@ async def fetch_keys(
 
 
 async def fetch_keys_dep(
-    page_number: int, page_size: int, pattern: str = "creature:*"
+        page_number: int, page_size: int, pattern: str = "creature:*"
 ) -> Tuple[int, List[int]]:
     cursor = page_number * page_size
     cursor, keys = r.scan(cursor=cursor, count=page_size, match=pattern)
@@ -41,7 +43,7 @@ async def fetch_keys_dep(
 
 
 async def get_paginated_creatures(
-    pagination_params: PaginationParams,
+        pagination_params: PaginationParams,
 ) -> Tuple[int, List]:
     next_cursor, keys = await fetch_keys(
         cursor=pagination_params.cursor,
@@ -49,11 +51,18 @@ async def get_paginated_creatures(
         pattern="creature:*",
     )
     parsed_keys = [key.decode("utf-8").replace("creature:", "") for key in keys]
-    return next_cursor, await get_creatures_by_ids(parsed_keys)
+    return next_cursor, await _json_get_all_elements_of_list(parsed_keys)
 
 
-async def get_creatures_by_ids(id_list: List[str]) -> List[str]:
-    return [r.json().get(_id) for _id in id_list]
+async def _json_get_all_elements_of_list(id_list: List[str]) -> List[str]:
+    json_list = []
+    for _id in id_list:
+        try:
+            json_list.append(r.json().get(_id, "$"))
+        except Exception as e:
+            logger.debug(f"Error encountered while fetching json with id {_id}: {e}")
+            raise
+    return json_list
 
 
 async def fetch_creature_by_id_and_filter():

@@ -171,7 +171,7 @@ LOGGING_CONFIG = {
     "disable_existing_loggers": True,
     "root": {
         "handlers": ["console_standard", "queue"],
-        "level": conf.  log_level,
+        "level": conf.log_level,
     },
     "loggers": {
         "gunicorn.access": {

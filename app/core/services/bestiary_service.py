@@ -11,6 +11,6 @@ async def get_bestiary(pagination_params: PaginationParams) -> dict:
         "results": list_of_creatures,
         "count": len(list_of_creatures),
         "next": f"{config.service_ip}:{config.service_port}"
-                f"/bestiary/get_bestiary/"
-                f"?cursor={next_cursor}&page_size=100",
+        f"/bestiary/get_bestiary/"
+        f"?cursor={next_cursor}&page_size=100",
     }
