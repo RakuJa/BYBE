@@ -1,3 +1,4 @@
+import json
 import logging
 import redis
 import os
@@ -54,11 +55,12 @@ async def get_paginated_creatures(
     return next_cursor, await _json_get_all_elements_of_list(parsed_keys)
 
 
-async def _json_get_all_elements_of_list(id_list: List[str]) -> List[str]:
-    json_list = []
+async def _json_get_all_elements_of_list(id_list: List[str]) -> List[dict]:
+    json_list: List[dict] = []
     for _id in id_list:
         try:
-            json_list.append(r.json().get(_id, "$"))
+            for el in r.json().get(_id, "$"):
+                json_list.append(json.loads(el))
         except Exception as e:
             logger.debug(f"Error encountered while fetching json with id {_id}: {e}")
             raise
