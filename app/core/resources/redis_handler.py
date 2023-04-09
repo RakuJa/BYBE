@@ -10,9 +10,7 @@ from app.core.resources.schema.pagination_params import PaginationParams
 logger = logging.getLogger(__name__)
 
 r = redis.StrictRedis(
-    host=config.redis_ip,
-    port=config.redis_port,
-    password=os.environ.get('REDIS_KEY')
+    host=config.redis_ip, port=config.redis_port, password=os.environ.get("REDIS_KEY")
 )
 
 
@@ -24,7 +22,7 @@ async def is_redis_up() -> bool:
 
 
 async def fetch_keys(
-        cursor: int, page_size: int, pattern: str
+    cursor: int, page_size: int, pattern: str
 ) -> Tuple[int, List[bytes]]:
     keys = r.scan_iter(match=pattern)
     keys_list: List[bytes] = list(keys)
@@ -36,7 +34,7 @@ async def fetch_keys(
 
 
 async def fetch_keys_dep(
-        page_number: int, page_size: int, pattern: str = "creature:*"
+    page_number: int, page_size: int, pattern: str = "creature:*"
 ) -> Tuple[int, List[int]]:
     cursor = page_number * page_size
     cursor, keys = r.scan(cursor=cursor, count=page_size, match=pattern)
@@ -44,7 +42,7 @@ async def fetch_keys_dep(
 
 
 async def get_paginated_creatures(
-        pagination_params: PaginationParams,
+    pagination_params: PaginationParams,
 ) -> Tuple[int, List]:
     next_cursor, keys = await fetch_keys(
         cursor=pagination_params.cursor,

@@ -1,7 +1,7 @@
 from fastapi import FastAPI
 
 from app.core.resources.app_config import config
-from app.core.routers import bestiary, health
+from app.core.routers import bestiary, health, encounter
 
 app = FastAPI(
     title=config.service_name,
@@ -10,4 +10,5 @@ app = FastAPI(
 )
 
 app.include_router(bestiary.router)
+app.include_router(encounter.router)
 app.include_router(health.router)
