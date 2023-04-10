@@ -9,6 +9,6 @@ router = APIRouter(
 )
 
 
-@router.get("/get_bestiary/", responses={404: {"description": "item not found"}})
+@router.get("/list/", responses={404: {"description": "item not found"}})
 async def get_bestiary(pagination_params: PaginationParams = Depends()):
     return await bestiary_service.get_bestiary(pagination_params)

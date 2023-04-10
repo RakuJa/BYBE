@@ -5,11 +5,11 @@ from app.core.services import encounter_service
 
 router = APIRouter(
     prefix="/encounter",
-    tags=["encounter", "generator"],
+    tags=["encounter"],
     responses={200: {"description": "success"}},
 )
 
 
-@router.post("/get_encounter_info/")
+@router.post("/info/")
 async def get_encounter_info(encounter_params: EncounterParams):
     return encounter_service.get_encounter_info(encounter_params)
