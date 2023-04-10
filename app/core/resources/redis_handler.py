@@ -25,32 +25,34 @@ async def fetch_keys(
     cursor: int, page_size: int, pattern: str
 ) -> Tuple[int, List[bytes]]:
     keys = r.scan_iter(match=pattern)
-    keys_list: List[bytes] = list(keys)
+    key_list: List[bytes] = list(keys)
 
     next_cursor = (
-        cursor + page_size if len(keys_list) > cursor + page_size else len(keys_list)
+        cursor + page_size if len(key_list) > cursor + page_size else len(key_list)
     )
-    return next_cursor, keys_list[cursor:next_cursor]
+    return next_cursor, key_list[cursor:next_cursor]
 
 
-async def fetch_keys_dep(
-    page_number: int, page_size: int, pattern: str = "creature:*"
-) -> Tuple[int, List[int]]:
-    cursor = page_number * page_size
-    cursor, keys = r.scan(cursor=cursor, count=page_size, match=pattern)
-    return cursor, keys
+async def fetch_and_parse_keys(
+    cursor: int, page_size: int, pattern: str
+) -> Tuple[int, List[str]]:
+    cursor, raw_key_list = await fetch_keys(
+        cursor=cursor, page_size=page_size, pattern=pattern
+    )
+    if pattern.endswith("*"):
+        pattern = pattern[:-1]
+    return cursor, [key.decode("utf-8").replace(pattern, "") for key in raw_key_list]
 
 
 async def get_paginated_creatures(
     pagination_params: PaginationParams,
 ) -> Tuple[int, List]:
-    next_cursor, keys = await fetch_keys(
+    next_cursor, keys = await fetch_and_parse_keys(
         cursor=pagination_params.cursor,
         page_size=pagination_params.page_size,
         pattern="creature:*",
     )
-    parsed_keys = [key.decode("utf-8").replace("creature:", "") for key in keys]
-    return next_cursor, await _json_get_all_elements_of_list(parsed_keys)
+    return next_cursor, await _json_get_all_elements_of_list(keys)
 
 
 async def _json_get_all_elements_of_list(id_list: List[str]) -> List[dict]:
