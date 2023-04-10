@@ -5,7 +5,7 @@ from app.core.services import bestiary_service
 
 
 router = APIRouter(
-    prefix="/bestiary", tags=["creature"], responses={200: {"description": "success"}}
+    prefix="/bestiary", tags=["bestiary"], responses={200: {"description": "success"}}
 )
 
 

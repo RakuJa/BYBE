@@ -1,6 +1,6 @@
 from statistics import mean
 from typing import List, Dict
-from math import floor
+from math import floor, dist
 
 from app.core.resources.schema.difficulty_enum import DifficultyEnum
 
@@ -46,8 +46,12 @@ def calculate_encounter_exp(party_levels: List[int], enemy_levels: List[int]) ->
     party_avg = mean(party_levels)
     exp_sum = 0
     for enemy_lvl in enemy_levels:
+        if enemy_lvl < 0 and enemy_lvl < party_avg:
+            lvl_diff = -dist((party_avg,), (enemy_lvl,))
+        else:
+            lvl_diff = enemy_lvl - party_avg
         exp_sum += convert_level_difference_into_experience(
-            level_difference=(enemy_lvl - party_avg),
+            level_difference=lvl_diff,
             party_size=len(party_levels),
         )
     return exp_sum
