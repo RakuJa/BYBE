@@ -1,5 +1,5 @@
 import json
-from typing import Optional, List
+from typing import Optional
 
 from app.core.resources.schema.alignment_enum import AlignmentEnum
 from app.core.resources.schema.rarity_enum import RarityEnum

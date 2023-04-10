@@ -9,6 +9,10 @@ class DifficultyEnum(Enum):
     EXTREME = "EXTREME"
     IMPOSSIBLE = "IMPOSSIBLE"
 
+    # Impossible = 320 with chara adjust 60, invented by me but what else can I do?
+    # Pathfinder 2E thinks that a GM will only try out extreme encounter at maximum
+    # I have to introduce a level for impossible things, Needs balancing Paizo help
+
     def get_base_xp_budget(self):
         if self == DifficultyEnum.TRIVIAL:
             return 40
@@ -23,8 +27,9 @@ class DifficultyEnum(Enum):
         elif self == DifficultyEnum.IMPOSSIBLE:
             return 320
         else:
-            raise NotImplemented(
-                f"This enumerator: {self.value} has not been implemented yet, contact the developer"
+            raise NotImplementedError(
+                f"This enumerator: {self.value} has not been implemented yet,"
+                f" contact the developer"
             )
 
     def get_xp_adjustment(self):
@@ -41,6 +46,7 @@ class DifficultyEnum(Enum):
         elif self == DifficultyEnum.IMPOSSIBLE:
             return 60
         else:
-            raise NotImplemented(
-                f"This enumerator: {self.value} has not been implemented yet, contact the developer"
+            raise NotImplementedError(
+                f"This enumerator: {self.value} has not been implemented yet,"
+                f" contact the developer"
             )

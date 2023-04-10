@@ -7,7 +7,7 @@ from starlette.responses import Response
 from app.core.resources import redis_handler
 
 router = APIRouter(
-    prefix=f"/health",
+    prefix="/health",
     tags=["health"],
     responses={
         502: {"description": "The database is offline."},

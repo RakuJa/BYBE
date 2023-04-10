@@ -1,5 +1,6 @@
 from statistics import mean
 from typing import List, Dict
+from math import floor
 
 from app.core.resources.schema.difficulty_enum import DifficultyEnum
 
@@ -8,38 +9,30 @@ def convert_level_difference_into_experience(
     level_difference: float, party_size: int
 ) -> int:
     """
-    Given the level difference and party size, it calculate the exp for the encounter
+    Given the level difference and party size, it calculates the exp for the encounter
     :param level_difference: Enemy level - Party AVG level
     :param party_size: Size of the party
     :return: The experience that the enemy will yield
     """
-    if level_difference < -4:
+    lvl_diff_rounded_down = floor(level_difference)
+    experience_values = {
+        -4: 10,
+        -3: 15,
+        -2: 20,
+        -1: 30,
+        00: 40,
+        +1: 60,
+        +2: 80,
+        +3: 120,
+        +4: 160,
+    }
+    if lvl_diff_rounded_down in experience_values:
+        return experience_values[lvl_diff_rounded_down]
+    elif lvl_diff_rounded_down < -4:
         return 0
-    elif -4 >= level_difference < -3:
-        return 10
-    elif -3 >= level_difference < -2:
-        return 15
-    elif -2 >= level_difference < -1:
-        return 20
-    elif -1 >= level_difference < 0:
-        return 30
-    elif 0 >= level_difference < 1:
-        return 40
-    elif 1 >= level_difference < 2:
-        return 60
-    elif 2 >= level_difference < 3:
-        return 80
-    elif 3 >= level_difference < 4:
-        return 120
-    elif 4 >= level_difference < 5:
-        return 160
     else:
         # just to avoid the level 1 party of 50 people destroying a lvl 20
-        return 320 + (party_size - 4) * 60
-
-    # Impossible = 320 with chara adjust 60, invented by me but what else can i do?
-    # Pathfinder 2E thinks that a GM will only try out extreme encounter at maximum
-    # I have to introduce a level for impossible things, Needs balancing Paizo help
+        return _scale_difficulty_exp(DifficultyEnum.IMPOSSIBLE, party_size=party_size)
 
 
 def calculate_encounter_exp(party_levels: List[int], enemy_levels: List[int]) -> int:
@@ -64,7 +57,8 @@ def calculate_encounter_difficulty(
     encounter_exp: int, scaled_exp_levels: Dict[DifficultyEnum, int]
 ) -> DifficultyEnum:
     """
-    Given the encounter total experience and the level of experience scaled with the party,
+    Given the encounter total experience and the level
+    of experience scaled with the party,
     It returns the difficulty of the encounter
     :param encounter_exp:
     :param scaled_exp_levels:
@@ -90,7 +84,8 @@ def calculate_encounter_scaling_difficulty(
     party_size: int,
 ) -> Dict[DifficultyEnum, int]:
     """
-    Given the party size, it scales and calculates the thresholds for the various difficulty levels
+    Given the party size, it scales and calculates
+    the thresholds for the various difficulty levels
     :param party_size:
     :return:
     """
