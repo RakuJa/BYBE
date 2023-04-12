@@ -1,10 +1,11 @@
-import json
 import logging
 import redis
 import os
-from typing import Tuple, List
+
+from typing import Tuple, List, Dict, Set, Iterable
 
 from app.core.resources.app_config import config
+from app.core.resources.schema.creature import Creature
 from app.core.resources.schema.pagination_params import PaginationParams
 
 logger = logging.getLogger(__name__)
@@ -52,23 +53,49 @@ async def get_paginated_creatures(
         page_size=pagination_params.page_size,
         pattern="creature:*",
     )
-    return next_cursor, await _json_get_all_elements_of_list(keys)
+    return next_cursor, await get_creatures_by_id(keys)
 
 
-async def _json_get_all_elements_of_list(id_list: List[str]) -> List[dict]:
-    json_list: List[dict] = []
+async def get_creatures_by_id(id_list: List[str]) -> List[Creature]:
+    """
+    Gets the creatures associated with the given ids
+    :param id_list: list of ids to fetch
+    :return: dict containing all the data of the
+    """
+    creature_list: List[Creature] = []
     for _id in id_list:
         try:
             for el in r.json().get(_id, "$"):
-                json_list.append(json.loads(el))
+                creature_list.append(Creature.from_json_string(json_str=el, _id=_id))
         except Exception as e:
             logger.debug(f"Error encountered while fetching json with id {_id}: {e}")
             raise
-    return json_list
+    return creature_list
 
 
-async def fetch_creature_by_id_and_filter():
-    result = r.hgetall("level:10")
-    for hash_key, json_str in result.items():
-        # gets the obj
-        r.json().get(int(json_str))
+async def fetch_creature_ids_passing_all_filters(
+    key_value_filters: dict,
+) -> Dict[str, Dict[str, Set[str]]]:
+    ids_passing_filter: Dict[str, Dict[str, Set[str]]] = dict()
+    for key, value in key_value_filters.items():
+        curr_dict = await fetch_creature_ids_passing_filter(key, filter_list=value)
+        if not curr_dict:
+            return {}
+        ids_passing_filter[key] = curr_dict
+    return ids_passing_filter
+
+
+async def fetch_creature_ids_passing_filter(
+    filter_name: str, filter_list: Iterable[str]
+) -> Dict[str, Set[str]]:
+    ids_passing_filter: Dict[str, Set[str]] = dict()
+    for curr_value in filter_list:
+        curr_set = set(
+            key.decode("utf-8").replace("creature:", "")
+            for key in r.hgetall(f"{filter_name}:{curr_value}")
+        )
+        if curr_set:
+            ids_passing_filter[curr_value] = curr_set
+        else:
+            logger.debug(f"No keys found for {filter_name} with value {curr_value}")
+    return ids_passing_filter
