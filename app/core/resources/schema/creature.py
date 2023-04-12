@@ -18,31 +18,51 @@ class Creature:
         family: Optional[str],
         rarity: Optional[RarityEnum],
     ):
-        self._id = identifier
-        self._name = name.strip()
-        self._hp = hp
-        self._level = level
-        self._alignment = alignment
-        self._size = size
-        self._family = family
-        self._rarity = rarity
+        self.id = identifier
+        self.name = name.strip()
+        self.hp = hp
+        self.level = level
+        self.alignment = alignment
+        self.size = size
+        self.family = family
+        self.rarity = rarity
+        self.archive_link = f"https://2e.aonprd.com/Monsters.aspx?ID={self.id}"
 
     def serialize_to_json(self) -> str:
         return json.dumps(self.serialize_to_dict())
 
     def serialize_to_dict(self) -> dict:
         return {
-            "name": self._name,
-            "hp": self._hp,
-            "level": self._level,
-            "family": self._family if self._family else "-",
-            "alignment": self._alignment.value,
-            "size": self._size.value,
-            "rarity": self._rarity.value if self._rarity else "-",
+            "id": self.id,
+            "name": self.name,
+            "hp": self.hp,
+            "level": self.level,
+            "family": self.family,
+            "alignment": self.alignment.value,
+            "size": self.size.value,
+            "rarity": self.rarity.value,
+            "archive_link": self.archive_link,
         }
 
+    @classmethod
+    def from_dict(cls, creature_dict: dict, _id: str) -> "Creature":
+        return cls(
+            identifier=_id,
+            name=creature_dict["name"],
+            hp=creature_dict["hp"],
+            level=creature_dict["level"],
+            family=creature_dict["family"],
+            alignment=creature_dict["alignment"],
+            size=creature_dict["size"],
+            rarity=creature_dict["rarity"],
+        )
+
+    @classmethod
+    def from_json_string(cls, json_str: str, _id: str):
+        return cls.from_dict(creature_dict=json.loads(json_str), _id=_id)
+
     def get_id(self) -> str:
-        return self._id
+        return self.id
 
     def __str__(self):
         return self.serialize_to_json()
