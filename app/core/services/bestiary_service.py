@@ -1,7 +1,6 @@
 from typing import List
 
 from app.core.resources import redis_handler
-from app.core.resources.app_config import config
 from app.core.resources.schema.alignment_enum import AlignmentEnum
 from app.core.resources.schema.pagination_params import PaginationParams
 from app.core.resources.schema.rarity_enum import RarityEnum
@@ -15,8 +14,7 @@ async def get_bestiary(pagination_params: PaginationParams) -> dict:
     return {
         "results": list_of_creatures,
         "count": len(list_of_creatures),
-        "next": f"{config.service_ip}:{config.service_port}"
-        f"/bestiary/get_bestiary/"
+        "next": f"https://bybe.fly.dev/bestiary/list/"
         f"?cursor={next_cursor}&page_size=100",
     }
 
