@@ -1,6 +1,8 @@
+import random
 from typing import Optional
 
 from fastapi import APIRouter
+from pydantic import conlist
 
 from app.core.resources.schema.alignment_enum import AlignmentEnum
 from app.core.resources.schema.difficulty_enum import DifficultyEnum
@@ -23,15 +25,17 @@ async def get_encounter_info(encounter_params: EncounterParams):
 
 @router.post("/generator/")
 async def generate_random_encounter(
-    encounter_params: EncounterParams,
+    party_levels: conlist(int, min_items=1),
     family: Optional[str] = None,
     rarity: Optional[RarityEnum] = None,
     size: Optional[SizeEnum] = None,
     alignment: Optional[AlignmentEnum] = None,
     encounter_difficulty: Optional[DifficultyEnum] = None,
 ):
+    if not encounter_difficulty:
+        encounter_difficulty = random.choice(list(DifficultyEnum))  # nosec
     return await encounter_service.generate_random_encounter(
-        encounter_params=encounter_params,
+        party_levels=party_levels,
         family=family,
         rarity=rarity,
         size=size,
