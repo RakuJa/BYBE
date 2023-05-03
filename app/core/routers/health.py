@@ -1,10 +1,10 @@
 import logging
 
-from fastapi import APIRouter
 from starlette import status
 from starlette.responses import Response
 
 from app.core.resources import redis_handler
+from app.core.resources.api_router import APIRouter
 
 router = APIRouter(
     prefix="/health",

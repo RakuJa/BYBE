@@ -1,5 +1,6 @@
-from fastapi import APIRouter, Depends
+from fastapi import Depends
 
+from app.core.resources.api_router import APIRouter
 from app.core.resources.schema.pagination_params import PaginationParams
 from app.core.services import bestiary_service
 

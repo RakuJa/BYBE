@@ -1,9 +1,9 @@
 import random
-from typing import Optional
 
-from fastapi import APIRouter
+from typing import Optional
 from pydantic import conlist
 
+from app.core.resources.api_router import APIRouter
 from app.core.resources.schema.alignment_enum import AlignmentEnum
 from app.core.resources.schema.difficulty_enum import DifficultyEnum
 from app.core.resources.schema.encounter_params import EncounterParams
