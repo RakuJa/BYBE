@@ -6,7 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title=config.service_name,
-    version="0.1.0",
+    version="0.1.1",
     description=config.service_description,
 )
 

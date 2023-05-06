@@ -74,15 +74,15 @@ def calculate_encounter_difficulty(
     """
     enc_exp = encounter_exp
     exp = scaled_exp_levels
-    if enc_exp < exp[DifficultyEnum.TRIVIAL]:
+    if enc_exp < exp[DifficultyEnum.LOW]:
         return DifficultyEnum.TRIVIAL
-    elif exp[DifficultyEnum.LOW] <= enc_exp < exp[DifficultyEnum.MODERATE]:
+    elif enc_exp < exp[DifficultyEnum.MODERATE]:
         return DifficultyEnum.LOW
-    elif exp[DifficultyEnum.MODERATE] <= enc_exp < exp[DifficultyEnum.SEVERE]:
+    elif enc_exp < exp[DifficultyEnum.SEVERE]:
         return DifficultyEnum.MODERATE
-    elif exp[DifficultyEnum.SEVERE] <= enc_exp < exp[DifficultyEnum.EXTREME]:
+    elif enc_exp < exp[DifficultyEnum.EXTREME]:
         return DifficultyEnum.SEVERE
-    elif exp[DifficultyEnum.EXTREME] <= enc_exp < exp[DifficultyEnum.IMPOSSIBLE]:
+    elif enc_exp < exp[DifficultyEnum.IMPOSSIBLE]:
         return DifficultyEnum.EXTREME
     else:
         return DifficultyEnum.IMPOSSIBLE
