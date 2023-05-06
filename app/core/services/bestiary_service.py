@@ -2,6 +2,7 @@ from typing import List
 
 from app.core.resources import redis_handler
 from app.core.resources.schema.alignment_enum import AlignmentEnum
+from app.core.resources.schema.creature import Creature
 from app.core.resources.schema.pagination_params import PaginationParams
 from app.core.resources.schema.rarity_enum import RarityEnum
 from app.core.resources.schema.size_enum import SizeEnum
@@ -38,3 +39,37 @@ def get_size_list() -> List[str]:
 
 def get_alignment_list() -> List[str]:
     return [el.value for el in AlignmentEnum]
+
+
+async def __update_creature(
+    creature_id: str,
+    hp_increase: dict,
+    level_delta: int,
+) -> Creature:
+    creature = await redis_handler.get_creature_by_id(creature_id)
+    # finds the bigger key in hp_increase where the creature's level
+    # is greater than or equal to the key.
+    creature.hp += hp_increase.get(
+        max(
+            (key for key in hp_increase.keys() if creature.level >= key),
+            default=next(iter(hp_increase)),
+        ),
+        0,
+    )
+
+    creature.hp = creature.hp if creature.hp > 0 else 1
+
+    creature.level += level_delta
+    archive_query = "Elite" if level_delta >= 1 else "Weak"
+    creature.archive_link = f"{creature.archive_link}&{archive_query}=true"
+    return creature
+
+
+async def get_elite_version(creature_id: str) -> dict:
+    hp_increase = {1: 10, 2: 15, 5: 20, 20: 30}
+    return {"results": await __update_creature(creature_id, hp_increase, 1)}
+
+
+async def get_weak_version(creature_id: str) -> dict:
+    hp_increase = {1: -10, 2: -15, 5: -20, 20: -30}
+    return {"results": await __update_creature(creature_id, hp_increase, -1)}

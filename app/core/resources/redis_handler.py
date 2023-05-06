@@ -73,6 +73,18 @@ async def get_creatures_by_id(id_list: List[str]) -> List[Creature]:
     return creature_list
 
 
+async def get_creature_by_id(creature_id: str) -> Creature:
+    try:
+        return Creature.from_json_string(
+            json_str=r.json().get(creature_id, "$")[0], _id=creature_id
+        )
+    except Exception as e:
+        logger.debug(
+            f"Error encountered while fetching json with id {creature_id}: {e}"
+        )
+        raise
+
+
 async def fetch_creature_ids_passing_all_filters(
     key_value_filters: dict,
 ) -> Dict[str, Dict[str, Set[str]]]:
