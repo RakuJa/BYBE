@@ -1,6 +1,9 @@
+import asyncio
+
 from fastapi import FastAPI
 
 from app.core.resources.app_config import config
+from app.core.resources.network import redis_proxy
 from app.core.routers import bestiary, health, encounter
 from fastapi.middleware.cors import CORSMiddleware
 
@@ -20,3 +23,12 @@ app.add_middleware(
 app.include_router(bestiary.router)
 app.include_router(encounter.router)
 app.include_router(health.router)
+
+
+@app.on_event("startup")
+async def startup_event():
+    # create the event loop
+    loop = asyncio.get_event_loop()
+
+    # create a task to run the update_cache coroutine in the event loop
+    loop.create_task(redis_proxy.update_cache())

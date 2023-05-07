@@ -3,7 +3,7 @@ import logging
 from starlette import status
 from starlette.responses import Response
 
-from app.core.resources import redis_handler
+from app.core.resources.network import redis_communicator
 from app.core.resources.api_router import APIRouter
 
 router = APIRouter(
@@ -18,7 +18,7 @@ logger = logging.getLogger(__name__)
 
 @router.get("/")
 async def health() -> dict:
-    redis_up: bool = await redis_handler.is_redis_up()
+    redis_up: bool = await redis_communicator.is_redis_up()
     result_dict = {
         "ready": redis_up,
         "dependencies": [
@@ -36,7 +36,7 @@ async def health() -> dict:
 
 @router.get("/ready/")
 async def health_ready() -> Response:
-    redis_up = await redis_handler.is_redis_up()
+    redis_up = await redis_communicator.is_redis_up()
     if redis_up:
         logger.debug("Health ready with status code 200")
         return Response(status_code=status.HTTP_200_OK)

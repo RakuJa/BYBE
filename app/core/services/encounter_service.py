@@ -6,8 +6,9 @@ from typing import Optional, Dict, Set, Iterable
 
 from pydantic import conlist
 
-from app.core.resources import redis_handler
+from app.core.resources.network import redis_proxy
 from app.core.resources.schema.alignment_enum import AlignmentEnum
+from app.core.resources.schema.creature_filter import CreatureFilter
 from app.core.resources.schema.difficulty_enum import DifficultyEnum
 from app.core.resources.schema.encounter_params import EncounterParams
 from app.core.resources.schema.rarity_enum import RarityEnum
@@ -58,8 +59,8 @@ async def generate_random_encounter(
     size: Optional[SizeEnum] = None,
     alignment: Optional[AlignmentEnum] = None,
     encounter_difficulty: Optional[DifficultyEnum] = None,
-):
-    levels_combinations = calculate_level_combination_for_encounter(
+) -> dict:
+    exp, levels_combinations = calculate_level_combination_for_encounter(
         encounter_difficulty, party_levels
     )
     if not levels_combinations:
@@ -68,10 +69,24 @@ async def generate_random_encounter(
     creature_ids = await filters_creatures_ids_by_filters_and_levels(
         filter_dict, levels_combinations
     )
-    creature_ids = choose_random_valid_ids(creature_ids, levels_combinations)
-    return await redis_handler.get_creatures_by_id(
-        list(chain.from_iterable(creature_ids))
+    try:
+        creature_ids = choose_random_valid_ids(creature_ids, levels_combinations)
+        encounter = await redis_proxy.get_creatures_by_ids(
+            list(chain.from_iterable(creature_ids))
+        )
+    except ValueError:
+        encounter = []
+    scaled_exp_levels = calculate_encounter_scaling_difficulty(
+        party_size=len(party_levels)
     )
+
+    return {
+        "results": encounter,
+        "count": len(encounter),
+        "experience": exp if encounter else 0,
+        "difficulty": encounter_difficulty.value,
+        "levels": scaled_exp_levels,
+    }
 
 
 async def filters_creatures_ids_by_filters_and_levels(
@@ -80,9 +95,7 @@ async def filters_creatures_ids_by_filters_and_levels(
     id_set = None
     if filter_dict:
         # Fetch creature IDs passing all filters
-        ids_dict = await redis_handler.fetch_creature_ids_passing_all_filters(
-            filter_dict
-        )
+        ids_dict = await redis_proxy.fetch_creature_ids_passing_all_filters(filter_dict)
         id_set = get_intersection_of_all_values_in_nested_dict(ids_dict)
         if not id_set:
             # Empty id set, abort. (Encounter could not be generated)
@@ -90,8 +103,8 @@ async def filters_creatures_ids_by_filters_and_levels(
 
     # Fetch creature IDs passing level filter
     unique_levels = set(chain.from_iterable(levels_combinations))
-    level_id = await redis_handler.fetch_creature_ids_passing_filter(
-        "level", unique_levels
+    level_id = await redis_proxy.fetch_creature_ids_passing_filter(
+        CreatureFilter.LEVEL, unique_levels
     )
     # Merge IDs with dict of sets and remove levels with empty sets
     # If id_set is empty THEN no filter were passed and you don't have to merge
@@ -100,11 +113,19 @@ async def filters_creatures_ids_by_filters_and_levels(
 
 
 def choose_random_valid_ids(
-    ids: Dict[int, Set[str]], levels_combinations: Iterable[Iterable[str]]
+    ids: Dict[str, Set[str]], levels_combinations: Iterable[Iterable[str]]
 ):
     valid_levels = filter_lists_by_id(lists=levels_combinations, ids=ids)
     random_encounter = random.sample(valid_levels, 1)[0]
     creature_count = Counter(random_encounter)
+    for key, value in creature_count.items():
+        if len(ids[key]) < value:
+            # fill ids[key] until len(ids[key]) = value. the filler values
+            # are already presents inside the ids dictionary
+            # Example: ids{0:{1,2}} creature_count{0:5} => ids{0:{1,2,2,1,2}
+            filler_values = list(ids[key]) * (value // len(ids[key]))
+            filler_values += list(ids[key])[: value % len(ids[key])]
+            ids[key] = filler_values
     return [
         random.sample([el for el in ids[key]], creature_count[key])
         for key in creature_count
@@ -119,17 +140,17 @@ def build_filter_dict(
 ) -> dict:
     filter_dict = {}
     if family:
-        filter_dict["family"] = [family]
+        filter_dict[CreatureFilter.FAMILY] = [family]
     if rarity:
-        filter_dict["rarity"] = [rarity.value]
+        filter_dict[CreatureFilter.RARITY] = [rarity.value]
     if size:
-        filter_dict["size"] = [size.value]
+        filter_dict[CreatureFilter.SIZE] = [size.value]
     if alignment:
-        filter_dict["alignment"] = [alignment.value]
+        filter_dict[CreatureFilter.ALIGNMENT] = [alignment.value]
     return filter_dict
 
 
-def filter_lists_by_id(lists: Iterable[Iterable[str]], ids: Dict[int, Iterable[str]]):
+def filter_lists_by_id(lists: Iterable[Iterable[str]], ids: Dict[str, Iterable[str]]):
     """
     Returns only iterables with elements contained in ids
     """

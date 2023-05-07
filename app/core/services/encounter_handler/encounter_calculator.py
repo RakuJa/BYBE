@@ -1,5 +1,5 @@
 from statistics import mean
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Tuple
 from math import floor, dist
 
 from app.core.resources.schema.difficulty_enum import DifficultyEnum
@@ -115,34 +115,37 @@ def _scale_difficulty_exp(base_difficulty: DifficultyEnum, party_size: int) -> i
 
 def calculate_level_combination_for_encounter(
     difficulty: DifficultyEnum, party_levels: List[int]
-):
+) -> Tuple[int, List[List[str]]]:
     """
     Given an encounter difficulty it calculates all possible encounter permutations
     :param difficulty:
     :param party_levels:
-    :return:
+    :return: (scaled_experience, level_combinations)
     """
-    return calculate_level_combinations_for_given_exp(
-        _scale_difficulty_exp(base_difficulty=difficulty, party_size=len(party_levels)),
+    exp = _scale_difficulty_exp(
+        base_difficulty=difficulty, party_size=len(party_levels)
+    )
+    return exp, calculate_level_combinations_for_given_exp(
+        exp,
         party_lvl=floor(mean(party_levels)),
     )
 
 
 def calculate_level_combinations_for_given_exp(
     experience: int, party_lvl: int
-) -> List[List[int]]:
+) -> List[List[str]]:
     """
     Given a encounter experience it calculates all possible encounter permutations
     :param experience:
     :param party_lvl:
     :return:
     """
-    encounters_lvl: List[List[int]] = []
+    encounters_lvl: List[List[str]] = []
     exp_list: List[int] = [exp for lvl, exp in get_lvl_and_exp_dict().items()]
     for el in find_combinations(candidates=exp_list, target=experience):
         encounters_lvl.append(
             [
-                party_lvl + convert_exp_to_lvl_diff(curr_exp)
+                str(party_lvl + convert_exp_to_lvl_diff(curr_exp))
                 for curr_exp in el
                 if party_lvl + convert_exp_to_lvl_diff(curr_exp) >= -1
             ]
