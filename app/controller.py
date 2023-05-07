@@ -9,7 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI(
     title=config.service_name,
-    version="0.1.1",
+    version="0.2.0",
     description=config.service_description,
 )
 
