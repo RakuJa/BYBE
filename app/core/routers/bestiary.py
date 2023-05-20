@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 from fastapi import Depends
 
@@ -16,8 +16,9 @@ router = APIRouter(
 async def get_bestiary(
     pagination_params: PaginationParams = Depends(),
     order: OrderEnum = OrderEnum.ORDERED_BY_ID,
+    name_filter: Optional[str] = None,
 ) -> dict:
-    return await bestiary_service.get_bestiary(pagination_params, order)
+    return await bestiary_service.get_bestiary(pagination_params, order, name_filter)
 
 
 @router.get("/families/")
@@ -38,6 +39,11 @@ async def get_size_list() -> List[str]:
 @router.get("/alignments/")
 async def get_alignment_list() -> List[str]:
     return await bestiary_service.get_alignment_list()
+
+
+@router.get("/")
+async def get_creature(creature_id: str) -> dict:
+    return await bestiary_service.get_creature(creature_id)
 
 
 @router.get("/elite/")

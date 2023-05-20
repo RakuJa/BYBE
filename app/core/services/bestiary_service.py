@@ -7,18 +7,28 @@ from app.core.resources.schema.order_enum import OrderEnum
 from app.core.resources.schema.pagination_params import PaginationParams
 
 
-async def get_bestiary(pagination_params: PaginationParams, order: OrderEnum) -> dict:
+async def get_bestiary(
+    pagination_params: PaginationParams,
+    order: OrderEnum,
+    name_filter: str,
+) -> dict:
     next_cursor, list_of_creatures = await redis_proxy.get_paginated_creatures(
         cursor=pagination_params.cursor,
         page_size=pagination_params.page_size,
         order=order,
+        name_filter=name_filter,
     )
+    end_of_next_field = ""
+    if name_filter:
+        end_of_next_field = f"&name_filter={name_filter}"
+
     return {
         "results": list_of_creatures,
         "count": len(list_of_creatures),
         "next": f"https://bybe.fly.dev/bestiary/list/"
         f"?order={order.value}&cursor={next_cursor}"
         f"&page_size={pagination_params.page_size}"
+        f"{end_of_next_field}"
         if len(list_of_creatures) >= pagination_params.page_size
         else None,
     }
@@ -38,6 +48,20 @@ async def get_size_list() -> List[str]:
 
 async def get_alignment_list() -> List[str]:
     return await redis_proxy.get_keys(CreatureFilter.ALIGNMENT)
+
+
+async def get_creature(creature_id: str) -> dict:
+    return {"results": await redis_proxy.get_creature_by_id(creature_id)}
+
+
+async def get_elite_version(creature_id: str) -> dict:
+    hp_increase = {1: 10, 2: 15, 5: 20, 20: 30}
+    return {"results": await __update_creature(creature_id, hp_increase, 1)}
+
+
+async def get_weak_version(creature_id: str) -> dict:
+    hp_increase = {1: -10, 2: -15, 5: -20, 20: -30}
+    return {"results": await __update_creature(creature_id, hp_increase, -1)}
 
 
 async def __update_creature(
@@ -62,13 +86,3 @@ async def __update_creature(
     archive_query = "Elite" if level_delta >= 1 else "Weak"
     creature.archive_link = f"{creature.archive_link}&{archive_query}=true"
     return creature
-
-
-async def get_elite_version(creature_id: str) -> dict:
-    hp_increase = {1: 10, 2: 15, 5: 20, 20: 30}
-    return {"results": await __update_creature(creature_id, hp_increase, 1)}
-
-
-async def get_weak_version(creature_id: str) -> dict:
-    hp_increase = {1: -10, 2: -15, 5: -20, 20: -30}
-    return {"results": await __update_creature(creature_id, hp_increase, -1)}

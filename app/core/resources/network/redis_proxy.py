@@ -107,10 +107,14 @@ async def fetch_data_from_database() -> List[Creature]:
 
 
 async def get_paginated_creatures(
-    cursor: int, page_size: int, order: OrderEnum
+    cursor: int, page_size: int, order: OrderEnum, name_filter: str
 ) -> Tuple[int, List[Creature]]:
     if creatures_cache:
-        ordered_values = creatures_cache["lists"][order]
+        ordered_values: List[Creature] = creatures_cache["lists"][order]
+        if name_filter:
+            ordered_values = [
+                el for el in ordered_values if name_filter.lower() in el.name.lower()
+            ]
         next_cursor = (
             cursor + page_size
             if len(ordered_values) > cursor + page_size
