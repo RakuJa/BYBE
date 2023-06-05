@@ -3,7 +3,7 @@ from collections import Counter
 from collections.abc import Iterable
 from itertools import chain
 
-from typing import Optional, Dict, Set, List, Annotated, FrozenSet
+from typing import Optional, Dict, Set, List, Annotated
 
 from pydantic import conlist
 
@@ -39,18 +39,6 @@ def get_encounter_info(encounter_params: EncounterParams) -> dict:
         "difficulty": encounter_difficulty.value,
         "levels": scaled_exp_levels,
     }
-
-
-def _get_intersection_of_all_values_in_nested_dict(
-    input_dict: Dict[str, Dict[str, Set[str]]]
-) -> FrozenSet[str]:
-    return frozenset.intersection(
-        *[
-            # Must be a frozenset, set is mutable.
-            {frozenset(id_set) for id_set in nested_dict.values()}
-            for filters, nested_dict in input_dict.items()
-        ]
-    )
 
 
 async def generate_random_encounter(

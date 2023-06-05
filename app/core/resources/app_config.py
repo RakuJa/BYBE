@@ -35,7 +35,7 @@ class AppConfig(BaseModel):
     @validator("number_of_workers")
     def workers_number_must_be_valid(cls, value: int) -> int:
         # Add any additional validation you need here
-        if value <= 0:
+        if int(value) <= 0:
             raise ValueError(f"Worker number is not valid. Given value {value}")
         else:
             return value

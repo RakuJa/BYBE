@@ -61,8 +61,5 @@ class Creature:
     def from_json_string(cls, json_str: str, _id: str) -> Self:
         return cls.from_dict(creature_dict=json.loads(json_str), _id=_id)
 
-    def get_id(self) -> str:
-        return self.id
-
     def __str__(self) -> str:
         return self.serialize_to_json()
