@@ -45,7 +45,7 @@ def _get_intersection_of_all_values_in_nested_dict(
     input_dict: Dict[str, Dict[str, Set[str]]]
 ) -> FrozenSet[str]:
     return frozenset.intersection(
-        * [
+        *[
             # Must be a frozenset, set is mutable.
             {frozenset(id_set) for id_set in nested_dict.values()}
             for filters, nested_dict in input_dict.items()
