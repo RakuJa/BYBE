@@ -13,7 +13,7 @@ class DifficultyEnum(Enum):
     # Pathfinder 2E thinks that a GM will only try out extreme encounter at maximum
     # I have to introduce a level for impossible things, Needs balancing Paizo help
 
-    def get_base_xp_budget(self):
+    def get_base_xp_budget(self) -> int:
         if self == DifficultyEnum.TRIVIAL:
             return 40
         elif self == DifficultyEnum.LOW:
@@ -32,7 +32,7 @@ class DifficultyEnum(Enum):
                 f" contact the developer"
             )
 
-    def get_xp_adjustment(self):
+    def get_xp_adjustment(self) -> int:
         if self == DifficultyEnum.TRIVIAL:
             return 10
         elif self == DifficultyEnum.LOW:

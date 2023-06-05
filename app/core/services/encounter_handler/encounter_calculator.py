@@ -1,11 +1,11 @@
 from statistics import mean
-from typing import List, Dict, Set
+from typing import List, Dict, Set, Tuple
 from math import floor, dist
 
 from app.core.resources.schema.difficulty_enum import DifficultyEnum
 
 
-def get_lvl_and_exp_dict():
+def get_lvl_and_exp_dict() -> Dict[int, int]:
     return {
         -4: 10,
         -3: 15,
@@ -29,7 +29,7 @@ def convert_level_difference_into_experience(
     :return: The experience that the enemy will yield
     """
     lvl_diff_rounded_down = floor(level_difference)
-    lvl_and_exp_dict = get_lvl_and_exp_dict()
+    lvl_and_exp_dict: Dict[int, int] = get_lvl_and_exp_dict()
     if lvl_diff_rounded_down in lvl_and_exp_dict:
         return lvl_and_exp_dict[lvl_diff_rounded_down]
     elif lvl_diff_rounded_down < -4:
@@ -115,16 +115,22 @@ def _scale_difficulty_exp(base_difficulty: DifficultyEnum, party_size: int) -> i
 
 def calculate_level_combination_for_encounter(
     difficulty: DifficultyEnum, party_levels: List[int]
-):
+) -> Tuple[List[List[int]], int]:
     """
     Given an encounter difficulty it calculates all possible encounter permutations
     :param difficulty:
     :param party_levels:
-    :return:
+    :return: a Tuple of [enc_lvl_combinations, encounter_exp]
     """
-    return calculate_level_combinations_for_given_exp(
-        _scale_difficulty_exp(base_difficulty=difficulty, party_size=len(party_levels)),
-        party_lvl=floor(mean(party_levels)),
+    encounter_exp: int = _scale_difficulty_exp(
+        base_difficulty=difficulty, party_size=len(party_levels)
+    )
+    return (
+        calculate_level_combinations_for_given_exp(
+            encounter_exp,
+            party_lvl=floor(mean(party_levels)),
+        ),
+        encounter_exp,
     )
 
 
@@ -154,9 +160,12 @@ def convert_exp_to_lvl_diff(experience: int) -> int:
     for lvl, exp in get_lvl_and_exp_dict().items():
         if experience == exp:
             return lvl
+    raise Exception()
 
 
-def merge_ids_with_dict_of_sets(dict_of_sets: Dict[str, Set[str]], ids: Set[str]):
+def merge_ids_with_dict_of_sets(
+    dict_of_sets: Dict[str, Set[str]], ids: Set[str]
+) -> Dict[str, Set[str]]:
     """
     foreach key in the dictionary, merges the set of id with the current key ids
     :param dict_of_sets: Dictionary made up by [key, set of ids]
@@ -168,12 +177,12 @@ def merge_ids_with_dict_of_sets(dict_of_sets: Dict[str, Set[str]], ids: Set[str]
     }
 
 
-def find_combinations(candidates, target):
+def find_combinations(candidates: List[int], target: int) -> List[List[int]]:
     """
     Find all combinations of numbers in the candidates list that sum up to the target.
     """
 
-    def backtrack(start, target, path):
+    def backtrack(start: int, target: int, path: List[int]) -> None:
         # If target is reached, add the current path to results list
         if target == 0:
             result.append(path)
@@ -187,7 +196,7 @@ def find_combinations(candidates, target):
             # Make a recursive call to backtrack with updated target and path
             backtrack(i, target - candidates[i], path + [candidates[i]])
 
-    result = []  # List to store all combinations
+    result: List[List] = []  # List to store all combinations
     candidates.sort()  # Sort the candidates list for optimization
     backtrack(0, target, [])  # Start the backtracking from the first index
     return result
