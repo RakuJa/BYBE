@@ -74,15 +74,15 @@ def calculate_encounter_difficulty(
     """
     enc_exp = encounter_exp
     exp = scaled_exp_levels
-    if enc_exp < exp[DifficultyEnum.TRIVIAL]:
+    if enc_exp < exp[DifficultyEnum.LOW]:
         return DifficultyEnum.TRIVIAL
-    elif exp[DifficultyEnum.LOW] <= enc_exp < exp[DifficultyEnum.MODERATE]:
+    elif enc_exp < exp[DifficultyEnum.MODERATE]:
         return DifficultyEnum.LOW
-    elif exp[DifficultyEnum.MODERATE] <= enc_exp < exp[DifficultyEnum.SEVERE]:
+    elif enc_exp < exp[DifficultyEnum.SEVERE]:
         return DifficultyEnum.MODERATE
-    elif exp[DifficultyEnum.SEVERE] <= enc_exp < exp[DifficultyEnum.EXTREME]:
+    elif enc_exp < exp[DifficultyEnum.EXTREME]:
         return DifficultyEnum.SEVERE
-    elif exp[DifficultyEnum.EXTREME] <= enc_exp < exp[DifficultyEnum.IMPOSSIBLE]:
+    elif enc_exp < exp[DifficultyEnum.IMPOSSIBLE]:
         return DifficultyEnum.EXTREME
     else:
         return DifficultyEnum.IMPOSSIBLE
@@ -115,40 +115,37 @@ def _scale_difficulty_exp(base_difficulty: DifficultyEnum, party_size: int) -> i
 
 def calculate_level_combination_for_encounter(
     difficulty: DifficultyEnum, party_levels: List[int]
-) -> Tuple[List[List[int]], int]:
+) -> Tuple[int, List[List[str]]]:
     """
     Given an encounter difficulty it calculates all possible encounter permutations
     :param difficulty:
     :param party_levels:
-    :return: a Tuple of [enc_lvl_combinations, encounter_exp]
+    :return: (scaled_experience, level_combinations)
     """
-    encounter_exp: int = _scale_difficulty_exp(
+    exp = _scale_difficulty_exp(
         base_difficulty=difficulty, party_size=len(party_levels)
     )
-    return (
-        calculate_level_combinations_for_given_exp(
-            encounter_exp,
-            party_lvl=floor(mean(party_levels)),
-        ),
-        encounter_exp,
+    return exp, calculate_level_combinations_for_given_exp(
+        exp,
+        party_lvl=floor(mean(party_levels)),
     )
 
 
 def calculate_level_combinations_for_given_exp(
     experience: int, party_lvl: int
-) -> List[List[int]]:
+) -> List[List[str]]:
     """
     Given a encounter experience it calculates all possible encounter permutations
     :param experience:
     :param party_lvl:
     :return:
     """
-    encounters_lvl: List[List[int]] = []
+    encounters_lvl: List[List[str]] = []
     exp_list: List[int] = [exp for lvl, exp in get_lvl_and_exp_dict().items()]
     for el in find_combinations(candidates=exp_list, target=experience):
         encounters_lvl.append(
             [
-                party_lvl + convert_exp_to_lvl_diff(curr_exp)
+                str(party_lvl + convert_exp_to_lvl_diff(curr_exp))
                 for curr_exp in el
                 if party_lvl + convert_exp_to_lvl_diff(curr_exp) >= -1
             ]

@@ -6,7 +6,6 @@ from typing import Tuple, List, Dict, Set, Iterable
 
 from app.core.resources.app_config import config
 from app.core.resources.schema.creature import Creature
-from app.core.resources.schema.pagination_params import PaginationParams
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +36,14 @@ async def fetch_keys(
     return next_cursor, key_list[cursor:next_cursor]
 
 
+async def fetch_and_parse_all_keys(pattern: str) -> List[str]:
+    parse_pattern = pattern[:-1] if pattern.endswith("*") else pattern
+    return [
+        key.decode("utf-8").replace(parse_pattern, "")
+        for key in r.scan_iter(match=pattern)
+    ]
+
+
 async def fetch_and_parse_keys(
     cursor: int, page_size: int, pattern: str
 ) -> Tuple[int, List[str]]:
@@ -48,12 +55,10 @@ async def fetch_and_parse_keys(
     return cursor, [key.decode("utf-8").replace(pattern, "") for key in raw_key_list]
 
 
-async def get_paginated_creatures(
-    pagination_params: PaginationParams,
-) -> Tuple[int, List]:
+async def get_paginated_creatures(cursor: int, page_size: int) -> Tuple[int, List]:
     next_cursor, keys = await fetch_and_parse_keys(
-        cursor=pagination_params.cursor,
-        page_size=pagination_params.page_size,
+        cursor=cursor,
+        page_size=page_size,
         pattern="creature:*",
     )
     return next_cursor, await get_creatures_by_id(keys)
@@ -74,6 +79,18 @@ async def get_creatures_by_id(id_list: List[str]) -> List[Creature]:
             logger.debug(f"Error encountered while fetching json with id {_id}: {e}")
             raise
     return creature_list
+
+
+async def get_creature_by_id(creature_id: str) -> Creature:
+    try:
+        return Creature.from_json_string(
+            json_str=r.json().get(creature_id, "$")[0], _id=creature_id
+        )
+    except Exception as e:
+        logger.debug(
+            f"Error encountered while fetching json with id {creature_id}: {e}"
+        )
+        raise
 
 
 async def fetch_creature_ids_passing_all_filters(

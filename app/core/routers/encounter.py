@@ -1,9 +1,10 @@
 import random
+
 from typing import Optional, Annotated, List
 
-from fastapi import APIRouter
 from pydantic import conlist
 
+from app.core.resources.api_router import APIRouter
 from app.core.resources.schema.alignment_enum import AlignmentEnum
 from app.core.resources.schema.difficulty_enum import DifficultyEnum
 from app.core.resources.schema.encounter_params import EncounterParams
@@ -31,7 +32,7 @@ async def generate_random_encounter(
     size: Optional[SizeEnum] = None,
     alignment: Optional[AlignmentEnum] = None,
     encounter_difficulty: Optional[DifficultyEnum] = None,
-):
+) -> dict:
     if not encounter_difficulty:
         encounter_difficulty = random.choice(list(DifficultyEnum))  # nosec
     return await encounter_service.generate_random_encounter(

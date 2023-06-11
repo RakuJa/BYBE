@@ -18,15 +18,15 @@ class Creature:
         family: Optional[str],
         rarity: Optional[RarityEnum],
     ):
-        self.id = identifier
-        self.name = name.strip()
-        self.hp = hp
-        self.level = level
-        self.alignment = alignment
-        self.size = size
-        self.family = family
-        self.rarity = rarity
-        self.archive_link = f"https://2e.aonprd.com/Monsters.aspx?ID={self.id}"
+        self.id: str = identifier
+        self.name: str = name.strip()
+        self.hp: int = hp
+        self.level: int = level
+        self.alignment: AlignmentEnum = alignment
+        self.size: SizeEnum = size
+        self.family: str = family if family else "-"
+        self.rarity: RarityEnum = rarity if rarity else RarityEnum.COMMON
+        self.archive_link: str = f"https://2e.aonprd.com/Monsters.aspx?ID={self.id}"
 
     def serialize_to_json(self) -> str:
         return json.dumps(self.serialize_to_dict())
