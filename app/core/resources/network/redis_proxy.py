@@ -21,7 +21,7 @@ async def update_cache() -> None:
     while True:
         if time.time() - last_cache_update_time >= cache_expiration:
             # fetch data from database and update cache
-            creatures_list = await fetch_data_from_database()
+            creatures_list = fetch_data_from_database()
             (
                 level_dict,
                 family_dict,
@@ -80,13 +80,13 @@ def __create_enum_dicts(
     )
 
 
-async def fetch_data_from_database() -> List[Creature]:
-    return await redis_communicator.get_creatures_by_id(
-        await redis_communicator.fetch_and_parse_all_keys(pattern="creature:*")
+def fetch_data_from_database() -> List[Creature]:
+    return redis_communicator.get_creatures_by_id(
+        redis_communicator.fetch_and_parse_all_keys(pattern="creature:*")
     )
 
 
-async def get_paginated_creatures(
+def get_paginated_creatures(
     cursor: int, page_size: int, order: OrderEnum, name_filter: Optional[str]
 ) -> Tuple[int, List[Creature]]:
     if creatures_cache:
@@ -102,53 +102,53 @@ async def get_paginated_creatures(
         )
         return next_cursor, ordered_values[cursor:next_cursor]
     else:
-        return await redis_communicator.get_paginated_creatures(cursor, page_size)
+        return redis_communicator.get_paginated_creatures(cursor, page_size)
 
 
-async def get_keys(creature_filter: CreatureFilter) -> List[str]:
+def get_keys(creature_filter: CreatureFilter) -> List[str]:
     if creatures_cache:
         return sorted(list(creatures_cache.get_dictionary(creature_filter).keys()))
     else:
         return sorted(
-            await redis_communicator.fetch_and_parse_all_keys(
+            redis_communicator.fetch_and_parse_all_keys(
                 creature_filter.value.lower() + "*"
             )
         )
 
 
-async def get_creatures_by_ids(id_list: List[str]) -> List[Creature]:
+def get_creatures_by_ids(id_list: List[str]) -> List[Creature]:
     creatures_list: List[Creature] = []
     for _id in id_list:
-        curr_creature = await get_creature_by_id(_id)
+        curr_creature = get_creature_by_id(_id)
         if curr_creature:
             creatures_list.append(curr_creature)
     return creatures_list
 
 
-async def get_creature_by_id(creature_id: str) -> Optional[Creature]:
+def get_creature_by_id(creature_id: str) -> Optional[Creature]:
     if creatures_cache:
         return creatures_cache.id_filter.get(creature_id, None)
-    return await redis_communicator.get_creature_by_id(creature_id)
+    return redis_communicator.get_creature_by_id(creature_id)
 
 
-async def fetch_creature_ids_passing_all_filters(
+def fetch_creature_ids_passing_all_filters(
     key_value_filters: dict,
 ) -> Dict[str, Dict[str, Set[str]]]:
     if creatures_cache:
         ids_passing_filter: Dict[str, Dict[str, Set[str]]] = dict()
         for key, value in key_value_filters.items():
-            curr_dict = await fetch_creature_ids_passing_filter(key, filter_list=value)
+            curr_dict = fetch_creature_ids_passing_filter(key, filter_list=value)
             if not curr_dict:
                 return {}
             ids_passing_filter[key] = curr_dict
         return ids_passing_filter
     else:
-        return await redis_communicator.fetch_creature_ids_passing_all_filters(
+        return redis_communicator.fetch_creature_ids_passing_all_filters(
             key_value_filters
         )
 
 
-async def fetch_creature_ids_passing_filter(
+def fetch_creature_ids_passing_filter(
     creature_filter: CreatureFilter, filter_list: Iterable[str]
 ) -> Dict[str, Set[str]]:
     if creatures_cache:
@@ -168,6 +168,6 @@ async def fetch_creature_ids_passing_filter(
                 )
         return ids_passing_filter
     else:
-        return await redis_communicator.fetch_creature_ids_passing_filter(
+        return redis_communicator.fetch_creature_ids_passing_filter(
             creature_filter.value.lower(), filter_list
         )

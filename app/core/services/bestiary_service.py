@@ -7,12 +7,12 @@ from app.core.resources.schema.order_enum import OrderEnum
 from app.core.resources.schema.pagination_params import PaginationParams
 
 
-async def get_bestiary(
+def get_bestiary(
     pagination_params: PaginationParams,
     order: OrderEnum,
     name_filter: Optional[str],
 ) -> dict:
-    next_cursor, list_of_creatures = await redis_proxy.get_paginated_creatures(
+    next_cursor, list_of_creatures = redis_proxy.get_paginated_creatures(
         cursor=pagination_params.cursor,
         page_size=pagination_params.page_size,
         order=order,
@@ -34,42 +34,42 @@ async def get_bestiary(
     }
 
 
-async def get_families_list() -> List[str]:
-    return await redis_proxy.get_keys(CreatureFilter.FAMILY)
+def get_families_list() -> List[str]:
+    return redis_proxy.get_keys(CreatureFilter.FAMILY)
 
 
-async def get_rarities_list() -> List[str]:
-    return await redis_proxy.get_keys(CreatureFilter.RARITY)
+def get_rarities_list() -> List[str]:
+    return redis_proxy.get_keys(CreatureFilter.RARITY)
 
 
-async def get_size_list() -> List[str]:
-    return await redis_proxy.get_keys(CreatureFilter.SIZE)
+def get_size_list() -> List[str]:
+    return redis_proxy.get_keys(CreatureFilter.SIZE)
 
 
-async def get_alignment_list() -> List[str]:
-    return await redis_proxy.get_keys(CreatureFilter.ALIGNMENT)
+def get_alignment_list() -> List[str]:
+    return redis_proxy.get_keys(CreatureFilter.ALIGNMENT)
 
 
-async def get_creature(creature_id: str) -> dict:
-    return {"results": await redis_proxy.get_creature_by_id(creature_id)}
+def get_creature(creature_id: str) -> dict:
+    return {"results": redis_proxy.get_creature_by_id(creature_id)}
 
 
-async def get_elite_version(creature_id: str) -> dict:
+def get_elite_version(creature_id: str) -> dict:
     hp_increase = {1: 10, 2: 15, 5: 20, 20: 30}
-    return {"results": await __update_creature(creature_id, hp_increase, 1)}
+    return {"results": __update_creature(creature_id, hp_increase, 1)}
 
 
-async def get_weak_version(creature_id: str) -> dict:
+def get_weak_version(creature_id: str) -> dict:
     hp_increase = {1: -10, 2: -15, 5: -20, 20: -30}
-    return {"results": await __update_creature(creature_id, hp_increase, -1)}
+    return {"results": __update_creature(creature_id, hp_increase, -1)}
 
 
-async def __update_creature(
+def __update_creature(
     creature_id: str,
     hp_increase: dict,
     level_delta: int,
 ) -> Optional[Creature]:
-    creature: Optional[Creature] = await redis_proxy.get_creature_by_id(creature_id)
+    creature: Optional[Creature] = redis_proxy.get_creature_by_id(creature_id)
     if not creature:
         return None
     # finds the bigger key in hp_increase where the creature's level

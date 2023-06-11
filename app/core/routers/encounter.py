@@ -20,12 +20,12 @@ router = APIRouter(
 
 
 @router.post("/info/")
-async def get_encounter_info(encounter_params: EncounterParams) -> dict:
+def get_encounter_info(encounter_params: EncounterParams) -> dict:
     return encounter_service.get_encounter_info(encounter_params)
 
 
 @router.post("/generator/")
-async def generate_random_encounter(
+def generate_random_encounter(
     party_levels: Annotated[List[int], conlist(int, min_items=1)],
     family: Optional[str] = None,
     rarity: Optional[RarityEnum] = None,
@@ -35,7 +35,7 @@ async def generate_random_encounter(
 ) -> dict:
     if not encounter_difficulty:
         encounter_difficulty = random.choice(list(DifficultyEnum))  # nosec
-    return await encounter_service.generate_random_encounter(
+    return encounter_service.generate_random_encounter(
         party_levels=party_levels,
         family=family,
         rarity=rarity,

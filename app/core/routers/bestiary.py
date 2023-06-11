@@ -13,44 +13,44 @@ router = APIRouter(
 
 
 @router.get("/list/")
-async def get_bestiary(
+def get_bestiary(
     pagination_params: PaginationParams = Depends(),
     order: OrderEnum = OrderEnum.ORDERED_BY_ID,
     name_filter: Optional[str] = None,
 ) -> dict:
-    return await bestiary_service.get_bestiary(pagination_params, order, name_filter)
+    return bestiary_service.get_bestiary(pagination_params, order, name_filter)
 
 
 @router.get("/families/")
-async def get_families_list() -> List[str]:
-    return await bestiary_service.get_families_list()
+def get_families_list() -> List[str]:
+    return bestiary_service.get_families_list()
 
 
 @router.get("/rarities/")
-async def get_rarities_list() -> List[str]:
-    return await bestiary_service.get_rarities_list()
+def get_rarities_list() -> List[str]:
+    return bestiary_service.get_rarities_list()
 
 
 @router.get("/sizes/")
-async def get_size_list() -> List[str]:
-    return await bestiary_service.get_size_list()
+def get_size_list() -> List[str]:
+    return bestiary_service.get_size_list()
 
 
 @router.get("/alignments/")
-async def get_alignment_list() -> List[str]:
-    return await bestiary_service.get_alignment_list()
+def get_alignment_list() -> List[str]:
+    return bestiary_service.get_alignment_list()
 
 
 @router.get("/")
-async def get_creature(creature_id: str) -> dict:
-    return await bestiary_service.get_creature(creature_id)
+def get_creature(creature_id: str) -> dict:
+    return bestiary_service.get_creature(creature_id)
 
 
 @router.get("/elite/")
-async def get_elite_version(creature_id: str) -> dict:
-    return await bestiary_service.get_elite_version(creature_id)
+def get_elite_version(creature_id: str) -> dict:
+    return bestiary_service.get_elite_version(creature_id)
 
 
 @router.get("/weak/")
-async def get_weak_version(creature_id: str) -> dict:
-    return await bestiary_service.get_weak_version(creature_id)
+def get_weak_version(creature_id: str) -> dict:
+    return bestiary_service.get_weak_version(creature_id)

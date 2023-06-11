@@ -41,7 +41,7 @@ def get_encounter_info(encounter_params: EncounterParams) -> dict:
     }
 
 
-async def generate_random_encounter(
+def generate_random_encounter(
     party_levels: Annotated[List[int], conlist(int, min_items=1)],
     encounter_difficulty: DifficultyEnum,
     family: Optional[str] = None,
@@ -57,14 +57,12 @@ async def generate_random_encounter(
     filter_dict = build_filter_dict(family, rarity, size, alignment)
     creature_ids_dict: Dict[
         str, Set[str]
-    ] = await filters_creatures_ids_by_filters_and_levels(
-        filter_dict, levels_combinations
-    )
+    ] = filters_creatures_ids_by_filters_and_levels(filter_dict, levels_combinations)
     try:
         creature_ids_list = choose_random_valid_ids(
             creature_ids_dict, levels_combinations
         )
-        encounter = await redis_proxy.get_creatures_by_ids(
+        encounter = redis_proxy.get_creatures_by_ids(
             list(chain.from_iterable(creature_ids_list))
         )
     except ValueError:
@@ -82,13 +80,13 @@ async def generate_random_encounter(
     }
 
 
-async def filters_creatures_ids_by_filters_and_levels(
+def filters_creatures_ids_by_filters_and_levels(
     filter_dict: dict, levels_combinations: List[List[str]]
 ) -> Dict[str, Set[str]]:
     id_set = None
     if filter_dict:
         # Fetch creature IDs passing all filters
-        ids_dict = await redis_proxy.fetch_creature_ids_passing_all_filters(filter_dict)
+        ids_dict = redis_proxy.fetch_creature_ids_passing_all_filters(filter_dict)
         id_set = get_intersection_of_all_values_in_nested_dict(ids_dict)
         if not id_set:
             # Empty id set, abort. (Encounter could not be generated)
@@ -96,7 +94,7 @@ async def filters_creatures_ids_by_filters_and_levels(
 
     # Fetch creature IDs passing level filter
     unique_levels = set(chain.from_iterable(levels_combinations))
-    level_id = await redis_proxy.fetch_creature_ids_passing_filter(
+    level_id = redis_proxy.fetch_creature_ids_passing_filter(
         CreatureFilter.LEVEL, unique_levels
     )
     # Merge IDs with dict of sets and remove levels with empty sets
