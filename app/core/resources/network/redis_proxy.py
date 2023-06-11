@@ -4,6 +4,8 @@ import time
 from collections import defaultdict
 from typing import List, Tuple, Dict, Set, Iterable, Optional
 
+from returns.maybe import Maybe, Nothing
+
 from app.core.resources.network import redis_communicator
 from app.core.resources.network.creature_cache import CreatureCache
 from app.core.resources.schema.creature import Creature
@@ -88,7 +90,7 @@ def fetch_data_from_database() -> List[Creature]:
 
 def get_paginated_creatures(
     cursor: int, page_size: int, order: OrderEnum, name_filter: Optional[str]
-) -> Tuple[int, List[Creature]]:
+) -> Maybe[Tuple[int, List[Creature]]]:
     if creatures_cache:
         ordered_values: List[Creature] = creatures_cache.get_list(order)
         if name_filter:
@@ -100,9 +102,15 @@ def get_paginated_creatures(
             if len(ordered_values) > cursor + page_size
             else len(ordered_values)
         )
-        return next_cursor, ordered_values[cursor:next_cursor]
+        return Maybe.from_value((next_cursor, ordered_values[cursor:next_cursor]))
     else:
-        return redis_communicator.get_paginated_creatures(cursor, page_size)
+        # We should have a direct call like we had in the past
+        # redis_communicator.get_paginated_creatures(cursor, page_size)
+        # But this would increment code complexity for
+        # a non-existent case. (handling filter, orders, etc..)
+        # cache is empty only on startup, later on it is never emptied but always
+        # overwritten.
+        return Nothing
 
 
 def get_keys(creature_filter: CreatureFilter) -> List[str]:
@@ -143,9 +151,13 @@ def fetch_creature_ids_passing_all_filters(
             ids_passing_filter[key] = curr_dict
         return ids_passing_filter
     else:
-        return redis_communicator.fetch_creature_ids_passing_all_filters(
-            key_value_filters
-        )
+        # We should have a direct call like we had in the past
+        # redis_communicator.get_paginated_creatures(cursor, page_size)
+        # But this would increment code complexity for a
+        # non-existent case. (handling filter, orders, etc..)
+        # cache is empty only on startup, later on it is never emptied but always
+        # overwritten.
+        return {}
 
 
 def fetch_creature_ids_passing_filter(
@@ -168,6 +180,4 @@ def fetch_creature_ids_passing_filter(
                 )
         return ids_passing_filter
     else:
-        return redis_communicator.fetch_creature_ids_passing_filter(
-            creature_filter.value.lower(), filter_list
-        )
+        return {}

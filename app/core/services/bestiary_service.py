@@ -12,12 +12,15 @@ def get_bestiary(
     order: OrderEnum,
     name_filter: Optional[str],
 ) -> dict:
-    next_cursor, list_of_creatures = redis_proxy.get_paginated_creatures(
+    paginated_result = redis_proxy.get_paginated_creatures(
         cursor=pagination_params.cursor,
         page_size=pagination_params.page_size,
         order=order,
         name_filter=name_filter,
     )
+
+    next_cursor, list_of_creatures = paginated_result.value_or((0, []))
+
     end_of_next_field = ""
     if name_filter:
         end_of_next_field = f"&name_filter={name_filter}"

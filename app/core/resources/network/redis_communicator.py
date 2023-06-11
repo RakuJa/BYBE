@@ -91,6 +91,7 @@ def get_creature_by_id(creature_id: str) -> Creature:
         raise
 
 
+# DEPRECATED AND NOT USED
 def fetch_creature_ids_passing_all_filters(
     key_value_filters: dict,
 ) -> Dict[str, Dict[str, Set[str]]]:
@@ -103,6 +104,7 @@ def fetch_creature_ids_passing_all_filters(
     return ids_passing_filter
 
 
+# DEPRECATED AND NOT USED
 def fetch_creature_ids_passing_filter(
     filter_name: str, filter_list: Iterable[str]
 ) -> Dict[str, Set[str]]:
