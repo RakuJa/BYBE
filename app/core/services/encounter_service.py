@@ -1,8 +1,9 @@
 import random
 from collections import Counter
+from collections.abc import Iterable
 from itertools import chain
 
-from typing import Optional, Dict, Set, Iterable
+from typing import Optional, Dict, Set, List, Annotated
 
 from pydantic import conlist
 
@@ -22,7 +23,7 @@ from app.core.services.encounter_handler.encounter_calculator import (
 )
 
 
-def get_encounter_info(encounter_params: EncounterParams):
+def get_encounter_info(encounter_params: EncounterParams) -> dict:
     party_levels = encounter_params.party_levels
     encounter_experience = calculate_encounter_exp(
         party_levels=party_levels, enemy_levels=encounter_params.enemy_levels
@@ -40,25 +41,13 @@ def get_encounter_info(encounter_params: EncounterParams):
     }
 
 
-def _get_intersection_of_all_values_in_nested_dict(
-    input_dict: Dict[str, Dict[str, Set[str]]]
-) -> Set[str]:
-    return set.intersection(
-        *[
-            # Must be a frozenset, set is mutable.
-            {frozenset(id_set) for id_set in nested_dict.values()}
-            for filters, nested_dict in input_dict.items()
-        ]
-    )
-
-
-async def generate_random_encounter(
-    party_levels: conlist(int, min_items=1),
+def generate_random_encounter(
+    party_levels: Annotated[List[int], conlist(int, min_items=1)],
+    encounter_difficulty: DifficultyEnum,
     family: Optional[str] = None,
     rarity: Optional[RarityEnum] = None,
     size: Optional[SizeEnum] = None,
     alignment: Optional[AlignmentEnum] = None,
-    encounter_difficulty: Optional[DifficultyEnum] = None,
 ) -> dict:
     exp, levels_combinations = calculate_level_combination_for_encounter(
         encounter_difficulty, party_levels
@@ -66,13 +55,15 @@ async def generate_random_encounter(
     if not levels_combinations:
         raise ValueError("This encounter cannot be generated")
     filter_dict = build_filter_dict(family, rarity, size, alignment)
-    creature_ids = await filters_creatures_ids_by_filters_and_levels(
-        filter_dict, levels_combinations
-    )
+    creature_ids_dict: Dict[
+        str, Set[str]
+    ] = filters_creatures_ids_by_filters_and_levels(filter_dict, levels_combinations)
     try:
-        creature_ids = choose_random_valid_ids(creature_ids, levels_combinations)
-        encounter = await redis_proxy.get_creatures_by_ids(
-            list(chain.from_iterable(creature_ids))
+        creature_ids_list = choose_random_valid_ids(
+            creature_ids_dict, levels_combinations
+        )
+        encounter = redis_proxy.get_creatures_by_ids(
+            list(chain.from_iterable(creature_ids_list))
         )
     except ValueError:
         encounter = []
@@ -89,13 +80,13 @@ async def generate_random_encounter(
     }
 
 
-async def filters_creatures_ids_by_filters_and_levels(
-    filter_dict: dict, levels_combinations: Iterable[Iterable[str]]
+def filters_creatures_ids_by_filters_and_levels(
+    filter_dict: dict, levels_combinations: List[List[str]]
 ) -> Dict[str, Set[str]]:
     id_set = None
     if filter_dict:
         # Fetch creature IDs passing all filters
-        ids_dict = await redis_proxy.fetch_creature_ids_passing_all_filters(filter_dict)
+        ids_dict = redis_proxy.fetch_creature_ids_passing_all_filters(filter_dict)
         id_set = get_intersection_of_all_values_in_nested_dict(ids_dict)
         if not id_set:
             # Empty id set, abort. (Encounter could not be generated)
@@ -103,7 +94,7 @@ async def filters_creatures_ids_by_filters_and_levels(
 
     # Fetch creature IDs passing level filter
     unique_levels = set(chain.from_iterable(levels_combinations))
-    level_id = await redis_proxy.fetch_creature_ids_passing_filter(
+    level_id = redis_proxy.fetch_creature_ids_passing_filter(
         CreatureFilter.LEVEL, unique_levels
     )
     # Merge IDs with dict of sets and remove levels with empty sets
@@ -114,10 +105,11 @@ async def filters_creatures_ids_by_filters_and_levels(
 
 def choose_random_valid_ids(
     ids: Dict[str, Set[str]], levels_combinations: Iterable[Iterable[str]]
-):
+) -> List[List[str]]:
     valid_levels = filter_lists_by_id(lists=levels_combinations, ids=ids)
     random_encounter = random.sample(valid_levels, 1)[0]
     creature_count = Counter(random_encounter)
+    new_ids_dict: Dict[str, List[str]] = dict()
     for key, value in creature_count.items():
         if len(ids[key]) < value:
             # fill ids[key] until len(ids[key]) = value. the filler values
@@ -125,9 +117,11 @@ def choose_random_valid_ids(
             # Example: ids{0:{1,2}} creature_count{0:5} => ids{0:{1,2,2,1,2}
             filler_values = list(ids[key]) * (value // len(ids[key]))
             filler_values += list(ids[key])[: value % len(ids[key])]
-            ids[key] = filler_values
+            new_ids_dict[key] = filler_values
     return [
-        random.sample([el for el in ids[key]], creature_count[key])
+        random.sample(
+            [el for el in new_ids_dict.get(str(key), {})], creature_count[key]
+        )
         for key in creature_count
     ]
 
@@ -150,7 +144,9 @@ def build_filter_dict(
     return filter_dict
 
 
-def filter_lists_by_id(lists: Iterable[Iterable[str]], ids: Dict[str, Iterable[str]]):
+def filter_lists_by_id(
+    lists: Iterable[Iterable[str]], ids: Dict[str, Set[str]]
+) -> List[Iterable[str]]:
     """
     Returns only iterables with elements contained in ids
     """

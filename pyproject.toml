@@ -5,3 +5,49 @@ max-complexity = 10
 
 [tool.bandit]
 exclude_dirs = ["venv/"]
+
+# Global options for static analysis:
+
+[tool.mypy]
+python_version = "3.11"
+plugins = [
+    "returns.contrib.mypy.returns_plugin",
+    "pydantic.mypy",
+]
+# follow_imports = "silent"
+warn_redundant_casts = true
+warn_unused_ignores = true
+check_untyped_defs = true
+no_implicit_reexport = true
+warn_return_any = true
+warn_unused_configs = true
+
+# This at false, otherwise it will flag every generic obj like dict
+disallow_any_generics = false
+
+# for strict mypy: (this is the tricky one :-))
+disallow_untyped_defs = true
+
+[tool.pydantic-mypy]
+init_forbid_extra = true
+init_typed = true
+warn_required_dynamic_aliases = true
+warn_untyped_fields = true
+
+# Per-module options:
+
+[[tool.mypy.overrides]]
+module = [
+    "pypdfium2"
+]
+ignore_missing_imports = true
+
+
+[tool.vulture]
+exclude = ["venv/", "gunicorn.conf.py"]
+ignore_decorators = ["@router.get", "@validator", "@router.post"]
+make_whitelist = true
+min_confidence = 60
+paths = ["app/controller.py"]
+sort_by_size = true
+verbose = false

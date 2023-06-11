@@ -26,7 +26,7 @@ app.include_router(health.router)
 
 
 @app.on_event("startup")
-async def startup_event():
+async def startup_event() -> None:
     # create the event loop
     loop = asyncio.get_event_loop()
 

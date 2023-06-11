@@ -2,25 +2,28 @@ import asyncio
 import logging
 import time
 from collections import defaultdict
-from typing import List, Tuple, Dict, Set, Iterable
+from typing import List, Tuple, Dict, Set, Iterable, Optional
+
+from returns.maybe import Maybe, Nothing
 
 from app.core.resources.network import redis_communicator
+from app.core.resources.network.creature_cache import CreatureCache
 from app.core.resources.schema.creature import Creature
 from app.core.resources.schema.creature_filter import CreatureFilter
 from app.core.resources.schema.order_enum import OrderEnum
 
-creatures_cache: Dict[str, dict] = {}
-cache_expiration = 3600  # cache expires after one hour
-last_cache_update_time = 0
+creatures_cache: Optional[CreatureCache] = None
+cache_expiration: int = 3600  # cache expires after one hour
+last_cache_update_time: float = 0
 logger = logging.getLogger(__name__)
 
 
-async def update_cache():
+async def update_cache() -> None:
     global last_cache_update_time, creatures_cache
     while True:
         if time.time() - last_cache_update_time >= cache_expiration:
             # fetch data from database and update cache
-            creatures_list = await fetch_data_from_database()
+            creatures_list = fetch_data_from_database()
             (
                 level_dict,
                 family_dict,
@@ -28,43 +31,14 @@ async def update_cache():
                 size_dict,
                 rarity_dict,
             ) = __create_enum_dicts(creatures_list)
-            creatures_cache = {
-                "lists": {
-                    OrderEnum.UNORDERED: creatures_list,
-                    OrderEnum.ORDERED_BY_ID: sorted(
-                        creatures_list, key=lambda creature: creature.id
-                    ),
-                    OrderEnum.ORDERED_BY_NAME: sorted(
-                        creatures_list, key=lambda creature: creature.name
-                    ),
-                    OrderEnum.ORDERED_BY_HP: sorted(
-                        creatures_list, key=lambda creature: creature.hp
-                    ),
-                    OrderEnum.ORDERED_BY_LEVEL: sorted(
-                        creatures_list, key=lambda creature: creature.level
-                    ),
-                    OrderEnum.ORDERED_BY_FAMILY: sorted(
-                        creatures_list, key=lambda creature: creature.family
-                    ),
-                    OrderEnum.ORDERED_BY_ALIGNMENT: sorted(
-                        creatures_list, key=lambda creature: creature.alignment
-                    ),
-                    OrderEnum.ORDERED_BY_SIZE: sorted(
-                        creatures_list, key=lambda creature: creature.size
-                    ),
-                    OrderEnum.ORDERED_BY_RARITY: sorted(
-                        creatures_list, key=lambda creature: creature.rarity
-                    ),
-                },
-                "dicts": {
-                    CreatureFilter.ID: {x.id: x for x in creatures_list},
-                    CreatureFilter.LEVEL: level_dict,
-                    CreatureFilter.FAMILY: family_dict,
-                    CreatureFilter.ALIGNMENT: alignment_dict,
-                    CreatureFilter.SIZE: size_dict,
-                    CreatureFilter.RARITY: rarity_dict,
-                },
-            }
+            creatures_cache = CreatureCache(
+                creatures_list=creatures_list,
+                level_dict=level_dict,
+                family_dict=family_dict,
+                alignment_dict=alignment_dict,
+                size_dict=size_dict,
+                rarity_dict=rarity_dict,
+            )
 
             last_cache_update_time = time.time()
         await asyncio.sleep(60)  # sleep for 60 seconds
@@ -72,7 +46,13 @@ async def update_cache():
 
 def __create_enum_dicts(
     creatures_list: List[Creature],
-) -> Tuple[dict, dict, dict, dict, dict]:
+) -> Tuple[
+    Dict[str, List[Creature]],
+    Dict[str, List[Creature]],
+    Dict[str, List[Creature]],
+    Dict[str, List[Creature]],
+    Dict[str, List[Creature]],
+]:
     """
 
     :param creatures_list:
@@ -84,12 +64,14 @@ def __create_enum_dicts(
     size_dict = defaultdict(list)
     rarity_dict = defaultdict(list)
 
-    for creature in creatures_list:
-        level_dict[str(creature.level)].append(creature)
-        family_dict[creature.family].append(creature)
-        alignment_dict[creature.alignment].append(creature)
-        size_dict[creature.size].append(creature)
-        rarity_dict[creature.rarity].append(creature)
+    for curr_creature in creatures_list:
+        level_dict[str(curr_creature.level)].append(curr_creature)
+        family_dict[curr_creature.family].append(curr_creature)
+        alignment_dict[curr_creature.alignment.value].append(curr_creature)
+        size_dict[curr_creature.size.value].append(curr_creature)
+        rarity_dict[curr_creature.rarity.value if curr_creature.rarity else "-"].append(
+            curr_creature
+        )
 
     return (
         dict(level_dict),
@@ -100,17 +82,17 @@ def __create_enum_dicts(
     )
 
 
-async def fetch_data_from_database() -> List[Creature]:
-    return await redis_communicator.get_creatures_by_id(
-        await redis_communicator.fetch_and_parse_all_keys(pattern="creature:*")
+def fetch_data_from_database() -> List[Creature]:
+    return redis_communicator.get_creatures_by_id(
+        redis_communicator.fetch_and_parse_all_keys(pattern="creature:*")
     )
 
 
-async def get_paginated_creatures(
-    cursor: int, page_size: int, order: OrderEnum, name_filter: str
-) -> Tuple[int, List[Creature]]:
+def get_paginated_creatures(
+    cursor: int, page_size: int, order: OrderEnum, name_filter: Optional[str]
+) -> Maybe[Tuple[int, List[Creature]]]:
     if creatures_cache:
-        ordered_values: List[Creature] = creatures_cache["lists"][order]
+        ordered_values: List[Creature] = creatures_cache.get_list(order)
         if name_filter:
             ordered_values = [
                 el for el in ordered_values if name_filter.lower() in el.name.lower()
@@ -118,53 +100,67 @@ async def get_paginated_creatures(
         next_cursor = (
             cursor + page_size
             if len(ordered_values) > cursor + page_size
-            else len(creatures_cache)
+            else len(ordered_values)
         )
-        return next_cursor, ordered_values[cursor:next_cursor]
+        return Maybe.from_value((next_cursor, ordered_values[cursor:next_cursor]))
     else:
-        return await redis_communicator.get_paginated_creatures(cursor, page_size)
+        # We should have a direct call like we had in the past
+        # redis_communicator.get_paginated_creatures(cursor, page_size)
+        # But this would increment code complexity for
+        # a non-existent case. (handling filter, orders, etc..)
+        # cache is empty only on startup, later on it is never emptied but always
+        # overwritten.
+        return Nothing
 
 
-async def get_keys(creature_filter: CreatureFilter):
+def get_keys(creature_filter: CreatureFilter) -> List[str]:
     if creatures_cache:
-        return sorted(list(creatures_cache["dicts"][creature_filter].keys()))
+        return sorted(list(creatures_cache.get_dictionary(creature_filter).keys()))
     else:
         return sorted(
-            await redis_communicator.fetch_and_parse_all_keys(
+            redis_communicator.fetch_and_parse_all_keys(
                 creature_filter.value.lower() + "*"
             )
         )
 
 
-async def get_creatures_by_ids(id_list: List[str]) -> List[Creature]:
-    return [await get_creature_by_id(_id) for _id in id_list]
+def get_creatures_by_ids(id_list: List[str]) -> List[Creature]:
+    creatures_list: List[Creature] = []
+    for _id in id_list:
+        curr_creature = get_creature_by_id(_id)
+        if curr_creature:
+            creatures_list.append(curr_creature)
+    return creatures_list
 
 
-async def get_creature_by_id(creature_id: str) -> Creature:
+def get_creature_by_id(creature_id: str) -> Optional[Creature]:
     if creatures_cache:
-        return creatures_cache["dicts"][CreatureFilter.ID][creature_id]
-    else:
-        return await redis_communicator.get_creature_by_id(creature_id)
+        return creatures_cache.id_filter.get(creature_id, None)
+    return redis_communicator.get_creature_by_id(creature_id)
 
 
-async def fetch_creature_ids_passing_all_filters(
+def fetch_creature_ids_passing_all_filters(
     key_value_filters: dict,
 ) -> Dict[str, Dict[str, Set[str]]]:
     if creatures_cache:
         ids_passing_filter: Dict[str, Dict[str, Set[str]]] = dict()
         for key, value in key_value_filters.items():
-            curr_dict = await fetch_creature_ids_passing_filter(key, filter_list=value)
+            curr_dict = fetch_creature_ids_passing_filter(key, filter_list=value)
             if not curr_dict:
                 return {}
             ids_passing_filter[key] = curr_dict
         return ids_passing_filter
     else:
-        return await redis_communicator.fetch_creature_ids_passing_all_filters(
-            key_value_filters
-        )
+        # We should have a direct call like we had in the past
+        # redis_communicator.get_paginated_creatures(cursor, page_size)
+        # But this would increment code complexity for a
+        # non-existent case. (handling filter, orders, etc..)
+        # cache is empty only on startup, later on it is never emptied but always
+        # overwritten.
+        return {}
 
 
-async def fetch_creature_ids_passing_filter(
+def fetch_creature_ids_passing_filter(
     creature_filter: CreatureFilter, filter_list: Iterable[str]
 ) -> Dict[str, Set[str]]:
     if creatures_cache:
@@ -172,7 +168,9 @@ async def fetch_creature_ids_passing_filter(
         for curr_value in filter_list:
             curr_set = set(
                 creature.id
-                for creature in creatures_cache["dicts"][creature_filter][curr_value]
+                for creature in creatures_cache.get_dictionary(creature_filter)[
+                    curr_value
+                ]
             )
             if curr_set:
                 ids_passing_filter[curr_value] = curr_set
@@ -182,6 +180,4 @@ async def fetch_creature_ids_passing_filter(
                 )
         return ids_passing_filter
     else:
-        return await redis_communicator.fetch_creature_ids_passing_filter(
-            creature_filter.value.lower(), filter_list
-        )
+        return {}

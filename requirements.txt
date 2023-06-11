@@ -1,8 +1,9 @@
-FastAPI~=0.95.0
+FastAPI~=0.96.0
 
-uvicorn~=0.21.1
+uvicorn~=0.22.0
 gunicorn~=20.1.0
 
 redis~=4.5.4
 
 pydantic
+returns~=0.20.0

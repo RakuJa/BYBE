@@ -1,5 +1,5 @@
 import json
-from typing import Optional
+from typing import Optional, Self
 
 from app.core.resources.schema.alignment_enum import AlignmentEnum
 from app.core.resources.schema.rarity_enum import RarityEnum
@@ -13,20 +13,20 @@ class Creature:
         name: str,
         hp: int,
         level: int,
-        alignment: AlignmentEnum,
-        size: SizeEnum,
+        alignment: str,
+        size: str,
         family: Optional[str],
-        rarity: Optional[RarityEnum],
+        rarity: Optional[str],
     ):
-        self.id = identifier
-        self.name = name.strip()
-        self.hp = hp
-        self.level = level
-        self.alignment = alignment
-        self.size = size
-        self.family = family
-        self.rarity = rarity
-        self.archive_link = f"https://2e.aonprd.com/Monsters.aspx?ID={self.id}"
+        self.id: str = identifier
+        self.name: str = name.strip()
+        self.hp: int = hp
+        self.level: int = level
+        self.alignment: AlignmentEnum = AlignmentEnum(alignment)
+        self.size: SizeEnum = SizeEnum(size)
+        self.family: str = family if family else "-"
+        self.rarity: RarityEnum = RarityEnum(rarity) if rarity else RarityEnum.COMMON
+        self.archive_link: str = f"https://2e.aonprd.com/Monsters.aspx?ID={self.id}"
 
     def serialize_to_json(self) -> str:
         return json.dumps(self.serialize_to_dict())
@@ -40,12 +40,12 @@ class Creature:
             "family": self.family,
             "alignment": self.alignment.value,
             "size": self.size.value,
-            "rarity": self.rarity.value,
+            # "rarity": self.rarity.value,
             "archive_link": self.archive_link,
         }
 
     @classmethod
-    def from_dict(cls, creature_dict: dict, _id: str) -> "Creature":
+    def from_dict(cls, creature_dict: dict, _id: str) -> Self:
         return cls(
             identifier=_id,
             name=creature_dict["name"],
@@ -58,11 +58,8 @@ class Creature:
         )
 
     @classmethod
-    def from_json_string(cls, json_str: str, _id: str):
+    def from_json_string(cls, json_str: str, _id: str) -> Self:
         return cls.from_dict(creature_dict=json.loads(json_str), _id=_id)
 
-    def get_id(self) -> str:
-        return self.id
-
-    def __str__(self):
+    def __str__(self) -> str:
         return self.serialize_to_json()

@@ -17,8 +17,8 @@ logger = logging.getLogger(__name__)
 
 
 @router.get("/")
-async def health() -> dict:
-    redis_up: bool = await redis_communicator.is_redis_up()
+def health() -> dict:
+    redis_up: bool = redis_communicator.is_redis_up()
     result_dict = {
         "ready": redis_up,
         "dependencies": [
@@ -35,8 +35,8 @@ async def health() -> dict:
 
 
 @router.get("/ready/")
-async def health_ready() -> Response:
-    redis_up = await redis_communicator.is_redis_up()
+def health_ready() -> Response:
+    redis_up = redis_communicator.is_redis_up()
     if redis_up:
         logger.debug("Health ready with status code 200")
         return Response(status_code=status.HTTP_200_OK)
@@ -49,6 +49,6 @@ async def health_ready() -> Response:
 
 
 @router.get("/live/")
-async def health_live() -> Response:
+def health_live() -> Response:
     logger.debug("Health live with status code 200")
     return Response(status_code=status.HTTP_200_OK)
