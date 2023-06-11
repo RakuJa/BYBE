@@ -68,8 +68,10 @@ async def __update_creature(
     creature_id: str,
     hp_increase: dict,
     level_delta: int,
-) -> Creature:
-    creature = await redis_proxy.get_creature_by_id(creature_id)
+) -> Optional[Creature]:
+    creature: Optional[Creature] = await redis_proxy.get_creature_by_id(creature_id)
+    if not creature:
+        return None
     # finds the bigger key in hp_increase where the creature's level
     # is greater than or equal to the key.
     creature.hp += hp_increase.get(

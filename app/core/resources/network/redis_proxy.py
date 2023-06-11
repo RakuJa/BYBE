@@ -62,12 +62,14 @@ def __create_enum_dicts(
     size_dict = defaultdict(list)
     rarity_dict = defaultdict(list)
 
-    for creature in creatures_list:
-        level_dict[str(creature.level)].append(creature)
-        family_dict[creature.family].append(creature)
-        alignment_dict[creature.alignment.value].append(creature)
-        size_dict[creature.size.value].append(creature)
-        rarity_dict[creature.rarity.value if creature.rarity else "-"].append(creature)
+    for curr_creature in creatures_list:
+        level_dict[str(curr_creature.level)].append(curr_creature)
+        family_dict[curr_creature.family].append(curr_creature)
+        alignment_dict[curr_creature.alignment.value].append(curr_creature)
+        size_dict[curr_creature.size.value].append(curr_creature)
+        rarity_dict[curr_creature.rarity.value if curr_creature.rarity else "-"].append(
+            curr_creature
+        )
 
     return (
         dict(level_dict),
@@ -115,12 +117,17 @@ async def get_keys(creature_filter: CreatureFilter) -> List[str]:
 
 
 async def get_creatures_by_ids(id_list: List[str]) -> List[Creature]:
-    return [await get_creature_by_id(_id) for _id in id_list]
+    creatures_list: List[Creature] = []
+    for _id in id_list:
+        curr_creature = await get_creature_by_id(_id)
+        if curr_creature:
+            creatures_list.append(curr_creature)
+    return creatures_list
 
 
-async def get_creature_by_id(creature_id: str) -> Creature:
+async def get_creature_by_id(creature_id: str) -> Optional[Creature]:
     if creatures_cache:
-        return creatures_cache.id_filter[creature_id]
+        return creatures_cache.id_filter.get(creature_id, None)
     return await redis_communicator.get_creature_by_id(creature_id)
 
 

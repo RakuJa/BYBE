@@ -13,19 +13,19 @@ class Creature:
         name: str,
         hp: int,
         level: int,
-        alignment: AlignmentEnum,
-        size: SizeEnum,
+        alignment: str,
+        size: str,
         family: Optional[str],
-        rarity: Optional[RarityEnum],
+        rarity: Optional[str],
     ):
         self.id: str = identifier
         self.name: str = name.strip()
         self.hp: int = hp
         self.level: int = level
-        self.alignment: AlignmentEnum = alignment
-        self.size: SizeEnum = size
+        self.alignment: AlignmentEnum = AlignmentEnum(alignment)
+        self.size: SizeEnum = SizeEnum(size)
         self.family: str = family if family else "-"
-        self.rarity: RarityEnum = rarity if rarity else RarityEnum.COMMON
+        self.rarity: RarityEnum = RarityEnum(rarity) if rarity else RarityEnum.COMMON
         self.archive_link: str = f"https://2e.aonprd.com/Monsters.aspx?ID={self.id}"
 
     def serialize_to_json(self) -> str:

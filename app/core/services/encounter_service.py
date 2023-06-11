@@ -121,7 +121,9 @@ def choose_random_valid_ids(
             filler_values += list(ids[key])[: value % len(ids[key])]
             new_ids_dict[key] = filler_values
     return [
-        random.sample([el for el in new_ids_dict[str(key)]], creature_count[key])
+        random.sample(
+            [el for el in new_ids_dict.get(str(key), {})], creature_count[key]
+        )
         for key in creature_count
     ]
 
