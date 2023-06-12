@@ -18,10 +18,10 @@ class CreatureCache:
     ):
         self.unordered = creatures_list
         self.ordered_by_id_ascending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.id
+            creatures_list, key=lambda creature: int(creature.id)
         )
         self.ordered_by_id_descending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.id, reverse=True
+            creatures_list, key=lambda creature: int(creature.id), reverse=True
         )
 
         self.ordered_by_name_ascending: List[Creature] = sorted(
