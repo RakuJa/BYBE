@@ -2,7 +2,7 @@ from statistics import mean
 from typing import List, Dict, Set, Tuple
 from math import floor, dist
 
-from app.core.resources.schema.difficulty_enum import DifficultyEnum
+from app.core.resources.schema.enum.difficulty_enum import DifficultyEnum
 
 
 def get_lvl_and_exp_dict() -> Dict[int, int]:

@@ -1,22 +1,36 @@
 from typing import List, Optional
 
 from app.core.resources.network import redis_proxy
-from app.core.resources.schema.creature import Creature
-from app.core.resources.schema.creature_filter import CreatureFilter
-from app.core.resources.schema.order_enum import OrderEnum
-from app.core.resources.schema.pagination_params import PaginationParams
+from app.core.resources.creature import Creature
+from app.core.resources.schema.enum.alignment_enum import AlignmentEnum
+from app.core.resources.schema.enum.creature_filter_enum import CreatureFilter
+from app.core.resources.schema.enum.order_enum import OrderEnum
+from app.core.resources.schema.enum.rarity_enum import RarityEnum
+from app.core.resources.schema.enum.size_enum import SizeEnum
+from app.core.resources.schema.enum.sort_enum import CreatureFieldsEnum
+from app.core.resources.schema.models.pagination_params import PaginationParams
 
 
 def get_bestiary(
     pagination_params: PaginationParams,
+    sort_field: CreatureFieldsEnum,
     order: OrderEnum,
     name_filter: Optional[str],
+    family_filter: Optional[str],
+    rarity_filter: Optional[RarityEnum],
+    size_filter: Optional[SizeEnum],
+    alignment_filter: Optional[AlignmentEnum],
 ) -> dict:
     paginated_result = redis_proxy.get_paginated_creatures(
         cursor=pagination_params.cursor,
         page_size=pagination_params.page_size,
+        sort_field=sort_field,
         order=order,
         name_filter=name_filter,
+        family_filter=family_filter,
+        rarity_filter=rarity_filter,
+        size_filter=size_filter,
+        alignment_filter=alignment_filter,
     )
 
     next_cursor, list_of_creatures = paginated_result.value_or((0, []))

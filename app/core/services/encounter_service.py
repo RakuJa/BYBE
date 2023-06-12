@@ -8,12 +8,12 @@ from typing import Optional, Dict, Set, List, Annotated
 from pydantic import conlist
 
 from app.core.resources.network import redis_proxy
-from app.core.resources.schema.alignment_enum import AlignmentEnum
-from app.core.resources.schema.creature_filter import CreatureFilter
-from app.core.resources.schema.difficulty_enum import DifficultyEnum
-from app.core.resources.schema.encounter_params import EncounterParams
-from app.core.resources.schema.rarity_enum import RarityEnum
-from app.core.resources.schema.size_enum import SizeEnum
+from app.core.resources.schema.enum.alignment_enum import AlignmentEnum
+from app.core.resources.schema.enum.creature_filter_enum import CreatureFilter
+from app.core.resources.schema.enum.difficulty_enum import DifficultyEnum
+from app.core.resources.schema.models.encounter_params import EncounterParams
+from app.core.resources.schema.enum.rarity_enum import RarityEnum
+from app.core.resources.schema.enum.size_enum import SizeEnum
 from app.core.services.encounter_handler.encounter_calculator import (
     calculate_encounter_exp,
     calculate_encounter_difficulty,

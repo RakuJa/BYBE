@@ -5,11 +5,11 @@ from typing import Optional, Annotated, List
 from pydantic import conlist
 
 from app.core.resources.api_router import APIRouter
-from app.core.resources.schema.alignment_enum import AlignmentEnum
-from app.core.resources.schema.difficulty_enum import DifficultyEnum
-from app.core.resources.schema.encounter_params import EncounterParams
-from app.core.resources.schema.rarity_enum import RarityEnum
-from app.core.resources.schema.size_enum import SizeEnum
+from app.core.resources.schema.enum.alignment_enum import AlignmentEnum
+from app.core.resources.schema.enum.difficulty_enum import DifficultyEnum
+from app.core.resources.schema.models.encounter_params import EncounterParams
+from app.core.resources.schema.enum.rarity_enum import RarityEnum
+from app.core.resources.schema.enum.size_enum import SizeEnum
 from app.core.services import encounter_service
 
 router = APIRouter(

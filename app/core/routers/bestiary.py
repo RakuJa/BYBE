@@ -1,10 +1,14 @@
-from typing import List, Optional
+from typing import Optional, List
 
 from fastapi import Depends
 
 from app.core.resources.api_router import APIRouter
-from app.core.resources.schema.order_enum import OrderEnum
-from app.core.resources.schema.pagination_params import PaginationParams
+from app.core.resources.schema.enum.alignment_enum import AlignmentEnum
+from app.core.resources.schema.enum.order_enum import OrderEnum
+from app.core.resources.schema.enum.rarity_enum import RarityEnum
+from app.core.resources.schema.enum.size_enum import SizeEnum
+from app.core.resources.schema.enum.sort_enum import CreatureFieldsEnum
+from app.core.resources.schema.models.pagination_params import PaginationParams
 from app.core.services import bestiary_service
 
 router = APIRouter(
@@ -15,10 +19,24 @@ router = APIRouter(
 @router.get("/list/")
 def get_bestiary(
     pagination_params: PaginationParams = Depends(),
-    order: OrderEnum = OrderEnum.ORDERED_BY_ID,
+    sort_field: CreatureFieldsEnum = CreatureFieldsEnum.ID,
+    order: OrderEnum = OrderEnum.ASCENDING,
     name_filter: Optional[str] = None,
+    family_filter: Optional[str] = None,
+    rarity_filter: Optional[RarityEnum] = None,
+    size_filter: Optional[SizeEnum] = None,
+    alignment_filter: Optional[AlignmentEnum] = None,
 ) -> dict:
-    return bestiary_service.get_bestiary(pagination_params, order, name_filter)
+    return bestiary_service.get_bestiary(
+        pagination_params=pagination_params,
+        sort_field=sort_field,
+        order=order,
+        name_filter=name_filter,
+        family_filter=family_filter,
+        rarity_filter=rarity_filter,
+        size_filter=size_filter,
+        alignment_filter=alignment_filter,
+    )
 
 
 @router.get("/families/")

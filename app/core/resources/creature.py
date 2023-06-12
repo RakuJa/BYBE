@@ -1,9 +1,9 @@
 import json
 from typing import Optional, Self
 
-from app.core.resources.schema.alignment_enum import AlignmentEnum
-from app.core.resources.schema.rarity_enum import RarityEnum
-from app.core.resources.schema.size_enum import SizeEnum
+from app.core.resources.schema.enum.alignment_enum import AlignmentEnum
+from app.core.resources.schema.enum.rarity_enum import RarityEnum
+from app.core.resources.schema.enum.size_enum import SizeEnum
 
 
 class Creature:
