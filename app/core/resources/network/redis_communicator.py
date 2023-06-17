@@ -5,7 +5,7 @@ import os
 from typing import Tuple, List, Dict, Set, Iterable
 
 from app.core.resources.app_config import config
-from app.core.resources.schema.creature import Creature
+from app.core.resources.creature import Creature
 
 logger = logging.getLogger(__name__)
 

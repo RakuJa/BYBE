@@ -8,9 +8,13 @@ from returns.maybe import Maybe, Nothing
 
 from app.core.resources.network import redis_communicator
 from app.core.resources.network.creature_cache import CreatureCache
-from app.core.resources.schema.creature import Creature
-from app.core.resources.schema.creature_filter import CreatureFilter
-from app.core.resources.schema.order_enum import OrderEnum
+from app.core.resources.creature import Creature
+from app.core.resources.schema.enum.alignment_enum import AlignmentEnum
+from app.core.resources.schema.enum.creature_filter_enum import CreatureFilter
+from app.core.resources.schema.enum.order_enum import OrderEnum
+from app.core.resources.schema.enum.rarity_enum import RarityEnum
+from app.core.resources.schema.enum.size_enum import SizeEnum
+from app.core.resources.schema.enum.sort_enum import CreatureFieldsEnum
 
 creatures_cache: Optional[CreatureCache] = None
 cache_expiration: int = 3600  # cache expires after one hour
@@ -89,20 +93,38 @@ def fetch_data_from_database() -> List[Creature]:
 
 
 def get_paginated_creatures(
-    cursor: int, page_size: int, order: OrderEnum, name_filter: Optional[str]
+    cursor: int,
+    page_size: int,
+    sort_field: CreatureFieldsEnum,
+    order: OrderEnum,
+    name_filter: Optional[str],
+    family_filter: Optional[str],
+    rarity_filter: Optional[RarityEnum],
+    size_filter: Optional[SizeEnum],
+    alignment_filter: Optional[AlignmentEnum],
 ) -> Maybe[Tuple[int, List[Creature]]]:
     if creatures_cache:
-        ordered_values: List[Creature] = creatures_cache.get_list(order)
-        if name_filter:
-            ordered_values = [
-                el for el in ordered_values if name_filter.lower() in el.name.lower()
-            ]
+        ordered_values: List[Creature] = creatures_cache.get_list(sort_field, order)
+        filtered_values: List[Creature] = list(
+            filter(
+                lambda creature: check_element_pass_filters(
+                    creature,
+                    name_filter,
+                    family_filter,
+                    rarity_filter,
+                    size_filter,
+                    alignment_filter,
+                ),
+                ordered_values,
+            )
+        )
+
         next_cursor = (
             cursor + page_size
-            if len(ordered_values) > cursor + page_size
-            else len(ordered_values)
+            if len(filtered_values) > cursor + page_size
+            else len(filtered_values)
         )
-        return Maybe.from_value((next_cursor, ordered_values[cursor:next_cursor]))
+        return Maybe.from_value((next_cursor, filtered_values[cursor:next_cursor]))
     else:
         # We should have a direct call like we had in the past
         # redis_communicator.get_paginated_creatures(cursor, page_size)
@@ -111,6 +133,30 @@ def get_paginated_creatures(
         # cache is empty only on startup, later on it is never emptied but always
         # overwritten.
         return Nothing
+
+
+def check_element_pass_filters(
+    element: Creature,
+    name_filter: Optional[str],
+    family_filter: Optional[str],
+    rarity_filter: Optional[RarityEnum],
+    size_filter: Optional[SizeEnum],
+    alignment_filter: Optional[AlignmentEnum],
+) -> bool:
+    if name_filter is not None and name_filter.lower() not in element.name.lower():
+        return False
+    if (
+        family_filter is not None
+        and family_filter.lower() not in element.family.lower()
+    ):
+        return False
+    if rarity_filter is not None and element.rarity != rarity_filter:
+        return False
+    if size_filter is not None and element.size != size_filter:
+        return False
+    if alignment_filter is not None and element.alignment != alignment_filter:
+        return False
+    return True
 
 
 def get_keys(creature_filter: CreatureFilter) -> List[str]:
