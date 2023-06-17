@@ -58,15 +58,10 @@ def generate_random_encounter(
     creature_ids_dict: Dict[
         str, Set[str]
     ] = filters_creatures_ids_by_filters_and_levels(filter_dict, levels_combinations)
-    try:
-        creature_ids_list = choose_random_valid_ids(
-            creature_ids_dict, levels_combinations
-        )
-        encounter = redis_proxy.get_creatures_by_ids(
-            list(chain.from_iterable(creature_ids_list))
-        )
-    except ValueError:
-        encounter = []
+    creature_ids_list = choose_random_valid_ids(creature_ids_dict, levels_combinations)
+    encounter = redis_proxy.get_creatures_by_ids(
+        list(chain.from_iterable(creature_ids_list))
+    )
     scaled_exp_levels = calculate_encounter_scaling_difficulty(
         party_size=len(party_levels)
     )
@@ -118,6 +113,8 @@ def choose_random_valid_ids(
             filler_values = list(ids[key]) * (value // len(ids[key]))
             filler_values += list(ids[key])[: value % len(ids[key])]
             new_ids_dict[key] = filler_values
+        else:
+            new_ids_dict[key] = list(ids[key])
     return [
         random.sample(
             [el for el in new_ids_dict.get(str(key), {})], creature_count[key]

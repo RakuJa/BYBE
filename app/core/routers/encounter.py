@@ -35,11 +35,27 @@ def generate_random_encounter(
 ) -> dict:
     if not encounter_difficulty:
         encounter_difficulty = random.choice(list(DifficultyEnum))  # nosec
-    return encounter_service.generate_random_encounter(
-        party_levels=party_levels,
-        family=family,
-        rarity=rarity,
-        size=size,
-        alignment=alignment,
-        encounter_difficulty=encounter_difficulty,
-    )
+    try:
+        return encounter_service.generate_random_encounter(
+            party_levels=party_levels,
+            family=family,
+            rarity=rarity,
+            size=size,
+            alignment=alignment,
+            encounter_difficulty=encounter_difficulty,
+        )
+    except ValueError:
+        return {
+            "results": [],
+            "count": 0,
+            "experience": 0,
+            "difficulty": DifficultyEnum.TRIVIAL,
+            "levels": {
+                "TRIVIAL": 10,
+                "LOW": 15,
+                "MODERATE": 20,
+                "SEVERE": 30,
+                "EXTREME": 40,
+                "IMPOSSIBLE": 140,
+            },
+        }
