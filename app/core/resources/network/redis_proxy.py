@@ -201,7 +201,7 @@ def get_creatures_by_ids(id_list: List[str]) -> List[Creature]:
 
 def get_creature_by_id(creature_id: str) -> Optional[Creature]:
     if creatures_cache:
-        return creatures_cache.id_filter.get(creature_id, None)
+        return creatures_cache.get_creature_by_id(creature_id)
     return redis_communicator.get_creature_by_id(creature_id)
 
 
