@@ -102,6 +102,10 @@ def get_paginated_creatures(
     rarity_filter: Optional[RarityEnum],
     size_filter: Optional[SizeEnum],
     alignment_filter: Optional[AlignmentEnum],
+    min_hp_filter: Optional[int],
+    max_hp_filter: Optional[int],
+    min_level_filter: Optional[int],
+    max_level_filter: Optional[int],
 ) -> Maybe[Tuple[int, List[Creature]]]:
     if creatures_cache:
         ordered_values: List[Creature] = creatures_cache.get_list(sort_field, order)
@@ -109,11 +113,15 @@ def get_paginated_creatures(
             filter(
                 lambda creature: check_element_pass_filters(
                     creature,
-                    name_filter,
-                    family_filter,
-                    rarity_filter,
-                    size_filter,
-                    alignment_filter,
+                    name_filter=name_filter,
+                    family_filter=family_filter,
+                    rarity_filter=rarity_filter,
+                    size_filter=size_filter,
+                    alignment_filter=alignment_filter,
+                    min_hp_filter=min_hp_filter,
+                    max_hp_filter=max_hp_filter,
+                    min_level_filter=min_level_filter,
+                    max_level_filter=max_level_filter,
                 ),
                 ordered_values,
             )
@@ -142,6 +150,10 @@ def check_element_pass_filters(
     rarity_filter: Optional[RarityEnum],
     size_filter: Optional[SizeEnum],
     alignment_filter: Optional[AlignmentEnum],
+    min_hp_filter: Optional[int],
+    max_hp_filter: Optional[int],
+    min_level_filter: Optional[int],
+    max_level_filter: Optional[int],
 ) -> bool:
     if name_filter is not None and name_filter.lower() not in element.name.lower():
         return False
@@ -155,6 +167,14 @@ def check_element_pass_filters(
     if size_filter is not None and element.size != size_filter:
         return False
     if alignment_filter is not None and element.alignment != alignment_filter:
+        return False
+    if min_hp_filter is not None and element.hp < min_hp_filter:
+        return False
+    if max_hp_filter is not None and element.hp > max_hp_filter:
+        return False
+    if min_level_filter is not None and element.level < min_level_filter:
+        return False
+    if max_level_filter is not None and element.level > max_level_filter:
         return False
     return True
 

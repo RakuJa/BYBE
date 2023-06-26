@@ -157,7 +157,7 @@ def convert_exp_to_lvl_diff(experience: int) -> int:
     for lvl, exp in get_lvl_and_exp_dict().items():
         if experience == exp:
             return lvl
-    raise Exception()
+    raise ValueError("Could not find a valid lvl diff")
 
 
 def merge_ids_with_dict_of_sets(

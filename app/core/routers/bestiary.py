@@ -26,6 +26,10 @@ def get_bestiary(
     rarity_filter: Optional[RarityEnum] = None,
     size_filter: Optional[SizeEnum] = None,
     alignment_filter: Optional[AlignmentEnum] = None,
+    min_hp_filter: Optional[int] = None,
+    max_hp_filter: Optional[int] = None,
+    min_level_filter: Optional[int] = None,
+    max_level_filter: Optional[int] = None,
 ) -> dict:
     return bestiary_service.get_bestiary(
         pagination_params=pagination_params,
@@ -36,6 +40,10 @@ def get_bestiary(
         rarity_filter=rarity_filter,
         size_filter=size_filter,
         alignment_filter=alignment_filter,
+        min_hp_filter=min_hp_filter,
+        max_hp_filter=max_hp_filter,
+        min_level_filter=min_level_filter,
+        max_level_filter=max_level_filter,
     )
 
 

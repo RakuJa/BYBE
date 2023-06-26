@@ -20,6 +20,10 @@ def get_bestiary(
     rarity_filter: Optional[RarityEnum],
     size_filter: Optional[SizeEnum],
     alignment_filter: Optional[AlignmentEnum],
+    min_hp_filter: Optional[int],
+    max_hp_filter: Optional[int],
+    min_level_filter: Optional[int],
+    max_level_filter: Optional[int],
 ) -> dict:
     paginated_result = redis_proxy.get_paginated_creatures(
         cursor=pagination_params.cursor,
@@ -31,6 +35,10 @@ def get_bestiary(
         rarity_filter=rarity_filter,
         size_filter=size_filter,
         alignment_filter=alignment_filter,
+        min_hp_filter=min_hp_filter,
+        max_hp_filter=max_hp_filter,
+        min_level_filter=min_level_filter,
+        max_level_filter=max_level_filter,
     )
 
     next_cursor, list_of_creatures = paginated_result.value_or((0, []))
