@@ -1,3 +1,4 @@
+import copy
 from typing import List, Dict, Optional
 
 from app.core.resources.creature import Creature
@@ -79,6 +80,15 @@ class CreatureCache:
         self.alignment_filter = alignment_dict
         self.size_filter = size_dict
         self.rarity_filter = rarity_dict
+
+    def get_creature_by_id(self, creature_id: str) -> Optional[Creature]:
+        """
+        Method used to fetch creatures, it will perform
+        a deep copy before returning
+        :param creature_id: id of the creature to fetch
+        :return: deep copy of creature or None
+        """
+        return copy.deepcopy(self.id_filter.get(creature_id, None))
 
     def get_all_dictionaries(self) -> Dict[str, Dict[str, List[Creature]]]:
         return {
