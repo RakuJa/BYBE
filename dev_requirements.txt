@@ -1,8 +1,6 @@
 -r requirements.txt
 
 black~=23.3.0
-flake8~=6.0.0
-Flake8-pyproject~=1.2.2
 pre-commit~=3.3.3
 
 mypy~=1.4.1
