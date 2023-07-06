@@ -1,5 +1,6 @@
-from app import controller
 import uvicorn
+
+from app import controller
 from app.core.resources.app_config import config
 
 if __name__ == "__main__":

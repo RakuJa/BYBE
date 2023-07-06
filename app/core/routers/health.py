@@ -3,8 +3,8 @@ import logging
 from starlette import status
 from starlette.responses import Response
 
-from app.core.resources.network import redis_communicator
 from app.core.resources.api_router import APIRouter
+from app.core.resources.network import redis_communicator
 
 router = APIRouter(
     prefix="/health",
@@ -40,12 +40,12 @@ def health_ready() -> Response:
     if redis_up:
         logger.debug("Health ready with status code 200")
         return Response(status_code=status.HTTP_200_OK)
-    else:
-        logger.debug("Health ready with status code 500")
-        return Response(
-            content="Service or dependencies are not healthy",
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-        )
+
+    logger.debug("Health ready with status code 500")
+    return Response(
+        content="Service or dependencies are not healthy",
+        status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+    )
 
 
 @router.get("/live/")

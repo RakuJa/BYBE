@@ -1,11 +1,11 @@
 import asyncio
 
 from fastapi import FastAPI
+from fastapi.middleware.cors import CORSMiddleware
 
 from app.core.resources.app_config import config
 from app.core.resources.network import redis_proxy
-from app.core.routers import bestiary, health, encounter
-from fastapi.middleware.cors import CORSMiddleware
+from app.core.routers import bestiary, encounter, health
 
 app = FastAPI(
     title=config.service_name,
@@ -17,7 +17,9 @@ origins = ["*"]
 
 methods = ["OPTIONS", "GET", "POST"]
 app.add_middleware(
-    middleware_class=CORSMiddleware, allow_origins=origins, allow_methods=methods
+    middleware_class=CORSMiddleware,
+    allow_origins=origins,
+    allow_methods=methods,
 )
 
 app.include_router(bestiary.router)
