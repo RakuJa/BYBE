@@ -2,6 +2,7 @@ import asyncio
 import logging
 import time
 from collections import defaultdict
+from enum import Enum
 from typing import List, Tuple, Dict, Set, Iterable, Optional
 
 from returns.maybe import Maybe, Nothing
@@ -34,6 +35,9 @@ async def update_cache() -> None:
                 alignment_dict,
                 size_dict,
                 rarity_dict,
+                melee_dict,
+                ranged_dict,
+                spell_caster_dict,
             ) = __create_enum_dicts(creatures_list)
             creatures_cache = CreatureCache(
                 creatures_list=creatures_list,
@@ -42,6 +46,9 @@ async def update_cache() -> None:
                 alignment_dict=alignment_dict,
                 size_dict=size_dict,
                 rarity_dict=rarity_dict,
+                melee_dict=melee_dict,
+                ranged_dict=ranged_dict,
+                spell_caster_dict=spell_caster_dict,
             )
 
             last_cache_update_time = time.time()
@@ -51,6 +58,9 @@ async def update_cache() -> None:
 def __create_enum_dicts(
     creatures_list: List[Creature],
 ) -> Tuple[
+    Dict[str, List[Creature]],
+    Dict[str, List[Creature]],
+    Dict[str, List[Creature]],
     Dict[str, List[Creature]],
     Dict[str, List[Creature]],
     Dict[str, List[Creature]],
@@ -67,6 +77,9 @@ def __create_enum_dicts(
     alignment_dict = defaultdict(list)
     size_dict = defaultdict(list)
     rarity_dict = defaultdict(list)
+    melee_dict = defaultdict(list)
+    ranged_dict = defaultdict(list)
+    spell_caster_dict = defaultdict(list)
 
     for curr_creature in creatures_list:
         level_dict[str(curr_creature.level)].append(curr_creature)
@@ -76,6 +89,9 @@ def __create_enum_dicts(
         rarity_dict[curr_creature.rarity.value if curr_creature.rarity else "-"].append(
             curr_creature
         )
+        melee_dict[str(curr_creature.is_melee)].append(curr_creature)
+        ranged_dict[str(curr_creature.is_ranged)].append(curr_creature)
+        spell_caster_dict[str(curr_creature.is_spell_caster)].append(curr_creature)
 
     return (
         dict(level_dict),
@@ -83,6 +99,9 @@ def __create_enum_dicts(
         dict(alignment_dict),
         dict(size_dict),
         dict(rarity_dict),
+        dict(melee_dict),
+        dict(ranged_dict),
+        dict(spell_caster_dict),
     )
 
 
@@ -106,6 +125,9 @@ def get_paginated_creatures(
     max_hp_filter: Optional[int],
     min_level_filter: Optional[int],
     max_level_filter: Optional[int],
+    is_melee_filter: Optional[bool],
+    is_ranged_filter: Optional[bool],
+    is_spell_caster_filter: Optional[bool],
 ) -> Maybe[Tuple[int, List[Creature]]]:
     if creatures_cache:
         ordered_values: List[Creature] = creatures_cache.get_list(sort_field, order)
@@ -122,6 +144,9 @@ def get_paginated_creatures(
                     max_hp_filter=max_hp_filter,
                     min_level_filter=min_level_filter,
                     max_level_filter=max_level_filter,
+                    is_melee_filter=is_melee_filter,
+                    is_ranged_filter=is_ranged_filter,
+                    is_spell_caster_filter=is_spell_caster_filter,
                 ),
                 ordered_values,
             )
@@ -154,28 +179,107 @@ def check_element_pass_filters(
     max_hp_filter: Optional[int],
     min_level_filter: Optional[int],
     max_level_filter: Optional[int],
+    is_melee_filter: Optional[bool],
+    is_ranged_filter: Optional[bool],
+    is_spell_caster_filter: Optional[bool],
 ) -> bool:
-    if name_filter is not None and name_filter.lower() not in element.name.lower():
-        return False
-    if (
-        family_filter is not None
-        and family_filter.lower() not in element.family.lower()
-    ):
-        return False
-    if rarity_filter is not None and element.rarity != rarity_filter:
-        return False
-    if size_filter is not None and element.size != size_filter:
-        return False
-    if alignment_filter is not None and element.alignment != alignment_filter:
-        return False
-    if min_hp_filter is not None and element.hp < min_hp_filter:
-        return False
-    if max_hp_filter is not None and element.hp > max_hp_filter:
-        return False
-    if min_level_filter is not None and element.level < min_level_filter:
-        return False
-    if max_level_filter is not None and element.level > max_level_filter:
-        return False
+    return (
+        _check_element_pass_equals_filters(
+            element=element,
+            name_filter=name_filter,
+            family_filter=family_filter,
+            rarity_filter=rarity_filter,
+            size_filter=size_filter,
+            alignment_filter=alignment_filter,
+            is_melee_filter=is_melee_filter,
+            is_ranged_filter=is_ranged_filter,
+            is_spell_caster_filter=is_spell_caster_filter,
+        )
+        and _check_element_pass_greater_filters(
+            element=element,
+            max_hp_filter=max_hp_filter,
+            max_level_filter=max_level_filter,
+        )
+        and _check_element_pass_lesser_filters(
+            element=element,
+            min_hp_filter=min_hp_filter,
+            min_level_filter=min_level_filter,
+        )
+    )
+
+
+def _check_element_pass_lesser_filters(
+    element: Creature,
+    min_hp_filter: Optional[int],
+    min_level_filter: Optional[int],
+) -> bool:
+    lesser_filters = [
+        (min_hp_filter, element.hp),
+        (min_level_filter, element.level),
+    ]
+    for filter_value, element_value in lesser_filters:
+        if filter_value is not None and element_value < filter_value:
+            return False
+    return True
+
+
+def _check_element_pass_greater_filters(
+    element: Creature,
+    max_hp_filter: Optional[int],
+    max_level_filter: Optional[int],
+) -> bool:
+    greater_filters = [
+        (max_hp_filter, element.hp),
+        (max_level_filter, element.level),
+    ]
+    for filter_value, element_value in greater_filters:
+        if filter_value is not None and element_value > filter_value:
+            return False
+    return True
+
+
+def _check_element_pass_equals_filters(
+    element: Creature,
+    name_filter: Optional[str],
+    family_filter: Optional[str],
+    rarity_filter: Optional[RarityEnum],
+    size_filter: Optional[SizeEnum],
+    alignment_filter: Optional[AlignmentEnum],
+    is_melee_filter: Optional[bool],
+    is_ranged_filter: Optional[bool],
+    is_spell_caster_filter: Optional[bool],
+) -> bool:
+    enum_filters: List[Tuple[Optional[Enum], Enum]] = [
+        (rarity_filter, element.rarity),
+        (size_filter, element.size),
+        (alignment_filter, element.alignment),
+    ]
+
+    string_filters: List[Tuple[Optional[str], str]] = [
+        (name_filter, element.name.lower()),
+        (family_filter, element.family.lower()),
+    ]
+
+    boolean_filters: List[Tuple[Optional[bool], bool]] = [
+        (is_melee_filter, element.is_melee),
+        (is_ranged_filter, element.is_ranged),
+        (is_spell_caster_filter, element.is_spell_caster),
+    ]
+
+    for filter_str_value, str_element_value in string_filters:
+        if (
+            filter_str_value is not None
+            and filter_str_value.lower() != str_element_value
+        ):
+            return False
+
+    for filter_bool_value, bool_element_value in boolean_filters:
+        if filter_bool_value is not None and filter_bool_value != bool_element_value:
+            return False
+
+    for filter_enum_value, enum_element_value in enum_filters:
+        if filter_enum_value is not None and filter_enum_value != enum_element_value:
+            return False
     return True
 
 

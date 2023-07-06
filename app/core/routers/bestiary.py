@@ -30,6 +30,9 @@ def get_bestiary(
     max_hp_filter: Optional[int] = None,
     min_level_filter: Optional[int] = None,
     max_level_filter: Optional[int] = None,
+    is_melee_filter: Optional[bool] = None,
+    is_ranged_filter: Optional[bool] = None,
+    is_spell_caster_filter: Optional[bool] = None,
 ) -> dict:
     return bestiary_service.get_bestiary(
         pagination_params=pagination_params,
@@ -44,6 +47,9 @@ def get_bestiary(
         max_hp_filter=max_hp_filter,
         min_level_filter=min_level_filter,
         max_level_filter=max_level_filter,
+        is_melee_filter=is_melee_filter,
+        is_ranged_filter=is_ranged_filter,
+        is_spell_caster_filter=is_spell_caster_filter,
     )
 
 
