@@ -1,5 +1,3 @@
-from typing import Optional, List
-
 from fastapi import Depends
 
 from app.core.resources.api_router import APIRouter
@@ -12,7 +10,9 @@ from app.core.resources.schema.models.pagination_params import PaginationParams
 from app.core.services import bestiary_service
 
 router = APIRouter(
-    prefix="/bestiary", tags=["bestiary"], responses={200: {"description": "success"}}
+    prefix="/bestiary",
+    tags=["bestiary"],
+    responses={200: {"description": "success"}},
 )
 
 
@@ -21,15 +21,15 @@ def get_bestiary(
     pagination_params: PaginationParams = Depends(),
     sort_field: CreatureFieldsEnum = CreatureFieldsEnum.ID,
     order: OrderEnum = OrderEnum.ASCENDING,
-    name_filter: Optional[str] = None,
-    family_filter: Optional[str] = None,
-    rarity_filter: Optional[RarityEnum] = None,
-    size_filter: Optional[SizeEnum] = None,
-    alignment_filter: Optional[AlignmentEnum] = None,
-    min_hp_filter: Optional[int] = None,
-    max_hp_filter: Optional[int] = None,
-    min_level_filter: Optional[int] = None,
-    max_level_filter: Optional[int] = None,
+    name_filter: str | None = None,
+    family_filter: str | None = None,
+    rarity_filter: RarityEnum | None = None,
+    size_filter: SizeEnum | None = None,
+    alignment_filter: AlignmentEnum | None = None,
+    min_hp_filter: int | None = None,
+    max_hp_filter: int | None = None,
+    min_level_filter: int | None = None,
+    max_level_filter: int | None = None,
 ) -> dict:
     return bestiary_service.get_bestiary(
         pagination_params=pagination_params,
@@ -48,22 +48,22 @@ def get_bestiary(
 
 
 @router.get("/families/")
-def get_families_list() -> List[str]:
+def get_families_list() -> list[str]:
     return bestiary_service.get_families_list()
 
 
 @router.get("/rarities/")
-def get_rarities_list() -> List[str]:
+def get_rarities_list() -> list[str]:
     return bestiary_service.get_rarities_list()
 
 
 @router.get("/sizes/")
-def get_size_list() -> List[str]:
+def get_size_list() -> list[str]:
     return bestiary_service.get_size_list()
 
 
 @router.get("/alignments/")
-def get_alignment_list() -> List[str]:
+def get_alignment_list() -> list[str]:
     return bestiary_service.get_alignment_list()
 
 

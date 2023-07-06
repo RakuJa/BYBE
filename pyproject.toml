@@ -1,11 +1,3 @@
-[tool.flake8]
-max-line-length = 90
-exclude = [".git", "__pycache__", "venv/*", "*.ini", "*.log"]
-max-complexity = 10
-
-[tool.bandit]
-exclude_dirs = ["venv/"]
-
 # Global options for static analysis:
 
 [tool.mypy]
@@ -51,3 +43,98 @@ min_confidence = 60
 paths = ["app/controller.py"]
 sort_by_size = true
 verbose = false
+
+
+
+[tool.ruff]
+# https://beta.ruff.rs/docs/rules/
+select = [
+    "E",    # pycodestyle (`E`)
+    "F",    # Pyflakes (`F`)
+    "C901", # McCabe complexity (`C901`)
+    "W",    # pycodestyle warnings (`W`)
+    "B",    # flake8-bugbear (`B`)
+    "I001", # isort (sort import for type and alphanumerically),
+    "N",    # pep8 naming
+    "UP",   # pyupgrade
+    "ANN",  # flake8 annotations
+    "ASYNC",# flake8 async
+    "S",    # bandit
+    "FBT",  # boolean trap
+    "A",    # flake8 shadowing builtins
+    "COM",  # missing or extra commas
+    "C4",   # flake8 comprehension
+    "EM",   # better error messages check
+    "G",    # logging format
+    "INP",  # remove implicit namespace package
+    "PIE",  # flake8 pie, unecessary statements or duplicates
+    "T20",  # removes prints
+    "PYI",  # Specializations for type hinting stub files
+    "Q",    # quotes lint
+    "RSE",  # raise linter uneccessary parenthesis
+    "RET",  # return statement
+    "SLF",  # accessing private members
+    "SIM",  # simplifies code
+    "TCH",  # type check
+    "ARG",  # unused arguments
+    "PTH",  # use Path insead of os library
+    "TD",   # rules on how to write todos
+    "FIX",  # for fixmes
+    "ERA",  # removes commented code
+    "PLE",
+    "PLR",
+    "PLW",
+    "TRY",  # prevents error handling antipatterns
+    "FLY",
+    "PERF", # check for performance antipatterns
+    "RUF",  # ruff rules
+]
+ignore = [
+    "ANN401",   # dynamically typed expression
+    "PLR0913",  # too many arguments to function call T0REMOVE
+    "PLR0911",  # too many return statements TOREMOVE
+    "PLW0603",  # using the global statement TOREMOVE
+    "B008",     # do not perform function calls Depends
+    "N999",     # Invalid module name gunicorn.conf
+
+]
+
+# Allow autofix for all enabled rules (when `--fix`) is provided.
+fixable = ["ALL"]
+fix = true
+unfixable = []
+
+# Exclude a variety of commonly ignored directories.
+exclude = [
+    ".bzr",
+    ".direnv",
+    ".eggs",
+    ".git",
+    ".git-rewrite",
+    ".hg",
+    ".mypy_cache",
+    ".nox",
+    ".pants.d",
+    ".pytype",
+    ".ruff_cache",
+    ".svn",
+    ".tox",
+    ".venv",
+    "__pypackages__",
+    "_build",
+    "buck-out",
+    "build",
+    "dist",
+    "node_modules",
+    "venv",
+]
+per-file-ignores = {}
+
+# Same as Black.
+line-length = 88
+
+# Allow unused variables when underscore-prefixed.
+dummy-variable-rgx = "^(_+|(_+[a-zA-Z0-9_]*[a-zA-Z0-9]+?))$"
+
+# Assume Python 3.10.
+target-version = "py310"
