@@ -22,6 +22,9 @@ def get_bestiary(
     max_hp_filter: int | None,
     min_level_filter: int | None,
     max_level_filter: int | None,
+    is_melee_filter: bool | None,
+    is_ranged_filter: bool | None,
+    is_spell_caster_filter: bool | None,
 ) -> dict:
     paginated_result = redis_proxy.get_paginated_creatures(
         cursor=pagination_params.cursor,
@@ -37,6 +40,9 @@ def get_bestiary(
         max_hp_filter=max_hp_filter,
         min_level_filter=min_level_filter,
         max_level_filter=max_level_filter,
+        is_melee_filter=is_melee_filter,
+        is_ranged_filter=is_ranged_filter,
+        is_spell_caster_filter=is_spell_caster_filter,
     )
 
     next_cursor, list_of_creatures = paginated_result.value_or((0, []))

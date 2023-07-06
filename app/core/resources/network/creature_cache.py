@@ -16,6 +16,9 @@ class CreatureCache:
         alignment_dict: dict[str, list[Creature]],
         size_dict: dict[str, list[Creature]],
         rarity_dict: dict[str, list[Creature]],
+        melee_dict: dict[str, list[Creature]],
+        ranged_dict: dict[str, list[Creature]],
+        spell_caster_dict: dict[str, list[Creature]],
     ) -> None:
         self.unordered = creatures_list
         self.ordered_by_id_ascending: list[Creature] = sorted(
@@ -104,6 +107,9 @@ class CreatureCache:
         self.alignment_filter = alignment_dict
         self.size_filter = size_dict
         self.rarity_filter = rarity_dict
+        self.melee_filter = melee_dict
+        self.ranged_filter = ranged_dict
+        self.spell_caster_filter = spell_caster_dict
 
     def get_creature_by_id(self: Self, creature_id: str) -> Creature | None:
         """
@@ -121,6 +127,9 @@ class CreatureCache:
             CreatureFilter.FAMILY.value: self.family_filter,
             CreatureFilter.LEVEL.value: self.level_filter,
             CreatureFilter.ALIGNMENT.value: self.alignment_filter,
+            CreatureFilter.MELEE.value: self.melee_filter,
+            CreatureFilter.RANGED.value: self.ranged_filter,
+            CreatureFilter.SPELL_CASTER.value: self.spell_caster_filter,
         }
 
     def get_dictionary(
@@ -139,6 +148,12 @@ class CreatureCache:
                 return self.alignment_filter
             case CreatureFilter.LEVEL:
                 return self.level_filter
+            case CreatureFilter.MELEE:
+                return self.melee_filter
+            case CreatureFilter.RANGED:
+                return self.ranged_filter
+            case CreatureFilter.SPELL_CASTER:
+                return self.ranged_filter
             case _:
                 msg = "Enum value is not valid for this method"
                 raise SyntaxError(msg)
