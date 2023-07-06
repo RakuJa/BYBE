@@ -15,45 +15,47 @@ class DifficultyEnum(Enum):
     # I have to introduce a level for impossible things, Needs balancing Paizo help
 
     def get_base_xp_budget(self: Self) -> int:
-        if self == DifficultyEnum.TRIVIAL:
-            return 40
-        if self == DifficultyEnum.LOW:
-            return 60
-        if self == DifficultyEnum.MODERATE:
-            return 80
-        if self == DifficultyEnum.SEVERE:
-            return 120
-        if self == DifficultyEnum.EXTREME:
-            return 160
-        if self == DifficultyEnum.IMPOSSIBLE:
-            return 320
-
-        msg = (
-            f"This enumerator: {self.value} has not been implemented yet,"
-            f" contact the developer"
-        )
-        raise NotImplementedError(
-            msg,
-        )
+        match self:
+            case DifficultyEnum.TRIVIAL:
+                return 40
+            case DifficultyEnum.LOW:
+                return 60
+            case DifficultyEnum.MODERATE:
+                return 80
+            case DifficultyEnum.SEVERE:
+                return 120
+            case DifficultyEnum.EXTREME:
+                return 160
+            case DifficultyEnum.IMPOSSIBLE:
+                return 320
+            case _:
+                msg = (
+                    f"This enumerator: {self.value} has not been implemented yet,"
+                    f" contact the developer"
+                )
+                raise NotImplementedError(
+                    msg,
+                )
 
     def get_xp_adjustment(self: Self) -> int:
-        if self == DifficultyEnum.TRIVIAL:
-            return 10
-        if self == DifficultyEnum.LOW:
-            return 15
-        if self == DifficultyEnum.MODERATE:
-            return 20
-        if self == DifficultyEnum.SEVERE:
-            return 30
-        if self == DifficultyEnum.EXTREME:
-            return 40
-        if self == DifficultyEnum.IMPOSSIBLE:
-            return 60
-
-        msg = (
-            f"This enumerator: {self.value} has not been implemented yet,"
-            f" contact the developer"
-        )
-        raise NotImplementedError(
-            msg,
-        )
+        match self:
+            case DifficultyEnum.TRIVIAL:
+                return 10
+            case DifficultyEnum.LOW:
+                return 15
+            case DifficultyEnum.MODERATE:
+                return 20
+            case DifficultyEnum.SEVERE:
+                return 30
+            case DifficultyEnum.EXTREME:
+                return 40
+            case DifficultyEnum.IMPOSSIBLE:
+                return 60
+            case _:
+                msg = (
+                    f"This enumerator: {self.value} has not been implemented yet,"
+                    f" contact the developer"
+                )
+                raise NotImplementedError(
+                    msg,
+                )
