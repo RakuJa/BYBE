@@ -1,5 +1,5 @@
 import copy
-from typing import List, Dict, Optional
+from typing import Self
 
 from app.core.resources.creature import Creature
 from app.core.resources.schema.enum.creature_filter_enum import CreatureFilter
@@ -9,75 +9,99 @@ from app.core.resources.schema.enum.sort_enum import CreatureFieldsEnum
 
 class CreatureCache:
     def __init__(
-        self,
-        creatures_list: List[Creature],
-        level_dict: Dict[str, List[Creature]],
-        family_dict: Dict[str, List[Creature]],
-        alignment_dict: Dict[str, List[Creature]],
-        size_dict: Dict[str, List[Creature]],
-        rarity_dict: Dict[str, List[Creature]],
-        melee_dict: Dict[str, List[Creature]],
-        ranged_dict: Dict[str, List[Creature]],
-        spell_caster_dict: Dict[str, List[Creature]],
-    ):
+        self: Self,
+        creatures_list: list[Creature],
+        level_dict: dict[str, list[Creature]],
+        family_dict: dict[str, list[Creature]],
+        alignment_dict: dict[str, list[Creature]],
+        size_dict: dict[str, list[Creature]],
+        rarity_dict: dict[str, list[Creature]],
+        melee_dict: dict[str, list[Creature]],
+        ranged_dict: dict[str, list[Creature]],
+        spell_caster_dict: dict[str, list[Creature]],
+    ) -> None:
         self.unordered = creatures_list
-        self.ordered_by_id_ascending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: int(creature.id)
+        self.ordered_by_id_ascending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: int(creature.id),
         )
-        self.ordered_by_id_descending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: int(creature.id), reverse=True
-        )
-
-        self.ordered_by_name_ascending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.name
-        )
-        self.ordered_by_name_descending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.name, reverse=True
+        self.ordered_by_id_descending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: int(creature.id),
+            reverse=True,
         )
 
-        self.ordered_by_hp_ascending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.hp
+        self.ordered_by_name_ascending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.name,
         )
-        self.ordered_by_hp_descending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.hp, reverse=True
-        )
-
-        self.ordered_by_level_ascending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.level
-        )
-        self.ordered_by_level_descending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.level, reverse=True
+        self.ordered_by_name_descending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.name,
+            reverse=True,
         )
 
-        self.ordered_by_family_ascending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.family
+        self.ordered_by_hp_ascending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.hp,
         )
-        self.ordered_by_family_descending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.family, reverse=True
-        )
-
-        self.ordered_by_alignment_ascending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.alignment.value
-        )
-        self.ordered_by_alignment_descending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.alignment.value, reverse=True
+        self.ordered_by_hp_descending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.hp,
+            reverse=True,
         )
 
-        self.ordered_by_size_ascending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.size.value
+        self.ordered_by_level_ascending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.level,
         )
-        self.ordered_by_size_descending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.size.value, reverse=True
-        )
-
-        self.ordered_by_rarity_ascending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.rarity.value
-        )
-        self.ordered_by_rarity_descending: List[Creature] = sorted(
-            creatures_list, key=lambda creature: creature.rarity.value, reverse=True
+        self.ordered_by_level_descending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.level,
+            reverse=True,
         )
 
-        self.id_filter: Dict[str, Creature] = {x.id: x for x in creatures_list}
+        self.ordered_by_family_ascending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.family,
+        )
+        self.ordered_by_family_descending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.family,
+            reverse=True,
+        )
+
+        self.ordered_by_alignment_ascending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.alignment.value,
+        )
+        self.ordered_by_alignment_descending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.alignment.value,
+            reverse=True,
+        )
+
+        self.ordered_by_size_ascending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.size.value,
+        )
+        self.ordered_by_size_descending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.size.value,
+            reverse=True,
+        )
+
+        self.ordered_by_rarity_ascending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.rarity.value,
+        )
+        self.ordered_by_rarity_descending: list[Creature] = sorted(
+            creatures_list,
+            key=lambda creature: creature.rarity.value,
+            reverse=True,
+        )
+
+        self.id_filter: dict[str, Creature] = {x.id: x for x in creatures_list}
         self.level_filter = level_dict
         self.family_filter = family_dict
         self.alignment_filter = alignment_dict
@@ -87,7 +111,7 @@ class CreatureCache:
         self.ranged_filter = ranged_dict
         self.spell_caster_filter = spell_caster_dict
 
-    def get_creature_by_id(self, creature_id: str) -> Optional[Creature]:
+    def get_creature_by_id(self: Self, creature_id: str) -> Creature | None:
         """
         Method used to fetch creatures, it will perform
         a deep copy before returning
@@ -96,7 +120,7 @@ class CreatureCache:
         """
         return copy.deepcopy(self.id_filter.get(creature_id, None))
 
-    def get_all_dictionaries(self) -> Dict[str, Dict[str, List[Creature]]]:
+    def get_all_dictionaries(self: Self) -> dict[str, dict[str, list[Creature]]]:
         return {
             CreatureFilter.SIZE.value: self.size_filter,
             CreatureFilter.RARITY.value: self.rarity_filter,
@@ -109,8 +133,9 @@ class CreatureCache:
         }
 
     def get_dictionary(
-        self, creature_filter: CreatureFilter
-    ) -> Dict[str, List[Creature]]:
+        self: Self,
+        creature_filter: CreatureFilter,
+    ) -> dict[str, list[Creature]]:
         match creature_filter:
             # Filter dicts
             case CreatureFilter.SIZE:
@@ -130,9 +155,10 @@ class CreatureCache:
             case CreatureFilter.SPELL_CASTER:
                 return self.ranged_filter
             case _:
-                raise SyntaxError("Enum value is not valid for this method")
+                msg = "Enum value is not valid for this method"
+                raise SyntaxError(msg)
 
-    def get_all_lists(self) -> Dict[str, List[Creature]]:
+    def get_all_lists(self: Self) -> dict[str, list[Creature]]:
         return {
             CreatureFieldsEnum.ID.value: self.ordered_by_id_ascending,
             CreatureFieldsEnum.SIZE.value: self.ordered_by_size_ascending,
@@ -145,10 +171,10 @@ class CreatureCache:
         }
 
     def get_list(
-        self,
-        sort_filter: Optional[CreatureFieldsEnum],
+        self: Self,
+        sort_filter: CreatureFieldsEnum | None,
         order: OrderEnum = OrderEnum.ASCENDING,
-    ) -> List[Creature]:
+    ) -> list[Creature]:
         match (sort_filter, order):
             case (CreatureFieldsEnum.ID, OrderEnum.ASCENDING):
                 return self.ordered_by_id_ascending

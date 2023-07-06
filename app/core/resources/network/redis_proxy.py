@@ -2,14 +2,14 @@ import asyncio
 import logging
 import time
 from collections import defaultdict
-from enum import Enum
-from typing import List, Tuple, Dict, Set, Iterable, Optional
+from collections.abc import Iterable
+from typing import TYPE_CHECKING
 
 from returns.maybe import Maybe, Nothing
 
+from app.core.resources.creature import Creature
 from app.core.resources.network import redis_communicator
 from app.core.resources.network.creature_cache import CreatureCache
-from app.core.resources.creature import Creature
 from app.core.resources.schema.enum.alignment_enum import AlignmentEnum
 from app.core.resources.schema.enum.creature_filter_enum import CreatureFilter
 from app.core.resources.schema.enum.order_enum import OrderEnum
@@ -17,7 +17,10 @@ from app.core.resources.schema.enum.rarity_enum import RarityEnum
 from app.core.resources.schema.enum.size_enum import SizeEnum
 from app.core.resources.schema.enum.sort_enum import CreatureFieldsEnum
 
-creatures_cache: Optional[CreatureCache] = None
+if TYPE_CHECKING:
+    from enum import Enum
+
+creatures_cache: CreatureCache | None = None
 cache_expiration: int = 3600  # cache expires after one hour
 last_cache_update_time: float = 0
 logger = logging.getLogger(__name__)
@@ -56,16 +59,16 @@ async def update_cache() -> None:
 
 
 def __create_enum_dicts(
-    creatures_list: List[Creature],
-) -> Tuple[
-    Dict[str, List[Creature]],
-    Dict[str, List[Creature]],
-    Dict[str, List[Creature]],
-    Dict[str, List[Creature]],
-    Dict[str, List[Creature]],
-    Dict[str, List[Creature]],
-    Dict[str, List[Creature]],
-    Dict[str, List[Creature]],
+    creatures_list: list[Creature],
+) -> tuple[
+    dict[str, list[Creature]],
+    dict[str, list[Creature]],
+    dict[str, list[Creature]],
+    dict[str, list[Creature]],
+    dict[str, list[Creature]],
+    dict[str, list[Creature]],
+    dict[str, list[Creature]],
+    dict[str, list[Creature]],
 ]:
     """
 
@@ -87,7 +90,7 @@ def __create_enum_dicts(
         alignment_dict[curr_creature.alignment.value].append(curr_creature)
         size_dict[curr_creature.size.value].append(curr_creature)
         rarity_dict[curr_creature.rarity.value if curr_creature.rarity else "-"].append(
-            curr_creature
+            curr_creature,
         )
         melee_dict[str(curr_creature.is_melee)].append(curr_creature)
         ranged_dict[str(curr_creature.is_ranged)].append(curr_creature)
@@ -105,9 +108,9 @@ def __create_enum_dicts(
     )
 
 
-def fetch_data_from_database() -> List[Creature]:
+def fetch_data_from_database() -> list[Creature]:
     return redis_communicator.get_creatures_by_id(
-        redis_communicator.fetch_and_parse_all_keys(pattern="creature:*")
+        redis_communicator.fetch_and_parse_all_keys(pattern="creature:*"),
     )
 
 
@@ -116,22 +119,22 @@ def get_paginated_creatures(
     page_size: int,
     sort_field: CreatureFieldsEnum,
     order: OrderEnum,
-    name_filter: Optional[str],
-    family_filter: Optional[str],
-    rarity_filter: Optional[RarityEnum],
-    size_filter: Optional[SizeEnum],
-    alignment_filter: Optional[AlignmentEnum],
-    min_hp_filter: Optional[int],
-    max_hp_filter: Optional[int],
-    min_level_filter: Optional[int],
-    max_level_filter: Optional[int],
-    is_melee_filter: Optional[bool],
-    is_ranged_filter: Optional[bool],
-    is_spell_caster_filter: Optional[bool],
-) -> Maybe[Tuple[int, List[Creature]]]:
+    name_filter: str | None,
+    family_filter: str | None,
+    rarity_filter: RarityEnum | None,
+    size_filter: SizeEnum | None,
+    alignment_filter: AlignmentEnum | None,
+    min_hp_filter: int | None,
+    max_hp_filter: int | None,
+    min_level_filter: int | None,
+    max_level_filter: int | None,
+    is_melee_filter: bool | None,
+    is_ranged_filter: bool | None,
+    is_spell_caster_filter: bool | None,
+) -> Maybe[tuple[int, list[Creature]]]:
     if creatures_cache:
-        ordered_values: List[Creature] = creatures_cache.get_list(sort_field, order)
-        filtered_values: List[Creature] = list(
+        ordered_values: list[Creature] = creatures_cache.get_list(sort_field, order)
+        filtered_values: list[Creature] = list(
             filter(
                 lambda creature: check_element_pass_filters(
                     creature,
@@ -149,7 +152,7 @@ def get_paginated_creatures(
                     is_spell_caster_filter=is_spell_caster_filter,
                 ),
                 ordered_values,
-            )
+            ),
         )
 
         next_cursor = (
@@ -158,30 +161,29 @@ def get_paginated_creatures(
             else len(filtered_values)
         )
         return Maybe.from_value((next_cursor, filtered_values[cursor:next_cursor]))
-    else:
-        # We should have a direct call like we had in the past
-        # redis_communicator.get_paginated_creatures(cursor, page_size)
-        # But this would increment code complexity for
-        # a non-existent case. (handling filter, orders, etc..)
-        # cache is empty only on startup, later on it is never emptied but always
-        # overwritten.
-        return Nothing
+
+    # We should have a direct call like we had in the past
+    # But this would increment code complexity for
+    # a non-existent case. (handling filter, orders, etc..)
+    # cache is empty only on startup, later on it is never emptied but always
+    # overwritten.
+    return Nothing
 
 
 def check_element_pass_filters(
     element: Creature,
-    name_filter: Optional[str],
-    family_filter: Optional[str],
-    rarity_filter: Optional[RarityEnum],
-    size_filter: Optional[SizeEnum],
-    alignment_filter: Optional[AlignmentEnum],
-    min_hp_filter: Optional[int],
-    max_hp_filter: Optional[int],
-    min_level_filter: Optional[int],
-    max_level_filter: Optional[int],
-    is_melee_filter: Optional[bool],
-    is_ranged_filter: Optional[bool],
-    is_spell_caster_filter: Optional[bool],
+    name_filter: str | None,
+    family_filter: str | None,
+    rarity_filter: RarityEnum | None,
+    size_filter: SizeEnum | None,
+    alignment_filter: AlignmentEnum | None,
+    min_hp_filter: int | None,
+    max_hp_filter: int | None,
+    min_level_filter: int | None,
+    max_level_filter: int | None,
+    is_melee_filter: bool | None,
+    is_ranged_filter: bool | None,
+    is_spell_caster_filter: bool | None,
 ) -> bool:
     return (
         _check_element_pass_equals_filters(
@@ -210,8 +212,8 @@ def check_element_pass_filters(
 
 def _check_element_pass_lesser_filters(
     element: Creature,
-    min_hp_filter: Optional[int],
-    min_level_filter: Optional[int],
+    min_hp_filter: int | None,
+    min_level_filter: int | None,
 ) -> bool:
     lesser_filters = [
         (min_hp_filter, element.hp),
@@ -225,8 +227,8 @@ def _check_element_pass_lesser_filters(
 
 def _check_element_pass_greater_filters(
     element: Creature,
-    max_hp_filter: Optional[int],
-    max_level_filter: Optional[int],
+    max_hp_filter: int | None,
+    max_level_filter: int | None,
 ) -> bool:
     greater_filters = [
         (max_hp_filter, element.hp),
@@ -240,27 +242,27 @@ def _check_element_pass_greater_filters(
 
 def _check_element_pass_equals_filters(
     element: Creature,
-    name_filter: Optional[str],
-    family_filter: Optional[str],
-    rarity_filter: Optional[RarityEnum],
-    size_filter: Optional[SizeEnum],
-    alignment_filter: Optional[AlignmentEnum],
-    is_melee_filter: Optional[bool],
-    is_ranged_filter: Optional[bool],
-    is_spell_caster_filter: Optional[bool],
+    name_filter: str | None,
+    family_filter: str | None,
+    rarity_filter: RarityEnum | None,
+    size_filter: SizeEnum | None,
+    alignment_filter: AlignmentEnum | None,
+    is_melee_filter: bool | None,
+    is_ranged_filter: bool | None,
+    is_spell_caster_filter: bool | None,
 ) -> bool:
-    enum_filters: List[Tuple[Optional[Enum], Enum]] = [
+    enum_filters: list[tuple[Enum | None, Enum]] = [
         (rarity_filter, element.rarity),
         (size_filter, element.size),
         (alignment_filter, element.alignment),
     ]
 
-    string_filters: List[Tuple[Optional[str], str]] = [
+    string_filters: list[tuple[str | None, str]] = [
         (name_filter, element.name.lower()),
         (family_filter, element.family.lower()),
     ]
 
-    boolean_filters: List[Tuple[Optional[bool], bool]] = [
+    boolean_filters: list[tuple[bool | None, bool]] = [
         (is_melee_filter, element.is_melee),
         (is_ranged_filter, element.is_ranged),
         (is_spell_caster_filter, element.is_spell_caster),
@@ -283,19 +285,19 @@ def _check_element_pass_equals_filters(
     return True
 
 
-def get_keys(creature_filter: CreatureFilter) -> List[str]:
+def get_keys(creature_filter: CreatureFilter) -> list[str]:
     if creatures_cache:
-        return sorted(list(creatures_cache.get_dictionary(creature_filter).keys()))
-    else:
-        return sorted(
-            redis_communicator.fetch_and_parse_all_keys(
-                creature_filter.value.lower() + "*"
-            )
-        )
+        return sorted(creatures_cache.get_dictionary(creature_filter).keys())
+
+    return sorted(
+        redis_communicator.fetch_and_parse_all_keys(
+            creature_filter.value.lower() + "*",
+        ),
+    )
 
 
-def get_creatures_by_ids(id_list: List[str]) -> List[Creature]:
-    creatures_list: List[Creature] = []
+def get_creatures_by_ids(id_list: list[str]) -> list[Creature]:
+    creatures_list: list[Creature] = []
     for _id in id_list:
         curr_creature = get_creature_by_id(_id)
         if curr_creature:
@@ -303,7 +305,7 @@ def get_creatures_by_ids(id_list: List[str]) -> List[Creature]:
     return creatures_list
 
 
-def get_creature_by_id(creature_id: str) -> Optional[Creature]:
+def get_creature_by_id(creature_id: str) -> Creature | None:
     if creatures_cache:
         return creatures_cache.get_creature_by_id(creature_id)
     return redis_communicator.get_creature_by_id(creature_id)
@@ -311,43 +313,44 @@ def get_creature_by_id(creature_id: str) -> Optional[Creature]:
 
 def fetch_creature_ids_passing_all_filters(
     key_value_filters: dict,
-) -> Dict[str, Dict[str, Set[str]]]:
+) -> dict[str, dict[str, set[str]]]:
     if creatures_cache:
-        ids_passing_filter: Dict[str, Dict[str, Set[str]]] = dict()
+        ids_passing_filter: dict[str, dict[str, set[str]]] = {}
         for key, value in key_value_filters.items():
             curr_dict = fetch_creature_ids_passing_filter(key, filter_list=value)
             if not curr_dict:
                 return {}
             ids_passing_filter[key] = curr_dict
         return ids_passing_filter
-    else:
-        # We should have a direct call like we had in the past
-        # redis_communicator.get_paginated_creatures(cursor, page_size)
-        # But this would increment code complexity for a
-        # non-existent case. (handling filter, orders, etc..)
-        # cache is empty only on startup, later on it is never emptied but always
-        # overwritten.
-        return {}
+
+    # We should have a direct call like we had in the past
+    # But this would increment code complexity for a
+    # non-existent case. (handling filter, orders, etc..)
+    # cache is empty only on startup, later on it is never emptied but always
+    # overwritten.
+    return {}
 
 
 def fetch_creature_ids_passing_filter(
-    creature_filter: CreatureFilter, filter_list: Iterable[str]
-) -> Dict[str, Set[str]]:
+    creature_filter: CreatureFilter,
+    filter_list: Iterable[str],
+) -> dict[str, set[str]]:
     if creatures_cache:
-        ids_passing_filter: Dict[str, Set[str]] = dict()
+        ids_passing_filter: dict[str, set[str]] = {}
         for curr_value in filter_list:
-            curr_set = set(
+            curr_set = {
                 creature.id
                 for creature in creatures_cache.get_dictionary(creature_filter)[
                     curr_value
                 ]
-            )
+            }
             if curr_set:
                 ids_passing_filter[curr_value] = curr_set
             else:
-                logger.debug(
+                error_string: str = (
                     f"No keys found for {creature_filter} with value {curr_value}"
                 )
+                logger.debug(error_string)
         return ids_passing_filter
-    else:
-        return {}
+
+    return {}

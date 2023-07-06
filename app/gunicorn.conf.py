@@ -1,7 +1,7 @@
 import logging
 import multiprocessing
-import os
-from logging.handlers import QueueListener, QueueHandler, TimedRotatingFileHandler
+from logging.handlers import QueueHandler, QueueListener, TimedRotatingFileHandler
+from pathlib import Path
 
 from app.core.resources.app_config import config as conf
 
@@ -146,7 +146,7 @@ tmp_upload_dir = None
 #       A string of "debug", "info", "warning", "error", "critical"
 #
 
-log_path = f"{os.path.join(conf.log_path, conf.service_name)}.log"
+log_path = f"{Path.joinpath(conf.log_path, conf.service_name)}.log"
 capture_output = False
 
 # Set up a queue to communicate with the handlers

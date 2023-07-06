@@ -2,8 +2,7 @@ import random
 from collections import Counter
 from collections.abc import Iterable
 from itertools import chain
-
-from typing import Optional, Dict, Set, List, Annotated
+from typing import Annotated
 
 from pydantic import conlist
 
@@ -11,12 +10,12 @@ from app.core.resources.network import redis_proxy
 from app.core.resources.schema.enum.alignment_enum import AlignmentEnum
 from app.core.resources.schema.enum.creature_filter_enum import CreatureFilter
 from app.core.resources.schema.enum.difficulty_enum import DifficultyEnum
-from app.core.resources.schema.models.encounter_params import EncounterParams
 from app.core.resources.schema.enum.rarity_enum import RarityEnum
 from app.core.resources.schema.enum.size_enum import SizeEnum
+from app.core.resources.schema.models.encounter_params import EncounterParams
 from app.core.services.encounter_handler.encounter_calculator import (
-    calculate_encounter_exp,
     calculate_encounter_difficulty,
+    calculate_encounter_exp,
     calculate_encounter_scaling_difficulty,
     calculate_level_combination_for_encounter,
     merge_ids_with_dict_of_sets,
@@ -26,13 +25,15 @@ from app.core.services.encounter_handler.encounter_calculator import (
 def get_encounter_info(encounter_params: EncounterParams) -> dict:
     party_levels = encounter_params.party_levels
     encounter_experience = calculate_encounter_exp(
-        party_levels=party_levels, enemy_levels=encounter_params.enemy_levels
+        party_levels=party_levels,
+        enemy_levels=encounter_params.enemy_levels,
     )
     scaled_exp_levels = calculate_encounter_scaling_difficulty(
-        party_size=len(party_levels)
+        party_size=len(party_levels),
     )
     encounter_difficulty = calculate_encounter_difficulty(
-        encounter_exp=encounter_experience, scaled_exp_levels=scaled_exp_levels
+        encounter_exp=encounter_experience,
+        scaled_exp_levels=scaled_exp_levels,
     )
     return {
         "experience": encounter_experience,
@@ -42,28 +43,31 @@ def get_encounter_info(encounter_params: EncounterParams) -> dict:
 
 
 def generate_random_encounter(
-    party_levels: Annotated[List[int], conlist(int, min_items=1)],
+    party_levels: Annotated[list[int], conlist(int, min_items=1)],
     encounter_difficulty: DifficultyEnum,
-    family: Optional[str] = None,
-    rarity: Optional[RarityEnum] = None,
-    size: Optional[SizeEnum] = None,
-    alignment: Optional[AlignmentEnum] = None,
+    family: str | None = None,
+    rarity: RarityEnum | None = None,
+    size: SizeEnum | None = None,
+    alignment: AlignmentEnum | None = None,
 ) -> dict:
     exp, levels_combinations = calculate_level_combination_for_encounter(
-        encounter_difficulty, party_levels
+        encounter_difficulty,
+        party_levels,
     )
     if not levels_combinations:
-        raise ValueError("This encounter cannot be generated")
+        msg = "This encounter cannot be generated"
+        raise ValueError(msg)
     filter_dict = build_filter_dict(family, rarity, size, alignment)
-    creature_ids_dict: Dict[
-        str, Set[str]
+    creature_ids_dict: dict[
+        str,
+        set[str],
     ] = filters_creatures_ids_by_filters_and_levels(filter_dict, levels_combinations)
     creature_ids_list = choose_random_valid_ids(creature_ids_dict, levels_combinations)
     encounter = redis_proxy.get_creatures_by_ids(
-        list(chain.from_iterable(creature_ids_list))
+        list(chain.from_iterable(creature_ids_list)),
     )
     scaled_exp_levels = calculate_encounter_scaling_difficulty(
-        party_size=len(party_levels)
+        party_size=len(party_levels),
     )
 
     return {
@@ -76,8 +80,9 @@ def generate_random_encounter(
 
 
 def filters_creatures_ids_by_filters_and_levels(
-    filter_dict: dict, levels_combinations: List[List[str]]
-) -> Dict[str, Set[str]]:
+    filter_dict: dict,
+    levels_combinations: list[list[str]],
+) -> dict[str, set[str]]:
     id_set = None
     if filter_dict:
         # Fetch creature IDs passing all filters
@@ -85,12 +90,13 @@ def filters_creatures_ids_by_filters_and_levels(
         id_set = get_intersection_of_all_values_in_nested_dict(ids_dict)
         if not id_set:
             # Empty id set, abort. (Encounter could not be generated)
-            return dict()
+            return {}
 
     # Fetch creature IDs passing level filter
     unique_levels = set(chain.from_iterable(levels_combinations))
     level_id = redis_proxy.fetch_creature_ids_passing_filter(
-        CreatureFilter.LEVEL, unique_levels
+        CreatureFilter.LEVEL,
+        unique_levels,
     )
     # Merge IDs with dict of sets and remove levels with empty sets
     # If id_set is empty THEN no filter were passed and you don't have to merge
@@ -99,12 +105,13 @@ def filters_creatures_ids_by_filters_and_levels(
 
 
 def choose_random_valid_ids(
-    ids: Dict[str, Set[str]], levels_combinations: Iterable[Iterable[str]]
-) -> List[List[str]]:
+    ids: dict[str, set[str]],
+    levels_combinations: Iterable[Iterable[str]],
+) -> list[list[str]]:
     valid_levels = filter_lists_by_id(lists=levels_combinations, ids=ids)
     random_encounter = random.sample(valid_levels, 1)[0]
     creature_count = Counter(random_encounter)
-    new_ids_dict: Dict[str, List[str]] = dict()
+    new_ids_dict: dict[str, list[str]] = {}
     for key, value in creature_count.items():
         if len(ids[key]) < value:
             # fill ids[key] until len(ids[key]) = value. the filler values
@@ -117,17 +124,18 @@ def choose_random_valid_ids(
             new_ids_dict[key] = list(ids[key])
     return [
         random.sample(
-            [el for el in new_ids_dict.get(str(key), {})], creature_count[key]
+            list(new_ids_dict.get(str(key), {})),
+            creature_count[key],
         )
         for key in creature_count
     ]
 
 
 def build_filter_dict(
-    family: Optional[str],
-    rarity: Optional[RarityEnum],
-    size: Optional[SizeEnum],
-    alignment: Optional[AlignmentEnum],
+    family: str | None,
+    rarity: RarityEnum | None,
+    size: SizeEnum | None,
+    alignment: AlignmentEnum | None,
 ) -> dict:
     filter_dict = {}
     if family:
@@ -142,8 +150,9 @@ def build_filter_dict(
 
 
 def filter_lists_by_id(
-    lists: Iterable[Iterable[str]], ids: Dict[str, Set[str]]
-) -> List[Iterable[str]]:
+    lists: Iterable[Iterable[str]],
+    ids: dict[str, set[str]],
+) -> list[Iterable[str]]:
     """
     Returns only iterables with elements contained in ids
     """
@@ -161,5 +170,5 @@ def get_intersection_of_all_values_in_nested_dict(input_dict: dict) -> set:
             set(id_set)
             for nested_dict in input_dict.values()
             for id_set in nested_dict.values()
-        ]
+        ],
     )

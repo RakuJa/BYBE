@@ -1,4 +1,5 @@
 from enum import Enum
+from typing import Self
 
 
 class DifficultyEnum(Enum):
@@ -13,40 +14,48 @@ class DifficultyEnum(Enum):
     # Pathfinder 2E thinks that a GM will only try out extreme encounter at maximum
     # I have to introduce a level for impossible things, Needs balancing Paizo help
 
-    def get_base_xp_budget(self) -> int:
-        if self == DifficultyEnum.TRIVIAL:
-            return 40
-        elif self == DifficultyEnum.LOW:
-            return 60
-        elif self == DifficultyEnum.MODERATE:
-            return 80
-        elif self == DifficultyEnum.SEVERE:
-            return 120
-        elif self == DifficultyEnum.EXTREME:
-            return 160
-        elif self == DifficultyEnum.IMPOSSIBLE:
-            return 320
-        else:
-            raise NotImplementedError(
-                f"This enumerator: {self.value} has not been implemented yet,"
-                f" contact the developer"
-            )
+    def get_base_xp_budget(self: Self) -> int:
+        match self:
+            case DifficultyEnum.TRIVIAL:
+                return 40
+            case DifficultyEnum.LOW:
+                return 60
+            case DifficultyEnum.MODERATE:
+                return 80
+            case DifficultyEnum.SEVERE:
+                return 120
+            case DifficultyEnum.EXTREME:
+                return 160
+            case DifficultyEnum.IMPOSSIBLE:
+                return 320
+            case _:
+                msg = (
+                    f"This enumerator: {self.value} has not been implemented yet,"
+                    f" contact the developer"
+                )
+                raise NotImplementedError(
+                    msg,
+                )
 
-    def get_xp_adjustment(self) -> int:
-        if self == DifficultyEnum.TRIVIAL:
-            return 10
-        elif self == DifficultyEnum.LOW:
-            return 15
-        elif self == DifficultyEnum.MODERATE:
-            return 20
-        elif self == DifficultyEnum.SEVERE:
-            return 30
-        elif self == DifficultyEnum.EXTREME:
-            return 40
-        elif self == DifficultyEnum.IMPOSSIBLE:
-            return 60
-        else:
-            raise NotImplementedError(
-                f"This enumerator: {self.value} has not been implemented yet,"
-                f" contact the developer"
-            )
+    def get_xp_adjustment(self: Self) -> int:
+        match self:
+            case DifficultyEnum.TRIVIAL:
+                return 10
+            case DifficultyEnum.LOW:
+                return 15
+            case DifficultyEnum.MODERATE:
+                return 20
+            case DifficultyEnum.SEVERE:
+                return 30
+            case DifficultyEnum.EXTREME:
+                return 40
+            case DifficultyEnum.IMPOSSIBLE:
+                return 60
+            case _:
+                msg = (
+                    f"This enumerator: {self.value} has not been implemented yet,"
+                    f" contact the developer"
+                )
+                raise NotImplementedError(
+                    msg,
+                )
