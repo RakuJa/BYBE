@@ -1,0 +1,19 @@
+[debug]
+address = "127.0.0.1"
+port = 8000
+workers = 2 #[number of cpus * 2]
+keep_alive = 5
+log_level = "debug"
+limits = { forms = 32768, json = "10Mib" }
+
+
+[release]
+address = "0.0.0.0"
+port = 25566
+workers = 3 # [number of cpus * 2]
+keep_alive = 5
+log = "critical"
+limits = { forms = 32768 }
+
+[default.databases.redis_pool]
+url = "redis://localhost:6379"
