@@ -1,43 +1,26 @@
-
-
-use std::collections::HashMap;
+use crate::db::db_communicator::is_redis_up;
+use actix_web::get;
+use actix_web::web::Json;
 use maplit::hashmap;
-use rocket::fairing::AdHoc;
-use rocket::serde::json::Json;
-use rocket::serde::{Deserialize, Serialize};
-use rocket_db_pools::{deadpool_redis, Database, Connection};
-use crate::rocket;
-
-#[derive(Database)]
-#[database("redis_pool")]
-pub struct Db(deadpool_redis::Pool);
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize)]
-struct HealthResponse {
+pub struct HealthResponse {
     ready: String,
-    dependencies: Vec<HashMap<String, String>>
+    dependencies: Vec<HashMap<String, String>>,
 }
 
-
-#[get("/")]
-async fn get_health(mut db: Connection<Db>) -> Json<HealthResponse> {
+#[get("/health")]
+pub async fn get_health() -> Json<HealthResponse> {
+    let is_redis_up = is_redis_up().unwrap_or(false);
     Json(HealthResponse {
-        ready: true.to_string(),
-        dependencies: vec![
-            hashmap! {
-                "name".to_string() => "redis database".to_string(),
-                "ready".to_string() => true.to_string(),
-                "live".to_string() => true.to_string(),
-                "type".to_string() => "REQUIRED".to_string(),
-            }
-        ]
-    })
-
-}
-
-pub fn stage() -> AdHoc {
-    AdHoc::on_ignite("redis stage", |rocket| async {
-        rocket.attach(Db::init())
-            .mount("/health", routes![get_health])
+        ready: is_redis_up.to_string(),
+        dependencies: vec![hashmap! {
+            "name".to_string() => "redis database".to_string(),
+            "ready".to_string() => is_redis_up.to_string(),
+            "live".to_string() => is_redis_up.to_string(),
+            "type".to_string() => "REQUIRED".to_string(),
+        }],
     })
 }
