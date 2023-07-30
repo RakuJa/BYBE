@@ -1,11 +1,12 @@
 #[macro_use]
 extern crate maplit;
 extern crate lazy_static;
+extern crate tokio;
 
 mod routes;
 
 use actix_web::{get, middleware, App, HttpResponse, HttpServer, Responder};
-use std::env;
+use std::{env, future};
 
 mod db;
 mod models;
@@ -42,8 +43,10 @@ async fn main() -> std::io::Result<()> {
         service_ip.as_str(),
         service_port.to_string()
     );
+    // async running in the background
+    tokio::task::spawn(db::db_proxy::update_cache());
 
-    HttpServer::new(move || {
+    let server = HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .service(index)
@@ -54,5 +57,7 @@ async fn main() -> std::io::Result<()> {
     })
     .bind((get_service_ip(), get_service_port()))?
     .run()
-    .await
+    .await;
+
+    server
 }

@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Eq, Hash, PartialEq, Ord, PartialOrd, Debug)]
 pub enum AlignmentEnum {
     CE,
     CN,
@@ -15,7 +15,7 @@ pub enum AlignmentEnum {
     ANY, // can be every alignment
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Eq, Hash, PartialEq, Ord, PartialOrd, Debug)]
 pub enum RarityEnum {
     COMMON,
     UNCOMMON,
@@ -23,7 +23,7 @@ pub enum RarityEnum {
     UNIQUE,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Eq, Hash, PartialEq, Ord, PartialOrd, Debug)]
 pub enum SizeEnum {
     TINY,
     SMALL,

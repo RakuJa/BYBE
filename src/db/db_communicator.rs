@@ -1,6 +1,9 @@
 use crate::models::creature::Creature;
 use crate::models::enums::{AlignmentEnum, RarityEnum, SizeEnum};
-use redis::{from_redis_value, Connection, ConnectionLike, FromRedisValue, JsonCommands, RedisError, RedisResult, Value, Commands};
+use redis::{
+    from_redis_value, Commands, Connection, ConnectionLike, FromRedisValue, JsonCommands,
+    RedisError, RedisResult, Value,
+};
 use serde::{Deserialize, Serialize};
 use std::env;
 
@@ -8,14 +11,14 @@ use std::env;
 pub struct RawCreature {
     name: String,
     hp: i16,
-    level: i16,
+    level: i8,
     alignment: AlignmentEnum,
     size: SizeEnum,
     family: Option<String>,
     rarity: RarityEnum,
-    is_melee: i16,
-    is_ranged: i16,
-    is_spell_caster: i16,
+    is_melee: i8,
+    is_ranged: i8,
+    is_spell_caster: i8,
     // source: Vec<String>,
 }
 
@@ -27,10 +30,7 @@ pub struct RawJsonString {
 impl FromRedisValue for RawJsonString {
     fn from_redis_value(v: &Value) -> RedisResult<Self> {
         let json_str: String = from_redis_value(v)?;
-        serde_json::from_str(&json_str).map_err(|err| {
-            println!("{}", err);
-            redis::RedisError::from(err)
-        })
+        serde_json::from_str(&json_str).map_err(|err| redis::RedisError::from(err))
     }
 }
 
@@ -60,14 +60,12 @@ fn from_raw_to_creature(raw: &RawCreature, identifier: &String) -> Creature {
 }
 
 fn remove_prefix(strings: Vec<String>, prefix: &String) -> Vec<String> {
-    let x = strings
+    strings
         .iter()
         // removes prefix, if it could not be removed it filters out the value
         .filter_map(|curr_str| curr_str.as_str().strip_prefix(prefix))
         .map(str::to_string) //convert &str to String
-        .collect();
-    println!("{:?}", x);
-    x
+        .collect()
 }
 fn get_redis_url() -> String {
     let redis_password = env::var("REDIS_KEY").unwrap_or_else(|_| "".to_string());
@@ -105,16 +103,15 @@ pub fn get_creature_by_id(id: &String) -> Result<Creature, RedisError> {
     Ok(from_raw_to_creature(&raw, id))
 }
 
-pub fn fetch_and_parse_all_keys(pattern: &String) -> Result<Vec<String>, RedisError>{
+pub fn fetch_and_parse_all_keys(pattern: &String) -> Result<Vec<String>, RedisError> {
     let mut conn = get_connection()?;
     let mut parse_pattern = pattern.clone();
     if !pattern.ends_with("*") {
         parse_pattern.push_str("*")
     }
 
-    let x : Vec<String> = conn.keys(parse_pattern)?;
-    println!("{:?}", x);
-    Ok(remove_prefix( x, pattern))
+    let x: Vec<String> = conn.keys(parse_pattern)?;
+    Ok(remove_prefix(x, pattern))
 }
 
 pub fn is_redis_up() -> RedisResult<bool> {

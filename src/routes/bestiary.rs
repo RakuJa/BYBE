@@ -17,7 +17,5 @@ pub async fn get_bestiary() -> Result<impl Responder> {
 
 #[get("/keys")]
 pub async fn get_keys() -> Result<impl Responder> {
-    Ok(web::Json(
-        bestiary_service::get_keys().await
-    ))
+    Ok(web::Json(bestiary_service::get_keys().await))
 }

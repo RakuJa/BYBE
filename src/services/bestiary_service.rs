@@ -1,4 +1,6 @@
-use crate::db::db_communicator::{fetch_and_parse_all_keys, get_creature_by_id, get_creatures_by_ids};
+use crate::db::db_communicator::{
+    fetch_and_parse_all_keys, get_creature_by_id, get_creatures_by_ids,
+};
 use crate::models::creature::Creature;
 use redis::RedisError;
 use serde::{Deserialize, Serialize};
@@ -44,9 +46,9 @@ pub async fn get_bestiary(ids: Vec<String>) -> BestiaryResponse {
     convert_result_to_bestiary_response(get_creatures_by_ids(ids))
 }
 
-pub async fn get_keys() -> Vec<String>{
+pub async fn get_keys() -> Vec<String> {
     match fetch_and_parse_all_keys(&"creature:".to_string()) {
         Ok(cr) => cr,
-        Err(err) => vec![]
+        Err(err) => vec![],
     }
 }
