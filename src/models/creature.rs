@@ -1,9 +1,9 @@
-use crate::models::enums::{AlignmentEnum, RarityEnum, SizeEnum};
+use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug)]
 pub struct Creature {
-    pub id: String,
+    pub id: i32,
     pub name: String,
     pub hp: i16,
     pub level: i8,

@@ -1,5 +1,5 @@
 use crate::models::creature::Creature;
-use crate::models::enums::{AlignmentEnum, RarityEnum, SizeEnum};
+use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
 use redis::{
     from_redis_value, Commands, Connection, ConnectionLike, FromRedisValue, JsonCommands,
     RedisError, RedisResult, Value,
@@ -44,7 +44,7 @@ fn from_raw_vec_to_creature(raw_vec: Vec<RawCreature>, id_vec: Vec<String>) -> V
 
 fn from_raw_to_creature(raw: &RawCreature, identifier: &String) -> Creature {
     Creature {
-        id: String::from(identifier),
+        id: identifier.parse::<i32>().unwrap_or(0),
         name: raw.name.clone(),
         hp: raw.hp,
         level: raw.level,

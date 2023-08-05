@@ -6,7 +6,7 @@ extern crate tokio;
 mod routes;
 
 use actix_web::{get, middleware, App, HttpResponse, HttpServer, Responder};
-use std::{env, future};
+use std::env;
 
 mod db;
 mod models;

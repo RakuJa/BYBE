@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
+use strum::Display;
 
-#[derive(Serialize, Deserialize, Eq, Hash, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Serialize, Deserialize, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug)]
 pub enum AlignmentEnum {
     CE,
     CN,
@@ -15,15 +16,16 @@ pub enum AlignmentEnum {
     ANY, // can be every alignment
 }
 
-#[derive(Serialize, Deserialize, Eq, Hash, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Serialize, Deserialize, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug)]
 pub enum RarityEnum {
     COMMON,
     UNCOMMON,
     RARE,
     UNIQUE,
+    ANY,
 }
 
-#[derive(Serialize, Deserialize, Eq, Hash, PartialEq, Ord, PartialOrd, Debug)]
+#[derive(Serialize, Deserialize, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug)]
 pub enum SizeEnum {
     TINY,
     SMALL,
@@ -31,6 +33,25 @@ pub enum SizeEnum {
     LARGE,
     HUGE,
     GARGANTUAN,
+    ANY,
+}
+
+impl Default for AlignmentEnum {
+    fn default() -> Self {
+        AlignmentEnum::ANY
+    }
+}
+
+impl Default for RarityEnum {
+    fn default() -> Self {
+        RarityEnum::ANY
+    }
+}
+
+impl Default for SizeEnum {
+    fn default() -> Self {
+        SizeEnum::ANY
+    }
 }
 
 impl Clone for AlignmentEnum {
@@ -58,6 +79,7 @@ impl Clone for RarityEnum {
             RarityEnum::UNCOMMON => RarityEnum::UNCOMMON,
             RarityEnum::RARE => RarityEnum::RARE,
             RarityEnum::UNIQUE => RarityEnum::UNIQUE,
+            RarityEnum::ANY => RarityEnum::ANY,
         }
     }
 }
@@ -71,6 +93,7 @@ impl Clone for SizeEnum {
             SizeEnum::LARGE => SizeEnum::LARGE,
             SizeEnum::HUGE => SizeEnum::HUGE,
             SizeEnum::GARGANTUAN => SizeEnum::GARGANTUAN,
+            SizeEnum::ANY => SizeEnum::ANY,
         }
     }
 }
