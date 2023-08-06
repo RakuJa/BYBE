@@ -135,16 +135,16 @@ pub async fn get_bestiary(
     pagination: &PaginatedRequest,
 ) -> BestiaryResponse {
     convert_result_to_bestiary_response(
-        &sort_field,
-        &field_filter,
-        &pagination,
-        get_paginated_creatures(sort_field, &field_filter, pagination),
+        sort_field,
+        field_filter,
+        pagination,
+        get_paginated_creatures(sort_field, field_filter, pagination),
     )
 }
 
 pub async fn get_keys() -> Vec<String> {
     match fetch_and_parse_all_keys(&"creature:".to_string()) {
         Ok(cr) => cr,
-        Err(err) => vec![],
+        Err(_err) => vec![],
     }
 }

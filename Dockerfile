@@ -1,15 +1,26 @@
-# Use an official Python runtime as a parent image
-FROM python:3.11-slim
+# Stage 1: Build the Rust project
+FROM rust:latest as builder
 
-# Copy the current directory contents into the container at /app
-COPY ./ /
-COPY requirements.txt /app
+# Set the working directory in the container
+WORKDIR /app
 
-# Install the required packages from requirements.txt
-RUN pip install --no-cache-dir -r app/requirements.txt
+# Copy the project files into the container
+COPY . .
 
-# Make port 25566 available to the world outside this container
+# Build the project with optimizations
+RUN cargo build --release
+
+# Stage 2: Create a minimal runtime image
+FROM debian:buster-slim
+
+# Set the working directory in the container
+WORKDIR /app
+
+# Copy the built binary from the previous stage
+COPY --from=builder /app/target/release/bybe .
+
+# Expose the port that your Actix-Web application will listen on
 EXPOSE 25566
 
-# Run the command to start the app
-CMD ["gunicorn", "app.controller:app", "--config", "app/gunicorn.conf.py"]
+# Command to run your application when the container starts
+CMD ["./bybe"]

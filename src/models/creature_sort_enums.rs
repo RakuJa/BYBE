@@ -1,33 +1,23 @@
 use serde::{Deserialize, Serialize};
-use std::fmt::Display;
+
 use strum::Display;
 
-#[derive(Serialize, Deserialize, Display, Copy, Clone)]
+#[derive(Serialize, Deserialize, Display, Copy, Clone, Default)]
 pub enum SortEnum {
-    ID,
-    NAME,
-    HP,
-    LEVEL,
-    FAMILY,
-    ALIGNMENT,
-    SIZE,
-    RARITY,
+    #[default]
+    Id,
+    Name,
+    Hp,
+    Level,
+    Family,
+    Alignment,
+    Size,
+    Rarity,
 }
 
-#[derive(Serialize, Deserialize, Display, Copy, Clone)]
+#[derive(Serialize, Deserialize, Display, Copy, Clone, Default)]
 pub enum OrderEnum {
-    ASCENDING,
-    DESCENDING,
-}
-
-impl Default for SortEnum {
-    fn default() -> Self {
-        SortEnum::ID
-    }
-}
-
-impl Default for OrderEnum {
-    fn default() -> Self {
-        OrderEnum::ASCENDING
-    }
+    #[default]
+    Ascending,
+    Descending,
 }

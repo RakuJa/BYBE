@@ -14,21 +14,13 @@ lazy_static! {
     static ref CACHE: std::sync::Mutex<DbCache> = std::sync::Mutex::new(DbCache::default());
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct DbCache {
     lists: SortedVectorCache,
     filters: FiltersCache,
 }
 
-impl Default for DbCache {
-    fn default() -> Self {
-        DbCache {
-            lists: SortedVectorCache::default(),
-            filters: FiltersCache::default(),
-        }
-    }
-}
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct SortedVectorCache {
     pub unordered_creatures: Vec<Creature>,
 
@@ -57,30 +49,7 @@ struct SortedVectorCache {
     pub order_by_rarity_descending: Vec<Creature>,
 }
 
-impl Default for SortedVectorCache {
-    fn default() -> Self {
-        SortedVectorCache {
-            unordered_creatures: vec![],
-            order_by_id_ascending: vec![],
-            order_by_id_descending: vec![],
-            order_by_name_ascending: vec![],
-            order_by_name_descending: vec![],
-            order_by_hp_ascending: vec![],
-            order_by_hp_descending: vec![],
-            order_by_level_ascending: vec![],
-            order_by_level_descending: vec![],
-            order_by_family_ascending: vec![],
-            order_by_family_descending: vec![],
-            order_by_alignment_ascending: vec![],
-            order_by_alignment_descending: vec![],
-            order_by_size_ascending: vec![],
-            order_by_size_descending: vec![],
-            order_by_rarity_ascending: vec![],
-            order_by_rarity_descending: vec![],
-        }
-    }
-}
-#[derive(Debug)]
+#[derive(Debug, Default)]
 struct FiltersCache {
     pub filtered_by_id: HashMap<i32, Vec<Creature>>,
     pub filtered_by_level: HashMap<i8, Vec<Creature>>,
@@ -91,22 +60,6 @@ struct FiltersCache {
     pub filtered_by_melee: HashMap<bool, Vec<Creature>>,
     pub filtered_by_ranged: HashMap<bool, Vec<Creature>>,
     pub filtered_by_spell_caster: HashMap<bool, Vec<Creature>>,
-}
-
-impl Default for FiltersCache {
-    fn default() -> Self {
-        FiltersCache {
-            filtered_by_id: Default::default(),
-            filtered_by_level: Default::default(),
-            filtered_by_family: Default::default(),
-            filtered_by_alignment: Default::default(),
-            filtered_by_size: Default::default(),
-            filtered_by_rarity: Default::default(),
-            filtered_by_melee: Default::default(),
-            filtered_by_ranged: Default::default(),
-            filtered_by_spell_caster: Default::default(),
-        }
-    }
 }
 
 fn from_db_data_to_filter_cache(data: &Result<Vec<Creature>, RedisError>) -> FiltersCache {
@@ -183,7 +136,7 @@ fn from_db_data_to_sorted_vectors(data: &Result<Vec<Creature>, RedisError>) -> S
 
         sorted_cache.unordered_creatures = unordered_creatures.clone();
 
-        sort_stage.sort_by_key(|cr| cr.id.clone());
+        sort_stage.sort_by_key(|cr| cr.id);
         sorted_cache.order_by_id_ascending = sort_stage.clone();
         sort_stage.reverse();
         sorted_cache.order_by_id_descending = sort_stage.clone();
@@ -256,74 +209,71 @@ fn get_list(sort_field: Option<SortEnum>, order_by: Option<OrderEnum>) -> Option
     log::info!("Before getting list");
     let x = CACHE.lock();
     log::info!("getting them cache lock");
-    if x.is_ok() {
+    if let Ok(cache) = x {
         log::info!("Got cache lock, pattern matching rn");
-        let cache = x.unwrap();
         match (sort_field.unwrap_or_default(), order_by.unwrap_or_default()) {
-            (SortEnum::ID, OrderEnum::ASCENDING) => {
+            (SortEnum::Id, OrderEnum::Ascending) => {
                 Some(cache.lists.order_by_id_ascending.to_owned())
             }
-            (SortEnum::ID, OrderEnum::DESCENDING) => {
+            (SortEnum::Id, OrderEnum::Descending) => {
                 Some(cache.lists.order_by_id_descending.to_owned())
             }
 
-            (SortEnum::HP, OrderEnum::ASCENDING) => {
+            (SortEnum::Hp, OrderEnum::Ascending) => {
                 Some(cache.lists.order_by_hp_ascending.to_owned())
             }
-            (SortEnum::HP, OrderEnum::DESCENDING) => {
+            (SortEnum::Hp, OrderEnum::Descending) => {
                 Some(cache.lists.order_by_hp_descending.to_owned())
             }
 
-            (SortEnum::FAMILY, OrderEnum::ASCENDING) => {
+            (SortEnum::Family, OrderEnum::Ascending) => {
                 Some(cache.lists.order_by_family_ascending.to_owned())
             }
-            (SortEnum::FAMILY, OrderEnum::DESCENDING) => {
+            (SortEnum::Family, OrderEnum::Descending) => {
                 Some(cache.lists.order_by_family_descending.to_owned())
             }
 
-            (SortEnum::ALIGNMENT, OrderEnum::ASCENDING) => {
+            (SortEnum::Alignment, OrderEnum::Ascending) => {
                 Some(cache.lists.order_by_alignment_ascending.to_owned())
             }
-            (SortEnum::ALIGNMENT, OrderEnum::DESCENDING) => {
+            (SortEnum::Alignment, OrderEnum::Descending) => {
                 Some(cache.lists.order_by_alignment_descending.to_owned())
             }
 
-            (SortEnum::LEVEL, OrderEnum::ASCENDING) => {
+            (SortEnum::Level, OrderEnum::Ascending) => {
                 Some(cache.lists.order_by_level_ascending.to_owned())
             }
-            (SortEnum::LEVEL, OrderEnum::DESCENDING) => {
+            (SortEnum::Level, OrderEnum::Descending) => {
                 Some(cache.lists.order_by_level_descending.to_owned())
             }
 
-            (SortEnum::NAME, OrderEnum::ASCENDING) => {
+            (SortEnum::Name, OrderEnum::Ascending) => {
                 Some(cache.lists.order_by_name_ascending.to_owned())
             }
-            (SortEnum::NAME, OrderEnum::DESCENDING) => {
+            (SortEnum::Name, OrderEnum::Descending) => {
                 Some(cache.lists.order_by_name_descending.to_owned())
             }
 
-            (SortEnum::RARITY, OrderEnum::ASCENDING) => {
+            (SortEnum::Rarity, OrderEnum::Ascending) => {
                 Some(cache.lists.order_by_rarity_ascending.to_owned())
             }
-            (SortEnum::RARITY, OrderEnum::DESCENDING) => {
+            (SortEnum::Rarity, OrderEnum::Descending) => {
                 Some(cache.lists.order_by_rarity_descending.to_owned())
             }
 
-            (SortEnum::SIZE, OrderEnum::ASCENDING) => {
+            (SortEnum::Size, OrderEnum::Ascending) => {
                 Some(cache.lists.order_by_size_ascending.to_owned())
             }
-            (SortEnum::SIZE, OrderEnum::DESCENDING) => {
+            (SortEnum::Size, OrderEnum::Descending) => {
                 Some(cache.lists.order_by_rarity_descending.to_owned())
             }
-
-            _ => Some(cache.lists.unordered_creatures.to_owned()),
         }
     } else {
         None
     }
 }
 
-pub fn get_paginated_creatures<'a>(
+pub fn get_paginated_creatures(
     sort: &SortData,
     filters: &FieldFilters,
     pagination: &PaginatedRequest,

@@ -26,10 +26,7 @@ fn get_service_ip() -> String {
 fn get_service_port() -> u16 {
     match env::var("SERVICE_PORT").ok() {
         None => 25566,
-        Some(port) => match port.parse::<u16>() {
-            Err(_) => 25566,
-            Ok(n) => n,
-        },
+        Some(port) => port.parse::<u16>().unwrap_or(25566),
     }
 }
 
@@ -46,7 +43,7 @@ async fn main() -> std::io::Result<()> {
     // async running in the background
     tokio::task::spawn(db::db_proxy::update_cache());
 
-    let server = HttpServer::new(move || {
+    HttpServer::new(move || {
         App::new()
             .wrap(middleware::Logger::default())
             .service(index)
@@ -57,7 +54,5 @@ async fn main() -> std::io::Result<()> {
     })
     .bind((get_service_ip(), get_service_port()))?
     .run()
-    .await;
-
-    server
+    .await
 }

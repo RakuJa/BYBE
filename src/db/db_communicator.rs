@@ -30,7 +30,7 @@ pub struct RawJsonString {
 impl FromRedisValue for RawJsonString {
     fn from_redis_value(v: &Value) -> RedisResult<Self> {
         let json_str: String = from_redis_value(v)?;
-        serde_json::from_str(&json_str).map_err(|err| redis::RedisError::from(err))
+        serde_json::from_str(&json_str).map_err(redis::RedisError::from)
     }
 }
 
@@ -42,7 +42,7 @@ fn from_raw_vec_to_creature(raw_vec: Vec<RawCreature>, id_vec: Vec<String>) -> V
         .collect()
 }
 
-fn from_raw_to_creature(raw: &RawCreature, identifier: &String) -> Creature {
+fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
     Creature {
         id: identifier.parse::<i32>().unwrap_or(0),
         name: raw.name.clone(),
@@ -98,7 +98,7 @@ pub fn get_creatures_by_ids(ids: Vec<String>) -> Result<Vec<Creature>, RedisErro
 
 pub fn get_creature_by_id(id: &String) -> Result<Creature, RedisError> {
     let mut conn = get_connection()?;
-    let json_string: RawJsonString = conn.json_get(&id, "$")?;
+    let json_string: RawJsonString = conn.json_get(id, "$")?;
     let raw: RawCreature = serde_json::from_str(&json_string.json_string)?;
     Ok(from_raw_to_creature(&raw, id))
 }
@@ -106,8 +106,8 @@ pub fn get_creature_by_id(id: &String) -> Result<Creature, RedisError> {
 pub fn fetch_and_parse_all_keys(pattern: &String) -> Result<Vec<String>, RedisError> {
     let mut conn = get_connection()?;
     let mut parse_pattern = pattern.clone();
-    if !pattern.ends_with("*") {
-        parse_pattern.push_str("*")
+    if !pattern.ends_with('*') {
+        parse_pattern.push('*')
     }
 
     let x: Vec<String> = conn.keys(parse_pattern)?;
