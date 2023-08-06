@@ -5,14 +5,13 @@ extern crate tokio;
 
 mod routes;
 
+use crate::routes::{bestiary, health};
 use actix_web::{get, middleware, App, HttpResponse, HttpServer, Responder};
 use std::env;
 
 mod db;
 mod models;
 mod services;
-use crate::routes::bestiary::{get_bestiary, get_creature, get_keys};
-use crate::routes::health::get_health;
 
 #[get("/")]
 async fn index() -> impl Responder {
@@ -47,10 +46,8 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(middleware::Logger::default())
             .service(index)
-            .service(get_health)
-            .service(get_bestiary)
-            .service(get_creature)
-            .service(get_keys)
+            .configure(health::init_endpoints)
+            .configure(bestiary::init_endpoints)
     })
     .bind((get_service_ip(), get_service_port()))?
     .run()

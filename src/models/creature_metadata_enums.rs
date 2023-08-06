@@ -3,39 +3,62 @@ use strum::Display;
 
 #[derive(Serialize, Deserialize, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug, Default)]
 pub enum AlignmentEnum {
+    #[serde(alias = "ce", alias = "CE")]
     Ce,
+    #[serde(alias = "cn", alias = "CN")]
     Cn,
+    #[serde(alias = "cg", alias = "CG")]
     Cg,
+    #[serde(alias = "ne", alias = "NE")]
     Ne,
+    #[serde(alias = "n")]
     N,
+    #[serde(alias = "ng", alias = "NG")]
     Ng,
+    #[serde(alias = "le", alias = "LE")]
     Le,
+    #[serde(alias = "ln", alias = "LN")]
     Ln,
+    #[serde(alias = "lg", alias = "LG")]
     Lg,
+    #[serde(alias = "no", alias = "NO")]
     No, // no alignment
     #[default]
+    #[serde(alias = "any", alias = "ANY")]
     Any, // can be every alignment
 }
 
 #[derive(Serialize, Deserialize, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug, Default)]
 pub enum RarityEnum {
+    #[serde(alias = "common", alias = "COMMON")]
     Common,
+    #[serde(alias = "uncommon", alias = "UNCOMMON")]
     Uncommon,
+    #[serde(alias = "rare", alias = "RARE")]
     Rare,
+    #[serde(alias = "unique", alias = "UNIQUE")]
     Unique,
     #[default]
+    #[serde(alias = "any", alias = "ANY")]
     Any,
 }
 
 #[derive(Serialize, Deserialize, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug, Default)]
 pub enum SizeEnum {
+    #[serde(alias = "tiny", alias = "TINY")]
     Tiny,
+    #[serde(alias = "small", alias = "SMALL")]
     Small,
+    #[serde(alias = "medium", alias = "MEDIUM")]
     Medium,
+    #[serde(alias = "large", alias = "LARGE")]
     Large,
+    #[serde(alias = "huge", alias = "HUGE")]
     Huge,
+    #[serde(alias = "gargantuan", alias = "GARGANTUAN")]
     Gargantuan,
     #[default]
+    #[serde(alias = "any", alias = "ANY")]
     Any,
 }
 

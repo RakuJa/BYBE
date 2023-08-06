@@ -1,6 +1,6 @@
 use crate::db::db_communicator::is_redis_up;
-use actix_web::get;
 use actix_web::web::Json;
+use actix_web::{get, web};
 use maplit::hashmap;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -9,6 +9,10 @@ use std::collections::HashMap;
 pub struct HealthResponse {
     ready: String,
     dependencies: Vec<HashMap<String, String>>,
+}
+
+pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
+    cfg.service(get_health);
 }
 
 #[get("/health")]

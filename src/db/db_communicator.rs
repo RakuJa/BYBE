@@ -110,8 +110,8 @@ pub fn fetch_and_parse_all_keys(pattern: &String) -> Result<Vec<String>, RedisEr
         parse_pattern.push('*')
     }
 
-    let x: Vec<String> = conn.keys(parse_pattern)?;
-    Ok(remove_prefix(x, pattern))
+    let keys: Vec<String> = conn.keys(parse_pattern)?;
+    Ok(remove_prefix(keys, pattern))
 }
 
 pub fn is_redis_up() -> RedisResult<bool> {

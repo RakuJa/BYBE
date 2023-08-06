@@ -1,6 +1,7 @@
-use crate::db::db_communicator::{fetch_and_parse_all_keys, get_creature_by_id};
-use crate::db::db_proxy::get_paginated_creatures;
+use crate::db::db_communicator::get_creature_by_id;
+use crate::db::db_proxy;
 use crate::models::creature::Creature;
+use crate::models::creature_fields_enum::CreatureField;
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
 use serde::{Deserialize, Serialize};
 
@@ -9,6 +10,46 @@ pub struct BestiaryResponse {
     results: Option<Vec<Creature>>,
     count: usize,
     next: Option<String>,
+}
+
+pub async fn get_creature(id: &String) -> Option<Creature> {
+    match get_creature_by_id(id) {
+        Ok(cr) => hashmap! {String::from("results") => Some(cr)},
+        _ => hashmap! {String::from("results") => None},
+    };
+    match get_creature_by_id(id) {
+        Ok(cr) => Some(cr),
+        _ => None,
+    }
+}
+
+pub fn get_bestiary(
+    sort_field: &SortData,
+    field_filter: &FieldFilters,
+    pagination: &PaginatedRequest,
+) -> BestiaryResponse {
+    convert_result_to_bestiary_response(
+        sort_field,
+        field_filter,
+        pagination,
+        db_proxy::get_paginated_creatures(sort_field, field_filter, pagination),
+    )
+}
+
+pub fn get_families_list() -> Vec<String> {
+    db_proxy::get_keys(CreatureField::Family)
+}
+
+pub fn get_rarities_list() -> Vec<String> {
+    db_proxy::get_keys(CreatureField::Rarity)
+}
+
+pub fn get_size_list() -> Vec<String> {
+    db_proxy::get_keys(CreatureField::Size)
+}
+
+pub fn get_alignment_list() -> Vec<String> {
+    db_proxy::get_keys(CreatureField::Alignment)
 }
 
 fn next_url_calculator(
@@ -93,7 +134,6 @@ fn convert_result_to_bestiary_response(
 ) -> BestiaryResponse {
     match result {
         Some(res) => {
-            println!("{:?}", res);
             let cr: Vec<Creature> = res.1;
             let cr_length = cr.len();
             BestiaryResponse {
@@ -116,35 +156,5 @@ fn convert_result_to_bestiary_response(
             count: 0,
             next: None,
         },
-    }
-}
-pub async fn get_creature(id: &String) -> Option<Creature> {
-    match get_creature_by_id(id) {
-        Ok(cr) => hashmap! {String::from("results") => Some(cr)},
-        _ => hashmap! {String::from("results") => None},
-    };
-    match get_creature_by_id(id) {
-        Ok(cr) => Some(cr),
-        _ => None,
-    }
-}
-
-pub async fn get_bestiary(
-    sort_field: &SortData,
-    field_filter: &FieldFilters,
-    pagination: &PaginatedRequest,
-) -> BestiaryResponse {
-    convert_result_to_bestiary_response(
-        sort_field,
-        field_filter,
-        pagination,
-        get_paginated_creatures(sort_field, field_filter, pagination),
-    )
-}
-
-pub async fn get_keys() -> Vec<String> {
-    match fetch_and_parse_all_keys(&"creature:".to_string()) {
-        Ok(cr) => cr,
-        Err(_err) => vec![],
     }
 }
