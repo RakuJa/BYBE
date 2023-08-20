@@ -16,6 +16,7 @@ pub struct Creature {
     pub is_ranged: bool,
     pub is_spell_caster: bool,
     pub source: Vec<String>,
+    pub archive_link: String,
 }
 
 pub fn check_creature_pass_filters(creature: &Creature, filters: &FieldFilters) -> bool {

@@ -3,7 +3,9 @@ use crate::db::db_proxy;
 use crate::models::creature::Creature;
 use crate::models::creature_fields_enum::CreatureField;
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
+use crate::services::url_calculator::{add_boolean_query, next_url_calculator};
 use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Serialize, Deserialize)]
 pub struct BestiaryResponse {
@@ -12,15 +14,19 @@ pub struct BestiaryResponse {
     next: Option<String>,
 }
 
-pub async fn get_creature(id: &String) -> Option<Creature> {
+pub async fn get_creature(id: &String) -> HashMap<String, Option<Creature>> {
     match get_creature_by_id(id) {
         Ok(cr) => hashmap! {String::from("results") => Some(cr)},
         _ => hashmap! {String::from("results") => None},
-    };
-    match get_creature_by_id(id) {
-        Ok(cr) => Some(cr),
-        _ => None,
     }
+}
+
+pub async fn get_elite_creature(id: &String) -> HashMap<String, Option<Creature>> {
+    hashmap! {String::from("results") => update_creature(id, 1)}
+}
+
+pub async fn get_weak_creature(id: &String) -> HashMap<String, Option<Creature>> {
+    hashmap! {String::from("results") => update_creature(id, -1)}
 }
 
 pub fn get_bestiary(
@@ -52,77 +58,32 @@ pub fn get_alignment_list() -> Vec<String> {
     db_proxy::get_keys(CreatureField::Alignment)
 }
 
-fn next_url_calculator(
-    sort_field: &SortData,
-    field_filters: &FieldFilters,
-    pagination: &PaginatedRequest,
-    next_cursor: u32,
-) -> String {
-    let base_url = "https://bybe.fly.dev/bestiary/list/"; //"0.0.0.0:25566/list/"
-    let sort_query = format!(
-        "?sort_key={}&order_by={}",
-        sort_field.sort_key.unwrap_or_default(),
-        sort_field.order_by.unwrap_or_default()
-    );
-    let filter_query = filter_query_calculator(field_filters);
-
-    let pagination_query = format!("&cursor={}&page_size={}", next_cursor, pagination.page_size);
-    format!(
-        "{}{}{}{}",
-        base_url, sort_query, filter_query, pagination_query
-    )
+fn hp_increase_by_level() -> HashMap<i8, u16> {
+    hashmap! { 1 => 10, 2=> 15, 5=> 20, 20=> 30 }
 }
 
-fn filter_query_calculator(field_filters: &FieldFilters) -> String {
-    let queries: Vec<String> = [
-        field_filters
-            .family_filter
-            .clone()
-            .map(|fam| format!("family_filter={}", fam)),
-        field_filters
-            .name_filter
-            .clone()
-            .map(|name| format!("name_filter={}", name)),
-        field_filters
-            .rarity_filter
-            .clone()
-            .map(|rar| format!("rarity_filter={}", rar)),
-        field_filters
-            .size_filter
-            .clone()
-            .map(|size| format!("size_filter={}", size)),
-        field_filters
-            .alignment_filter
-            .clone()
-            .map(|align| format!("alignment_filter={}", align)),
-        field_filters
-            .min_hp_filter
-            .map(|hp| format!("min_hp_filter={}", hp)),
-        field_filters
-            .max_hp_filter
-            .map(|hp| format!("max_hp_filter={}", hp)),
-        field_filters
-            .min_hp_filter
-            .map(|lvl| format!("min_level_filter={}", lvl)),
-        field_filters
-            .max_hp_filter
-            .map(|lvl| format!("max_level_filter={}", lvl)),
-        field_filters
-            .is_melee_filter
-            .map(|is| format!("is_melee_filter={}", is)),
-        field_filters
-            .is_ranged_filter
-            .map(|is| format!("is_ranged_filter={}", is)),
-        field_filters
-            .is_spell_caster_filter
-            .map(|is| format!("is_spell_caster_filter={}", is)),
-    ]
-    .iter()
-    .filter_map(|opt| opt.clone())
-    .collect();
-    match queries.len() {
-        0 => String::new(),
-        _ => format!("{}{}", "&", queries.join("&")),
+fn update_creature(id: &String, level_delta: i8) -> Option<Creature> {
+    match get_creature_by_id(id) {
+        Ok(mut creature) => {
+            let hp_increase = hp_increase_by_level();
+            let desired_key = hp_increase
+                .keys()
+                .filter(|&&lvl| creature.level >= lvl)
+                .max()
+                .unwrap_or(hp_increase.keys().next().unwrap_or(&0));
+            creature.hp += *hp_increase.get(desired_key).unwrap_or(&0) as i16 * level_delta as i16;
+            creature.hp = creature.hp.max(1);
+
+            creature.level += level_delta;
+
+            creature.archive_link = add_boolean_query(
+                &creature.archive_link,
+                &String::from(if level_delta >= 1 { "Elite" } else { "Weak" }),
+                true,
+            );
+            Some(creature)
+        }
+        Err(_) => None,
     }
 }
 

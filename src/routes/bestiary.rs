@@ -7,6 +7,8 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/bestiary")
             .service(get_bestiary)
+            .service(get_elite_creature)
+            .service(get_weak_creature)
             .service(get_creature)
             .service(get_families_list)
             .service(get_rarities_list)
@@ -18,6 +20,20 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
 pub async fn get_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_creature(&creature_id).await,
+    ))
+}
+
+#[get("/elite")]
+pub async fn get_elite_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
+    Ok(web::Json(
+        bestiary_service::get_elite_creature(&creature_id).await,
+    ))
+}
+
+#[get("/weak")]
+pub async fn get_weak_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
+    Ok(web::Json(
+        bestiary_service::get_weak_creature(&creature_id).await,
     ))
 }
 

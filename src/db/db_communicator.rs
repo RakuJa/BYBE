@@ -1,5 +1,6 @@
 use crate::models::creature::Creature;
 use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
+use crate::services::url_calculator::generate_archive_link;
 use redis::{
     from_redis_value, Commands, Connection, ConnectionLike, FromRedisValue, JsonCommands,
     RedisError, RedisResult, Value,
@@ -43,8 +44,9 @@ fn from_raw_vec_to_creature(raw_vec: Vec<RawCreature>, id_vec: Vec<String>) -> V
 }
 
 fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
+    let id = identifier.parse::<i32>().unwrap_or(0);
     Creature {
-        id: identifier.parse::<i32>().unwrap_or(0),
+        id,
         name: raw.name.clone(),
         hp: raw.hp,
         level: raw.level,
@@ -56,6 +58,7 @@ fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
         is_ranged: raw.is_ranged != 0,
         is_spell_caster: raw.is_spell_caster != 0,
         source: vec![],
+        archive_link: generate_archive_link(id),
     }
 }
 
