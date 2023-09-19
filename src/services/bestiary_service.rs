@@ -6,8 +6,9 @@ use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, S
 use crate::services::url_calculator::{add_boolean_query, next_url_calculator};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct BestiaryResponse {
     results: Option<Vec<Creature>>,
     count: usize,

@@ -3,13 +3,13 @@ use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum
 use redis::RedisError;
 use std::collections::HashMap;
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct DbCache {
     pub lists: SortedVectorCache,
     pub filters: FiltersCache,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct SortedVectorCache {
     pub unordered_creatures: Vec<Creature>,
 
@@ -38,7 +38,7 @@ pub struct SortedVectorCache {
     pub order_by_rarity_descending: Vec<Creature>,
 }
 
-#[derive(Debug, Default)]
+#[derive(Default)]
 pub struct FiltersCache {
     pub filtered_by_id: HashMap<i32, Vec<Creature>>,
     pub filtered_by_level: HashMap<i8, Vec<Creature>>,

@@ -10,6 +10,9 @@ actix-web = "4"
 actix-web-validator = "5.0.1"
 validator = {version="0.16.1", features = ["derive"]}
 
+utoipa = { version = "3", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "3", features = ["actix-web"] }
+
 redis = {version = "0.23.0-beta.1", features = ["json"]}
 
 

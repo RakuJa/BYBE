@@ -1,8 +1,9 @@
 use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
 use crate::models::routers_validator_structs::FieldFilters;
 use serde::{Deserialize, Serialize};
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, ToSchema)]
 pub struct Creature {
     pub id: i32,
     pub name: String,

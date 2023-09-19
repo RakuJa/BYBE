@@ -1,9 +1,10 @@
 use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
 use crate::models::creature_sort_enums::{OrderEnum, SortEnum};
 use serde::{Deserialize, Serialize};
+use utoipa::IntoParams;
 use validator::Validate;
 
-#[derive(Serialize, Deserialize, Validate)]
+#[derive(Serialize, Deserialize, IntoParams, Validate)]
 pub struct FieldFilters {
     pub name_filter: Option<String>,
     pub family_filter: Option<String>,
@@ -19,13 +20,15 @@ pub struct FieldFilters {
     pub is_spell_caster_filter: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, Validate, Copy, Clone)]
+#[derive(Serialize, Deserialize, IntoParams, Validate, Copy, Clone)]
 pub struct SortData {
+    #[param(inline)]
     pub sort_key: Option<SortEnum>,
+    #[param(inline)]
     pub order_by: Option<OrderEnum>,
 }
 
-#[derive(Serialize, Deserialize, Validate)]
+#[derive(Serialize, Deserialize, IntoParams, Validate)]
 pub struct PaginatedRequest {
     pub cursor: u32,
     #[validate(range(min = 1, max = 100))]

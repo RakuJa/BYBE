@@ -1,7 +1,10 @@
 use serde::{Deserialize, Serialize};
 use strum::Display;
+use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug, Default)]
+#[derive(
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug, Default,
+)]
 pub enum AlignmentEnum {
     #[serde(alias = "ce", alias = "CE")]
     Ce,
@@ -28,7 +31,9 @@ pub enum AlignmentEnum {
     Any, // can be every alignment
 }
 
-#[derive(Serialize, Deserialize, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug, Default)]
+#[derive(
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug, Default,
+)]
 pub enum RarityEnum {
     #[serde(alias = "common", alias = "COMMON")]
     Common,
@@ -43,7 +48,9 @@ pub enum RarityEnum {
     Any,
 }
 
-#[derive(Serialize, Deserialize, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug, Default)]
+#[derive(
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Debug, Default,
+)]
 pub enum SizeEnum {
     #[serde(alias = "tiny", alias = "TINY")]
     Tiny,

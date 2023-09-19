@@ -8,11 +8,14 @@ mod routes;
 use crate::routes::{bestiary, health};
 use actix_web::{get, middleware, App, HttpResponse, HttpServer, Responder};
 use std::env;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 mod db;
 mod models;
 mod services;
 
+#[utoipa::path(get, path = "/")]
 #[get("/")]
 async fn index() -> impl Responder {
     HttpResponse::Ok().body("Hello, world!")
@@ -29,6 +32,11 @@ fn get_service_port() -> u16 {
     }
 }
 
+fn init_docs(openapi: &mut utoipa::openapi::OpenApi) {
+    health::init_docs(openapi);
+    bestiary::init_docs(openapi);
+}
+
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
@@ -39,8 +47,18 @@ async fn main() -> std::io::Result<()> {
         service_ip.as_str(),
         service_port.to_string()
     );
-    // async running in the background
+    // async running in the background for db update
     tokio::task::spawn(db::db_proxy::update_cache());
+
+    // Swagger initialization
+    #[derive(OpenApi)]
+    #[openapi(paths(index))]
+    struct ApiDoc;
+
+    let mut openapi = ApiDoc::openapi();
+    init_docs(&mut openapi);
+
+    // Configure endpoints
 
     HttpServer::new(move || {
         App::new()
@@ -48,6 +66,9 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .configure(health::init_endpoints)
             .configure(bestiary::init_endpoints)
+            .service(
+                SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
+            )
     })
     .bind((get_service_ip(), get_service_port()))?
     .run()
