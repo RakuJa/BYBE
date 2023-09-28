@@ -5,7 +5,7 @@ extern crate tokio;
 
 mod routes;
 
-use crate::routes::{bestiary, health};
+use crate::routes::{bestiary, encounter, health};
 use actix_web::{get, middleware, App, HttpResponse, HttpServer, Responder};
 use std::env;
 use utoipa::OpenApi;
@@ -35,6 +35,7 @@ fn get_service_port() -> u16 {
 fn init_docs(openapi: &mut utoipa::openapi::OpenApi) {
     health::init_docs(openapi);
     bestiary::init_docs(openapi);
+    encounter::init_docs(openapi);
 }
 
 #[actix_web::main]
@@ -66,6 +67,7 @@ async fn main() -> std::io::Result<()> {
             .service(index)
             .configure(health::init_endpoints)
             .configure(bestiary::init_endpoints)
+            .configure(encounter::init_endpoints)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
