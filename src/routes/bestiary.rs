@@ -136,17 +136,17 @@ pub async fn get_alignment_list() -> Result<impl Responder> {
 
 #[utoipa::path(
     get,
-    path = "/bestiary/creature_id={creature_id}",
+    path = "/bestiary/{creature_id}",
     tag = "bestiary",
     params(
-
+        ("creature_id" = String, Path, description = "id of the creature to fetch")
     ),
     responses(
         (status=200, description = "Successful Response", body = Creature),
         (status=400, description = "Bad request.")
     ),
 )]
-#[get("/creature_id={creature_id}")]
+#[get("/{creature_id}")]
 pub async fn get_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_creature(&creature_id).await,
@@ -155,17 +155,17 @@ pub async fn get_creature(creature_id: web::Path<String>) -> Result<impl Respond
 
 #[utoipa::path(
     get,
-    path = "/bestiary/elite",
+    path = "/bestiary/elite/{creature_id}",
     tag = "bestiary",
     params(
-
+        ("creature_id" = String, Path, description = "id of the creature to fetch")
     ),
     responses(
         (status=200, description = "Successful Response", body = Creature),
         (status=400, description = "Bad request.")
     ),
 )]
-#[get("/elite")]
+#[get("/elite/{creature_id}")]
 pub async fn get_elite_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_elite_creature(&creature_id).await,
@@ -174,17 +174,17 @@ pub async fn get_elite_creature(creature_id: web::Path<String>) -> Result<impl R
 
 #[utoipa::path(
     get,
-    path = "/bestiary/weak",
+    path = "/bestiary/weak/{creature_id}",
     tag = "bestiary",
     params(
-
+        ("creature_id" = String, Path, description = "id of the creature to fetch")
     ),
     responses(
         (status=200, description = "Successful Response", body = Creature),
         (status=400, description = "Bad request.")
     ),
 )]
-#[get("/weak")]
+#[get("/weak/{creature_id}")]
 pub async fn get_weak_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_weak_creature(&creature_id).await,
