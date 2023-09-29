@@ -19,10 +19,9 @@ pub struct EncounterParams {
 
 #[derive(Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Clone)]
 pub enum EncounterDifficultyEnum {
-    #[default]
-    Random,
     Trivial,
     Low,
+    #[default]
     Moderate,
     Severe,
     Extreme,

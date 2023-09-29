@@ -6,7 +6,7 @@ use utoipa::OpenApi;
 
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(
-        web::scope("/bestiary").service(get_encounter_info), //.service(get_generated_random_encounter),
+        web::scope("/encounter").service(get_encounter_info), //.service(get_generated_random_encounter),
     );
 }
 
@@ -28,7 +28,8 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     request_body(
         content = EncounterParams,
         description = "Party and enemy levels.\
-         Could send one value for each, representing the average"
+         Could send one value for each, representing the average",
+        content_type = "application/json",
     ),
     responses(
         (status=200, description = "Successful Response", body = EncounterInfoResponse),
@@ -37,7 +38,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
 )]
 #[post("/info")]
 pub async fn get_encounter_info(
-    web::Form(form): web::Form<EncounterParams>,
+    web::Json(form): web::Json<EncounterParams>,
 ) -> Result<impl Responder> {
     Ok(web::Json(encounter_service::get_encounter_info(form)))
 }

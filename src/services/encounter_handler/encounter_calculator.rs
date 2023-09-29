@@ -45,7 +45,7 @@ pub fn calculate_encounter_scaling_difficulty(
     for curr_diff in EncounterDifficultyEnum::iter() {
         diff_scaled_exp_map.insert(
             curr_diff.clone(),
-            scale_difficulty_exp(&curr_diff, party_size as u8),
+            scale_difficulty_exp(&curr_diff, party_size as i16),
         );
     }
     diff_scaled_exp_map
@@ -99,6 +99,6 @@ fn convert_lvl_diff_into_exp(lvl_diff: f32, party_size: usize) -> i16 {
             0i16
         } else {
             // To avoid the party of 50 level 1 pg destroying a lvl 20
-            scale_difficulty_exp(&EncounterDifficultyEnum::Impossible, party_size as u8)
+            scale_difficulty_exp(&EncounterDifficultyEnum::Impossible, party_size as i16)
         })
 }
