@@ -7,6 +7,7 @@ edition = "2021"
 
 [dependencies]
 actix-web = "4"
+actix-cors = "0.6.4"
 actix-web-validator = "5.0.1"
 validator = {version="0.16.1", features = ["derive"]}
 

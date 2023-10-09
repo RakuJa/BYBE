@@ -6,6 +6,7 @@ extern crate tokio;
 mod routes;
 
 use crate::routes::{bestiary, encounter, health};
+use actix_cors::Cors;
 use actix_web::{get, middleware, App, HttpResponse, HttpServer, Responder};
 use std::env;
 use utoipa::OpenApi;
@@ -60,9 +61,9 @@ async fn main() -> std::io::Result<()> {
     init_docs(&mut openapi);
 
     // Configure endpoints
-
     HttpServer::new(move || {
         App::new()
+            .wrap(Cors::default().allow_any_origin().allow_any_header())
             .wrap(middleware::Logger::default())
             .service(index)
             .configure(health::init_endpoints)

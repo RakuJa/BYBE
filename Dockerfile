@@ -11,7 +11,7 @@ COPY . .
 RUN cargo build --release
 
 # Stage 2: Create a minimal runtime image
-FROM debian:buster-slim
+FROM debian:bookworm-slim
 
 # Set the working directory in the container
 WORKDIR /app
