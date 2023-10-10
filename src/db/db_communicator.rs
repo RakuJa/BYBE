@@ -113,7 +113,7 @@ pub fn fetch_and_parse_all_keys(pattern: &String) -> Result<Vec<String>, RedisEr
         parse_pattern.push('*')
     }
 
-    let keys: Vec<String> = conn.keys(parse_pattern)?;
+    let keys: Vec<String> = conn.scan_match(parse_pattern)?.collect();
     Ok(remove_prefix(keys, pattern))
 }
 

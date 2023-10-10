@@ -28,7 +28,7 @@ pub async fn update_cache() {
             }
             Err(_) => log::error!("Error occurred while updating db"),
         }
-        sleep(Duration::from_secs(60));
+        sleep(Duration::from_secs(3600));
     }
 }
 
