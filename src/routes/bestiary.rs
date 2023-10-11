@@ -136,7 +136,7 @@ pub async fn get_alignment_list() -> Result<impl Responder> {
 
 #[utoipa::path(
     get,
-    path = "/bestiary/{creature_id}",
+    path = "/bestiary/base/{creature_id}",
     tag = "bestiary",
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch")
@@ -146,7 +146,7 @@ pub async fn get_alignment_list() -> Result<impl Responder> {
         (status=400, description = "Bad request.")
     ),
 )]
-#[get("/{creature_id}")]
+#[get("/base/{creature_id}")]
 pub async fn get_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_creature(&creature_id).await,
