@@ -41,8 +41,8 @@ pub struct RandomEncounterData {
 #[derive(Serialize, Deserialize, IntoParams, Validate)]
 pub struct PaginatedRequest {
     pub cursor: u32,
-    #[validate(range(min = 1, max = 100))]
-    pub page_size: u8,
+    #[validate(range(min = -1, max = 100))]
+    pub page_size: i16,
 }
 
 impl Default for PaginatedRequest {

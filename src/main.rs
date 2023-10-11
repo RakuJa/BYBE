@@ -63,7 +63,7 @@ async fn main() -> std::io::Result<()> {
     // Configure endpoints
     HttpServer::new(move || {
         App::new()
-            .wrap(Cors::default().allow_any_origin().allow_any_header())
+            .wrap(Cors::permissive())
             .wrap(middleware::Logger::default())
             .service(index)
             .configure(health::init_endpoints)

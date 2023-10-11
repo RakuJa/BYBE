@@ -44,7 +44,12 @@ pub fn get_paginated_creatures(
                 .filter(|x| check_creature_pass_filters(x, filters))
                 .collect();
 
-            let next_cursor = pagination.cursor + pagination.page_size as u32;
+            let next_cursor = if pagination.page_size == -1 {
+                filtered_list.len() as u32
+            } else {
+                pagination.cursor + pagination.page_size as u32
+            };
+
             let curr_slice: Vec<Creature> = filtered_list
                 .iter()
                 .skip(pagination.cursor as usize)
