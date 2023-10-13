@@ -4,6 +4,7 @@ use crate::models::creature::Creature;
 use crate::models::creature_fields_enum::CreatureField;
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
 use crate::services::url_calculator::{add_boolean_query, next_url_calculator};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use utoipa::ToSchema;
@@ -92,10 +93,10 @@ fn convert_result_to_bestiary_response(
     sort_field: &SortData,
     field_filters: &FieldFilters,
     pagination: &PaginatedRequest,
-    result: Option<(u32, Vec<Creature>)>,
+    result: Result<(u32, Vec<Creature>)>,
 ) -> BestiaryResponse {
     match result {
-        Some(res) => {
+        Ok(res) => {
             let cr: Vec<Creature> = res.1;
             let cr_length = cr.len();
             BestiaryResponse {
@@ -113,7 +114,7 @@ fn convert_result_to_bestiary_response(
                 },
             }
         }
-        None => BestiaryResponse {
+        Err(_) => BestiaryResponse {
             results: None,
             count: 0,
             next: None,
