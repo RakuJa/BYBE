@@ -10,9 +10,9 @@ use anyhow::{ensure, Result};
 use counter::Counter;
 use log::warn;
 use rand::seq::SliceRandom;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
-use rand::Rng;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
