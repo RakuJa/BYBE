@@ -28,10 +28,12 @@ pub fn calculate_encounter_exp(party_levels: &[i8], enemy_levels: &[i8]) -> i16 
         .iter()
         .map(|&curr_enemy_lvl| {
             let enemy_lvl = curr_enemy_lvl as f32;
-            convert_lvl_diff_into_exp(
-                (enemy_lvl - party_avg).abs() * enemy_lvl.signum(),
-                party_levels.len(),
-            )
+            let lvl_diff = if enemy_lvl < 0f32 && enemy_lvl < party_avg {
+                (party_avg - enemy_lvl).abs()
+            } else {
+                enemy_lvl - party_avg
+            };
+            convert_lvl_diff_into_exp(lvl_diff, party_levels.len())
         })
         .sum();
     exp_sum
