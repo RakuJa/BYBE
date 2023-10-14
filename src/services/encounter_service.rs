@@ -12,6 +12,7 @@ use log::warn;
 use rand::seq::SliceRandom;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
+use rand::Rng;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -34,8 +35,7 @@ pub fn get_encounter_info(enc_params: EncounterParams) -> EncounterInfoResponse 
         &enc_params.enemy_levels,
     );
 
-    let scaled_exp =
-        encounter_calculator::calculate_encounter_scaling_difficulty(enc_params.party_levels.len());
+    let scaled_exp = calculate_encounter_scaling_difficulty(enc_params.party_levels.len());
 
     let enc_diff = encounter_calculator::calculate_encounter_difficulty(enc_exp, &scaled_exp);
     EncounterInfoResponse {
@@ -53,7 +53,7 @@ pub fn generate_random_encounter(
     match encounter_data {
         Err(error) => {
             warn!(
-                "Could not generate a random encounter, failed for: {}",
+                "Could not generate a random encounter, reason: {}",
                 error.to_string()
             );
             RandomEncounterGeneratorResponse {
@@ -77,6 +77,8 @@ fn calculate_random_encounter(
 ) -> Result<RandomEncounterGeneratorResponse> {
     let enc_diff = enc_data.encounter_difficulty.unwrap_or(rand::random());
 
+    println!("Building encounter with difficulty: {:?}", enc_diff.clone());
+
     let (exp, lvl_combinations) =
         encounter_calculator::calculate_lvl_combination_for_encounter(&enc_diff, &party_levels);
     let unique_levels = HashSet::from_iter(
@@ -98,6 +100,10 @@ fn calculate_random_encounter(
         unique_levels,
     );
     let filtered_creatures = fetch_creatures_passing_all_filters(filter_map)?;
+    ensure!(
+        !filtered_creatures.is_empty(),
+        "No creatures have been fetched"
+    );
     let chosen_encounter =
         choose_random_creatures_combination(filtered_creatures, lvl_combinations)?;
 
@@ -116,7 +122,7 @@ fn calculate_random_encounter(
 
 fn choose_random_creatures_combination(
     filtered_creatures: HashSet<Creature>,
-    lvl_combinations: Vec<Vec<i16>>,
+    lvl_combinations: HashSet<Vec<i16>>,
 ) -> Result<Vec<Creature>> {
     // Chooses an id combination, could be (1, 1, 2). Admits duplicates
     let creatures_ordered_by_level = order_list_by_level(filtered_creatures);
@@ -129,19 +135,20 @@ fn choose_random_creatures_combination(
     //.map(|curr_creature| curr_creature.level)
     //.collect();
     let existing_levels = filter_non_existing_levels(list_of_levels, lvl_combinations);
-    let random_combo = existing_levels.choose(&mut rand::thread_rng());
+    let tmp = Vec::from_iter(existing_levels.iter());
+    let random_combo = tmp[rand::thread_rng().gen_range(0..tmp.len())];
+    // let random_combo = tmp.choose(&mut rand::thread_rng());
     // Now, having chosen the combo, we may have only x filtered creature with level y but
     // x+1 instances of level y. We need to create a vector with duplicates to fill it up to
     // the number of instances of the required level
-    ensure!(!random_combo.is_none(), "No valid combo found");
-    let random_combo = random_combo.unwrap();
+    ensure!(!random_combo.is_empty(), "No valid combo found");
     let creature_count = random_combo.iter().collect::<Counter<_>>();
     let mut result_vec: Vec<Creature> = Vec::new();
     for (level, required_number_of_creatures_with_level) in creature_count {
         // Fill if there are not enough creatures
         let curr_lvl_values = creatures_ordered_by_level.get(level).unwrap();
         let filled_vec_of_creatures = fill_vector_if_it_does_not_contain_enough_elements(
-            &curr_lvl_values,
+            curr_lvl_values,
             required_number_of_creatures_with_level,
         )?;
         // Now, we choose. This is in case that there are more creatures
@@ -178,14 +185,14 @@ fn fill_vector_if_it_does_not_contain_enough_elements(
 
 fn filter_non_existing_levels(
     creatures_levels: Vec<i16>,
-    level_combinations: Vec<Vec<i16>>,
-) -> Vec<Vec<i16>> {
+    level_combinations: HashSet<Vec<i16>>,
+) -> HashSet<Vec<i16>> {
     // Removes the vec with levels that are not found in any creature
-    let mut result_vec = Vec::new();
+    let mut result_vec = HashSet::new();
     for curr_combo in level_combinations {
-        if !curr_combo.iter().any(|lvl| !creatures_levels.contains(lvl)) {
+        if !curr_combo.is_empty() && curr_combo.iter().all(|lvl| creatures_levels.contains(lvl)) {
             // Check if there is one of the curr_combo level that is not found in the creature.level field
-            result_vec.push(curr_combo)
+            result_vec.insert(curr_combo);
         }
     }
     result_vec

@@ -23,6 +23,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             EncounterInfoResponse,
             EncounterParams,
             EncounterDifficultyEnum,
+            Party,
             RandomEncounterGeneratorResponse,
         ))
     )]
@@ -58,16 +59,15 @@ pub async fn get_encounter_info(
     path = "/encounter/generator",
     tag = "encounter",
     request_body(
-        content = EncounterParams,
-        description = "Party and enemy levels.\
-         Could send one value for each, representing the average",
+        content = Party,
+        description = "Party levels as a vector of integers",
         content_type = "application/json",
     ),
     params(
         RandomEncounterData
     ),
     responses(
-        (status=200, description = "Successful Response", body = [String]),
+        (status=200, description = "Successful Response", body = RandomEncounterGeneratorResponse),
         (status=400, description = "Bad request.")
     ),
 )]

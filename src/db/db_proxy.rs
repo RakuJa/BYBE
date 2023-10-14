@@ -58,16 +58,6 @@ pub fn get_paginated_creatures(
     Ok((curr_slice.len() as u32, curr_slice))
 }
 
-pub fn fetch_creature_ids_passing_all_filters(
-    key_value_filters: HashMap<CreatureFilter, HashSet<String>>,
-) -> Result<HashSet<i32>> {
-    let x: HashSet<i32> = fetch_creatures_passing_all_filters(key_value_filters)?
-        .iter()
-        .map(|creature| creature.id)
-        .collect();
-    Ok(x)
-}
-
 pub fn fetch_creatures_passing_all_filters(
     key_value_filters: HashMap<CreatureFilter, HashSet<String>>,
 ) -> Result<HashSet<Creature>> {
@@ -87,11 +77,11 @@ pub fn fetch_creatures_passing_all_filters(
 }
 
 fn fetch_creatures_passing_single_filter(
-    creature_list: &Vec<Creature>,
+    creature_list: &[Creature],
     field_in_which_to_filter: &CreatureFilter,
     filter_vec: &HashSet<String>,
 ) -> HashSet<Creature> {
-    let cr_iterator = creature_list.iter().map(|cr| cr.clone());
+    let cr_iterator = creature_list.iter().cloned();
     match field_in_which_to_filter {
         CreatureFilter::Id => cr_iterator
             .filter(|creature| filter_vec.contains(creature.id.to_string().as_str()))

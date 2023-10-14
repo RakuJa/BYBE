@@ -2,10 +2,10 @@ use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
-use utoipa::{IntoParams, ToSchema};
+use utoipa::ToSchema;
 use validator::Validate;
 
-#[derive(Serialize, Deserialize, IntoParams, Validate)]
+#[derive(Serialize, Deserialize, ToSchema, Validate)]
 pub struct Party {
     #[validate(length(min = 1))]
     pub party_levels: Vec<i16>,
@@ -19,7 +19,9 @@ pub struct EncounterParams {
     pub enemy_levels: Vec<i8>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Clone)]
+#[derive(
+    Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Clone, Debug,
+)]
 pub enum EncounterDifficultyEnum {
     Trivial,
     Low,

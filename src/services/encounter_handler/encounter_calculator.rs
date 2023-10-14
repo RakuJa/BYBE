@@ -1,7 +1,7 @@
 use crate::models::encounter_structs::EncounterDifficultyEnum;
 use crate::services::encounter_handler::difficulty_utilities::scale_difficulty_exp;
 use lazy_static::lazy_static;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 // Used to explicitly tell about the iter trait
 use strum::IntoEnumIterator;
 
@@ -93,9 +93,9 @@ pub fn calculate_encounter_difficulty(
 pub fn calculate_lvl_combination_for_encounter(
     difficulty: &EncounterDifficultyEnum,
     party_levels: &Vec<i16>,
-) -> (i16, Vec<Vec<i16>>) {
+) -> (i16, HashSet<Vec<i16>>) {
     // Given an encounter difficulty it calculates all possible encounter permutations
-    let exp = scale_difficulty_exp(&difficulty, party_levels.len() as i16);
+    let exp = scale_difficulty_exp(difficulty, party_levels.len() as i16);
     let party_avg = party_levels.iter().sum::<i16>() as f32 / party_levels.len() as f32;
     (
         exp,
@@ -116,7 +116,7 @@ fn convert_lvl_diff_into_exp(lvl_diff: f32, party_size: usize) -> i16 {
         })
 }
 
-fn calculate_lvl_combinations_for_given_exp(experience: i16, party_lvl: f32) -> Vec<Vec<i16>> {
+fn calculate_lvl_combinations_for_given_exp(experience: i16, party_lvl: f32) -> HashSet<Vec<i16>> {
     // Given an encounter experience it calculates all possible encounter permutations
     let exp_list = LVL_AND_EXP_MAP.values().cloned().collect::<Vec<i16>>();
 
@@ -127,12 +127,13 @@ fn calculate_lvl_combinations_for_given_exp(experience: i16, party_lvl: f32) -> 
                 .iter()
                 .map(|curr_exp| convert_exp_to_lvl_diff(*curr_exp))
                 .filter(|a| a.is_some())
-                .map(|curr_exp| party_lvl as i16 + curr_exp.unwrap())
-                .filter(|lvl_combo| *lvl_combo >= -1)
+                .map(|lvl_diff| party_lvl as i16 + lvl_diff.unwrap())
+                .filter(|lvl_combo| *lvl_combo >= -1) // there are no creature with level<-1
                 .collect::<Vec<i16>>()
             // I'mma gonna puke mamma mia
         })
-        .collect::<Vec<Vec<i16>>>()
+        .filter(|x| !x.is_empty())
+        .collect::<HashSet<Vec<i16>>>()
 }
 
 fn convert_exp_to_lvl_diff(experience: i16) -> Option<i16> {
@@ -163,10 +164,11 @@ fn find_combinations(candidates: Vec<i16>, target: i16) -> Vec<Vec<i16>> {
                 backtrack(candidates, target - candidates[i], i, path, result);
                 path.pop();
             }
-        } else {
-            // If target is negative or 0, no need to continue as
+        }
+
+        if target < 1 {
+            // If target is negative or 0 no need to continue as
             // adding more numbers will exceed the target
-            return;
         }
     }
 
