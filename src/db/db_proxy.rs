@@ -47,11 +47,10 @@ pub fn get_paginated_creatures(
         .filter(|x| check_creature_pass_filters(x, filters))
         .collect();
 
-    let next_cursor = pagination.cursor + pagination.page_size as u32;
     let curr_slice: Vec<Creature> = filtered_list
         .iter()
         .skip(pagination.cursor as usize)
-        .take(next_cursor as usize)
+        .take(pagination.page_size as usize)
         .cloned()
         .collect();
 
