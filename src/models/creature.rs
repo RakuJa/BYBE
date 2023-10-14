@@ -3,7 +3,7 @@ use crate::models::routers_validator_structs::FieldFilters;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct Creature {
     pub id: i32,
     pub name: String,

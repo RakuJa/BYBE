@@ -1,13 +1,16 @@
 use crate::db::db_communicator;
 use crate::models::creature::{check_creature_pass_filters, Creature};
 use redis::RedisError;
+use std::collections::{HashMap, HashSet};
 use std::thread::sleep;
 use std::time::Duration;
 
 use crate::db::db_cache::{from_db_data_to_filter_cache, from_db_data_to_sorted_vectors, DbCache};
 use crate::models::creature_fields_enum::CreatureField;
+use crate::models::creature_filter_enum::CreatureFilter;
 use crate::models::creature_sort_enums::{OrderEnum, SortEnum};
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
+use anyhow::{ensure, Result};
 use lazy_static::lazy_static;
 
 lazy_static! {
@@ -36,30 +39,79 @@ pub fn get_paginated_creatures(
     sort: &SortData,
     filters: &FieldFilters,
     pagination: &PaginatedRequest,
-) -> Option<(u32, Vec<Creature>)> {
-    match get_list(sort.sort_key, sort.order_by) {
-        Some(list) => {
-            let filtered_list: Vec<Creature> = list
-                .into_iter()
-                .filter(|x| check_creature_pass_filters(x, filters))
-                .collect();
+) -> Result<(u32, Vec<Creature>)> {
+    let list = get_list(sort.sort_key, sort.order_by)?;
 
-            let next_cursor = if pagination.page_size == -1 {
-                filtered_list.len() as u32
-            } else {
-                pagination.cursor + pagination.page_size as u32
-            };
+    let filtered_list: Vec<Creature> = list
+        .into_iter()
+        .filter(|x| check_creature_pass_filters(x, filters))
+        .collect();
 
-            let curr_slice: Vec<Creature> = filtered_list
-                .iter()
-                .skip(pagination.cursor as usize)
-                .take(next_cursor as usize)
-                .cloned()
-                .collect();
+    let next_cursor = pagination.cursor + pagination.page_size as u32;
+    let curr_slice: Vec<Creature> = filtered_list
+        .iter()
+        .skip(pagination.cursor as usize)
+        .take(next_cursor as usize)
+        .cloned()
+        .collect();
 
-            Some((curr_slice.len() as u32, curr_slice))
-        }
-        None => None,
+    Ok((curr_slice.len() as u32, curr_slice))
+}
+
+pub fn fetch_creatures_passing_all_filters(
+    key_value_filters: HashMap<CreatureFilter, HashSet<String>>,
+) -> Result<HashSet<Creature>> {
+    let creature_list = get_list(None, None)?;
+    let mut x: HashSet<Creature> = HashSet::new();
+    key_value_filters
+        .iter()
+        .map(|(curr_field_filter, curr_value_filter)| {
+            fetch_creatures_passing_single_filter(
+                &creature_list,
+                curr_field_filter,
+                curr_value_filter,
+            )
+        })
+        .for_each(|curr| x.extend(curr));
+    Ok(x)
+}
+
+fn fetch_creatures_passing_single_filter(
+    creature_list: &[Creature],
+    field_in_which_to_filter: &CreatureFilter,
+    filter_vec: &HashSet<String>,
+) -> HashSet<Creature> {
+    let cr_iterator = creature_list.iter().cloned();
+    match field_in_which_to_filter {
+        CreatureFilter::Id => cr_iterator
+            .filter(|creature| filter_vec.contains(creature.id.to_string().as_str()))
+            .collect(),
+        CreatureFilter::Level => cr_iterator
+            .filter(|creature| filter_vec.contains(creature.level.to_string().as_str()))
+            .collect(),
+        CreatureFilter::Family => cr_iterator
+            .filter(|creature| {
+                filter_vec.contains(creature.clone().family.unwrap_or_default().as_str())
+            })
+            .collect(),
+        CreatureFilter::Alignment => cr_iterator
+            .filter(|creature| filter_vec.contains(creature.alignment.to_string().as_str()))
+            .collect(),
+        CreatureFilter::Size => cr_iterator
+            .filter(|creature| filter_vec.contains(creature.size.to_string().as_str()))
+            .collect(),
+        CreatureFilter::Rarity => cr_iterator
+            .filter(|creature| filter_vec.contains(creature.rarity.to_string().as_str()))
+            .collect(),
+        CreatureFilter::Melee => cr_iterator
+            .filter(|creature| filter_vec.contains(creature.is_melee.to_string().as_str()))
+            .collect(),
+        CreatureFilter::Ranged => cr_iterator
+            .filter(|creature| filter_vec.contains(creature.is_ranged.to_string().as_str()))
+            .collect(),
+        CreatureFilter::SpellCaster => cr_iterator
+            .filter(|creature| filter_vec.contains(creature.is_spell_caster.to_string().as_str()))
+            .collect(),
     }
 }
 
@@ -134,66 +186,68 @@ fn fetch_data_from_database() -> Result<Vec<Creature>, RedisError> {
     )?)
 }
 
-fn get_list(sort_field: Option<SortEnum>, order_by: Option<OrderEnum>) -> Option<Vec<Creature>> {
-    if let Ok(cache) = CACHE.lock() {
-        match (sort_field.unwrap_or_default(), order_by.unwrap_or_default()) {
-            (SortEnum::Id, OrderEnum::Ascending) => {
-                Some(cache.lists.order_by_id_ascending.to_owned())
-            }
-            (SortEnum::Id, OrderEnum::Descending) => {
-                Some(cache.lists.order_by_id_descending.to_owned())
-            }
+fn get_list(sort_field: Option<SortEnum>, order_by: Option<OrderEnum>) -> Result<Vec<Creature>> {
+    let x = CACHE.lock();
+    ensure!(x.is_ok(), "Could not get lock to fetch creatures");
+    let cache = x.unwrap();
+    match (sort_field.unwrap_or_default(), order_by.unwrap_or_default()) {
+        (SortEnum::Id, OrderEnum::Ascending) => Ok(cache.lists.order_by_id_ascending.to_owned()),
+        (SortEnum::Id, OrderEnum::Descending) => Ok(cache.lists.order_by_id_descending.to_owned()),
 
-            (SortEnum::Hp, OrderEnum::Ascending) => {
-                Some(cache.lists.order_by_hp_ascending.to_owned())
-            }
-            (SortEnum::Hp, OrderEnum::Descending) => {
-                Some(cache.lists.order_by_hp_descending.to_owned())
-            }
+        (SortEnum::Hp, OrderEnum::Ascending) => Ok(cache.lists.order_by_hp_ascending.to_owned()),
+        (SortEnum::Hp, OrderEnum::Descending) => Ok(cache.lists.order_by_hp_descending.to_owned()),
 
-            (SortEnum::Family, OrderEnum::Ascending) => {
-                Some(cache.lists.order_by_family_ascending.to_owned())
-            }
-            (SortEnum::Family, OrderEnum::Descending) => {
-                Some(cache.lists.order_by_family_descending.to_owned())
-            }
-
-            (SortEnum::Alignment, OrderEnum::Ascending) => {
-                Some(cache.lists.order_by_alignment_ascending.to_owned())
-            }
-            (SortEnum::Alignment, OrderEnum::Descending) => {
-                Some(cache.lists.order_by_alignment_descending.to_owned())
-            }
-
-            (SortEnum::Level, OrderEnum::Ascending) => {
-                Some(cache.lists.order_by_level_ascending.to_owned())
-            }
-            (SortEnum::Level, OrderEnum::Descending) => {
-                Some(cache.lists.order_by_level_descending.to_owned())
-            }
-
-            (SortEnum::Name, OrderEnum::Ascending) => {
-                Some(cache.lists.order_by_name_ascending.to_owned())
-            }
-            (SortEnum::Name, OrderEnum::Descending) => {
-                Some(cache.lists.order_by_name_descending.to_owned())
-            }
-
-            (SortEnum::Rarity, OrderEnum::Ascending) => {
-                Some(cache.lists.order_by_rarity_ascending.to_owned())
-            }
-            (SortEnum::Rarity, OrderEnum::Descending) => {
-                Some(cache.lists.order_by_rarity_descending.to_owned())
-            }
-
-            (SortEnum::Size, OrderEnum::Ascending) => {
-                Some(cache.lists.order_by_size_ascending.to_owned())
-            }
-            (SortEnum::Size, OrderEnum::Descending) => {
-                Some(cache.lists.order_by_rarity_descending.to_owned())
-            }
+        (SortEnum::Family, OrderEnum::Ascending) => {
+            Ok(cache.lists.order_by_family_ascending.to_owned())
         }
-    } else {
-        None
+        (SortEnum::Family, OrderEnum::Descending) => {
+            Ok(cache.lists.order_by_family_descending.to_owned())
+        }
+
+        (SortEnum::Alignment, OrderEnum::Ascending) => {
+            Ok(cache.lists.order_by_alignment_ascending.to_owned())
+        }
+        (SortEnum::Alignment, OrderEnum::Descending) => {
+            Ok(cache.lists.order_by_alignment_descending.to_owned())
+        }
+
+        (SortEnum::Level, OrderEnum::Ascending) => {
+            Ok(cache.lists.order_by_level_ascending.to_owned())
+        }
+        (SortEnum::Level, OrderEnum::Descending) => {
+            Ok(cache.lists.order_by_level_descending.to_owned())
+        }
+
+        (SortEnum::Name, OrderEnum::Ascending) => {
+            Ok(cache.lists.order_by_name_ascending.to_owned())
+        }
+        (SortEnum::Name, OrderEnum::Descending) => {
+            Ok(cache.lists.order_by_name_descending.to_owned())
+        }
+
+        (SortEnum::Rarity, OrderEnum::Ascending) => {
+            Ok(cache.lists.order_by_rarity_ascending.to_owned())
+        }
+        (SortEnum::Rarity, OrderEnum::Descending) => {
+            Ok(cache.lists.order_by_rarity_descending.to_owned())
+        }
+
+        (SortEnum::Size, OrderEnum::Ascending) => {
+            Ok(cache.lists.order_by_size_ascending.to_owned())
+        }
+        (SortEnum::Size, OrderEnum::Descending) => {
+            Ok(cache.lists.order_by_rarity_descending.to_owned())
+        }
     }
+}
+
+pub fn order_list_by_level(creature_list: HashSet<Creature>) -> HashMap<i16, Vec<Creature>> {
+    let mut ordered_by_level = HashMap::new();
+    creature_list.iter().for_each(|creature| {
+        ordered_by_level
+            .entry(creature.level as i16)
+            .or_insert_with(Vec::new)
+            .push(creature.clone());
+    });
+    ordered_by_level
 }

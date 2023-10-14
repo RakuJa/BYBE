@@ -1,7 +1,7 @@
 use crate::models::encounter_structs::EncounterDifficultyEnum;
 use crate::services::encounter_handler::difficulty_utilities::scale_difficulty_exp;
 use lazy_static::lazy_static;
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 // Used to explicitly tell about the iter trait
 use strum::IntoEnumIterator;
 
@@ -90,6 +90,19 @@ pub fn calculate_encounter_difficulty(
     EncounterDifficultyEnum::Impossible
 }
 
+pub fn calculate_lvl_combination_for_encounter(
+    difficulty: &EncounterDifficultyEnum,
+    party_levels: &Vec<i16>,
+) -> (i16, HashSet<Vec<i16>>) {
+    // Given an encounter difficulty it calculates all possible encounter permutations
+    let exp = scale_difficulty_exp(difficulty, party_levels.len() as i16);
+    let party_avg = party_levels.iter().sum::<i16>() as f32 / party_levels.len() as f32;
+    (
+        exp,
+        calculate_lvl_combinations_for_given_exp(exp, party_avg.floor()),
+    )
+}
+
 fn convert_lvl_diff_into_exp(lvl_diff: f32, party_size: usize) -> i16 {
     let lvl_diff_rounded_down = lvl_diff.floor() as i16;
     LVL_AND_EXP_MAP
@@ -101,4 +114,68 @@ fn convert_lvl_diff_into_exp(lvl_diff: f32, party_size: usize) -> i16 {
             // To avoid the party of 50 level 1 pg destroying a lvl 20
             scale_difficulty_exp(&EncounterDifficultyEnum::Impossible, party_size as i16)
         })
+}
+
+fn calculate_lvl_combinations_for_given_exp(experience: i16, party_lvl: f32) -> HashSet<Vec<i16>> {
+    // Given an encounter experience it calculates all possible encounter permutations
+    let exp_list = LVL_AND_EXP_MAP.values().cloned().collect::<Vec<i16>>();
+
+    find_combinations(exp_list, experience)
+        .iter()
+        .map(|curr_combination| {
+            curr_combination
+                .iter()
+                .map(|curr_exp| convert_exp_to_lvl_diff(*curr_exp))
+                .filter(|a| a.is_some())
+                .map(|lvl_diff| party_lvl as i16 + lvl_diff.unwrap())
+                .filter(|lvl_combo| *lvl_combo >= -1) // there are no creature with level<-1
+                .collect::<Vec<i16>>()
+            // I'mma gonna puke mamma mia
+        })
+        .filter(|x| !x.is_empty())
+        .collect::<HashSet<Vec<i16>>>()
+}
+
+fn convert_exp_to_lvl_diff(experience: i16) -> Option<i16> {
+    LVL_AND_EXP_MAP
+        .iter()
+        .find_map(|(key, &exp)| if exp == experience { Some(*key) } else { None })
+}
+
+fn find_combinations(candidates: Vec<i16>, target: i16) -> Vec<Vec<i16>> {
+    // Find all the combination of numbers in the candidates vector
+    // that sums up to the target. I.e coin changing problem
+    fn backtrack(
+        candidates: &Vec<i16>,
+        target: i16,
+        start: usize,
+        path: &mut Vec<i16>,
+        result: &mut Vec<Vec<i16>>,
+    ) {
+        if target == 0 {
+            // If target is reached, add the current path to results list
+            result.push(path.clone());
+        }
+
+        if target > 0 {
+            // Iterate through the candidates starting from the given index
+            for i in start..candidates.len() {
+                path.push(candidates[i]);
+                backtrack(candidates, target - candidates[i], i, path, result);
+                path.pop();
+            }
+        }
+
+        if target < 1 {
+            // If target is negative or 0 no need to continue as
+            // adding more numbers will exceed the target
+        }
+    }
+
+    let mut result = Vec::new(); // List to store all combinations
+    let mut path = Vec::new(); // Sort the candidates list for optimization
+                               // Start the backtracking from the first index
+    backtrack(&candidates, target, 0, &mut path, &mut result);
+
+    result
 }
