@@ -2,7 +2,7 @@ use crate::db::db_proxy::{fetch_creatures_passing_all_filters, order_list_by_lev
 use crate::models::creature::Creature;
 use crate::models::creature_filter_enum::CreatureFilter;
 use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
-use crate::models::encounter_structs::{EncounterDifficultyEnum, EncounterParams};
+use crate::models::encounter_structs::{EncounterChallengeEnum, EncounterParams};
 use crate::models::routers_validator_structs::RandomEncounterData;
 use crate::services::encounter_handler::encounter_calculator;
 use crate::services::encounter_handler::encounter_calculator::calculate_encounter_scaling_difficulty;
@@ -18,8 +18,8 @@ use utoipa::ToSchema;
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct EncounterInfoResponse {
     experience: i16,
-    difficulty: EncounterDifficultyEnum,
-    encounter_exp_levels: HashMap<EncounterDifficultyEnum, i16>,
+    challenge: EncounterChallengeEnum,
+    encounter_exp_levels: HashMap<EncounterChallengeEnum, i16>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -40,7 +40,7 @@ pub fn get_encounter_info(enc_params: EncounterParams) -> EncounterInfoResponse 
     let enc_diff = encounter_calculator::calculate_encounter_difficulty(enc_exp, &scaled_exp);
     EncounterInfoResponse {
         experience: enc_exp,
-        difficulty: enc_diff,
+        challenge: enc_diff,
         encounter_exp_levels: scaled_exp,
     }
 }
@@ -61,7 +61,7 @@ pub fn generate_random_encounter(
                 count: 0,
                 encounter_info: EncounterInfoResponse {
                     experience: 0,
-                    difficulty: Default::default(),
+                    challenge: Default::default(),
                     encounter_exp_levels: Default::default(),
                 },
             }
@@ -75,7 +75,7 @@ fn calculate_random_encounter(
     enc_data: RandomEncounterData,
     party_levels: Vec<i16>,
 ) -> Result<RandomEncounterGeneratorResponse> {
-    let enc_diff = enc_data.encounter_difficulty.unwrap_or(rand::random());
+    let enc_diff = enc_data.encounter_challenge.unwrap_or(rand::random());
 
     println!("Building encounter with difficulty: {:?}", enc_diff.clone());
 
@@ -114,7 +114,7 @@ fn calculate_random_encounter(
         results: chosen_encounter,
         encounter_info: EncounterInfoResponse {
             experience: exp,
-            difficulty: enc_diff,
+            challenge: enc_diff,
             encounter_exp_levels: scaled_exp_levels,
         },
     })

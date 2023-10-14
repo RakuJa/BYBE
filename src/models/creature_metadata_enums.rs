@@ -16,6 +16,7 @@ use utoipa::ToSchema;
     Default,
     EnumString,
 )]
+#[strum(serialize_all = "UPPERCASE")]
 pub enum AlignmentEnum {
     #[serde(alias = "ce", alias = "CE")]
     Ce,
@@ -56,7 +57,9 @@ pub enum AlignmentEnum {
     Default,
     EnumString,
 )]
+#[strum(serialize_all = "UPPERCASE")]
 pub enum RarityEnum {
+    #[default]
     #[serde(alias = "common", alias = "COMMON")]
     Common,
     #[serde(alias = "uncommon", alias = "UNCOMMON")]
@@ -65,9 +68,6 @@ pub enum RarityEnum {
     Rare,
     #[serde(alias = "unique", alias = "UNIQUE")]
     Unique,
-    #[default]
-    #[serde(alias = "any", alias = "ANY")]
-    Any,
 }
 
 #[derive(
@@ -84,12 +84,14 @@ pub enum RarityEnum {
     Default,
     EnumString,
 )]
+#[strum(serialize_all = "UPPERCASE")]
 pub enum SizeEnum {
     #[serde(alias = "tiny", alias = "TINY")]
     Tiny,
     #[serde(alias = "small", alias = "SMALL")]
     Small,
     #[serde(alias = "medium", alias = "MEDIUM")]
+    #[default]
     Medium,
     #[serde(alias = "large", alias = "LARGE")]
     Large,
@@ -97,9 +99,6 @@ pub enum SizeEnum {
     Huge,
     #[serde(alias = "gargantuan", alias = "GARGANTUAN")]
     Gargantuan,
-    #[default]
-    #[serde(alias = "any", alias = "ANY")]
-    Any,
 }
 
 impl Clone for AlignmentEnum {
@@ -127,7 +126,6 @@ impl Clone for RarityEnum {
             RarityEnum::Uncommon => RarityEnum::Uncommon,
             RarityEnum::Rare => RarityEnum::Rare,
             RarityEnum::Unique => RarityEnum::Unique,
-            RarityEnum::Any => RarityEnum::Any,
         }
     }
 }
@@ -141,7 +139,6 @@ impl Clone for SizeEnum {
             SizeEnum::Large => SizeEnum::Large,
             SizeEnum::Huge => SizeEnum::Huge,
             SizeEnum::Gargantuan => SizeEnum::Gargantuan,
-            SizeEnum::Any => SizeEnum::Any,
         }
     }
 }

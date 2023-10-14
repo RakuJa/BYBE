@@ -1,4 +1,4 @@
-use crate::models::encounter_structs::{EncounterDifficultyEnum, EncounterParams, Party};
+use crate::models::encounter_structs::{EncounterChallengeEnum, EncounterParams, Party};
 use crate::models::routers_validator_structs::RandomEncounterData;
 use crate::services::encounter_service;
 use crate::services::encounter_service::EncounterInfoResponse;
@@ -22,7 +22,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
         components(schemas(
             EncounterInfoResponse,
             EncounterParams,
-            EncounterDifficultyEnum,
+            EncounterChallengeEnum,
             Party,
             RandomEncounterGeneratorResponse,
         ))

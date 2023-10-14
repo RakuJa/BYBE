@@ -1,6 +1,6 @@
-use crate::models::encounter_structs::EncounterDifficultyEnum;
+use crate::models::encounter_structs::EncounterChallengeEnum;
 
-pub fn scale_difficulty_exp(base_difficulty: &EncounterDifficultyEnum, party_size: i16) -> i16 {
+pub fn scale_difficulty_exp(base_difficulty: &EncounterChallengeEnum, party_size: i16) -> i16 {
     // Given the base difficulty and the party size, it scales the base difficulty.
     // Useful when a party is not the canon 4 party member
     let party_deviation = party_size - 4;
@@ -8,24 +8,24 @@ pub fn scale_difficulty_exp(base_difficulty: &EncounterDifficultyEnum, party_siz
         + (party_deviation * convert_difficulty_enum_to_xp_adjustment(base_difficulty))
 }
 
-fn convert_difficulty_enum_to_base_xp_budget(diff: &EncounterDifficultyEnum) -> i16 {
+fn convert_difficulty_enum_to_base_xp_budget(diff: &EncounterChallengeEnum) -> i16 {
     match diff {
-        EncounterDifficultyEnum::Trivial => 40,
-        EncounterDifficultyEnum::Low => 60,
-        EncounterDifficultyEnum::Moderate => 80,
-        EncounterDifficultyEnum::Severe => 120,
-        EncounterDifficultyEnum::Extreme => 160,
-        EncounterDifficultyEnum::Impossible => 320,
+        EncounterChallengeEnum::Trivial => 40,
+        EncounterChallengeEnum::Low => 60,
+        EncounterChallengeEnum::Moderate => 80,
+        EncounterChallengeEnum::Severe => 120,
+        EncounterChallengeEnum::Extreme => 160,
+        EncounterChallengeEnum::Impossible => 320,
     }
 }
 
-fn convert_difficulty_enum_to_xp_adjustment(diff: &EncounterDifficultyEnum) -> i16 {
+fn convert_difficulty_enum_to_xp_adjustment(diff: &EncounterChallengeEnum) -> i16 {
     match diff {
-        EncounterDifficultyEnum::Trivial => 10,
-        EncounterDifficultyEnum::Low => 15,
-        EncounterDifficultyEnum::Moderate => 20,
-        EncounterDifficultyEnum::Severe => 30,
-        EncounterDifficultyEnum::Extreme => 40,
-        EncounterDifficultyEnum::Impossible => 60,
+        EncounterChallengeEnum::Trivial => 10,
+        EncounterChallengeEnum::Low => 15,
+        EncounterChallengeEnum::Moderate => 20,
+        EncounterChallengeEnum::Severe => 30,
+        EncounterChallengeEnum::Extreme => 40,
+        EncounterChallengeEnum::Impossible => 60,
     }
 }

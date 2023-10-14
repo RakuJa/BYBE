@@ -1,4 +1,4 @@
-use crate::models::encounter_structs::EncounterDifficultyEnum;
+use crate::models::encounter_structs::EncounterChallengeEnum;
 use crate::services::encounter_handler::difficulty_utilities::scale_difficulty_exp;
 use lazy_static::lazy_static;
 use std::collections::{HashMap, HashSet};
@@ -41,10 +41,10 @@ pub fn calculate_encounter_exp(party_levels: &[i8], enemy_levels: &[i8]) -> i16 
 
 pub fn calculate_encounter_scaling_difficulty(
     party_size: usize,
-) -> HashMap<EncounterDifficultyEnum, i16> {
+) -> HashMap<EncounterChallengeEnum, i16> {
     // Given the party size, it scales and calculates the threshold for the various difficulty levels
     let mut diff_scaled_exp_map = HashMap::new();
-    for curr_diff in EncounterDifficultyEnum::iter() {
+    for curr_diff in EncounterChallengeEnum::iter() {
         diff_scaled_exp_map.insert(
             curr_diff.clone(),
             scale_difficulty_exp(&curr_diff, party_size as i16),
@@ -55,45 +55,41 @@ pub fn calculate_encounter_scaling_difficulty(
 
 pub fn calculate_encounter_difficulty(
     encounter_exp: i16,
-    scaled_exp_levels: &HashMap<EncounterDifficultyEnum, i16>,
-) -> EncounterDifficultyEnum {
+    scaled_exp_levels: &HashMap<EncounterChallengeEnum, i16>,
+) -> EncounterChallengeEnum {
     // This method is ugly, it's 1:1 from python and as such needs refactor
-    if &encounter_exp
-        < scaled_exp_levels
-            .get(&EncounterDifficultyEnum::Low)
-            .unwrap()
-    {
-        return EncounterDifficultyEnum::Trivial;
+    if &encounter_exp < scaled_exp_levels.get(&EncounterChallengeEnum::Low).unwrap() {
+        return EncounterChallengeEnum::Trivial;
     } else if &encounter_exp
         < scaled_exp_levels
-            .get(&EncounterDifficultyEnum::Moderate)
+            .get(&EncounterChallengeEnum::Moderate)
             .unwrap()
     {
-        return EncounterDifficultyEnum::Low;
+        return EncounterChallengeEnum::Low;
     } else if &encounter_exp
         < scaled_exp_levels
-            .get(&EncounterDifficultyEnum::Severe)
+            .get(&EncounterChallengeEnum::Severe)
             .unwrap()
     {
-        return EncounterDifficultyEnum::Moderate;
+        return EncounterChallengeEnum::Moderate;
     } else if &encounter_exp
         < scaled_exp_levels
-            .get(&EncounterDifficultyEnum::Extreme)
+            .get(&EncounterChallengeEnum::Extreme)
             .unwrap()
     {
-        return EncounterDifficultyEnum::Severe;
+        return EncounterChallengeEnum::Severe;
     } else if &encounter_exp
         < scaled_exp_levels
-            .get(&EncounterDifficultyEnum::Impossible)
+            .get(&EncounterChallengeEnum::Impossible)
             .unwrap()
     {
-        return EncounterDifficultyEnum::Extreme;
+        return EncounterChallengeEnum::Extreme;
     }
-    EncounterDifficultyEnum::Impossible
+    EncounterChallengeEnum::Impossible
 }
 
 pub fn calculate_lvl_combination_for_encounter(
-    difficulty: &EncounterDifficultyEnum,
+    difficulty: &EncounterChallengeEnum,
     party_levels: &Vec<i16>,
 ) -> (i16, HashSet<Vec<i16>>) {
     // Given an encounter difficulty it calculates all possible encounter permutations
@@ -114,7 +110,7 @@ fn convert_lvl_diff_into_exp(lvl_diff: f32, party_size: usize) -> i16 {
             0i16
         } else {
             // To avoid the party of 50 level 1 pg destroying a lvl 20
-            scale_difficulty_exp(&EncounterDifficultyEnum::Impossible, party_size as i16)
+            scale_difficulty_exp(&EncounterChallengeEnum::Impossible, party_size as i16)
         })
 }
 

@@ -22,7 +22,7 @@ pub struct EncounterParams {
 #[derive(
     Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Clone, Debug,
 )]
-pub enum EncounterDifficultyEnum {
+pub enum EncounterChallengeEnum {
     Trivial,
     Low,
     #[default]
@@ -35,15 +35,15 @@ pub enum EncounterDifficultyEnum {
     // I have to introduce a level for impossible things, Needs balancing Paizo help
 }
 
-impl Distribution<EncounterDifficultyEnum> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> EncounterDifficultyEnum {
+impl Distribution<EncounterChallengeEnum> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> EncounterChallengeEnum {
         match rng.gen_range(0..6) {
-            0 => EncounterDifficultyEnum::Trivial,
-            1 => EncounterDifficultyEnum::Low,
-            2 => EncounterDifficultyEnum::Moderate,
-            3 => EncounterDifficultyEnum::Severe,
-            4 => EncounterDifficultyEnum::Extreme,
-            _ => EncounterDifficultyEnum::Impossible,
+            0 => EncounterChallengeEnum::Trivial,
+            1 => EncounterChallengeEnum::Low,
+            2 => EncounterChallengeEnum::Moderate,
+            3 => EncounterChallengeEnum::Severe,
+            4 => EncounterChallengeEnum::Extreme,
+            _ => EncounterChallengeEnum::Impossible,
         }
     }
 }
