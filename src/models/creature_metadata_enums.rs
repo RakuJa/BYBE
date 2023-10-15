@@ -12,31 +12,49 @@ use utoipa::ToSchema;
     PartialEq,
     Ord,
     PartialOrd,
-    Debug,
     Default,
     EnumString,
 )]
 #[strum(serialize_all = "UPPERCASE")]
 pub enum AlignmentEnum {
-    #[serde(alias = "ce", alias = "CE")]
+    #[serde(alias = "ce", alias = "Ce")]
+    #[strum(to_string = "CE")]
+    #[serde(rename = "CE")]
     Ce,
-    #[serde(alias = "cn", alias = "CN")]
+    #[serde(alias = "cn", alias = "Cn")]
+    #[strum(to_string = "CN")]
+    #[serde(rename = "CN")]
     Cn,
-    #[serde(alias = "cg", alias = "CG")]
+    #[serde(alias = "cg", alias = "Cg")]
+    #[strum(to_string = "CG")]
+    #[serde(rename = "CG")]
     Cg,
-    #[serde(alias = "ne", alias = "NE")]
+    #[serde(alias = "ne", alias = "Ne")]
+    #[strum(to_string = "NE")]
+    #[serde(rename = "NE")]
     Ne,
     #[serde(alias = "n")]
+    #[strum(to_string = "N")]
     N,
-    #[serde(alias = "ng", alias = "NG")]
+    #[serde(alias = "ng", alias = "Ng")]
+    #[strum(to_string = "NG")]
+    #[serde(rename = "NG")]
     Ng,
-    #[serde(alias = "le", alias = "LE")]
+    #[serde(alias = "le", alias = "Le")]
+    #[strum(to_string = "LE")]
+    #[serde(rename = "LE")]
     Le,
     #[serde(alias = "ln", alias = "LN")]
+    #[strum(to_string = "Ln")]
+    #[serde(rename = "LN")]
     Ln,
-    #[serde(alias = "lg", alias = "LG")]
+    #[serde(alias = "lg", alias = "Lg")]
+    #[strum(to_string = "LG")]
+    #[serde(rename = "LG")]
     Lg,
     #[serde(alias = "no", alias = "NO")]
+    #[strum(to_string = "No Alignment")]
+    #[serde(rename = "No Alignment")]
     No, // no alignment
     #[default]
     #[serde(alias = "any", alias = "ANY")]
@@ -53,11 +71,9 @@ pub enum AlignmentEnum {
     PartialEq,
     Ord,
     PartialOrd,
-    Debug,
     Default,
     EnumString,
 )]
-#[strum(serialize_all = "UPPERCASE")]
 pub enum RarityEnum {
     #[default]
     #[serde(alias = "common", alias = "COMMON")]
@@ -80,11 +96,9 @@ pub enum RarityEnum {
     PartialEq,
     Ord,
     PartialOrd,
-    Debug,
     Default,
     EnumString,
 )]
-#[strum(serialize_all = "UPPERCASE")]
 pub enum SizeEnum {
     #[serde(alias = "tiny", alias = "TINY")]
     Tiny,

@@ -19,9 +19,7 @@ pub struct EncounterParams {
     pub enemy_levels: Vec<i8>,
 }
 
-#[derive(
-    Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Clone, Debug,
-)]
+#[derive(Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Clone)]
 pub enum EncounterChallengeEnum {
     Trivial,
     Low,

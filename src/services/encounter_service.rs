@@ -24,7 +24,7 @@ pub struct EncounterInfoResponse {
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct RandomEncounterGeneratorResponse {
-    results: Vec<Creature>,
+    results: Option<Vec<Creature>>,
     count: usize,
     encounter_info: EncounterInfoResponse,
 }
@@ -57,7 +57,7 @@ pub fn generate_random_encounter(
                 error.to_string()
             );
             RandomEncounterGeneratorResponse {
-                results: vec![],
+                results: None,
                 count: 0,
                 encounter_info: EncounterInfoResponse {
                     experience: 0,
@@ -76,8 +76,6 @@ fn calculate_random_encounter(
     party_levels: Vec<i16>,
 ) -> Result<RandomEncounterGeneratorResponse> {
     let enc_diff = enc_data.encounter_challenge.unwrap_or(rand::random());
-
-    println!("Building encounter with difficulty: {:?}", enc_diff.clone());
 
     let (exp, lvl_combinations) =
         encounter_calculator::calculate_lvl_combination_for_encounter(&enc_diff, &party_levels);
@@ -111,7 +109,7 @@ fn calculate_random_encounter(
 
     Ok(RandomEncounterGeneratorResponse {
         count: chosen_encounter.len(),
-        results: chosen_encounter,
+        results: Some(chosen_encounter),
         encounter_info: EncounterInfoResponse {
             experience: exp,
             challenge: enc_diff,

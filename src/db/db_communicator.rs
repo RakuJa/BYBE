@@ -8,7 +8,7 @@ use redis::{
 use serde::{Deserialize, Serialize};
 use std::env;
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct RawCreature {
     name: String,
     hp: i16,
@@ -23,7 +23,7 @@ pub struct RawCreature {
     // source: Vec<String>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize)]
 pub struct RawJsonString {
     json_string: String,
 }
