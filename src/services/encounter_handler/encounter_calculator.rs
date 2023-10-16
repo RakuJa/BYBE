@@ -2,6 +2,7 @@ use crate::models::encounter_structs::EncounterChallengeEnum;
 use crate::services::encounter_handler::difficulty_utilities::scale_difficulty_exp;
 use lazy_static::lazy_static;
 use std::collections::{HashMap, HashSet};
+use std::ops::Neg;
 // Used to explicitly tell about the iter trait
 use strum::IntoEnumIterator;
 
@@ -29,7 +30,7 @@ pub fn calculate_encounter_exp(party_levels: &[i8], enemy_levels: &[i8]) -> i16 
         .map(|&curr_enemy_lvl| {
             let enemy_lvl = curr_enemy_lvl as f32;
             let lvl_diff = if enemy_lvl < 0f32 && enemy_lvl < party_avg {
-                (party_avg - enemy_lvl).abs()
+                ((enemy_lvl - party_avg).abs()).neg()
             } else {
                 enemy_lvl - party_avg
             };
