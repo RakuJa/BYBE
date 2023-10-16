@@ -45,7 +45,7 @@ pub enum AlignmentEnum {
     #[serde(rename = "LE")]
     Le,
     #[serde(alias = "ln", alias = "LN")]
-    #[strum(to_string = "Ln")]
+    #[strum(to_string = "LN")]
     #[serde(rename = "LN")]
     Ln,
     #[serde(alias = "lg", alias = "Lg")]
