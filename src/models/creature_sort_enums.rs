@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, ToSchema, Display, Copy, Clone, Default)]
+#[derive(Serialize, Deserialize, ToSchema, Display, Copy, Clone, Default, Hash, Eq, PartialEq)]
 pub enum SortEnum {
     #[default]
     Id,
@@ -16,7 +16,7 @@ pub enum SortEnum {
     Rarity,
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Display, Copy, Clone, Default)]
+#[derive(Serialize, Deserialize, ToSchema, Display, Copy, Clone, Default, Hash, Eq, PartialEq)]
 pub enum OrderEnum {
     #[default]
     Ascending,

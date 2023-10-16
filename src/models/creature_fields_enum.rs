@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Hash, Eq, PartialEq, Clone)]
 pub enum CreatureField {
     #[serde(alias = "id", alias = "ID")]
     Id,

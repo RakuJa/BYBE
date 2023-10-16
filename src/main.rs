@@ -1,7 +1,6 @@
 #[macro_use]
 extern crate maplit;
 extern crate lazy_static;
-extern crate tokio;
 
 mod routes;
 
@@ -49,8 +48,6 @@ async fn main() -> std::io::Result<()> {
         service_ip.as_str(),
         service_port.to_string()
     );
-    // async running in the background for db update
-    tokio::task::spawn(db::db_proxy::update_cache());
 
     // Swagger initialization
     #[derive(OpenApi)]
