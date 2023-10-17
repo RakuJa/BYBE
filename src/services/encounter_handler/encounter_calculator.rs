@@ -118,7 +118,6 @@ fn convert_lvl_diff_into_exp(lvl_diff: f32, party_size: usize) -> i16 {
 fn calculate_lvl_combinations_for_given_exp(experience: i16, party_lvl: f32) -> HashSet<Vec<i16>> {
     // Given an encounter experience it calculates all possible encounter permutations
     let exp_list = LVL_AND_EXP_MAP.values().cloned().collect::<Vec<i16>>();
-
     find_combinations(exp_list, experience)
         .iter()
         .map(|curr_combination| {
@@ -127,11 +126,11 @@ fn calculate_lvl_combinations_for_given_exp(experience: i16, party_lvl: f32) -> 
                 .map(|curr_exp| convert_exp_to_lvl_diff(*curr_exp))
                 .filter(|a| a.is_some())
                 .map(|lvl_diff| party_lvl as i16 + lvl_diff.unwrap())
-                .filter(|lvl_combo| *lvl_combo >= -1) // there are no creature with level<-1
                 .collect::<Vec<i16>>()
-            // I'mma gonna puke mamma mia
         })
         .filter(|x| !x.is_empty())
+        // there are no creature with level<-1
+        .filter(|x| x.iter().all(|curr_lvl| *curr_lvl >= -1))
         .collect::<HashSet<Vec<i16>>>()
 }
 
