@@ -36,7 +36,7 @@ pub fn fetch_creatures_passing_all_filters(
     key_value_filters: HashMap<CreatureFilter, HashSet<String>>,
 ) -> Result<HashSet<Creature>> {
     let creature_list = get_list(None, None);
-    let mut x: HashSet<Creature> = HashSet::new();
+    let mut intersection = HashSet::from_iter(creature_list.iter().cloned());
     key_value_filters
         .iter()
         .map(|(curr_field_filter, curr_value_filter)| {
@@ -46,8 +46,8 @@ pub fn fetch_creatures_passing_all_filters(
                 curr_value_filter,
             )
         })
-        .for_each(|curr| x.extend(curr));
-    Ok(x)
+        .for_each(|curr| intersection = intersection.intersection(&curr).cloned().collect());
+    Ok(intersection)
 }
 
 fn fetch_creatures_passing_single_filter(
