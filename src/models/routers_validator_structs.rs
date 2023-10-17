@@ -35,7 +35,7 @@ pub struct RandomEncounterData {
     pub rarity: Option<RarityEnum>,
     pub size: Option<SizeEnum>,
     pub alignment: Option<AlignmentEnum>,
-    pub encounter_challenge: Option<EncounterChallengeEnum>,
+    pub challenge: Option<EncounterChallengeEnum>,
 }
 
 #[derive(Serialize, Deserialize, IntoParams, Validate)]

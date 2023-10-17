@@ -75,7 +75,7 @@ fn calculate_random_encounter(
     enc_data: RandomEncounterData,
     party_levels: Vec<i16>,
 ) -> Result<RandomEncounterGeneratorResponse> {
-    let enc_diff = enc_data.encounter_challenge.unwrap_or(rand::random());
+    let enc_diff = enc_data.challenge.unwrap_or(rand::random());
 
     let (exp, lvl_combinations) =
         encounter_calculator::calculate_lvl_combination_for_encounter(&enc_diff, &party_levels);

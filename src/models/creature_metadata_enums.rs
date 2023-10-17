@@ -58,6 +58,8 @@ pub enum AlignmentEnum {
     No, // no alignment
     #[default]
     #[serde(alias = "any", alias = "ANY")]
+    #[strum(to_string = "Any")]
+    #[serde(rename = "Any")]
     Any, // can be every alignment
 }
 
