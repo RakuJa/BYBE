@@ -16,7 +16,7 @@ pub struct Creature {
     pub is_melee: bool,
     pub is_ranged: bool,
     pub is_spell_caster: bool,
-    pub source: Vec<String>,
+    pub sources: Vec<String>,
     pub archive_link: String,
 }
 

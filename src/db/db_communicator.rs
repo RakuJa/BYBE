@@ -1,10 +1,12 @@
 use crate::models::creature::Creature;
 use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
 use crate::services::url_calculator::generate_archive_link;
+use log::warn;
 use redis::{
     from_redis_value, Commands, Connection, ConnectionLike, FromRedisValue, JsonCommands,
     RedisError, RedisResult, Value,
 };
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::env;
 
@@ -20,18 +22,24 @@ pub struct RawCreature {
     is_melee: i8,
     is_ranged: i8,
     is_spell_caster: i8,
-    // source: Vec<String>,
+    sources: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct RawJsonString {
-    json_string: String,
-}
-
-impl FromRedisValue for RawJsonString {
+impl FromRedisValue for RawCreature {
     fn from_redis_value(v: &Value) -> RedisResult<Self> {
         let json_str: String = from_redis_value(v)?;
-        serde_json::from_str(&json_str).map_err(redis::RedisError::from)
+        let vec_of_raw_strings: serde_json::error::Result<Vec<String>> =
+            serde_json::from_str(&json_str);
+        match vec_of_raw_strings {
+            Ok(mut raw) => {
+                // raw is a vec of one element, we can pop it and forget
+                let x: serde_json::error::Result<RawCreature> =
+                    serde_json::from_str(&(raw.pop().unwrap_or(String::from(""))));
+                x
+            }
+            Err(err) => Err(err),
+        }
+        .map_err(redis::RedisError::from)
     }
 }
 
@@ -45,6 +53,14 @@ fn from_raw_vec_to_creature(raw_vec: Vec<RawCreature>, id_vec: Vec<String>) -> V
 
 fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
     let id = identifier.parse::<i32>().unwrap_or(0);
+    let re = Regex::new(r"'([^']+)'").unwrap();
+
+    // Serde does not automatically handle conversion from "['el1', 'el2'..] to vec of string
+    let sources_list: Vec<String> = re
+        .captures_iter(&raw.sources)
+        .map(|capture| capture[1].to_string())
+        .collect();
+
     Creature {
         id,
         name: raw.name.clone(),
@@ -57,7 +73,7 @@ fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
         is_melee: raw.is_melee != 0,
         is_ranged: raw.is_ranged != 0,
         is_spell_caster: raw.is_spell_caster != 0,
-        source: vec![],
+        sources: sources_list,
         archive_link: generate_archive_link(id),
     }
 }
@@ -87,23 +103,19 @@ fn get_connection() -> RedisResult<Connection> {
 
 pub fn get_creatures_by_ids(ids: Vec<String>) -> Result<Vec<Creature>, RedisError> {
     let mut conn = get_connection()?;
-    let raw_results: Vec<RawJsonString> = conn.json_get(ids.clone(), "$")?;
-
+    let raw_results: RedisResult<Vec<RawCreature>> = conn.json_get(ids.clone(), "$");
     // Convert each RawJsonString to RawCreature and collect the results into a Vec<RawCreature>
     let mut raw_creatures = Vec::new();
-    for json_string in raw_results {
-        let raw: RawCreature = serde_json::from_str(&json_string.json_string)?;
-        raw_creatures.push(raw);
+    match raw_results {
+        Ok(creature_list) => {
+            for raw in creature_list {
+                raw_creatures.push(raw);
+            }
+        }
+        Err(err) => warn!("Error converting data from db {}", err),
     }
 
     Ok(from_raw_vec_to_creature(raw_creatures, ids))
-}
-
-pub fn get_creature_by_id(id: &String) -> Result<Creature, RedisError> {
-    let mut conn = get_connection()?;
-    let json_string: RawJsonString = conn.json_get(id, "$")?;
-    let raw: RawCreature = serde_json::from_str(&json_string.json_string)?;
-    Ok(from_raw_to_creature(&raw, id))
 }
 
 pub fn fetch_and_parse_all_keys(pattern: &String) -> Result<Vec<String>, RedisError> {
