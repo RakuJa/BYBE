@@ -1,5 +1,5 @@
-use crate::db::db_communicator::get_creature_by_id;
 use crate::db::db_proxy;
+use crate::db::db_proxy::get_creature_by_id;
 use crate::models::creature::Creature;
 use crate::models::creature_fields_enum::CreatureField;
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
@@ -16,18 +16,15 @@ pub struct BestiaryResponse {
     next: Option<String>,
 }
 
-pub async fn get_creature(id: &String) -> HashMap<String, Option<Creature>> {
-    match get_creature_by_id(id) {
-        Ok(cr) => hashmap! {String::from("results") => Some(cr)},
-        _ => hashmap! {String::from("results") => None},
-    }
+pub async fn get_creature(id: i32) -> HashMap<String, Option<Creature>> {
+    hashmap! {String::from("results") => get_creature_by_id(id)}
 }
 
-pub async fn get_elite_creature(id: &String) -> HashMap<String, Option<Creature>> {
+pub async fn get_elite_creature(id: i32) -> HashMap<String, Option<Creature>> {
     hashmap! {String::from("results") => update_creature(id, 1)}
 }
 
-pub async fn get_weak_creature(id: &String) -> HashMap<String, Option<Creature>> {
+pub async fn get_weak_creature(id: i32) -> HashMap<String, Option<Creature>> {
     hashmap! {String::from("results") => update_creature(id, -1)}
 }
 
@@ -64,9 +61,9 @@ fn hp_increase_by_level() -> HashMap<i8, u16> {
     hashmap! { 1 => 10, 2=> 15, 5=> 20, 20=> 30 }
 }
 
-fn update_creature(id: &String, level_delta: i8) -> Option<Creature> {
+fn update_creature(id: i32, level_delta: i8) -> Option<Creature> {
     match get_creature_by_id(id) {
-        Ok(mut creature) => {
+        Some(mut creature) => {
             let hp_increase = hp_increase_by_level();
             let desired_key = hp_increase
                 .keys()
@@ -85,7 +82,7 @@ fn update_creature(id: &String, level_delta: i8) -> Option<Creature> {
             );
             Some(creature)
         }
-        Err(_) => None,
+        None => None,
     }
 }
 

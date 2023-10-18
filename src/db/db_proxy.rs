@@ -10,6 +10,11 @@ use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, S
 use anyhow::Result;
 use cached::proc_macro::cached;
 
+pub fn get_creature_by_id(id: i32) -> Option<Creature> {
+    let list = get_list(None, None);
+    list.iter().find(|creature| creature.id == id).cloned()
+}
+
 pub fn get_paginated_creatures(
     sort: &SortData,
     filters: &FieldFilters,

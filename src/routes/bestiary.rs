@@ -3,7 +3,7 @@ use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
 use crate::services::bestiary_service;
 use crate::services::bestiary_service::BestiaryResponse;
-use actix_web::{get, web, Responder, Result};
+use actix_web::{error, get, web, Responder, Result};
 use actix_web_validator::Query;
 use utoipa::OpenApi;
 
@@ -149,7 +149,7 @@ pub async fn get_alignment_list() -> Result<impl Responder> {
 #[get("/base/{creature_id}")]
 pub async fn get_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_creature(&creature_id).await,
+        bestiary_service::get_creature(sanitize_id(&creature_id)?).await,
     ))
 }
 
@@ -168,7 +168,7 @@ pub async fn get_creature(creature_id: web::Path<String>) -> Result<impl Respond
 #[get("/elite/{creature_id}")]
 pub async fn get_elite_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_elite_creature(&creature_id).await,
+        bestiary_service::get_elite_creature(sanitize_id(&creature_id)?).await,
     ))
 }
 
@@ -187,6 +187,14 @@ pub async fn get_elite_creature(creature_id: web::Path<String>) -> Result<impl R
 #[get("/weak/{creature_id}")]
 pub async fn get_weak_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_weak_creature(&creature_id).await,
+        bestiary_service::get_weak_creature(sanitize_id(&creature_id)?).await,
     ))
+}
+
+fn sanitize_id(creature_id: &str) -> Result<i32> {
+    let id = creature_id.parse::<i32>();
+    match id {
+        Ok(s) => Ok(s),
+        Err(e) => Err(error::ErrorNotFound(e)),
+    }
 }
