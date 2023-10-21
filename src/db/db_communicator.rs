@@ -51,15 +51,31 @@ fn from_raw_vec_to_creature(raw_vec: Vec<RawCreature>, id_vec: Vec<String>) -> V
         .collect()
 }
 
-fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
-    let id = identifier.parse::<i32>().unwrap_or(0);
-    let re = Regex::new(r"'([^']+)'").unwrap();
+fn extract_sources(sources: &str) -> Vec<String> {
+    // complex string ex "oneword's secondword" are stored in double quotes
+    // simple strings in ''
+    let double_quotes_re = Regex::new("\"([^\"]+)\"").unwrap();
+    let single_quotes_re = Regex::new(r"'([^']+)'").unwrap();
 
-    // Serde does not automatically handle conversion from "['el1', 'el2'..] to vec of string
-    let sources_list: Vec<String> = re
-        .captures_iter(&raw.sources)
+    let sources_list: Vec<String> = double_quotes_re
+        .captures_iter(sources)
+        .filter(|capture| capture.len() >= 2)
         .map(|capture| capture[1].to_string())
         .collect();
+    if !sources_list.is_empty() {
+        sources_list
+    } else {
+        let sources_list: Vec<String> = single_quotes_re
+            .captures_iter(sources)
+            .map(|capture| capture[1].to_string())
+            .collect();
+        sources_list
+    }
+}
+
+fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
+    let id = identifier.parse::<i32>().unwrap_or(0);
+    let sources_list = extract_sources(&raw.sources);
 
     Creature {
         id,
