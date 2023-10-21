@@ -1,14 +1,62 @@
-![Python](https://img.shields.io/badge/python-3670A0?style=for-the-badge&logo=python&logoColor=ffdd54)
-![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
+![Rust](https://img.shields.io/badge/Rust-664666?style=for-the-badge&logo=rust&logoColor=red)
+![Actix-web](https://img.shields.io/badge/actix-web?style=for-the-badge&logoColor=black&labelColor=pink&color=black
+)
 ![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)
-[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/charliermarsh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 
 [![SonarCloud](https://sonarcloud.io/images/project_badges/sonarcloud-orange.svg)](https://sonarcloud.io/summary/new_code?id=RakuJa_BYBE)
 
-# BYBE
-Pathfinder 2e - Encounter Builder BACKEND
+# BYBE - Backend
+
+> Beyond Your Bestiary Explorer (BYBE) provides tools to help Pathfinder 2e Game Masters. Built as the backend of [BYBE - Frontend](https://github.com/TheAsel/BYBE-frontend/)
+
+## Features
+
+- Browse and filter a list of all creatures.
+- Balance encounters based on your party size and level.
+- Generate random encounters based on your requirements.
+- More to come...
+
+## Requirements
+
+Built using:
+
+- [Rust](https://www.rust-lang.org/tools/install)
+- [Redis](https://redis.io/download/)
+
+## Installation guide - Local
+
+1. Install [Rust](https://www.rust-lang.org/tools/install) on your machine.
+2. Install [Redis](https://redis.io/download/) and populate the database.
+3Clone this repository:
+
+```
+git clone https://github.com/RakuJa/BYBE
+```
+
+4. Navigate to the project's main directory.
+5. Build the project:
+
+```
+cargo build
+```
+
+5. Run the backend in development mode:
+
+```
+cargo run
+```
+
+6. To instead deploy the production build, run:
+
+```
+cargo build --release
+```
+
+```
+cargo run
+```
 
 ## Installation guide using Docker
 
@@ -33,16 +81,10 @@ docker build -t bybe .
 docker run -p 25566:25566 --name bybe-container bybe
 ```
 
-Instead of creating a bybe docker instance you may want to run it directly.
+## Support me
 
-```
-gunicorn app.controller:app --config app/gunicorn.conf.py
-```
+If you like this tool, consider supporting me:
 
+[![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/rakuja)
 
-Gunicorn will have first class support, but you may use uvicorn like:
-```
-uvicorn app.controller:app --host 127.0.0.1 --port 25566
-```
-
-
+Also consider supporting [TheAsel](https://github.com/TheAsel), the frontend developer. Thank you!
