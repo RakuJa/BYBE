@@ -45,15 +45,19 @@ pub fn get_families_list() -> Vec<String> {
     db_proxy::get_keys(CreatureField::Family)
 }
 
+pub fn get_traits_list() -> Vec<String> {
+    db_proxy::get_keys(CreatureField::Traits)
+}
+
 pub fn get_rarities_list() -> Vec<String> {
     db_proxy::get_keys(CreatureField::Rarity)
 }
 
-pub fn get_size_list() -> Vec<String> {
+pub fn get_sizes_list() -> Vec<String> {
     db_proxy::get_keys(CreatureField::Size)
 }
 
-pub fn get_alignment_list() -> Vec<String> {
+pub fn get_alignments_list() -> Vec<String> {
     db_proxy::get_keys(CreatureField::Alignment)
 }
 

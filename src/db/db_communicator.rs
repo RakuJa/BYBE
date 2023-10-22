@@ -23,6 +23,7 @@ pub struct RawCreature {
     is_ranged: i8,
     is_spell_caster: i8,
     sources: String,
+    traits: String,
 }
 
 impl FromRedisValue for RawCreature {
@@ -51,31 +52,34 @@ fn from_raw_vec_to_creature(raw_vec: Vec<RawCreature>, id_vec: Vec<String>) -> V
         .collect()
 }
 
-fn extract_sources(sources: &str) -> Vec<String> {
+fn extract_vec_from_raw_string(raw_vector: &str) -> Vec<String> {
+    // Extracts a vec of string from a json string representing a vector
+    // ex "['hi', 'man']" => ['hi', 'man']
     // complex string ex "oneword's secondword" are stored in double quotes
     // simple strings in ''
     let double_quotes_re = Regex::new("\"([^\"]+)\"").unwrap();
     let single_quotes_re = Regex::new(r"'([^']+)'").unwrap();
 
-    let sources_list: Vec<String> = double_quotes_re
-        .captures_iter(sources)
+    let resulting_vector: Vec<String> = double_quotes_re
+        .captures_iter(raw_vector)
         .filter(|capture| capture.len() >= 2)
         .map(|capture| capture[1].to_string())
         .collect();
-    if !sources_list.is_empty() {
-        sources_list
+    if !resulting_vector.is_empty() {
+        resulting_vector
     } else {
-        let sources_list: Vec<String> = single_quotes_re
-            .captures_iter(sources)
+        let resulting_vector: Vec<String> = single_quotes_re
+            .captures_iter(raw_vector)
             .map(|capture| capture[1].to_string())
             .collect();
-        sources_list
+        resulting_vector
     }
 }
 
 fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
     let id = identifier.parse::<i32>().unwrap_or(0);
-    let sources_list = extract_sources(&raw.sources);
+    let sources_list = extract_vec_from_raw_string(&raw.sources);
+    let traits_list = extract_vec_from_raw_string(&raw.traits);
 
     Creature {
         id,
@@ -90,6 +94,7 @@ fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
         is_ranged: raw.is_ranged != 0,
         is_spell_caster: raw.is_spell_caster != 0,
         sources: sources_list,
+        traits: traits_list,
         archive_link: generate_archive_link(id),
     }
 }

@@ -26,4 +26,6 @@ pub enum CreatureField {
     SpellCaster,
     #[serde(alias = "sources", alias = "SOURCES")]
     Sources,
+    #[serde(alias = "traits", alias = "TRAITS")]
+    Traits,
 }

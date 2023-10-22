@@ -35,6 +35,7 @@ pub struct RuntimeFieldsValues {
     pub list_of_ids: Vec<String>,
     pub list_of_levels: Vec<String>,
     pub list_of_families: Vec<String>,
+    pub list_of_traits: Vec<String>,
     pub list_of_alignments: Vec<String>,
     pub list_of_sizes: Vec<String>,
     pub list_of_rarities: Vec<String>,
@@ -65,6 +66,15 @@ pub fn from_db_data_to_filter_cache(data: Vec<Creature>) -> RuntimeFieldsValues 
         if !fields_values_cache.list_of_families.contains(&family) {
             fields_values_cache.list_of_families.push(family);
         }
+
+        curr_creature.traits.iter().for_each(|single_trait| {
+            if !fields_values_cache.list_of_traits.contains(single_trait) {
+                fields_values_cache
+                    .list_of_traits
+                    .push(single_trait.to_string())
+            }
+        });
+
         if !fields_values_cache.list_of_alignments.contains(&alignment) {
             fields_values_cache.list_of_alignments.push(alignment);
         }
