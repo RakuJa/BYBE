@@ -1,3 +1,4 @@
+use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -6,17 +7,23 @@ use utoipa::ToSchema;
 use validator::Validate;
 
 #[derive(Serialize, Deserialize, ToSchema, Validate)]
-pub struct Party {
-    #[validate(length(min = 1))]
-    pub party_levels: Vec<i16>,
-}
-
-#[derive(Serialize, Deserialize, ToSchema, Validate)]
 pub struct EncounterParams {
     #[validate(length(min = 1))]
     pub party_levels: Vec<i8>,
     #[validate(length(min = 1))]
     pub enemy_levels: Vec<i8>,
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Validate)]
+pub struct RandomEncounterData {
+    pub family: Option<String>,
+    pub traits: Option<Vec<String>>,
+    pub rarity: Option<RarityEnum>,
+    pub size: Option<SizeEnum>,
+    pub alignment: Option<AlignmentEnum>,
+    pub challenge: Option<EncounterChallengeEnum>,
+    #[validate(length(min = 1))]
+    pub party_levels: Vec<i16>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Clone)]

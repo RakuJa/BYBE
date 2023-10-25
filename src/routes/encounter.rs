@@ -1,9 +1,9 @@
-use crate::models::encounter_structs::{EncounterChallengeEnum, EncounterParams, Party};
-use crate::models::routers_validator_structs::RandomEncounterData;
+use crate::models::encounter_structs::{
+    EncounterChallengeEnum, EncounterParams, RandomEncounterData,
+};
 use crate::services::encounter_service;
 use crate::services::encounter_service::EncounterInfoResponse;
 use crate::services::encounter_service::RandomEncounterGeneratorResponse;
-use actix_web::web::Query;
 use actix_web::{post, web, Responder, Result};
 use utoipa::OpenApi;
 
@@ -21,9 +21,9 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
         paths(get_encounter_info, get_generated_random_encounter),
         components(schemas(
             EncounterInfoResponse,
+            RandomEncounterData,
             EncounterParams,
             EncounterChallengeEnum,
-            Party,
             RandomEncounterGeneratorResponse,
         ))
     )]
@@ -59,12 +59,12 @@ pub async fn get_encounter_info(
     path = "/encounter/generator",
     tag = "encounter",
     request_body(
-        content = Party,
+        content = RandomEncounterData,
         description = "Party levels as a vector of integers",
         content_type = "application/json",
     ),
     params(
-        RandomEncounterData
+
     ),
     responses(
         (status=200, description = "Successful Response", body = RandomEncounterGeneratorResponse),
@@ -73,11 +73,9 @@ pub async fn get_encounter_info(
 )]
 #[post("/generator")]
 pub async fn get_generated_random_encounter(
-    data: Query<RandomEncounterData>,
-    web::Json(body): web::Json<Party>,
+    web::Json(body): web::Json<RandomEncounterData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(encounter_service::generate_random_encounter(
-        data.0,
-        body.party_levels,
+        body,
     )))
 }

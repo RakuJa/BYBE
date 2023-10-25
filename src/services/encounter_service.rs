@@ -2,8 +2,9 @@ use crate::db::db_proxy::{fetch_creatures_passing_all_filters, order_list_by_lev
 use crate::models::creature::Creature;
 use crate::models::creature_filter_enum::CreatureFilter;
 use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
-use crate::models::encounter_structs::{EncounterChallengeEnum, EncounterParams};
-use crate::models::routers_validator_structs::RandomEncounterData;
+use crate::models::encounter_structs::{
+    EncounterChallengeEnum, EncounterParams, RandomEncounterData,
+};
 use crate::services::encounter_handler::encounter_calculator;
 use crate::services::encounter_handler::encounter_calculator::calculate_encounter_scaling_difficulty;
 use anyhow::{ensure, Result};
@@ -47,8 +48,8 @@ pub fn get_encounter_info(enc_params: EncounterParams) -> EncounterInfoResponse 
 
 pub fn generate_random_encounter(
     enc_data: RandomEncounterData,
-    party_levels: Vec<i16>,
 ) -> RandomEncounterGeneratorResponse {
+    let party_levels = enc_data.party_levels.clone();
     let encounter_data = calculate_random_encounter(enc_data, party_levels);
     match encounter_data {
         Err(error) => {
@@ -92,6 +93,7 @@ fn calculate_random_encounter(
     );
     let filter_map = build_filter_map(
         enc_data.family,
+        enc_data.traits,
         enc_data.rarity,
         enc_data.size,
         enc_data.alignment,
@@ -198,6 +200,7 @@ fn filter_non_existing_levels(
 
 fn build_filter_map(
     family: Option<String>,
+    traits: Option<Vec<String>>,
     rarity: Option<RarityEnum>,
     size: Option<SizeEnum>,
     alignment: Option<AlignmentEnum>,
@@ -205,6 +208,7 @@ fn build_filter_map(
 ) -> HashMap<CreatureFilter, HashSet<String>> {
     let mut filter_map = HashMap::new();
     family.map(|el| filter_map.insert(CreatureFilter::Family, hashset![el]));
+    traits.map(|el| filter_map.insert(CreatureFilter::Traits, HashSet::from_iter(el)));
     rarity.map(|el| filter_map.insert(CreatureFilter::Rarity, hashset![el.to_string()]));
     size.map(|el| filter_map.insert(CreatureFilter::Size, hashset![el.to_string()]));
     alignment.map(|el| filter_map.insert(CreatureFilter::Alignment, hashset![el.to_string()]));

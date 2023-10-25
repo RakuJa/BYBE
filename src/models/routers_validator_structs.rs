@@ -1,6 +1,5 @@
 use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
 use crate::models::creature_sort_enums::{OrderEnum, SortEnum};
-use crate::models::encounter_structs::EncounterChallengeEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::IntoParams;
 use validator::Validate;
@@ -27,15 +26,6 @@ pub struct SortData {
     pub sort_key: Option<SortEnum>,
     #[param(inline)]
     pub order_by: Option<OrderEnum>,
-}
-
-#[derive(Serialize, Deserialize, IntoParams, Validate)]
-pub struct RandomEncounterData {
-    pub family: Option<String>,
-    pub rarity: Option<RarityEnum>,
-    pub size: Option<SizeEnum>,
-    pub alignment: Option<AlignmentEnum>,
-    pub challenge: Option<EncounterChallengeEnum>,
 }
 
 #[derive(Serialize, Deserialize, IntoParams, Validate)]

@@ -73,6 +73,13 @@ fn fetch_creatures_passing_single_filter(
                 filter_vec.contains(creature.clone().family.unwrap_or_default().as_str())
             })
             .collect(),
+        CreatureFilter::Traits => cr_iterator
+            .filter(|creature| {
+                filter_vec
+                    .iter()
+                    .any(|curr_trait| creature.clone().traits.contains(curr_trait))
+            })
+            .collect(),
         CreatureFilter::Alignment => cr_iterator
             .filter(|creature| filter_vec.contains(creature.alignment.to_string().as_str()))
             .collect(),
@@ -106,6 +113,7 @@ pub fn get_keys(field: CreatureField) -> Vec<String> {
             CreatureField::Melee => vec![true.to_string(), false.to_string()],
             CreatureField::SpellCaster => vec![true.to_string(), false.to_string()],
             CreatureField::Family => runtime_fields_values.list_of_families,
+            CreatureField::Traits => runtime_fields_values.list_of_traits,
             CreatureField::Alignment => runtime_fields_values.list_of_alignments,
             CreatureField::Level => runtime_fields_values.list_of_levels,
             _ => vec![],

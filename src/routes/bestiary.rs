@@ -15,9 +15,10 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
             .service(get_weak_creature)
             .service(get_creature)
             .service(get_families_list)
+            .service(get_traits_list)
             .service(get_rarities_list)
-            .service(get_size_list)
-            .service(get_alignment_list),
+            .service(get_sizes_list)
+            .service(get_alignments_list),
     );
 }
 
@@ -27,9 +28,10 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
         paths(
             get_bestiary,
             get_families_list,
+            get_traits_list,
             get_rarities_list,
-            get_size_list,
-            get_alignment_list,
+            get_sizes_list,
+            get_alignments_list,
             get_creature,
             get_elite_creature,
             get_weak_creature,
@@ -85,6 +87,23 @@ pub async fn get_families_list() -> Result<impl Responder> {
 
 #[utoipa::path(
     get,
+    path = "/bestiary/traits",
+    tag = "bestiary",
+    params(
+
+    ),
+    responses(
+        (status=200, description = "Successful Response", body = [String]),
+        (status=400, description = "Bad request.")
+    ),
+)]
+#[get("/traits")]
+pub async fn get_traits_list() -> Result<impl Responder> {
+    Ok(web::Json(bestiary_service::get_traits_list()))
+}
+
+#[utoipa::path(
+    get,
     path = "/bestiary/rarities",
     tag = "bestiary",
     params(
@@ -113,8 +132,8 @@ pub async fn get_rarities_list() -> Result<impl Responder> {
     ),
 )]
 #[get("/sizes")]
-pub async fn get_size_list() -> Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_size_list()))
+pub async fn get_sizes_list() -> Result<impl Responder> {
+    Ok(web::Json(bestiary_service::get_sizes_list()))
 }
 
 #[utoipa::path(
@@ -130,8 +149,8 @@ pub async fn get_size_list() -> Result<impl Responder> {
     ),
 )]
 #[get("/alignments")]
-pub async fn get_alignment_list() -> Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_alignment_list()))
+pub async fn get_alignments_list() -> Result<impl Responder> {
+    Ok(web::Json(bestiary_service::get_alignments_list()))
 }
 
 #[utoipa::path(
