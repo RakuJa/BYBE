@@ -39,6 +39,7 @@ pub struct RuntimeFieldsValues {
     pub list_of_alignments: Vec<String>,
     pub list_of_sizes: Vec<String>,
     pub list_of_rarities: Vec<String>,
+    pub list_of_creature_types: Vec<String>,
 }
 
 #[cached(time = 86400, sync_writes = true)]
@@ -56,6 +57,7 @@ pub fn from_db_data_to_filter_cache(data: Vec<Creature>) -> RuntimeFieldsValues 
         let alignment = curr_creature.alignment.to_string();
         let size = curr_creature.size.to_string();
         let rarity = curr_creature.rarity.to_string();
+        let creature_type = curr_creature.creature_type.to_string();
 
         if !fields_values_cache.list_of_ids.contains(&id) {
             fields_values_cache.list_of_ids.push(id);
@@ -83,6 +85,14 @@ pub fn from_db_data_to_filter_cache(data: Vec<Creature>) -> RuntimeFieldsValues 
         }
         if !fields_values_cache.list_of_rarities.contains(&rarity) {
             fields_values_cache.list_of_rarities.push(rarity);
+        }
+        if !fields_values_cache
+            .list_of_creature_types
+            .contains(&creature_type)
+        {
+            fields_values_cache
+                .list_of_creature_types
+                .push(creature_type);
         }
     }
     fields_values_cache

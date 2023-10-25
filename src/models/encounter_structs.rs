@@ -1,4 +1,6 @@
-use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
+use crate::models::creature_metadata_enums::{
+    AlignmentEnum, CreatureTypeEnum, RarityEnum, SizeEnum,
+};
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -21,6 +23,7 @@ pub struct RandomEncounterData {
     pub rarity: Option<RarityEnum>,
     pub size: Option<SizeEnum>,
     pub alignment: Option<AlignmentEnum>,
+    pub creature_types: Option<Vec<CreatureTypeEnum>>,
     pub challenge: Option<EncounterChallengeEnum>,
     #[validate(length(min = 1))]
     pub party_levels: Vec<i16>,

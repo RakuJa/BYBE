@@ -1,7 +1,9 @@
 use crate::db::db_proxy::{fetch_creatures_passing_all_filters, order_list_by_level};
 use crate::models::creature::Creature;
 use crate::models::creature_filter_enum::CreatureFilter;
-use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
+use crate::models::creature_metadata_enums::{
+    AlignmentEnum, CreatureTypeEnum, RarityEnum, SizeEnum,
+};
 use crate::models::encounter_structs::{
     EncounterChallengeEnum, EncounterParams, RandomEncounterData,
 };
@@ -97,6 +99,7 @@ fn calculate_random_encounter(
         enc_data.rarity,
         enc_data.size,
         enc_data.alignment,
+        enc_data.creature_types,
         unique_levels,
     );
     let filtered_creatures = fetch_creatures_passing_all_filters(filter_map)?;
@@ -204,6 +207,7 @@ fn build_filter_map(
     rarity: Option<RarityEnum>,
     size: Option<SizeEnum>,
     alignment: Option<AlignmentEnum>,
+    creature_types: Option<Vec<CreatureTypeEnum>>,
     lvl_combinations: HashSet<String>,
 ) -> HashMap<CreatureFilter, HashSet<String>> {
     let mut filter_map = HashMap::new();
@@ -212,6 +216,12 @@ fn build_filter_map(
     rarity.map(|el| filter_map.insert(CreatureFilter::Rarity, hashset![el.to_string()]));
     size.map(|el| filter_map.insert(CreatureFilter::Size, hashset![el.to_string()]));
     alignment.map(|el| filter_map.insert(CreatureFilter::Alignment, hashset![el.to_string()]));
+    creature_types.map(|vec| {
+        filter_map.insert(
+            CreatureFilter::CreatureTypes,
+            HashSet::from_iter(vec.iter().map(|el| el.to_string())),
+        )
+    });
     filter_map.insert(CreatureFilter::Level, lvl_combinations);
     filter_map
 }

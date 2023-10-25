@@ -80,6 +80,9 @@ fn fetch_creatures_passing_single_filter(
                     .any(|curr_trait| creature.clone().traits.contains(curr_trait))
             })
             .collect(),
+        CreatureFilter::CreatureTypes => cr_iterator
+            .filter(|creature| filter_vec.contains(creature.creature_type.to_string().as_str()))
+            .collect(),
         CreatureFilter::Alignment => cr_iterator
             .filter(|creature| filter_vec.contains(creature.alignment.to_string().as_str()))
             .collect(),
@@ -116,6 +119,8 @@ pub fn get_keys(field: CreatureField) -> Vec<String> {
             CreatureField::Traits => runtime_fields_values.list_of_traits,
             CreatureField::Alignment => runtime_fields_values.list_of_alignments,
             CreatureField::Level => runtime_fields_values.list_of_levels,
+            CreatureField::CreatureTypes => runtime_fields_values.list_of_creature_types,
+
             _ => vec![],
         };
         x.sort();
@@ -126,7 +131,18 @@ pub fn get_keys(field: CreatureField) -> Vec<String> {
 
 #[cached(time = 86400, sync_writes = true)]
 fn fetch_data_from_database() -> Option<Vec<Creature>> {
-    if let Ok(keys) = db_communicator::fetch_and_parse_all_keys(&"creature:".to_string()) {
+    if let Some(monster_vec) = fetch_creatures("monster:") {
+        if let Some(mut npc_vec) = fetch_creatures("npc:") {
+            let mut creature_vec = monster_vec;
+            creature_vec.append(&mut npc_vec);
+            return Some(creature_vec);
+        }
+    }
+    None
+}
+
+fn fetch_creatures(pattern: &str) -> Option<Vec<Creature>> {
+    if let Ok(keys) = db_communicator::fetch_and_parse_all_keys(pattern) {
         if let Ok(creatures) = db_communicator::get_creatures_by_ids(keys) {
             return Some(creatures);
         }

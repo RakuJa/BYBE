@@ -61,6 +61,10 @@ pub fn get_alignments_list() -> Vec<String> {
     db_proxy::get_keys(CreatureField::Alignment)
 }
 
+pub fn get_creature_types_list() -> Vec<String> {
+    db_proxy::get_keys(CreatureField::CreatureTypes)
+}
+
 fn hp_increase_by_level() -> HashMap<i8, u16> {
     hashmap! { 1 => 10, 2=> 15, 5=> 20, 20=> 30 }
 }

@@ -1,3 +1,4 @@
+use crate::models::creature_metadata_enums::{creature_type_to_url_string, CreatureTypeEnum};
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
 
 pub fn next_url_calculator(
@@ -21,8 +22,12 @@ pub fn next_url_calculator(
     )
 }
 
-pub fn generate_archive_link(id: i32) -> String {
-    format!("https://2e.aonprd.com/Monsters.aspx?ID={}", id)
+pub fn generate_archive_link(id: i32, creature_type: &CreatureTypeEnum) -> String {
+    format!(
+        "https://2e.aonprd.com/{}.aspx?ID={}",
+        creature_type_to_url_string(creature_type),
+        id
+    )
 }
 
 pub fn add_boolean_query(url: &str, key: &String, value: bool) -> String {
