@@ -1,5 +1,7 @@
 use crate::models::creature::Creature;
-use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
+use crate::models::creature_metadata_enums::{
+    creature_type_to_storage_string, AlignmentEnum, CreatureTypeEnum, RarityEnum, SizeEnum,
+};
 use crate::services::url_calculator::generate_archive_link;
 use log::warn;
 use redis::{
@@ -24,6 +26,7 @@ pub struct RawCreature {
     is_spell_caster: i8,
     sources: String,
     traits: String,
+    creature_type: CreatureTypeEnum,
 }
 
 impl FromRedisValue for RawCreature {
@@ -77,10 +80,15 @@ fn extract_vec_from_raw_string(raw_vector: &str) -> Vec<String> {
 }
 
 fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
-    let id = identifier.parse::<i32>().unwrap_or(0);
+    let creature_type = raw.creature_type.clone();
+    let key_prefix_string = &format!("{}{}", creature_type_to_storage_string(&creature_type), ":");
+    let id = identifier
+        .strip_prefix(key_prefix_string)
+        .map(|s| s.parse::<i32>().unwrap_or(0))
+        .unwrap_or(0);
     let sources_list = extract_vec_from_raw_string(&raw.sources);
     let traits_list = extract_vec_from_raw_string(&raw.traits);
-
+    let archive_link = generate_archive_link(id, &creature_type);
     Creature {
         id,
         name: raw.name.clone(),
@@ -95,18 +103,11 @@ fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
         is_spell_caster: raw.is_spell_caster != 0,
         sources: sources_list,
         traits: traits_list,
-        archive_link: generate_archive_link(id),
+        creature_type,
+        archive_link,
     }
 }
 
-fn remove_prefix(strings: Vec<String>, prefix: &String) -> Vec<String> {
-    strings
-        .iter()
-        // removes prefix, if it could not be removed it filters out the value
-        .filter_map(|curr_str| curr_str.as_str().strip_prefix(prefix))
-        .map(str::to_string) //convert &str to String
-        .collect()
-}
 fn get_redis_url() -> String {
     let redis_password = env::var("REDIS_KEY").unwrap_or_else(|_| "".to_string());
 
@@ -139,15 +140,15 @@ pub fn get_creatures_by_ids(ids: Vec<String>) -> Result<Vec<Creature>, RedisErro
     Ok(from_raw_vec_to_creature(raw_creatures, ids))
 }
 
-pub fn fetch_and_parse_all_keys(pattern: &String) -> Result<Vec<String>, RedisError> {
+pub fn fetch_and_parse_all_keys(pattern: &str) -> Result<Vec<String>, RedisError> {
     let mut conn = get_connection()?;
-    let mut parse_pattern = pattern.clone();
+    let mut parse_pattern = pattern.to_owned();
     if !pattern.ends_with('*') {
         parse_pattern.push('*')
     }
 
     let keys: Vec<String> = conn.scan_match(parse_pattern)?.collect();
-    Ok(remove_prefix(keys, pattern))
+    Ok(keys)
 }
 
 pub fn is_redis_up() -> RedisResult<bool> {

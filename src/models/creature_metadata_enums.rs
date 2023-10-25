@@ -116,6 +116,30 @@ pub enum SizeEnum {
     #[serde(alias = "gargantuan", alias = "GARGANTUAN")]
     Gargantuan,
 }
+#[derive(
+    Serialize,
+    Deserialize,
+    ToSchema,
+    Display,
+    Eq,
+    Hash,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Default,
+    EnumString,
+)]
+pub enum CreatureTypeEnum {
+    #[default]
+    #[serde(alias = "monster", alias = "MONSTER")]
+    #[strum(to_string = "Monster")]
+    #[serde(rename = "Monster")]
+    Monster,
+    #[serde(alias = "npc", alias = "NPC")]
+    #[strum(to_string = "NPC")]
+    #[serde(rename = "NPC")]
+    Npc,
+}
 
 impl Clone for AlignmentEnum {
     fn clone(&self) -> AlignmentEnum {
@@ -156,5 +180,28 @@ impl Clone for SizeEnum {
             SizeEnum::Huge => SizeEnum::Huge,
             SizeEnum::Gargantuan => SizeEnum::Gargantuan,
         }
+    }
+}
+
+impl Clone for CreatureTypeEnum {
+    fn clone(&self) -> CreatureTypeEnum {
+        match self {
+            CreatureTypeEnum::Monster => CreatureTypeEnum::Monster,
+            CreatureTypeEnum::Npc => CreatureTypeEnum::Npc,
+        }
+    }
+}
+
+pub fn creature_type_to_url_string(creature_type: &CreatureTypeEnum) -> &str {
+    match creature_type {
+        CreatureTypeEnum::Monster => "Monster",
+        CreatureTypeEnum::Npc => "NPCs",
+    }
+}
+
+pub fn creature_type_to_storage_string(creature_type: &CreatureTypeEnum) -> &str {
+    match creature_type {
+        CreatureTypeEnum::Monster => "monster",
+        CreatureTypeEnum::Npc => "npc",
     }
 }

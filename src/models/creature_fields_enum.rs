@@ -28,4 +28,6 @@ pub enum CreatureField {
     Sources,
     #[serde(alias = "traits", alias = "TRAITS")]
     Traits,
+    #[serde(alias = "creature_type", alias = "CREATURE_TYPE")]
+    CreatureTypes,
 }
