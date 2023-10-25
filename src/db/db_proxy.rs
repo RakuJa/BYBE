@@ -80,6 +80,9 @@ fn fetch_creatures_passing_single_filter(
                     .any(|curr_trait| creature.clone().traits.contains(curr_trait))
             })
             .collect(),
+        CreatureFilter::CreatureTypes => cr_iterator
+            .filter(|creature| filter_vec.contains(creature.creature_type.to_string().as_str()))
+            .collect(),
         CreatureFilter::Alignment => cr_iterator
             .filter(|creature| filter_vec.contains(creature.alignment.to_string().as_str()))
             .collect(),

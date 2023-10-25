@@ -12,4 +12,5 @@ pub enum CreatureFilter {
     Ranged,
     SpellCaster,
     Traits,
+    CreatureTypes,
 }

@@ -194,7 +194,7 @@ impl Clone for CreatureTypeEnum {
 
 pub fn creature_type_to_url_string(creature_type: &CreatureTypeEnum) -> &str {
     match creature_type {
-        CreatureTypeEnum::Monster => "Monster",
+        CreatureTypeEnum::Monster => "Monsters",
         CreatureTypeEnum::Npc => "NPCs",
     }
 }
