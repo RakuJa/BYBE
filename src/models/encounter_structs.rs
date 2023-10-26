@@ -18,11 +18,11 @@ pub struct EncounterParams {
 
 #[derive(Serialize, Deserialize, ToSchema, Validate)]
 pub struct RandomEncounterData {
-    pub family: Option<String>,
+    pub families: Option<Vec<String>>,
     pub traits: Option<Vec<String>>,
-    pub rarity: Option<RarityEnum>,
-    pub size: Option<SizeEnum>,
-    pub alignment: Option<AlignmentEnum>,
+    pub rarities: Option<Vec<RarityEnum>>,
+    pub sizes: Option<Vec<SizeEnum>>,
+    pub alignments: Option<Vec<AlignmentEnum>>,
     pub creature_types: Option<Vec<CreatureTypeEnum>>,
     pub challenge: Option<EncounterChallengeEnum>,
     #[validate(length(min = 1))]

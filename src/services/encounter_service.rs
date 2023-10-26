@@ -94,11 +94,11 @@ fn calculate_random_encounter(
         "There are no valid levels to chose from. Encounter could not be built"
     );
     let filter_map = build_filter_map(
-        enc_data.family,
+        enc_data.families,
         enc_data.traits,
-        enc_data.rarity,
-        enc_data.size,
-        enc_data.alignment,
+        enc_data.rarities,
+        enc_data.sizes,
+        enc_data.alignments,
         enc_data.creature_types,
         unique_levels,
     );
@@ -202,20 +202,35 @@ fn filter_non_existing_levels(
 }
 
 fn build_filter_map(
-    family: Option<String>,
+    families: Option<Vec<String>>,
     traits: Option<Vec<String>>,
-    rarity: Option<RarityEnum>,
-    size: Option<SizeEnum>,
-    alignment: Option<AlignmentEnum>,
+    rarities: Option<Vec<RarityEnum>>,
+    sizes: Option<Vec<SizeEnum>>,
+    alignments: Option<Vec<AlignmentEnum>>,
     creature_types: Option<Vec<CreatureTypeEnum>>,
     lvl_combinations: HashSet<String>,
 ) -> HashMap<CreatureFilter, HashSet<String>> {
     let mut filter_map = HashMap::new();
-    family.map(|el| filter_map.insert(CreatureFilter::Family, hashset![el]));
+    families.map(|el| filter_map.insert(CreatureFilter::Family, HashSet::from_iter(el)));
     traits.map(|el| filter_map.insert(CreatureFilter::Traits, HashSet::from_iter(el)));
-    rarity.map(|el| filter_map.insert(CreatureFilter::Rarity, hashset![el.to_string()]));
-    size.map(|el| filter_map.insert(CreatureFilter::Size, hashset![el.to_string()]));
-    alignment.map(|el| filter_map.insert(CreatureFilter::Alignment, hashset![el.to_string()]));
+    rarities.map(|vec| {
+        filter_map.insert(
+            CreatureFilter::Rarity,
+            HashSet::from_iter(vec.iter().map(|el| el.to_string())),
+        )
+    });
+    sizes.map(|vec| {
+        filter_map.insert(
+            CreatureFilter::Size,
+            HashSet::from_iter(vec.iter().map(|el| el.to_string())),
+        )
+    });
+    alignments.map(|vec| {
+        filter_map.insert(
+            CreatureFilter::Alignment,
+            HashSet::from_iter(vec.iter().map(|el| el.to_string())),
+        )
+    });
     creature_types.map(|vec| {
         filter_map.insert(
             CreatureFilter::CreatureTypes,
