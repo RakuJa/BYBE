@@ -6,6 +6,7 @@ mod routes;
 
 use crate::routes::{bestiary, encounter, health};
 use actix_cors::Cors;
+use actix_web::http::header::{CacheControl, CacheDirective};
 use actix_web::{get, middleware, App, HttpResponse, HttpServer, Responder};
 use std::env;
 use utoipa::OpenApi;
@@ -62,6 +63,11 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Cors::permissive())
             .wrap(middleware::Logger::default())
+            // Cache header
+            .wrap(middleware::DefaultHeaders::new().add(CacheControl(vec![
+                CacheDirective::Private,
+                CacheDirective::MaxAge(86400u32),
+            ])))
             .service(index)
             .configure(health::init_endpoints)
             .configure(bestiary::init_endpoints)
