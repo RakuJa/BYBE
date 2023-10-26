@@ -63,11 +63,17 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Cors::permissive())
             .wrap(middleware::Logger::default())
-            // Cache header
-            .wrap(middleware::DefaultHeaders::new().add(CacheControl(vec![
-                CacheDirective::Private,
-                CacheDirective::MaxAge(86400u32),
-            ])))
+
+            .wrap(
+                middleware::DefaultHeaders::new()
+                    // Cache header
+                    .add(CacheControl(vec![
+                        CacheDirective::Private,
+                        CacheDirective::MaxAge(86400u32),
+                    ]))
+                    // Do not infer mime type header
+                    .add(("X-Content-Type-Options", "nosniff")),
+            )
             .service(index)
             .configure(health::init_endpoints)
             .configure(bestiary::init_endpoints)
