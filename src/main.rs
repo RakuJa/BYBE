@@ -63,7 +63,6 @@ async fn main() -> std::io::Result<()> {
         App::new()
             .wrap(Cors::permissive())
             .wrap(middleware::Logger::default())
-
             .wrap(
                 middleware::DefaultHeaders::new()
                     // Cache header
