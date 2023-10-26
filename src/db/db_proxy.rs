@@ -70,7 +70,7 @@ fn fetch_creatures_passing_single_filter(
             .collect(),
         CreatureFilter::Family => cr_iterator
             .filter(|creature| {
-                filter_vec.contains(creature.clone().family.unwrap_or_default().as_str())
+                filter_vec.contains(creature.family.clone().unwrap_or_default().as_str())
             })
             .collect(),
         CreatureFilter::Traits => cr_iterator
