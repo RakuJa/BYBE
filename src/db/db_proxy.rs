@@ -104,7 +104,7 @@ fn fetch_creatures_passing_single_filter(
     }
 }
 
-#[cached(time = 86400, sync_writes = true)]
+#[cached(time = 604800, sync_writes = true)]
 pub fn get_keys(field: CreatureField) -> Vec<String> {
     if let Some(db_data) = fetch_data_from_database() {
         let runtime_fields_values = from_db_data_to_filter_cache(db_data);
@@ -129,7 +129,7 @@ pub fn get_keys(field: CreatureField) -> Vec<String> {
     vec![]
 }
 
-#[cached(time = 86400, sync_writes = true)]
+#[cached(time = 604800, sync_writes = true)]
 fn fetch_data_from_database() -> Option<Vec<Creature>> {
     if let Some(monster_vec) = fetch_creatures("monster:") {
         if let Some(mut npc_vec) = fetch_creatures("npc:") {
@@ -150,7 +150,7 @@ fn fetch_creatures(pattern: &str) -> Option<Vec<Creature>> {
     None
 }
 
-#[cached(time = 86400, sync_writes = true)]
+#[cached(time = 604800, sync_writes = true)]
 fn get_list(sort_field: Option<SortEnum>, order_by: Option<OrderEnum>) -> Vec<Creature> {
     if let Some(db_data) = fetch_data_from_database() {
         let sorted_vec_cache = from_db_data_to_sorted_vectors(db_data);

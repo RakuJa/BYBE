@@ -42,7 +42,7 @@ pub struct RuntimeFieldsValues {
     pub list_of_creature_types: Vec<String>,
 }
 
-#[cached(time = 86400, sync_writes = true)]
+#[cached(time = 604800, sync_writes = true)]
 pub fn from_db_data_to_filter_cache(data: Vec<Creature>) -> RuntimeFieldsValues {
     let mut fields_values_cache = RuntimeFieldsValues::default();
     // The right structure would be an hashset, but it does not implement hash..
@@ -98,7 +98,7 @@ pub fn from_db_data_to_filter_cache(data: Vec<Creature>) -> RuntimeFieldsValues 
     fields_values_cache
 }
 
-#[cached(time = 86400, sync_writes = true)]
+#[cached(time = 604800, sync_writes = true)]
 pub fn from_db_data_to_sorted_vectors(unordered_creatures: Vec<Creature>) -> SortedVectorsByField {
     let mut sorted_cache = SortedVectorsByField::default();
 
