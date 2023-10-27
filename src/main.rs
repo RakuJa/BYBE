@@ -71,8 +71,7 @@ async fn main() -> std::io::Result<()> {
                         CacheDirective::MaxAge(86400u32),
                     ]))
                     // Do not infer mime type header
-                    .add(("X-Content-Type-Options", "nosniff"))
-                    .add(("charset", "utf-8")),
+                    .add(("X-Content-Type-Options", "nosniff")),
             )
             .service(index)
             .configure(health::init_endpoints)
