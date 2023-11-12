@@ -28,6 +28,9 @@ RUN cargo build --target x86_64-unknown-linux-musl --release
 # Stage 2: Create a minimal runtime image
 FROM alpine:latest
 
+# Adding sqlite, cannot do it before
+RUN apk add sqlite
+
 # Set the working directory in the container
 WORKDIR /app
 
@@ -36,6 +39,5 @@ COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/bybe .
 
 # Expose the port that your Actix-Web application will listen on
 EXPOSE 25566
-RUN apk add --no-cache bash
 # Command to run your application when the container starts
 ENTRYPOINT ["./bybe"]

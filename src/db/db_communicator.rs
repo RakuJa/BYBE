@@ -5,8 +5,8 @@ use crate::models::creature_metadata_enums::{
 use crate::services::url_calculator::generate_archive_link;
 use log::warn;
 use redis::{
-    from_redis_value, Commands, Connection, ConnectionLike, FromRedisValue, JsonCommands,
-    RedisError, RedisResult, Value,
+    from_redis_value, Commands, Connection, FromRedisValue, JsonCommands, RedisError, RedisResult,
+    Value,
 };
 use regex::Regex;
 use serde::{Deserialize, Serialize};
@@ -149,8 +149,4 @@ pub fn fetch_and_parse_all_keys(pattern: &str) -> Result<Vec<String>, RedisError
 
     let keys: Vec<String> = conn.scan_match(parse_pattern)?.collect();
     Ok(keys)
-}
-
-pub fn is_redis_up() -> RedisResult<bool> {
-    Ok(get_connection()?.is_open())
 }
