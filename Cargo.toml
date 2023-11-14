@@ -15,7 +15,7 @@ utoipa = { version = "4", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "4", features = ["actix-web"] }
 
 redis = {version = "0.23.0-beta.1", features = ["json"]}
-sea-orm = { version = "0.12.4", features = ["sqlx-sqlite", "runtime-actix-rustls"] }
+sqlx = { version = "0.7.2", features = ["runtime-async-std", "sqlite"] }
 cached = "0.46.0"
 
 anyhow = "1.0.75"

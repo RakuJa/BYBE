@@ -8,19 +8,20 @@ use crate::models::creature_filter_enum::CreatureFilter;
 use crate::models::creature_sort_enums::{OrderEnum, SortEnum};
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
 use anyhow::Result;
-use cached::proc_macro::cached;
+use sqlx::{Pool, Sqlite};
 
-pub fn get_creature_by_id(id: i32) -> Option<Creature> {
-    let list = get_list(None, None);
+pub async fn get_creature_by_id(conn: &Pool<Sqlite>, id: i32) -> Option<Creature> {
+    let list = get_list(conn, None, None).await;
     list.iter().find(|creature| creature.id == id).cloned()
 }
 
-pub fn get_paginated_creatures(
+pub async fn get_paginated_creatures(
+    conn: &Pool<Sqlite>,
     sort: &SortData,
     filters: &FieldFilters,
     pagination: &PaginatedRequest,
 ) -> Result<(u32, Vec<Creature>)> {
-    let list = get_list(sort.sort_key, sort.order_by);
+    let list = get_list(conn, sort.sort_key, sort.order_by).await;
 
     let filtered_list: Vec<Creature> = list
         .into_iter()
@@ -37,10 +38,11 @@ pub fn get_paginated_creatures(
     Ok((curr_slice.len() as u32, curr_slice))
 }
 
-pub fn fetch_creatures_passing_all_filters(
+pub async fn fetch_creatures_passing_all_filters(
+    conn: &Pool<Sqlite>,
     key_value_filters: HashMap<CreatureFilter, HashSet<String>>,
 ) -> Result<HashSet<Creature>> {
-    let creature_list = get_list(None, None);
+    let creature_list = get_list(conn, None, None).await;
     let mut intersection = HashSet::from_iter(creature_list.iter().cloned());
     key_value_filters
         .iter()
@@ -104,9 +106,8 @@ fn fetch_creatures_passing_single_filter(
     }
 }
 
-#[cached(time = 604800, sync_writes = true)]
-pub fn get_keys(field: CreatureField) -> Vec<String> {
-    if let Some(db_data) = fetch_data_from_database() {
+pub async fn get_keys(conn: &Pool<Sqlite>, field: CreatureField) -> Vec<String> {
+    if let Some(db_data) = fetch_data_from_database(conn).await {
         let runtime_fields_values = from_db_data_to_filter_cache(db_data);
         let mut x = match field {
             CreatureField::Id => runtime_fields_values.list_of_ids,
@@ -129,30 +130,26 @@ pub fn get_keys(field: CreatureField) -> Vec<String> {
     vec![]
 }
 
-#[cached(time = 604800, sync_writes = true)]
-fn fetch_data_from_database() -> Option<Vec<Creature>> {
-    if let Some(monster_vec) = fetch_creatures("monster:") {
-        if let Some(mut npc_vec) = fetch_creatures("npc:") {
-            let mut creature_vec = monster_vec;
-            creature_vec.append(&mut npc_vec);
-            return Some(creature_vec);
-        }
+async fn fetch_data_from_database(conn: &Pool<Sqlite>) -> Option<Vec<Creature>> {
+    if let Some(creature_vec) = fetch_creatures(conn).await {
+        return Some(creature_vec);
     }
     None
 }
 
-fn fetch_creatures(pattern: &str) -> Option<Vec<Creature>> {
-    if let Ok(keys) = db_communicator::fetch_and_parse_all_keys(pattern) {
-        if let Ok(creatures) = db_communicator::get_creatures_by_ids(keys) {
-            return Some(creatures);
-        }
+async fn fetch_creatures(conn: &Pool<Sqlite>) -> Option<Vec<Creature>> {
+    if let Ok(creatures) = db_communicator::fetch_creatures(conn).await {
+        return Some(creatures);
     }
     None
 }
 
-#[cached(time = 604800, sync_writes = true)]
-fn get_list(sort_field: Option<SortEnum>, order_by: Option<OrderEnum>) -> Vec<Creature> {
-    if let Some(db_data) = fetch_data_from_database() {
+async fn get_list(
+    conn: &Pool<Sqlite>,
+    sort_field: Option<SortEnum>,
+    order_by: Option<OrderEnum>,
+) -> Vec<Creature> {
+    if let Some(db_data) = fetch_data_from_database(conn).await {
         let sorted_vec_cache = from_db_data_to_sorted_vectors(db_data);
         let x = match (sort_field.unwrap_or_default(), order_by.unwrap_or_default()) {
             (SortEnum::Id, OrderEnum::Ascending) => {

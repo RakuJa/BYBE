@@ -4,6 +4,7 @@ use crate::models::encounter_structs::{
 use crate::services::encounter_service;
 use crate::services::encounter_service::EncounterInfoResponse;
 use crate::services::encounter_service::RandomEncounterGeneratorResponse;
+use crate::AppState;
 use actix_web::{post, web, Responder, Result};
 use utoipa::OpenApi;
 
@@ -73,9 +74,10 @@ pub async fn get_encounter_info(
 )]
 #[post("/generator")]
 pub async fn get_generated_random_encounter(
+    data: web::Data<AppState>,
     web::Json(body): web::Json<RandomEncounterData>,
 ) -> Result<impl Responder> {
-    Ok(web::Json(encounter_service::generate_random_encounter(
-        body,
-    )))
+    Ok(web::Json(
+        encounter_service::generate_random_encounter(&data.conn, body).await,
+    ))
 }

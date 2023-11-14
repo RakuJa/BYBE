@@ -36,7 +36,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
 #[get("/health")]
 pub async fn get_health(data: web::Data<AppState>) -> Json<HealthResponse> {
     let conn = &data.conn;
-    let is_db_up = conn.ping().await.is_ok();
+    let is_db_up = !conn.is_closed();
     Json(HealthResponse {
         ready: is_db_up.to_string(),
         dependencies: vec![hashmap! {

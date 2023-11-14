@@ -198,10 +198,3 @@ pub fn creature_type_to_url_string(creature_type: &CreatureTypeEnum) -> &str {
         CreatureTypeEnum::Npc => "NPCs",
     }
 }
-
-pub fn creature_type_to_storage_string(creature_type: &CreatureTypeEnum) -> &str {
-    match creature_type {
-        CreatureTypeEnum::Monster => "monster",
-        CreatureTypeEnum::Npc => "npc",
-    }
-}

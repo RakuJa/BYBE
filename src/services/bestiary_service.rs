@@ -6,6 +6,7 @@ use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, S
 use crate::services::url_calculator::{add_boolean_query, next_url_calculator};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
+use sqlx::{Pool, Sqlite};
 use std::collections::HashMap;
 use utoipa::ToSchema;
 
@@ -16,19 +17,20 @@ pub struct BestiaryResponse {
     next: Option<String>,
 }
 
-pub async fn get_creature(id: i32) -> HashMap<String, Option<Creature>> {
-    hashmap! {String::from("results") => get_creature_by_id(id)}
+pub async fn get_creature(conn: &Pool<Sqlite>, id: i32) -> HashMap<String, Option<Creature>> {
+    hashmap! {String::from("results") => get_creature_by_id(conn, id).await}
 }
 
-pub async fn get_elite_creature(id: i32) -> HashMap<String, Option<Creature>> {
-    hashmap! {String::from("results") => update_creature(id, 1)}
+pub async fn get_elite_creature(conn: &Pool<Sqlite>, id: i32) -> HashMap<String, Option<Creature>> {
+    hashmap! {String::from("results") => update_creature(conn, id, 1).await}
 }
 
-pub async fn get_weak_creature(id: i32) -> HashMap<String, Option<Creature>> {
-    hashmap! {String::from("results") => update_creature(id, -1)}
+pub async fn get_weak_creature(conn: &Pool<Sqlite>, id: i32) -> HashMap<String, Option<Creature>> {
+    hashmap! {String::from("results") => update_creature(conn, id, -1).await}
 }
 
-pub fn get_bestiary(
+pub async fn get_bestiary(
+    conn: &Pool<Sqlite>,
     sort_field: &SortData,
     field_filter: &FieldFilters,
     pagination: &PaginatedRequest,
@@ -37,40 +39,40 @@ pub fn get_bestiary(
         sort_field,
         field_filter,
         pagination,
-        db_proxy::get_paginated_creatures(sort_field, field_filter, pagination),
+        db_proxy::get_paginated_creatures(conn, sort_field, field_filter, pagination).await,
     )
 }
 
-pub fn get_families_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::Family)
+pub async fn get_families_list(conn: &Pool<Sqlite>) -> Vec<String> {
+    db_proxy::get_keys(conn, CreatureField::Family).await
 }
 
-pub fn get_traits_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::Traits)
+pub async fn get_traits_list(conn: &Pool<Sqlite>) -> Vec<String> {
+    db_proxy::get_keys(conn, CreatureField::Traits).await
 }
 
-pub fn get_rarities_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::Rarity)
+pub async fn get_rarities_list(conn: &Pool<Sqlite>) -> Vec<String> {
+    db_proxy::get_keys(conn, CreatureField::Rarity).await
 }
 
-pub fn get_sizes_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::Size)
+pub async fn get_sizes_list(conn: &Pool<Sqlite>) -> Vec<String> {
+    db_proxy::get_keys(conn, CreatureField::Size).await
 }
 
-pub fn get_alignments_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::Alignment)
+pub async fn get_alignments_list(conn: &Pool<Sqlite>) -> Vec<String> {
+    db_proxy::get_keys(conn, CreatureField::Alignment).await
 }
 
-pub fn get_creature_types_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::CreatureTypes)
+pub async fn get_creature_types_list(conn: &Pool<Sqlite>) -> Vec<String> {
+    db_proxy::get_keys(conn, CreatureField::CreatureTypes).await
 }
 
 fn hp_increase_by_level() -> HashMap<i8, u16> {
     hashmap! { 1 => 10, 2=> 15, 5=> 20, 20=> 30 }
 }
 
-fn update_creature(id: i32, level_delta: i8) -> Option<Creature> {
-    match get_creature_by_id(id) {
+async fn update_creature(conn: &Pool<Sqlite>, id: i32, level_delta: i8) -> Option<Creature> {
+    match get_creature_by_id(conn, id).await {
         Some(mut creature) => {
             let hp_increase = hp_increase_by_level();
             let desired_key = hp_increase
