@@ -1,5 +1,5 @@
-use crate::AppState;
 use crate::models::creature::Creature;
+use crate::AppState;
 
 #[derive(Default, Eq, PartialEq, Clone)]
 pub struct RuntimeFieldsValues {
@@ -13,11 +13,14 @@ pub struct RuntimeFieldsValues {
     pub list_of_creature_types: Vec<String>,
 }
 
-pub fn from_db_data_to_filter_cache(app_state: &AppState, data: Vec<Creature>) -> RuntimeFieldsValues {
+pub fn from_db_data_to_filter_cache(
+    app_state: &AppState,
+    data: Vec<Creature>,
+) -> RuntimeFieldsValues {
     let mut fields_values_cache = RuntimeFieldsValues::default();
     let cache = &app_state.runtime_fields_cache.clone();
     if let Some(runtime_fields) = cache.get(&0) {
-        return RuntimeFieldsValues{
+        return RuntimeFieldsValues {
             list_of_ids: runtime_fields.list_of_ids.clone(),
             list_of_levels: runtime_fields.list_of_levels.clone(),
             list_of_families: runtime_fields.list_of_families.clone(),
@@ -26,7 +29,7 @@ pub fn from_db_data_to_filter_cache(app_state: &AppState, data: Vec<Creature>) -
             list_of_sizes: runtime_fields.list_of_sizes.clone(),
             list_of_rarities: runtime_fields.list_of_rarities.clone(),
             list_of_creature_types: runtime_fields.list_of_creature_types.clone(),
-        }
+        };
     }
     for curr_creature in data {
         let id = curr_creature.id.to_string();

@@ -4,6 +4,7 @@ extern crate lazy_static;
 
 mod routes;
 
+use crate::db::db_cache::RuntimeFieldsValues;
 use crate::models::creature::Creature;
 use crate::routes::{bestiary, encounter, health};
 use actix_cors::Cors;
@@ -15,7 +16,6 @@ use std::env;
 use std::time::Duration;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
-use crate::db::db_cache::RuntimeFieldsValues;
 
 mod db;
 mod models;
