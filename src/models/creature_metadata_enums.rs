@@ -65,17 +65,7 @@ pub enum AlignmentEnum {
 }
 
 #[derive(
-    Serialize,
-    Deserialize,
-    ToSchema,
-    Display,
-    Eq,
-    Hash,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Default,
-    EnumString,
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
 )]
 pub enum RarityEnum {
     #[default]
@@ -90,17 +80,7 @@ pub enum RarityEnum {
 }
 
 #[derive(
-    Serialize,
-    Deserialize,
-    ToSchema,
-    Display,
-    Eq,
-    Hash,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Default,
-    EnumString,
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
 )]
 pub enum SizeEnum {
     #[serde(alias = "tiny", alias = "TINY")]
@@ -163,6 +143,23 @@ impl Clone for AlignmentEnum {
     }
 }
 
+impl FromStr for RarityEnum {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "COMMON" => Ok(RarityEnum::Common),
+            "common" => Ok(RarityEnum::Common),
+            "UNCOMMON" => Ok(RarityEnum::Uncommon),
+            "uncommon" => Ok(RarityEnum::Uncommon),
+            "RARE" => Ok(RarityEnum::Rare),
+            "rare" => Ok(RarityEnum::Rare),
+            "UNIQUE" => Ok(RarityEnum::Unique),
+            "unique" => Ok(RarityEnum::Unique),
+            _ => Err(()),
+        }
+    }
+}
+
 impl Clone for RarityEnum {
     fn clone(&self) -> RarityEnum {
         match self {
@@ -183,6 +180,27 @@ impl Clone for SizeEnum {
             SizeEnum::Large => SizeEnum::Large,
             SizeEnum::Huge => SizeEnum::Huge,
             SizeEnum::Gargantuan => SizeEnum::Gargantuan,
+        }
+    }
+}
+
+impl FromStr for SizeEnum {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "TINY" => Ok(SizeEnum::Tiny),
+            "tiny" => Ok(SizeEnum::Tiny),
+            "SMALL" => Ok(SizeEnum::Small),
+            "small" => Ok(SizeEnum::Small),
+            "MEDIUM" => Ok(SizeEnum::Medium),
+            "medium" => Ok(SizeEnum::Medium),
+            "LARGE" => Ok(SizeEnum::Large),
+            "large" => Ok(SizeEnum::Large),
+            "HUGE" => Ok(SizeEnum::Huge),
+            "huge" => Ok(SizeEnum::Huge),
+            "GARGANTUAN" => Ok(SizeEnum::Gargantuan),
+            "gargantuan" => Ok(SizeEnum::Gargantuan),
+            _ => Err(()),
         }
     }
 }
