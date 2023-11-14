@@ -116,6 +116,7 @@ pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String>
             CreatureField::SpellCaster => vec![true.to_string(), false.to_string()],
             CreatureField::Family => runtime_fields_values.list_of_families,
             CreatureField::Traits => runtime_fields_values.list_of_traits,
+            CreatureField::Sources => runtime_fields_values.list_of_sources,
             CreatureField::Alignment => runtime_fields_values.list_of_alignments,
             CreatureField::Level => runtime_fields_values.list_of_levels,
             CreatureField::CreatureTypes => runtime_fields_values.list_of_creature_types,

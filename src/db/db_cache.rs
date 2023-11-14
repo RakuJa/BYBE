@@ -7,6 +7,7 @@ pub struct RuntimeFieldsValues {
     pub list_of_levels: Vec<String>,
     pub list_of_families: Vec<String>,
     pub list_of_traits: Vec<String>,
+    pub list_of_sources: Vec<String>,
     pub list_of_alignments: Vec<String>,
     pub list_of_sizes: Vec<String>,
     pub list_of_rarities: Vec<String>,
@@ -25,6 +26,7 @@ pub fn from_db_data_to_filter_cache(
             list_of_levels: runtime_fields.list_of_levels.clone(),
             list_of_families: runtime_fields.list_of_families.clone(),
             list_of_traits: runtime_fields.list_of_traits.clone(),
+            list_of_sources: runtime_fields.list_of_sources.clone(),
             list_of_alignments: runtime_fields.list_of_alignments.clone(),
             list_of_sizes: runtime_fields.list_of_sizes.clone(),
             list_of_rarities: runtime_fields.list_of_rarities.clone(),
@@ -59,6 +61,14 @@ pub fn from_db_data_to_filter_cache(
                 fields_values_cache
                     .list_of_traits
                     .push(single_trait.to_string())
+            }
+        });
+
+        curr_creature.sources.iter().for_each(|single_source| {
+            if !fields_values_cache.list_of_sources.contains(single_source) {
+                fields_values_cache
+                    .list_of_sources
+                    .push(single_source.to_string())
             }
         });
 

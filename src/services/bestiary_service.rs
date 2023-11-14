@@ -52,6 +52,10 @@ pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
     db_proxy::get_keys(app_state, CreatureField::Traits).await
 }
 
+pub async fn get_sources_list(app_state: &AppState) -> Vec<String> {
+    db_proxy::get_keys(app_state, CreatureField::Sources).await
+}
+
 pub async fn get_rarities_list(app_state: &AppState) -> Vec<String> {
     db_proxy::get_keys(app_state, CreatureField::Rarity).await
 }
