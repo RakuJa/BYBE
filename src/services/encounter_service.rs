@@ -9,13 +9,13 @@ use crate::models::encounter_structs::{
 };
 use crate::services::encounter_handler::encounter_calculator;
 use crate::services::encounter_handler::encounter_calculator::calculate_encounter_scaling_difficulty;
+use crate::AppState;
 use anyhow::{ensure, Result};
 use counter::Counter;
 use log::warn;
 use rand::seq::SliceRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use sqlx::{Pool, Sqlite};
 use std::collections::{HashMap, HashSet};
 use utoipa::ToSchema;
 
@@ -50,11 +50,11 @@ pub fn get_encounter_info(enc_params: EncounterParams) -> EncounterInfoResponse 
 }
 
 pub async fn generate_random_encounter(
-    conn: &Pool<Sqlite>,
+    app_state: &AppState,
     enc_data: RandomEncounterData,
 ) -> RandomEncounterGeneratorResponse {
     let party_levels = enc_data.party_levels.clone();
-    let encounter_data = calculate_random_encounter(conn, enc_data, party_levels).await;
+    let encounter_data = calculate_random_encounter(app_state, enc_data, party_levels).await;
     match encounter_data {
         Err(error) => {
             warn!(
@@ -77,7 +77,7 @@ pub async fn generate_random_encounter(
 
 // Private method, does not handle failure. For that we use a public method
 async fn calculate_random_encounter(
-    conn: &Pool<Sqlite>,
+    app_state: &AppState,
     enc_data: RandomEncounterData,
     party_levels: Vec<i16>,
 ) -> Result<RandomEncounterGeneratorResponse> {
@@ -105,7 +105,7 @@ async fn calculate_random_encounter(
         enc_data.creature_types,
         unique_levels,
     );
-    let filtered_creatures = fetch_creatures_passing_all_filters(conn, filter_map).await?;
+    let filtered_creatures = fetch_creatures_passing_all_filters(app_state, filter_map).await?;
     ensure!(
         !filtered_creatures.is_empty(),
         "No creatures have been fetched"

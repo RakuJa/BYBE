@@ -78,6 +78,6 @@ pub async fn get_generated_random_encounter(
     web::Json(body): web::Json<RandomEncounterData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        encounter_service::generate_random_encounter(&data.conn, body).await,
+        encounter_service::generate_random_encounter(&data, body).await,
     ))
 }

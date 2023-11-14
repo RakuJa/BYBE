@@ -2,7 +2,7 @@ use crate::models::creature::Creature;
 use crate::models::creature_metadata_enums::{
     AlignmentEnum, CreatureTypeEnum, RarityEnum, SizeEnum,
 };
-use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
+use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
 use crate::services::bestiary_service;
 use crate::services::bestiary_service::BestiaryResponse;
 use crate::AppState;
@@ -60,7 +60,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     path = "/bestiary/list",
     tag = "bestiary",
     params(
-        SortData, FieldFilters, PaginatedRequest
+        FieldFilters, PaginatedRequest
     ),
     responses(
         (status=200, description = "Successful Response", body = BestiaryResponse),
@@ -70,12 +70,11 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
 #[get("/list")]
 pub async fn get_bestiary(
     data: web::Data<AppState>,
-    sort: Query<SortData>,
     filters: Query<FieldFilters>,
     pagination: Query<PaginatedRequest>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_bestiary(&data.conn, &sort.0, &filters.0, &pagination.0).await,
+        bestiary_service::get_bestiary(&data, &filters.0, &pagination.0).await,
     ))
 }
 
@@ -93,9 +92,7 @@ pub async fn get_bestiary(
 )]
 #[get("/families")]
 pub async fn get_families_list(data: web::Data<AppState>) -> Result<impl Responder> {
-    Ok(web::Json(
-        bestiary_service::get_families_list(&data.conn).await,
-    ))
+    Ok(web::Json(bestiary_service::get_families_list(&data).await))
 }
 
 #[utoipa::path(
@@ -112,9 +109,7 @@ pub async fn get_families_list(data: web::Data<AppState>) -> Result<impl Respond
 )]
 #[get("/traits")]
 pub async fn get_traits_list(data: web::Data<AppState>) -> Result<impl Responder> {
-    Ok(web::Json(
-        bestiary_service::get_traits_list(&data.conn).await,
-    ))
+    Ok(web::Json(bestiary_service::get_traits_list(&data).await))
 }
 
 #[utoipa::path(
@@ -131,9 +126,7 @@ pub async fn get_traits_list(data: web::Data<AppState>) -> Result<impl Responder
 )]
 #[get("/rarities")]
 pub async fn get_rarities_list(data: web::Data<AppState>) -> Result<impl Responder> {
-    Ok(web::Json(
-        bestiary_service::get_rarities_list(&data.conn).await,
-    ))
+    Ok(web::Json(bestiary_service::get_rarities_list(&data).await))
 }
 
 #[utoipa::path(
@@ -150,9 +143,7 @@ pub async fn get_rarities_list(data: web::Data<AppState>) -> Result<impl Respond
 )]
 #[get("/sizes")]
 pub async fn get_sizes_list(data: web::Data<AppState>) -> Result<impl Responder> {
-    Ok(web::Json(
-        bestiary_service::get_sizes_list(&data.conn).await,
-    ))
+    Ok(web::Json(bestiary_service::get_sizes_list(&data).await))
 }
 
 #[utoipa::path(
@@ -170,7 +161,7 @@ pub async fn get_sizes_list(data: web::Data<AppState>) -> Result<impl Responder>
 #[get("/alignments")]
 pub async fn get_alignments_list(data: web::Data<AppState>) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_alignments_list(&data.conn).await,
+        bestiary_service::get_alignments_list(&data).await,
     ))
 }
 
@@ -189,7 +180,7 @@ pub async fn get_alignments_list(data: web::Data<AppState>) -> Result<impl Respo
 #[get("/creature_types")]
 pub async fn get_creature_types_list(data: web::Data<AppState>) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_creature_types_list(&data.conn).await,
+        bestiary_service::get_creature_types_list(&data).await,
     ))
 }
 
@@ -211,7 +202,7 @@ pub async fn get_creature(
     creature_id: web::Path<String>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_creature(&data.conn, sanitize_id(&creature_id)?).await,
+        bestiary_service::get_creature(&data, sanitize_id(&creature_id)?).await,
     ))
 }
 
@@ -233,7 +224,7 @@ pub async fn get_elite_creature(
     creature_id: web::Path<String>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_elite_creature(&data.conn, sanitize_id(&creature_id)?).await,
+        bestiary_service::get_elite_creature(&data, sanitize_id(&creature_id)?).await,
     ))
 }
 
@@ -255,7 +246,7 @@ pub async fn get_weak_creature(
     creature_id: web::Path<String>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_weak_creature(&data.conn, sanitize_id(&creature_id)?).await,
+        bestiary_service::get_weak_creature(&data, sanitize_id(&creature_id)?).await,
     ))
 }
 
