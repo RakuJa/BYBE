@@ -29,8 +29,7 @@ async fn index() -> impl Responder {
 }
 
 fn get_service_db_url() -> String {
-    env::var("DATABASE_URL")
-        .unwrap_or("sqlite:////home/rakuja/PycharmProjects/AON_scraper/database.db".to_string())
+    env::var("DATABASE_URL").expect("Error fetching database URL")
 }
 
 fn get_service_ip() -> String {

@@ -44,19 +44,18 @@ async fn from_raw_vec_to_creature(conn: &Pool<Sqlite>, raw_vec: Vec<RawCreature>
 }
 
 async fn from_raw_to_creature(conn: &Pool<Sqlite>, raw: &RawCreature) -> Creature {
-    let creature_type =
-        CreatureTypeEnum::from_str(raw.creature_type.clone().as_str()).unwrap_or_default();
+    let creature_type = CreatureTypeEnum::from_str(raw.creature_type.as_str()).unwrap_or_default();
     let alignment_enum = AlignmentEnum::from_str(raw.alignment.as_str()).unwrap_or_default();
     let size_enum = SizeEnum::from_str(raw.size.as_str()).unwrap_or_default();
     let rarity_enum = RarityEnum::from_str(raw.rarity.as_str()).unwrap_or_default();
     let archive_link = generate_archive_link(raw.aon_id, &creature_type);
 
     let sources = sqlx::query_as::<_, CreatureSource>(
-        &*format!("SELECT * FROM source_table INTERSECT SELECT source_id FROM SOURCE_ASSOCIATION_TABLE WHERE creature_id == {}", raw.id)
+        &format!("SELECT * FROM source_table INTERSECT SELECT source_id FROM SOURCE_ASSOCIATION_TABLE WHERE creature_id == {}", raw.id)
     ).fetch_all(conn).await.unwrap_or_default();
 
     let traits = sqlx::query_as::<_, CreatureTrait>(
-        &*format!("SELECT * FROM trait_table INTERSECT SELECT trait_id FROM TRAIT_ASSOCIATION_TABLE WHERE creature_id == {}", raw.id)
+        &format!("SELECT * FROM trait_table INTERSECT SELECT trait_id FROM TRAIT_ASSOCIATION_TABLE WHERE creature_id == {}", raw.id)
     ).fetch_all(conn).await.unwrap_or_default();
     Creature {
         id: raw.id,
@@ -71,8 +70,14 @@ async fn from_raw_to_creature(conn: &Pool<Sqlite>, raw: &RawCreature) -> Creatur
         is_melee: raw.is_melee != 0,
         is_ranged: raw.is_ranged != 0,
         is_spell_caster: raw.is_spell_caster != 0,
-        sources: sources.into_iter().map(|curr_source| {curr_source.name}).collect(),
-        traits: traits.into_iter().map(|curr_trait| {curr_trait.name}).collect(),
+        sources: sources
+            .into_iter()
+            .map(|curr_source| curr_source.name)
+            .collect(),
+        traits: traits
+            .into_iter()
+            .map(|curr_trait| curr_trait.name)
+            .collect(),
         creature_type,
         archive_link,
     }
@@ -83,7 +88,7 @@ pub async fn fetch_creatures(conn: &Pool<Sqlite>) -> Result<Vec<Creature>, Error
         .fetch_all(conn)
         .await;
     match creatures {
-        Ok(creature_list) => Ok(from_raw_vec_to_creature(conn,creature_list).await),
+        Ok(creature_list) => Ok(from_raw_vec_to_creature(conn, creature_list).await),
         Err(err) => {
             warn!("Error converting data from db {}", err);
             Err(err)

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use strum::{Display, EnumString};
 use utoipa::ToSchema;
 
@@ -117,17 +118,7 @@ pub enum SizeEnum {
     Gargantuan,
 }
 #[derive(
-    Serialize,
-    Deserialize,
-    ToSchema,
-    Display,
-    Eq,
-    Hash,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Default,
-    EnumString,
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
 )]
 pub enum CreatureTypeEnum {
     #[default]
@@ -139,6 +130,19 @@ pub enum CreatureTypeEnum {
     #[strum(to_string = "NPC")]
     #[serde(rename = "NPC")]
     Npc,
+}
+
+impl FromStr for CreatureTypeEnum {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Monster" => Ok(CreatureTypeEnum::Monster),
+            "NPC" => Ok(CreatureTypeEnum::Npc),
+            "Npc" => Ok(CreatureTypeEnum::Npc),
+            "npc" => Ok(CreatureTypeEnum::Npc),
+            _ => Ok(CreatureTypeEnum::Monster),
+        }
+    }
 }
 
 impl Clone for AlignmentEnum {

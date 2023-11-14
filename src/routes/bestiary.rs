@@ -1,5 +1,7 @@
 use crate::models::creature::Creature;
-use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
+use crate::models::creature_metadata_enums::{
+    AlignmentEnum, CreatureTypeEnum, RarityEnum, SizeEnum,
+};
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
 use crate::services::bestiary_service;
 use crate::services::bestiary_service::BestiaryResponse;
@@ -39,7 +41,14 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             get_elite_creature,
             get_weak_creature,
         ),
-        components(schemas(BestiaryResponse, Creature, AlignmentEnum, RarityEnum, SizeEnum))
+        components(schemas(
+            BestiaryResponse,
+            Creature,
+            AlignmentEnum,
+            RarityEnum,
+            SizeEnum,
+            CreatureTypeEnum
+        ))
     )]
     struct ApiDoc;
 
