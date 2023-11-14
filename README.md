@@ -1,7 +1,7 @@
 ![Rust](https://img.shields.io/badge/Rust-664666?style=for-the-badge&logo=rust&logoColor=red)
 ![Actix-web](https://img.shields.io/badge/actix-web?style=for-the-badge&logoColor=black&labelColor=pink&color=black
 )
-![Redis](https://img.shields.io/badge/redis-%23DD0031.svg?style=for-the-badge&logo=redis&logoColor=white)
+![SQLite](https://img.shields.io/badge/sqlite-%2307405e.svg?style=for-the-badge&logo=sqlite&logoColor=white)
 [![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](https://opensource.org/licenses/MIT)
 
 
@@ -23,13 +23,13 @@
 Built using:
 
 - [Rust](https://www.rust-lang.org/tools/install)
-- [Redis](https://redis.io/download/)
+- [SQLite](https://www.sqlite.org/download.html)
 
 ## Installation guide - Local
 
 1. Install [Rust](https://www.rust-lang.org/tools/install) on your machine.
-2. Install [Redis](https://redis.io/download/) and populate the database.
-3Clone this repository:
+2. Populate the SQLite database.
+3. Clone this repository:
 
 ```
 git clone https://github.com/RakuJa/BYBE
@@ -41,14 +41,14 @@ git clone https://github.com/RakuJa/BYBE
 ```
 cargo build
 ```
-
-5. Run the backend in development mode:
+6. Set DATABASE_URL variable to SQLite db path
+7. Run the backend in development mode:
 
 ```
 cargo run
 ```
 
-6. To instead deploy the production build, run:
+8. To instead deploy the production build, run:
 
 ```
 cargo build --release
