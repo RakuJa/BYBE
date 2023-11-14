@@ -60,23 +60,18 @@ cargo run
 
 ## Installation guide using Docker
 
-1) Install Docker on your local machine
-2) Download redis on your local machine:
-```
-docker pull redis
-```
-3) Clone the repository or download the ZIP
+1. Install Docker on your local machine
+2. Clone the repository or download the ZIP
 ```
 git clone https://github.com/RakuJa/BYBE
 ```
-4) Go to the local BYBE project folder
+3. Go to the local BYBE project folder
 
-5) Build docker image of bybe using
+4. Build docker image of bybe using
 ```
 docker build -t bybe .
 ```
-
-6) Run the image
+5. Run the image
 ```
 docker run -p 25566:25566 --name bybe-container bybe
 ```
