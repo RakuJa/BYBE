@@ -85,8 +85,13 @@ async fn calculate_random_encounter(
 
     let (exp, lvl_combinations) =
         encounter_calculator::calculate_lvl_combination_for_encounter(&enc_diff, &party_levels);
+    let filtered_lvl_combinations = encounter_calculator::filter_combinations_outside_range(
+        lvl_combinations,
+        enc_data.min_creatures,
+        enc_data.max_creatures,
+    );
     let unique_levels = HashSet::from_iter(
-        lvl_combinations
+        filtered_lvl_combinations
             .clone()
             .into_iter()
             .flatten()
@@ -111,7 +116,7 @@ async fn calculate_random_encounter(
         "No creatures have been fetched"
     );
     let chosen_encounter =
-        choose_random_creatures_combination(filtered_creatures, lvl_combinations)?;
+        choose_random_creatures_combination(filtered_creatures, filtered_lvl_combinations)?;
 
     let scaled_exp_levels = calculate_encounter_scaling_difficulty(party_levels.len());
 

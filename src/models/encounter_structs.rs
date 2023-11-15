@@ -25,6 +25,8 @@ pub struct RandomEncounterData {
     pub alignments: Option<Vec<AlignmentEnum>>,
     pub creature_types: Option<Vec<CreatureTypeEnum>>,
     pub challenge: Option<EncounterChallengeEnum>,
+    pub min_creatures: Option<u8>,
+    pub max_creatures: Option<u8>,
     #[validate(length(min = 1))]
     pub party_levels: Vec<i16>,
 }

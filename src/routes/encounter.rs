@@ -61,7 +61,9 @@ pub async fn get_encounter_info(
     tag = "encounter",
     request_body(
         content = RandomEncounterData,
-        description = "Party levels as a vector of integers",
+        description = "Party levels as a vector of integers,\
+         if min and max are not set they will not be considered. If only one of them is set, \
+         the other one will be set at the same value.",
         content_type = "application/json",
     ),
     params(
