@@ -84,7 +84,9 @@ async fn from_raw_to_creature(conn: &Pool<Sqlite>, raw: &RawCreature) -> Creatur
 }
 
 pub async fn fetch_creatures(conn: &Pool<Sqlite>) -> Result<Vec<Creature>, Error> {
-    let creatures = sqlx::query_as::<_, RawCreature>("SELECT * FROM CREATURE_TABLE")
+    let creatures = sqlx::query_as::<_, RawCreature>(
+        "SELECT * FROM CREATURE_TABLE ORDER BY name"
+    )
         .fetch_all(conn)
         .await;
     match creatures {
