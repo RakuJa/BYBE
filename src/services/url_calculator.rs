@@ -1,25 +1,16 @@
 use crate::models::creature_metadata_enums::{creature_type_to_url_string, CreatureTypeEnum};
-use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
+use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
 
 pub fn next_url_calculator(
-    sort_field: &SortData,
     field_filters: &FieldFilters,
     pagination: &PaginatedRequest,
     next_cursor: u32,
 ) -> String {
-    let base_url = "https://bybe.fly.dev/bestiary/list/"; //"0.0.0.0:25566/list/"
-    let sort_query = format!(
-        "?sort_key={}&order_by={}",
-        sort_field.sort_key.unwrap_or_default(),
-        sort_field.order_by.unwrap_or_default()
-    );
+    let base_url = "https://backbybe.fly.dev/bestiary/list/"; //"0.0.0.0:25566/list/"
     let filter_query = filter_query_calculator(field_filters);
 
     let pagination_query = format!("&cursor={}&page_size={}", next_cursor, pagination.page_size);
-    format!(
-        "{}{}{}{}",
-        base_url, sort_query, filter_query, pagination_query
-    )
+    format!("{}{}{}", base_url, filter_query, pagination_query)
 }
 
 pub fn generate_archive_link(id: i32, creature_type: &CreatureTypeEnum) -> String {

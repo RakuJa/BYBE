@@ -1,36 +1,7 @@
 use crate::models::creature::Creature;
-use cached::proc_macro::cached;
+use crate::AppState;
 
-#[derive(Default, Hash, Eq, PartialEq, Clone)]
-pub struct SortedVectorsByField {
-    pub unordered_creatures: Vec<Creature>,
-
-    pub order_by_id_ascending: Vec<Creature>,
-    pub order_by_id_descending: Vec<Creature>,
-
-    pub order_by_name_ascending: Vec<Creature>,
-    pub order_by_name_descending: Vec<Creature>,
-
-    pub order_by_hp_ascending: Vec<Creature>,
-    pub order_by_hp_descending: Vec<Creature>,
-
-    pub order_by_level_ascending: Vec<Creature>,
-    pub order_by_level_descending: Vec<Creature>,
-
-    pub order_by_family_ascending: Vec<Creature>,
-    pub order_by_family_descending: Vec<Creature>,
-
-    pub order_by_alignment_ascending: Vec<Creature>,
-    pub order_by_alignment_descending: Vec<Creature>,
-
-    pub order_by_size_ascending: Vec<Creature>,
-    pub order_by_size_descending: Vec<Creature>,
-
-    pub order_by_rarity_ascending: Vec<Creature>,
-    pub order_by_rarity_descending: Vec<Creature>,
-}
-
-#[derive(Default, Hash, Eq, PartialEq, Clone)]
+#[derive(Default, Eq, PartialEq, Clone)]
 pub struct RuntimeFieldsValues {
     pub list_of_ids: Vec<String>,
     pub list_of_levels: Vec<String>,
@@ -42,10 +13,24 @@ pub struct RuntimeFieldsValues {
     pub list_of_creature_types: Vec<String>,
 }
 
-#[cached(time = 604800, sync_writes = true)]
-pub fn from_db_data_to_filter_cache(data: Vec<Creature>) -> RuntimeFieldsValues {
+pub fn from_db_data_to_filter_cache(
+    app_state: &AppState,
+    data: Vec<Creature>,
+) -> RuntimeFieldsValues {
     let mut fields_values_cache = RuntimeFieldsValues::default();
-    // The right structure would be an hashset, but it does not implement hash..
+    let cache = &app_state.runtime_fields_cache.clone();
+    if let Some(runtime_fields) = cache.get(&0) {
+        return RuntimeFieldsValues {
+            list_of_ids: runtime_fields.list_of_ids.clone(),
+            list_of_levels: runtime_fields.list_of_levels.clone(),
+            list_of_families: runtime_fields.list_of_families.clone(),
+            list_of_traits: runtime_fields.list_of_traits.clone(),
+            list_of_alignments: runtime_fields.list_of_alignments.clone(),
+            list_of_sizes: runtime_fields.list_of_sizes.clone(),
+            list_of_rarities: runtime_fields.list_of_rarities.clone(),
+            list_of_creature_types: runtime_fields.list_of_creature_types.clone(),
+        };
+    }
     for curr_creature in data {
         let id = curr_creature.id.to_string();
         let lvl = curr_creature.level.to_string();
@@ -95,56 +80,7 @@ pub fn from_db_data_to_filter_cache(data: Vec<Creature>) -> RuntimeFieldsValues 
                 .push(creature_type);
         }
     }
+    cache.insert(0, fields_values_cache.clone());
+
     fields_values_cache
-}
-
-#[cached(time = 604800, sync_writes = true)]
-pub fn from_db_data_to_sorted_vectors(unordered_creatures: Vec<Creature>) -> SortedVectorsByField {
-    let mut sorted_cache = SortedVectorsByField::default();
-
-    let mut sort_stage = unordered_creatures.clone();
-
-    sorted_cache.unordered_creatures = unordered_creatures.clone();
-
-    sort_stage.sort_by_key(|cr| cr.id);
-    sorted_cache.order_by_id_ascending = sort_stage.clone();
-    sort_stage.reverse();
-    sorted_cache.order_by_id_descending = sort_stage.clone();
-
-    sort_stage.sort_by_key(|cr| cr.name.clone());
-    sorted_cache.order_by_name_ascending = sort_stage.clone();
-    sort_stage.reverse();
-    sorted_cache.order_by_name_descending = sort_stage.clone();
-
-    sort_stage.sort_by_key(|cr| cr.hp);
-    sorted_cache.order_by_hp_ascending = sort_stage.clone();
-    sort_stage.reverse();
-    sorted_cache.order_by_hp_descending = sort_stage.clone();
-
-    sort_stage.sort_by_key(|cr| cr.level);
-    sorted_cache.order_by_level_ascending = sort_stage.clone();
-    sort_stage.reverse();
-    sorted_cache.order_by_level_descending = sort_stage.clone();
-
-    sort_stage.sort_by_key(|cr| cr.family.clone());
-    sorted_cache.order_by_family_ascending = sort_stage.clone();
-    sort_stage.reverse();
-    sorted_cache.order_by_family_descending = sort_stage.clone();
-
-    sort_stage.sort_by_key(|cr| cr.alignment.clone());
-    sorted_cache.order_by_alignment_ascending = sort_stage.clone();
-    sort_stage.reverse();
-    sorted_cache.order_by_alignment_descending = sort_stage.clone();
-
-    sort_stage.sort_by_key(|cr| cr.size.clone());
-    sorted_cache.order_by_size_ascending = sort_stage.clone();
-    sort_stage.reverse();
-    sorted_cache.order_by_size_descending = sort_stage.clone();
-
-    sort_stage.sort_by_key(|cr| cr.rarity.clone());
-    sorted_cache.order_by_rarity_ascending = sort_stage.clone();
-    sort_stage.reverse();
-    sorted_cache.order_by_rarity_descending = sort_stage.clone();
-
-    sorted_cache
 }

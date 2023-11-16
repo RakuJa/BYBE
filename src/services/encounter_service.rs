@@ -9,6 +9,7 @@ use crate::models::encounter_structs::{
 };
 use crate::services::encounter_handler::encounter_calculator;
 use crate::services::encounter_handler::encounter_calculator::calculate_encounter_scaling_difficulty;
+use crate::AppState;
 use anyhow::{ensure, Result};
 use counter::Counter;
 use log::warn;
@@ -48,11 +49,12 @@ pub fn get_encounter_info(enc_params: EncounterParams) -> EncounterInfoResponse 
     }
 }
 
-pub fn generate_random_encounter(
+pub async fn generate_random_encounter(
+    app_state: &AppState,
     enc_data: RandomEncounterData,
 ) -> RandomEncounterGeneratorResponse {
     let party_levels = enc_data.party_levels.clone();
-    let encounter_data = calculate_random_encounter(enc_data, party_levels);
+    let encounter_data = calculate_random_encounter(app_state, enc_data, party_levels).await;
     match encounter_data {
         Err(error) => {
             warn!(
@@ -74,7 +76,8 @@ pub fn generate_random_encounter(
 }
 
 // Private method, does not handle failure. For that we use a public method
-fn calculate_random_encounter(
+async fn calculate_random_encounter(
+    app_state: &AppState,
     enc_data: RandomEncounterData,
     party_levels: Vec<i16>,
 ) -> Result<RandomEncounterGeneratorResponse> {
@@ -102,7 +105,7 @@ fn calculate_random_encounter(
         enc_data.creature_types,
         unique_levels,
     );
-    let filtered_creatures = fetch_creatures_passing_all_filters(filter_map)?;
+    let filtered_creatures = fetch_creatures_passing_all_filters(app_state, filter_map).await?;
     ensure!(
         !filtered_creatures.is_empty(),
         "No creatures have been fetched"

@@ -1,4 +1,5 @@
 use serde::{Deserialize, Serialize};
+use std::str::FromStr;
 use strum::{Display, EnumString};
 use utoipa::ToSchema;
 
@@ -64,17 +65,7 @@ pub enum AlignmentEnum {
 }
 
 #[derive(
-    Serialize,
-    Deserialize,
-    ToSchema,
-    Display,
-    Eq,
-    Hash,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Default,
-    EnumString,
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
 )]
 pub enum RarityEnum {
     #[default]
@@ -89,17 +80,7 @@ pub enum RarityEnum {
 }
 
 #[derive(
-    Serialize,
-    Deserialize,
-    ToSchema,
-    Display,
-    Eq,
-    Hash,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Default,
-    EnumString,
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
 )]
 pub enum SizeEnum {
     #[serde(alias = "tiny", alias = "TINY")]
@@ -117,17 +98,7 @@ pub enum SizeEnum {
     Gargantuan,
 }
 #[derive(
-    Serialize,
-    Deserialize,
-    ToSchema,
-    Display,
-    Eq,
-    Hash,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Default,
-    EnumString,
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
 )]
 pub enum CreatureTypeEnum {
     #[default]
@@ -139,6 +110,19 @@ pub enum CreatureTypeEnum {
     #[strum(to_string = "NPC")]
     #[serde(rename = "NPC")]
     Npc,
+}
+
+impl FromStr for CreatureTypeEnum {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "Monster" => Ok(CreatureTypeEnum::Monster),
+            "NPC" => Ok(CreatureTypeEnum::Npc),
+            "Npc" => Ok(CreatureTypeEnum::Npc),
+            "npc" => Ok(CreatureTypeEnum::Npc),
+            _ => Ok(CreatureTypeEnum::Monster),
+        }
+    }
 }
 
 impl Clone for AlignmentEnum {
@@ -155,6 +139,23 @@ impl Clone for AlignmentEnum {
             AlignmentEnum::Lg => AlignmentEnum::Lg,
             AlignmentEnum::No => AlignmentEnum::No,
             AlignmentEnum::Any => AlignmentEnum::Any,
+        }
+    }
+}
+
+impl FromStr for RarityEnum {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "COMMON" => Ok(RarityEnum::Common),
+            "common" => Ok(RarityEnum::Common),
+            "UNCOMMON" => Ok(RarityEnum::Uncommon),
+            "uncommon" => Ok(RarityEnum::Uncommon),
+            "RARE" => Ok(RarityEnum::Rare),
+            "rare" => Ok(RarityEnum::Rare),
+            "UNIQUE" => Ok(RarityEnum::Unique),
+            "unique" => Ok(RarityEnum::Unique),
+            _ => Err(()),
         }
     }
 }
@@ -183,6 +184,27 @@ impl Clone for SizeEnum {
     }
 }
 
+impl FromStr for SizeEnum {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s {
+            "TINY" => Ok(SizeEnum::Tiny),
+            "tiny" => Ok(SizeEnum::Tiny),
+            "SMALL" => Ok(SizeEnum::Small),
+            "small" => Ok(SizeEnum::Small),
+            "MEDIUM" => Ok(SizeEnum::Medium),
+            "medium" => Ok(SizeEnum::Medium),
+            "LARGE" => Ok(SizeEnum::Large),
+            "large" => Ok(SizeEnum::Large),
+            "HUGE" => Ok(SizeEnum::Huge),
+            "huge" => Ok(SizeEnum::Huge),
+            "GARGANTUAN" => Ok(SizeEnum::Gargantuan),
+            "gargantuan" => Ok(SizeEnum::Gargantuan),
+            _ => Err(()),
+        }
+    }
+}
+
 impl Clone for CreatureTypeEnum {
     fn clone(&self) -> CreatureTypeEnum {
         match self {
@@ -196,12 +218,5 @@ pub fn creature_type_to_url_string(creature_type: &CreatureTypeEnum) -> &str {
     match creature_type {
         CreatureTypeEnum::Monster => "Monsters",
         CreatureTypeEnum::Npc => "NPCs",
-    }
-}
-
-pub fn creature_type_to_storage_string(creature_type: &CreatureTypeEnum) -> &str {
-    match creature_type {
-        CreatureTypeEnum::Monster => "monster",
-        CreatureTypeEnum::Npc => "npc",
     }
 }

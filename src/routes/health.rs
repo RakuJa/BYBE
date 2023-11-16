@@ -1,4 +1,4 @@
-use crate::db::db_communicator::is_redis_up;
+use crate::AppState;
 use actix_web::web::Json;
 use actix_web::{get, web};
 use maplit::hashmap;
@@ -34,14 +34,15 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     ),
 )]
 #[get("/health")]
-pub async fn get_health() -> Json<HealthResponse> {
-    let is_redis_up = is_redis_up().unwrap_or(false);
+pub async fn get_health(data: web::Data<AppState>) -> Json<HealthResponse> {
+    let conn = &data.conn;
+    let is_db_up = !conn.is_closed();
     Json(HealthResponse {
-        ready: is_redis_up.to_string(),
+        ready: is_db_up.to_string(),
         dependencies: vec![hashmap! {
-            "name".to_string() => "redis database".to_string(),
-            "ready".to_string() => is_redis_up.to_string(),
-            "live".to_string() => is_redis_up.to_string(),
+            "name".to_string() => "SQLite database".to_string(),
+            "ready".to_string() => is_db_up.to_string(),
+            "live".to_string() => is_db_up.to_string(),
             "type".to_string() => "REQUIRED".to_string(),
         }],
     })

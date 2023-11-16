@@ -2,25 +2,24 @@ use crate::db::db_communicator;
 use crate::models::creature::{check_creature_pass_filters, Creature};
 use std::collections::{HashMap, HashSet};
 
-use crate::db::db_cache::{from_db_data_to_filter_cache, from_db_data_to_sorted_vectors};
+use crate::db::db_cache::from_db_data_to_filter_cache;
 use crate::models::creature_fields_enum::CreatureField;
 use crate::models::creature_filter_enum::CreatureFilter;
-use crate::models::creature_sort_enums::{OrderEnum, SortEnum};
-use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
+use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
+use crate::AppState;
 use anyhow::Result;
-use cached::proc_macro::cached;
 
-pub fn get_creature_by_id(id: i32) -> Option<Creature> {
-    let list = get_list(None, None);
+pub async fn get_creature_by_id(app_state: &AppState, id: i32) -> Option<Creature> {
+    let list = get_list(app_state).await;
     list.iter().find(|creature| creature.id == id).cloned()
 }
 
-pub fn get_paginated_creatures(
-    sort: &SortData,
+pub async fn get_paginated_creatures(
+    app_state: &AppState,
     filters: &FieldFilters,
     pagination: &PaginatedRequest,
 ) -> Result<(u32, Vec<Creature>)> {
-    let list = get_list(sort.sort_key, sort.order_by);
+    let list = get_list(app_state).await;
 
     let filtered_list: Vec<Creature> = list
         .into_iter()
@@ -37,10 +36,11 @@ pub fn get_paginated_creatures(
     Ok((curr_slice.len() as u32, curr_slice))
 }
 
-pub fn fetch_creatures_passing_all_filters(
+pub async fn fetch_creatures_passing_all_filters(
+    app_state: &AppState,
     key_value_filters: HashMap<CreatureFilter, HashSet<String>>,
 ) -> Result<HashSet<Creature>> {
-    let creature_list = get_list(None, None);
+    let creature_list = get_list(app_state).await;
     let mut intersection = HashSet::from_iter(creature_list.iter().cloned());
     key_value_filters
         .iter()
@@ -104,10 +104,9 @@ fn fetch_creatures_passing_single_filter(
     }
 }
 
-#[cached(time = 604800, sync_writes = true)]
-pub fn get_keys(field: CreatureField) -> Vec<String> {
-    if let Some(db_data) = fetch_data_from_database() {
-        let runtime_fields_values = from_db_data_to_filter_cache(db_data);
+pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String> {
+    if let Some(db_data) = fetch_data_from_database(app_state).await {
+        let runtime_fields_values = from_db_data_to_filter_cache(app_state, db_data);
         let mut x = match field {
             CreatureField::Id => runtime_fields_values.list_of_ids,
             CreatureField::Size => runtime_fields_values.list_of_sizes,
@@ -129,89 +128,27 @@ pub fn get_keys(field: CreatureField) -> Vec<String> {
     vec![]
 }
 
-#[cached(time = 604800, sync_writes = true)]
-fn fetch_data_from_database() -> Option<Vec<Creature>> {
-    if let Some(monster_vec) = fetch_creatures("monster:") {
-        if let Some(mut npc_vec) = fetch_creatures("npc:") {
-            let mut creature_vec = monster_vec;
-            creature_vec.append(&mut npc_vec);
-            return Some(creature_vec);
-        }
+async fn fetch_data_from_database(app_state: &AppState) -> Option<Vec<Creature>> {
+    if let Some(creature_vec) = fetch_creatures(app_state).await {
+        return Some(creature_vec);
     }
     None
 }
 
-fn fetch_creatures(pattern: &str) -> Option<Vec<Creature>> {
-    if let Ok(keys) = db_communicator::fetch_and_parse_all_keys(pattern) {
-        if let Ok(creatures) = db_communicator::get_creatures_by_ids(keys) {
-            return Some(creatures);
-        }
+async fn fetch_creatures(app_state: &AppState) -> Option<Vec<Creature>> {
+    let cache = &app_state.creature_cache.clone();
+    if let Some(creatures) = cache.get(&0) {
+        return Some(creatures);
+    } else if let Ok(creatures) = db_communicator::fetch_creatures(&app_state.conn).await {
+        cache.insert(0, creatures.clone());
+        return Some(creatures);
     }
     None
 }
 
-#[cached(time = 604800, sync_writes = true)]
-fn get_list(sort_field: Option<SortEnum>, order_by: Option<OrderEnum>) -> Vec<Creature> {
-    if let Some(db_data) = fetch_data_from_database() {
-        let sorted_vec_cache = from_db_data_to_sorted_vectors(db_data);
-        let x = match (sort_field.unwrap_or_default(), order_by.unwrap_or_default()) {
-            (SortEnum::Id, OrderEnum::Ascending) => {
-                sorted_vec_cache.order_by_id_ascending.to_owned()
-            }
-            (SortEnum::Id, OrderEnum::Descending) => {
-                sorted_vec_cache.order_by_id_descending.to_owned()
-            }
-
-            (SortEnum::Hp, OrderEnum::Ascending) => {
-                sorted_vec_cache.order_by_hp_ascending.to_owned()
-            }
-            (SortEnum::Hp, OrderEnum::Descending) => {
-                sorted_vec_cache.order_by_hp_descending.to_owned()
-            }
-
-            (SortEnum::Family, OrderEnum::Ascending) => {
-                sorted_vec_cache.order_by_family_ascending.to_owned()
-            }
-            (SortEnum::Family, OrderEnum::Descending) => {
-                sorted_vec_cache.order_by_family_descending.to_owned()
-            }
-
-            (SortEnum::Alignment, OrderEnum::Ascending) => {
-                sorted_vec_cache.order_by_alignment_ascending.to_owned()
-            }
-            (SortEnum::Alignment, OrderEnum::Descending) => {
-                sorted_vec_cache.order_by_alignment_descending.to_owned()
-            }
-
-            (SortEnum::Level, OrderEnum::Ascending) => {
-                sorted_vec_cache.order_by_level_ascending.to_owned()
-            }
-            (SortEnum::Level, OrderEnum::Descending) => {
-                sorted_vec_cache.order_by_level_descending.to_owned()
-            }
-
-            (SortEnum::Name, OrderEnum::Ascending) => {
-                sorted_vec_cache.order_by_name_ascending.to_owned()
-            }
-            (SortEnum::Name, OrderEnum::Descending) => {
-                sorted_vec_cache.order_by_name_descending.to_owned()
-            }
-
-            (SortEnum::Rarity, OrderEnum::Ascending) => {
-                sorted_vec_cache.order_by_rarity_ascending.to_owned()
-            }
-            (SortEnum::Rarity, OrderEnum::Descending) => {
-                sorted_vec_cache.order_by_rarity_descending.to_owned()
-            }
-
-            (SortEnum::Size, OrderEnum::Ascending) => {
-                sorted_vec_cache.order_by_size_ascending.to_owned()
-            }
-            (SortEnum::Size, OrderEnum::Descending) => {
-                sorted_vec_cache.order_by_rarity_descending.to_owned()
-            }
-        };
-        return x;
+async fn get_list(app_state: &AppState) -> Vec<Creature> {
+    if let Some(db_data) = fetch_data_from_database(app_state).await {
+        return db_data;
     }
     vec![]
 }

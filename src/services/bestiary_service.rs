@@ -2,8 +2,9 @@ use crate::db::db_proxy;
 use crate::db::db_proxy::get_creature_by_id;
 use crate::models::creature::Creature;
 use crate::models::creature_fields_enum::CreatureField;
-use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
+use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
 use crate::services::url_calculator::{add_boolean_query, next_url_calculator};
+use crate::AppState;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -16,61 +17,63 @@ pub struct BestiaryResponse {
     next: Option<String>,
 }
 
-pub async fn get_creature(id: i32) -> HashMap<String, Option<Creature>> {
-    hashmap! {String::from("results") => get_creature_by_id(id)}
+pub async fn get_creature(app_state: &AppState, id: i32) -> HashMap<String, Option<Creature>> {
+    hashmap! {String::from("results") => get_creature_by_id(app_state, id).await}
 }
 
-pub async fn get_elite_creature(id: i32) -> HashMap<String, Option<Creature>> {
-    hashmap! {String::from("results") => update_creature(id, 1)}
+pub async fn get_elite_creature(
+    app_state: &AppState,
+    id: i32,
+) -> HashMap<String, Option<Creature>> {
+    hashmap! {String::from("results") => update_creature(app_state, id, 1).await}
 }
 
-pub async fn get_weak_creature(id: i32) -> HashMap<String, Option<Creature>> {
-    hashmap! {String::from("results") => update_creature(id, -1)}
+pub async fn get_weak_creature(app_state: &AppState, id: i32) -> HashMap<String, Option<Creature>> {
+    hashmap! {String::from("results") => update_creature(app_state, id, -1).await}
 }
 
-pub fn get_bestiary(
-    sort_field: &SortData,
+pub async fn get_bestiary(
+    app_state: &AppState,
     field_filter: &FieldFilters,
     pagination: &PaginatedRequest,
 ) -> BestiaryResponse {
     convert_result_to_bestiary_response(
-        sort_field,
         field_filter,
         pagination,
-        db_proxy::get_paginated_creatures(sort_field, field_filter, pagination),
+        db_proxy::get_paginated_creatures(app_state, field_filter, pagination).await,
     )
 }
 
-pub fn get_families_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::Family)
+pub async fn get_families_list(app_state: &AppState) -> Vec<String> {
+    db_proxy::get_keys(app_state, CreatureField::Family).await
 }
 
-pub fn get_traits_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::Traits)
+pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
+    db_proxy::get_keys(app_state, CreatureField::Traits).await
 }
 
-pub fn get_rarities_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::Rarity)
+pub async fn get_rarities_list(app_state: &AppState) -> Vec<String> {
+    db_proxy::get_keys(app_state, CreatureField::Rarity).await
 }
 
-pub fn get_sizes_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::Size)
+pub async fn get_sizes_list(app_state: &AppState) -> Vec<String> {
+    db_proxy::get_keys(app_state, CreatureField::Size).await
 }
 
-pub fn get_alignments_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::Alignment)
+pub async fn get_alignments_list(app_state: &AppState) -> Vec<String> {
+    db_proxy::get_keys(app_state, CreatureField::Alignment).await
 }
 
-pub fn get_creature_types_list() -> Vec<String> {
-    db_proxy::get_keys(CreatureField::CreatureTypes)
+pub async fn get_creature_types_list(app_state: &AppState) -> Vec<String> {
+    db_proxy::get_keys(app_state, CreatureField::CreatureTypes).await
 }
 
 fn hp_increase_by_level() -> HashMap<i8, u16> {
     hashmap! { 1 => 10, 2=> 15, 5=> 20, 20=> 30 }
 }
 
-fn update_creature(id: i32, level_delta: i8) -> Option<Creature> {
-    match get_creature_by_id(id) {
+async fn update_creature(app_state: &AppState, id: i32, level_delta: i8) -> Option<Creature> {
+    match get_creature_by_id(app_state, id).await {
         Some(mut creature) => {
             let hp_increase = hp_increase_by_level();
             let desired_key = hp_increase
@@ -95,7 +98,6 @@ fn update_creature(id: i32, level_delta: i8) -> Option<Creature> {
 }
 
 fn convert_result_to_bestiary_response(
-    sort_field: &SortData,
     field_filters: &FieldFilters,
     pagination: &PaginatedRequest,
     result: Result<(u32, Vec<Creature>)>,
@@ -108,12 +110,7 @@ fn convert_result_to_bestiary_response(
                 results: Some(cr),
                 count: cr_length,
                 next: if cr_length >= pagination.page_size as usize {
-                    Some(next_url_calculator(
-                        sort_field,
-                        field_filters,
-                        pagination,
-                        res.0,
-                    ))
+                    Some(next_url_calculator(field_filters, pagination, res.0))
                 } else {
                     None
                 },

@@ -1,8 +1,11 @@
 use crate::models::creature::Creature;
-use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
-use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest, SortData};
+use crate::models::creature_metadata_enums::{
+    AlignmentEnum, CreatureTypeEnum, RarityEnum, SizeEnum,
+};
+use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
 use crate::services::bestiary_service;
 use crate::services::bestiary_service::BestiaryResponse;
+use crate::AppState;
 use actix_web::{error, get, web, Responder, Result};
 use actix_web_validator::Query;
 use utoipa::OpenApi;
@@ -38,7 +41,14 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             get_elite_creature,
             get_weak_creature,
         ),
-        components(schemas(BestiaryResponse, Creature, AlignmentEnum, RarityEnum, SizeEnum))
+        components(schemas(
+            BestiaryResponse,
+            Creature,
+            AlignmentEnum,
+            RarityEnum,
+            SizeEnum,
+            CreatureTypeEnum
+        ))
     )]
     struct ApiDoc;
 
@@ -50,7 +60,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     path = "/bestiary/list",
     tag = "bestiary",
     params(
-        SortData, FieldFilters, PaginatedRequest
+        FieldFilters, PaginatedRequest
     ),
     responses(
         (status=200, description = "Successful Response", body = BestiaryResponse),
@@ -59,15 +69,13 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
 )]
 #[get("/list")]
 pub async fn get_bestiary(
-    sort: Query<SortData>,
+    data: web::Data<AppState>,
     filters: Query<FieldFilters>,
     pagination: Query<PaginatedRequest>,
 ) -> Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_bestiary(
-        &sort.0,
-        &filters.0,
-        &pagination.0,
-    )))
+    Ok(web::Json(
+        bestiary_service::get_bestiary(&data, &filters.0, &pagination.0).await,
+    ))
 }
 
 #[utoipa::path(
@@ -83,8 +91,8 @@ pub async fn get_bestiary(
     ),
 )]
 #[get("/families")]
-pub async fn get_families_list() -> Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_families_list()))
+pub async fn get_families_list(data: web::Data<AppState>) -> Result<impl Responder> {
+    Ok(web::Json(bestiary_service::get_families_list(&data).await))
 }
 
 #[utoipa::path(
@@ -100,8 +108,8 @@ pub async fn get_families_list() -> Result<impl Responder> {
     ),
 )]
 #[get("/traits")]
-pub async fn get_traits_list() -> Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_traits_list()))
+pub async fn get_traits_list(data: web::Data<AppState>) -> Result<impl Responder> {
+    Ok(web::Json(bestiary_service::get_traits_list(&data).await))
 }
 
 #[utoipa::path(
@@ -117,8 +125,8 @@ pub async fn get_traits_list() -> Result<impl Responder> {
     ),
 )]
 #[get("/rarities")]
-pub async fn get_rarities_list() -> Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_rarities_list()))
+pub async fn get_rarities_list(data: web::Data<AppState>) -> Result<impl Responder> {
+    Ok(web::Json(bestiary_service::get_rarities_list(&data).await))
 }
 
 #[utoipa::path(
@@ -134,8 +142,8 @@ pub async fn get_rarities_list() -> Result<impl Responder> {
     ),
 )]
 #[get("/sizes")]
-pub async fn get_sizes_list() -> Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_sizes_list()))
+pub async fn get_sizes_list(data: web::Data<AppState>) -> Result<impl Responder> {
+    Ok(web::Json(bestiary_service::get_sizes_list(&data).await))
 }
 
 #[utoipa::path(
@@ -151,8 +159,10 @@ pub async fn get_sizes_list() -> Result<impl Responder> {
     ),
 )]
 #[get("/alignments")]
-pub async fn get_alignments_list() -> Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_alignments_list()))
+pub async fn get_alignments_list(data: web::Data<AppState>) -> Result<impl Responder> {
+    Ok(web::Json(
+        bestiary_service::get_alignments_list(&data).await,
+    ))
 }
 
 #[utoipa::path(
@@ -168,8 +178,10 @@ pub async fn get_alignments_list() -> Result<impl Responder> {
     ),
 )]
 #[get("/creature_types")]
-pub async fn get_creature_types_list() -> Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_creature_types_list()))
+pub async fn get_creature_types_list(data: web::Data<AppState>) -> Result<impl Responder> {
+    Ok(web::Json(
+        bestiary_service::get_creature_types_list(&data).await,
+    ))
 }
 
 #[utoipa::path(
@@ -185,9 +197,12 @@ pub async fn get_creature_types_list() -> Result<impl Responder> {
     ),
 )]
 #[get("/base/{creature_id}")]
-pub async fn get_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
+pub async fn get_creature(
+    data: web::Data<AppState>,
+    creature_id: web::Path<String>,
+) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_creature(sanitize_id(&creature_id)?).await,
+        bestiary_service::get_creature(&data, sanitize_id(&creature_id)?).await,
     ))
 }
 
@@ -204,9 +219,12 @@ pub async fn get_creature(creature_id: web::Path<String>) -> Result<impl Respond
     ),
 )]
 #[get("/elite/{creature_id}")]
-pub async fn get_elite_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
+pub async fn get_elite_creature(
+    data: web::Data<AppState>,
+    creature_id: web::Path<String>,
+) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_elite_creature(sanitize_id(&creature_id)?).await,
+        bestiary_service::get_elite_creature(&data, sanitize_id(&creature_id)?).await,
     ))
 }
 
@@ -223,9 +241,12 @@ pub async fn get_elite_creature(creature_id: web::Path<String>) -> Result<impl R
     ),
 )]
 #[get("/weak/{creature_id}")]
-pub async fn get_weak_creature(creature_id: web::Path<String>) -> Result<impl Responder> {
+pub async fn get_weak_creature(
+    data: web::Data<AppState>,
+    creature_id: web::Path<String>,
+) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_weak_creature(sanitize_id(&creature_id)?).await,
+        bestiary_service::get_weak_creature(&data, sanitize_id(&creature_id)?).await,
     ))
 }
 

@@ -1,156 +1,99 @@
 use crate::models::creature::Creature;
 use crate::models::creature_metadata_enums::{
-    creature_type_to_storage_string, AlignmentEnum, CreatureTypeEnum, RarityEnum, SizeEnum,
+    AlignmentEnum, CreatureTypeEnum, RarityEnum, SizeEnum,
 };
 use crate::services::url_calculator::generate_archive_link;
 use log::warn;
-use redis::{
-    from_redis_value, Commands, Connection, ConnectionLike, FromRedisValue, JsonCommands,
-    RedisError, RedisResult, Value,
-};
-use regex::Regex;
 use serde::{Deserialize, Serialize};
-use std::env;
+use sqlx::{Error, FromRow, Pool, Sqlite};
+use std::str::FromStr;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, FromRow)]
 pub struct RawCreature {
+    id: i32,
+    aon_id: i32,
     name: String,
     hp: i16,
     level: i8,
-    alignment: AlignmentEnum,
-    size: SizeEnum,
+    alignment: String,
+    size: String,
     family: Option<String>,
-    rarity: RarityEnum,
+    rarity: String,
     is_melee: i8,
     is_ranged: i8,
     is_spell_caster: i8,
-    sources: String,
-    traits: String,
-    creature_type: CreatureTypeEnum,
+    creature_type: String,
 }
 
-impl FromRedisValue for RawCreature {
-    fn from_redis_value(v: &Value) -> RedisResult<Self> {
-        let json_str: String = from_redis_value(v)?;
-        let vec_of_raw_strings: serde_json::error::Result<Vec<String>> =
-            serde_json::from_str(&json_str);
-        match vec_of_raw_strings {
-            Ok(mut raw) => {
-                // raw is a vec of one element, we can pop it and forget
-                let x: serde_json::error::Result<RawCreature> =
-                    serde_json::from_str(&(raw.pop().unwrap_or(String::from(""))));
-                x
-            }
-            Err(err) => Err(err),
-        }
-        .map_err(redis::RedisError::from)
+#[derive(Serialize, Deserialize, FromRow)]
+pub struct CreatureTrait {
+    name: String,
+}
+
+#[derive(Serialize, Deserialize, FromRow)]
+pub struct CreatureSource {
+    name: String,
+}
+
+async fn from_raw_vec_to_creature(conn: &Pool<Sqlite>, raw_vec: Vec<RawCreature>) -> Vec<Creature> {
+    let mut creature_list = Vec::new();
+    for el in raw_vec {
+        creature_list.push(from_raw_to_creature(conn, &el).await);
     }
+    creature_list
 }
 
-fn from_raw_vec_to_creature(raw_vec: Vec<RawCreature>, id_vec: Vec<String>) -> Vec<Creature> {
-    raw_vec
-        .iter()
-        .zip(id_vec.iter())
-        .map(|(raw, identifier)| from_raw_to_creature(raw, identifier))
-        .collect()
-}
+async fn from_raw_to_creature(conn: &Pool<Sqlite>, raw: &RawCreature) -> Creature {
+    let creature_type = CreatureTypeEnum::from_str(raw.creature_type.as_str()).unwrap_or_default();
+    let alignment_enum = AlignmentEnum::from_str(raw.alignment.as_str()).unwrap_or_default();
+    let size_enum = SizeEnum::from_str(raw.size.as_str()).unwrap_or_default();
+    let rarity_enum = RarityEnum::from_str(raw.rarity.as_str()).unwrap_or_default();
+    let archive_link = generate_archive_link(raw.aon_id, &creature_type);
 
-fn extract_vec_from_raw_string(raw_vector: &str) -> Vec<String> {
-    // Extracts a vec of string from a json string representing a vector
-    // ex "['hi', 'man']" => ['hi', 'man']
-    // complex string ex "oneword's secondword" are stored in double quotes
-    // simple strings in ''
-    let double_quotes_re = Regex::new("\"([^\"]+)\"").unwrap();
-    let single_quotes_re = Regex::new(r"'([^']+)'").unwrap();
+    let sources = sqlx::query_as::<_, CreatureSource>(
+        &format!("SELECT * FROM source_table INTERSECT SELECT source_id FROM SOURCE_ASSOCIATION_TABLE WHERE creature_id == {}", raw.id)
+    ).fetch_all(conn).await.unwrap_or_default();
 
-    let resulting_vector: Vec<String> = double_quotes_re
-        .captures_iter(raw_vector)
-        .filter(|capture| capture.len() >= 2)
-        .map(|capture| capture[1].to_string())
-        .collect();
-    if !resulting_vector.is_empty() {
-        resulting_vector
-    } else {
-        let resulting_vector: Vec<String> = single_quotes_re
-            .captures_iter(raw_vector)
-            .map(|capture| capture[1].to_string())
-            .collect();
-        resulting_vector
-    }
-}
-
-fn from_raw_to_creature(raw: &RawCreature, identifier: &str) -> Creature {
-    let creature_type = raw.creature_type.clone();
-    let key_prefix_string = &format!("{}{}", creature_type_to_storage_string(&creature_type), ":");
-    let id = identifier
-        .strip_prefix(key_prefix_string)
-        .map(|s| s.parse::<i32>().unwrap_or(0))
-        .unwrap_or(0);
-    let sources_list = extract_vec_from_raw_string(&raw.sources);
-    let traits_list = extract_vec_from_raw_string(&raw.traits);
-    let archive_link = generate_archive_link(id, &creature_type);
+    let traits = sqlx::query_as::<_, CreatureTrait>(
+        &format!("SELECT * FROM trait_table INTERSECT SELECT trait_id FROM TRAIT_ASSOCIATION_TABLE WHERE creature_id == {}", raw.id)
+    ).fetch_all(conn).await.unwrap_or_default();
     Creature {
-        id,
+        id: raw.id,
+        aon_id: raw.aon_id,
         name: raw.name.clone(),
         hp: raw.hp,
         level: raw.level,
-        alignment: raw.alignment.clone(),
-        size: raw.size.clone(),
+        alignment: alignment_enum,
+        size: size_enum,
         family: raw.family.clone(),
-        rarity: raw.rarity.clone(),
+        rarity: rarity_enum,
         is_melee: raw.is_melee != 0,
         is_ranged: raw.is_ranged != 0,
         is_spell_caster: raw.is_spell_caster != 0,
-        sources: sources_list,
-        traits: traits_list,
+        sources: sources
+            .into_iter()
+            .map(|curr_source| curr_source.name)
+            .collect(),
+        traits: traits
+            .into_iter()
+            .map(|curr_trait| curr_trait.name)
+            .collect(),
         creature_type,
         archive_link,
     }
 }
 
-fn get_redis_url() -> String {
-    let redis_password = env::var("REDIS_KEY").unwrap_or_else(|_| "".to_string());
-
-    let redis_ip = env::var("REDIS_IP").unwrap_or_else(|_| "localhost".to_string());
-    let redis_port = env::var("REDIS_PORT").unwrap_or_else(|_| "6379".to_string());
-
-    format!("redis://:{}@{}:{}", redis_password, redis_ip, redis_port)
-}
-
-fn get_connection() -> RedisResult<Connection> {
-    let client = redis::Client::open(get_redis_url())?;
-    let conn = client.get_connection()?;
-    Ok(conn)
-}
-
-pub fn get_creatures_by_ids(ids: Vec<String>) -> Result<Vec<Creature>, RedisError> {
-    let mut conn = get_connection()?;
-    let raw_results: RedisResult<Vec<RawCreature>> = conn.json_get(ids.clone(), "$");
-    // Convert each RawJsonString to RawCreature and collect the results into a Vec<RawCreature>
-    let mut raw_creatures = Vec::new();
-    match raw_results {
-        Ok(creature_list) => {
-            for raw in creature_list {
-                raw_creatures.push(raw);
-            }
+pub async fn fetch_creatures(conn: &Pool<Sqlite>) -> Result<Vec<Creature>, Error> {
+    let creatures = sqlx::query_as::<_, RawCreature>(
+        "SELECT * FROM CREATURE_TABLE ORDER BY name"
+    )
+        .fetch_all(conn)
+        .await;
+    match creatures {
+        Ok(creature_list) => Ok(from_raw_vec_to_creature(conn, creature_list).await),
+        Err(err) => {
+            warn!("Error converting data from db {}", err);
+            Err(err)
         }
-        Err(err) => warn!("Error converting data from db {}", err),
     }
-
-    Ok(from_raw_vec_to_creature(raw_creatures, ids))
-}
-
-pub fn fetch_and_parse_all_keys(pattern: &str) -> Result<Vec<String>, RedisError> {
-    let mut conn = get_connection()?;
-    let mut parse_pattern = pattern.to_owned();
-    if !pattern.ends_with('*') {
-        parse_pattern.push('*')
-    }
-
-    let keys: Vec<String> = conn.scan_match(parse_pattern)?.collect();
-    Ok(keys)
-}
-
-pub fn is_redis_up() -> RedisResult<bool> {
-    Ok(get_connection()?.is_open())
 }
