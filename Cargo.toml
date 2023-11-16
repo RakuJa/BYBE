@@ -1,9 +1,24 @@
 [package]
 name = "bybe"
-version = "0.1.0"
+version = "1.0.0"
+authors = ["RakuJa"]
+
+# Compiler info
 edition = "2021"
+rust-version = "1.66.1"
+
+description = "Beyond Your Bestiary Explorer (BYBE) is a web service that provides tools to help Pathfinder 2e Game Masters."
+readme = "README.md"
+homepage = "https://backbybe.fly.dev/"
+repository = "https://github.com/RakuJa/BYBE"
+license = "MIT"
+keywords = ["webservice", "pathfinder"]
+publish = false
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lints.rust]
+unsafe_code = "forbid"
 
 [dependencies]
 actix-web = "4"
