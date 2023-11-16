@@ -19,6 +19,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
             .service(get_creature)
             .service(get_families_list)
             .service(get_traits_list)
+            .service(get_sources_list)
             .service(get_rarities_list)
             .service(get_creature_types_list)
             .service(get_sizes_list)
@@ -33,6 +34,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             get_bestiary,
             get_families_list,
             get_traits_list,
+            get_sources_list,
             get_rarities_list,
             get_sizes_list,
             get_alignments_list,
@@ -110,6 +112,23 @@ pub async fn get_families_list(data: web::Data<AppState>) -> Result<impl Respond
 #[get("/traits")]
 pub async fn get_traits_list(data: web::Data<AppState>) -> Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_traits_list(&data).await))
+}
+
+#[utoipa::path(
+    get,
+    path = "/bestiary/sources",
+    tag = "bestiary",
+    params(
+
+    ),
+    responses(
+        (status=200, description = "Successful Response", body = [String]),
+        (status=400, description = "Bad request.")
+    ),
+)]
+#[get("/sources")]
+pub async fn get_sources_list(data: web::Data<AppState>) -> Result<impl Responder> {
+    Ok(web::Json(bestiary_service::get_sources_list(&data).await))
 }
 
 #[utoipa::path(
