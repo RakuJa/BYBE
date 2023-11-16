@@ -5,6 +5,7 @@ use std::collections::{HashMap, HashSet};
 use std::ops::Neg;
 // Used to explicitly tell about the iter trait
 use strum::IntoEnumIterator;
+use validator::HasLen;
 
 static MAX_LVL_DIFF: i16 = -4;
 lazy_static! {
@@ -100,6 +101,29 @@ pub fn calculate_lvl_combination_for_encounter(
         exp,
         calculate_lvl_combinations_for_given_exp(exp, party_avg.floor()),
     )
+}
+
+pub fn filter_combinations_outside_range(
+    combinations: HashSet<Vec<i16>>,
+    lower_bound: Option<u8>,
+    upper_bound: Option<u8>,
+) -> HashSet<Vec<i16>> {
+    let mut lower = lower_bound.unwrap_or(0);
+    let mut upper = upper_bound.unwrap_or(0);
+    if lower != 0 && upper == 0 {
+        upper = lower;
+    } else if lower == 0 && upper != 0 {
+        lower = upper;
+    } else if lower == 0 && upper == 0 {
+        return combinations;
+    }
+    let mut filtered_combo = HashSet::new();
+    combinations.iter().for_each(|curr_combo| {
+        if curr_combo.length() >= lower as u64 && curr_combo.length() <= upper as u64 {
+            filtered_combo.insert(curr_combo.clone());
+        }
+    });
+    filtered_combo
 }
 
 fn convert_lvl_diff_into_exp(lvl_diff: f32, party_size: usize) -> i16 {
