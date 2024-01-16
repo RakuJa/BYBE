@@ -80,6 +80,8 @@ async fn from_raw_to_creature(conn: &Pool<Sqlite>, raw: &RawCreature) -> Creatur
             .collect(),
         creature_type,
         archive_link,
+        is_weak: false,
+        is_elite: false,
     }
 }
 

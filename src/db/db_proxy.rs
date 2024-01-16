@@ -5,13 +5,57 @@ use std::collections::{HashMap, HashSet};
 use crate::db::db_cache::from_db_data_to_filter_cache;
 use crate::models::creature_fields_enum::CreatureField;
 use crate::models::creature_filter_enum::CreatureFilter;
+use crate::models::creature_metadata_enums::{
+    creature_variant_to_cache_index, creature_variant_to_level_delta, CreatureVariant,
+};
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
+use crate::services::url_calculator::add_boolean_query;
 use crate::AppState;
 use anyhow::Result;
 
-pub async fn get_creature_by_id(app_state: &AppState, id: i32) -> Option<Creature> {
-    let list = get_list(app_state).await;
+fn hp_increase_by_level() -> HashMap<i8, u16> {
+    hashmap! { 1 => 10, 2=> 15, 5=> 20, 20=> 30 }
+}
+
+pub async fn get_creature_by_id(
+    app_state: &AppState,
+    id: i32,
+    variant: CreatureVariant,
+) -> Option<Creature> {
+    let list = get_list(app_state, variant).await;
     list.iter().find(|creature| creature.id == id).cloned()
+}
+
+fn convert_creature_to_variant(creature: &Creature, level_delta: i8) -> Creature {
+    let mut cr = creature.clone();
+    let hp_increase = hp_increase_by_level();
+    let desired_key = hp_increase
+        .keys()
+        .filter(|&&lvl| cr.level >= lvl)
+        .max()
+        .unwrap_or(hp_increase.keys().next().unwrap_or(&0));
+    cr.hp += *hp_increase.get(desired_key).unwrap_or(&0) as i16 * level_delta as i16;
+    cr.hp = cr.hp.max(1);
+
+    cr.level += level_delta;
+
+    cr.is_elite = level_delta >= 1;
+    cr.is_weak = level_delta <= -1;
+    if level_delta != 0 {
+        cr.archive_link = add_boolean_query(
+            &creature.archive_link,
+            &String::from(if level_delta >= 1 { "Elite" } else { "Weak" }),
+            true,
+        );
+    }
+    cr
+}
+
+pub async fn get_weak_creature_by_id(app_state: &AppState, id: i32) -> Option<Creature> {
+    get_creature_by_id(app_state, id, CreatureVariant::Weak).await
+}
+pub async fn get_elite_creature_by_id(app_state: &AppState, id: i32) -> Option<Creature> {
+    get_creature_by_id(app_state, id, CreatureVariant::Elite).await
 }
 
 pub async fn get_paginated_creatures(
@@ -19,7 +63,7 @@ pub async fn get_paginated_creatures(
     filters: &FieldFilters,
     pagination: &PaginatedRequest,
 ) -> Result<(u32, Vec<Creature>)> {
-    let list = get_list(app_state).await;
+    let list = get_list(app_state, CreatureVariant::Standard).await;
 
     let filtered_list: Vec<Creature> = list
         .into_iter()
@@ -38,9 +82,10 @@ pub async fn get_paginated_creatures(
 
 pub async fn fetch_creatures_passing_all_filters(
     app_state: &AppState,
-    key_value_filters: HashMap<CreatureFilter, HashSet<String>>,
+    key_value_filters: &HashMap<CreatureFilter, HashSet<String>>,
+    variant: CreatureVariant,
 ) -> Result<HashSet<Creature>> {
-    let creature_list = get_list(app_state).await;
+    let creature_list = get_list(app_state, variant).await;
     let mut intersection = HashSet::from_iter(creature_list.iter().cloned());
     key_value_filters
         .iter()
@@ -105,7 +150,7 @@ fn fetch_creatures_passing_single_filter(
 }
 
 pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String> {
-    if let Some(db_data) = fetch_data_from_database(app_state).await {
+    if let Some(db_data) = fetch_data_from_database(app_state, CreatureVariant::Standard).await {
         let runtime_fields_values = from_db_data_to_filter_cache(app_state, db_data);
         let mut x = match field {
             CreatureField::Id => runtime_fields_values.list_of_ids,
@@ -129,26 +174,54 @@ pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String>
     vec![]
 }
 
-async fn fetch_data_from_database(app_state: &AppState) -> Option<Vec<Creature>> {
-    if let Some(creature_vec) = fetch_creatures(app_state).await {
+async fn fetch_data_from_database(
+    app_state: &AppState,
+    variant: CreatureVariant,
+) -> Option<Vec<Creature>> {
+    if let Some(creature_vec) = fetch_creatures(app_state, variant).await {
         return Some(creature_vec);
     }
     None
 }
 
-async fn fetch_creatures(app_state: &AppState) -> Option<Vec<Creature>> {
+async fn fetch_creatures(app_state: &AppState, variant: CreatureVariant) -> Option<Vec<Creature>> {
     let cache = &app_state.creature_cache.clone();
-    if let Some(creatures) = cache.get(&0) {
+    if let Some(creatures) = cache.get(&creature_variant_to_cache_index(variant.clone())) {
         return Some(creatures);
     } else if let Ok(creatures) = db_communicator::fetch_creatures(&app_state.conn).await {
         cache.insert(0, creatures.clone());
-        return Some(creatures);
+        let mut weak_creatures = Vec::new();
+        let mut elite_creatures = Vec::new();
+
+        creatures.iter().for_each(|cr| {
+            weak_creatures.push(convert_creature_to_variant(
+                cr,
+                creature_variant_to_level_delta(CreatureVariant::Weak),
+            ));
+            elite_creatures.push(convert_creature_to_variant(
+                cr,
+                creature_variant_to_level_delta(CreatureVariant::Elite),
+            ));
+        });
+        cache.insert(
+            creature_variant_to_cache_index(CreatureVariant::Weak),
+            weak_creatures.clone(),
+        );
+        cache.insert(
+            creature_variant_to_cache_index(CreatureVariant::Elite),
+            elite_creatures.clone(),
+        );
+        return match variant {
+            CreatureVariant::Weak => Some(weak_creatures),
+            CreatureVariant::Elite => Some(elite_creatures),
+            _ => Some(creatures),
+        };
     }
     None
 }
 
-async fn get_list(app_state: &AppState) -> Vec<Creature> {
-    if let Some(db_data) = fetch_data_from_database(app_state).await {
+async fn get_list(app_state: &AppState, variant: CreatureVariant) -> Vec<Creature> {
+    if let Some(db_data) = fetch_data_from_database(app_state, variant).await {
         return db_data;
     }
     vec![]

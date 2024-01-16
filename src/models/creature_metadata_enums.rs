@@ -112,6 +112,12 @@ pub enum CreatureTypeEnum {
     Npc,
 }
 
+pub enum CreatureVariant {
+    Weak,
+    Elite,
+    Standard,
+}
+
 impl FromStr for CreatureTypeEnum {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -211,6 +217,32 @@ impl Clone for CreatureTypeEnum {
             CreatureTypeEnum::Monster => CreatureTypeEnum::Monster,
             CreatureTypeEnum::Npc => CreatureTypeEnum::Npc,
         }
+    }
+}
+
+impl Clone for CreatureVariant {
+    fn clone(&self) -> CreatureVariant {
+        match self {
+            CreatureVariant::Elite => CreatureVariant::Elite,
+            CreatureVariant::Weak => CreatureVariant::Weak,
+            CreatureVariant::Standard => CreatureVariant::Standard,
+        }
+    }
+}
+
+pub fn creature_variant_to_level_delta(creature_variant: CreatureVariant) -> i8 {
+    match creature_variant {
+        CreatureVariant::Weak => -1,
+        CreatureVariant::Elite => 1,
+        CreatureVariant::Standard => 0,
+    }
+}
+
+pub fn creature_variant_to_cache_index(creature_variant: CreatureVariant) -> i32 {
+    match creature_variant {
+        CreatureVariant::Standard => 0,
+        CreatureVariant::Weak => 1,
+        CreatureVariant::Elite => 2,
     }
 }
 
