@@ -39,19 +39,16 @@ fn convert_creature_to_variant(creature: &Creature, level_delta: i8) -> Creature
 
     cr.level += level_delta;
 
-    if level_delta>=1 {
+    if level_delta >= 1 {
         cr.variant = CreatureVariant::Elite
-    }else if level_delta<=-1 {
+    } else if level_delta <= -1 {
         cr.variant = CreatureVariant::Weak
-    }else {
+    } else {
         cr.variant = CreatureVariant::Base
     }
     if cr.variant != CreatureVariant::Base {
-        cr.archive_link = add_boolean_query(
-            &creature.archive_link,
-            &String::from(cr.variant.to_string()),
-            true,
-        );
+        cr.variant_archive_link =
+            add_boolean_query(&creature.archive_link, &cr.variant.to_string(), true);
     }
     cr
 }

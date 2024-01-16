@@ -113,7 +113,7 @@ pub enum CreatureTypeEnum {
 }
 
 #[derive(
-Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
 )]
 pub enum CreatureVariant {
     Weak,
