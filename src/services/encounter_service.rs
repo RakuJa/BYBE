@@ -271,7 +271,7 @@ async fn get_filtered_creatures(
     }
 
     let mut filtered_creatures =
-        fetch_creatures_passing_all_filters(app_state, filter_map, CreatureVariant::Standard)
+        fetch_creatures_passing_all_filters(app_state, filter_map, CreatureVariant::Base)
             .await?;
 
     filtered_creatures.extend(filtered_variants);

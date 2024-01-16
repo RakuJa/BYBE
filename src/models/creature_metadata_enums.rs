@@ -112,10 +112,14 @@ pub enum CreatureTypeEnum {
     Npc,
 }
 
+#[derive(
+Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
+)]
 pub enum CreatureVariant {
     Weak,
     Elite,
-    Standard,
+    #[default]
+    Base,
 }
 
 impl FromStr for CreatureTypeEnum {
@@ -225,7 +229,7 @@ impl Clone for CreatureVariant {
         match self {
             CreatureVariant::Elite => CreatureVariant::Elite,
             CreatureVariant::Weak => CreatureVariant::Weak,
-            CreatureVariant::Standard => CreatureVariant::Standard,
+            CreatureVariant::Base => CreatureVariant::Base,
         }
     }
 }
@@ -234,13 +238,13 @@ pub fn creature_variant_to_level_delta(creature_variant: CreatureVariant) -> i8 
     match creature_variant {
         CreatureVariant::Weak => -1,
         CreatureVariant::Elite => 1,
-        CreatureVariant::Standard => 0,
+        CreatureVariant::Base => 0,
     }
 }
 
 pub fn creature_variant_to_cache_index(creature_variant: CreatureVariant) -> i32 {
     match creature_variant {
-        CreatureVariant::Standard => 0,
+        CreatureVariant::Base => 0,
         CreatureVariant::Weak => 1,
         CreatureVariant::Elite => 2,
     }

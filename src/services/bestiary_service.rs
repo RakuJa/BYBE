@@ -18,7 +18,7 @@ pub struct BestiaryResponse {
 }
 
 pub async fn get_creature(app_state: &AppState, id: i32) -> HashMap<String, Option<Creature>> {
-    hashmap! {String::from("results") => db_proxy::get_creature_by_id(app_state, id, CreatureVariant::Standard).await}
+    hashmap! {String::from("results") => db_proxy::get_creature_by_id(app_state, id, CreatureVariant::Base).await}
 }
 
 pub async fn get_elite_creature(

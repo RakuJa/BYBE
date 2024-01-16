@@ -39,12 +39,17 @@ fn convert_creature_to_variant(creature: &Creature, level_delta: i8) -> Creature
 
     cr.level += level_delta;
 
-    cr.is_elite = level_delta >= 1;
-    cr.is_weak = level_delta <= -1;
-    if level_delta != 0 {
+    if level_delta>=1 {
+        cr.variant = CreatureVariant::Elite
+    }else if level_delta<=-1 {
+        cr.variant = CreatureVariant::Weak
+    }else {
+        cr.variant = CreatureVariant::Base
+    }
+    if cr.variant != CreatureVariant::Base {
         cr.archive_link = add_boolean_query(
             &creature.archive_link,
-            &String::from(if level_delta >= 1 { "Elite" } else { "Weak" }),
+            &String::from(cr.variant.to_string()),
             true,
         );
     }
@@ -63,7 +68,7 @@ pub async fn get_paginated_creatures(
     filters: &FieldFilters,
     pagination: &PaginatedRequest,
 ) -> Result<(u32, Vec<Creature>)> {
-    let list = get_list(app_state, CreatureVariant::Standard).await;
+    let list = get_list(app_state, CreatureVariant::Base).await;
 
     let filtered_list: Vec<Creature> = list
         .into_iter()
@@ -150,7 +155,7 @@ fn fetch_creatures_passing_single_filter(
 }
 
 pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String> {
-    if let Some(db_data) = fetch_data_from_database(app_state, CreatureVariant::Standard).await {
+    if let Some(db_data) = fetch_data_from_database(app_state, CreatureVariant::Base).await {
         let runtime_fields_values = from_db_data_to_filter_cache(app_state, db_data);
         let mut x = match field {
             CreatureField::Id => runtime_fields_values.list_of_ids,
