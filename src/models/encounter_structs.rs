@@ -29,6 +29,8 @@ pub struct RandomEncounterData {
     pub max_creatures: Option<u8>,
     #[validate(length(min = 1))]
     pub party_levels: Vec<i16>,
+    pub allow_elite_variants: Option<bool>,
+    pub allow_weak_variants: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Clone)]

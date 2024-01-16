@@ -1,6 +1,6 @@
 use crate::models::creature::Creature;
 use crate::models::creature_metadata_enums::{
-    AlignmentEnum, CreatureTypeEnum, RarityEnum, SizeEnum,
+    AlignmentEnum, CreatureTypeEnum, CreatureVariant, RarityEnum, SizeEnum,
 };
 use crate::services::url_calculator::generate_archive_link;
 use log::warn;
@@ -79,7 +79,9 @@ async fn from_raw_to_creature(conn: &Pool<Sqlite>, raw: &RawCreature) -> Creatur
             .map(|curr_trait| curr_trait.name)
             .collect(),
         creature_type,
-        archive_link,
+        archive_link: archive_link.clone(),
+        variant_archive_link: archive_link,
+        variant: CreatureVariant::Base,
     }
 }
 

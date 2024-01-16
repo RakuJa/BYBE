@@ -2,7 +2,7 @@ use crate::db::db_proxy::{fetch_creatures_passing_all_filters, order_list_by_lev
 use crate::models::creature::Creature;
 use crate::models::creature_filter_enum::CreatureFilter;
 use crate::models::creature_metadata_enums::{
-    AlignmentEnum, CreatureTypeEnum, RarityEnum, SizeEnum,
+    AlignmentEnum, CreatureTypeEnum, CreatureVariant, RarityEnum, SizeEnum,
 };
 use crate::models::encounter_structs::{
     EncounterChallengeEnum, EncounterParams, RandomEncounterData,
@@ -55,24 +55,21 @@ pub async fn generate_random_encounter(
 ) -> RandomEncounterGeneratorResponse {
     let party_levels = enc_data.party_levels.clone();
     let encounter_data = calculate_random_encounter(app_state, enc_data, party_levels).await;
-    match encounter_data {
-        Err(error) => {
-            warn!(
-                "Could not generate a random encounter, reason: {}",
-                error.to_string()
-            );
-            RandomEncounterGeneratorResponse {
-                results: None,
-                count: 0,
-                encounter_info: EncounterInfoResponse {
-                    experience: 0,
-                    challenge: Default::default(),
-                    encounter_exp_levels: Default::default(),
-                },
-            }
+    encounter_data.unwrap_or_else(|error| {
+        warn!(
+            "Could not generate a random encounter, reason: {}",
+            error.to_string()
+        );
+        RandomEncounterGeneratorResponse {
+            results: None,
+            count: 0,
+            encounter_info: EncounterInfoResponse {
+                experience: 0,
+                challenge: Default::default(),
+                encounter_exp_levels: Default::default(),
+            },
         }
-        Ok(enc_data) => enc_data,
-    }
+    })
 }
 
 // Private method, does not handle failure. For that we use a public method
@@ -110,7 +107,15 @@ async fn calculate_random_encounter(
         enc_data.creature_types,
         unique_levels,
     );
-    let filtered_creatures = fetch_creatures_passing_all_filters(app_state, filter_map).await?;
+
+    let filtered_creatures = get_filtered_creatures(
+        app_state,
+        &filter_map,
+        enc_data.allow_weak_variants,
+        enc_data.allow_elite_variants,
+    )
+    .await?;
+
     ensure!(
         !filtered_creatures.is_empty(),
         "No creatures have been fetched"
@@ -141,14 +146,9 @@ fn choose_random_creatures_combination(
     creatures_ordered_by_level
         .keys()
         .for_each(|key| list_of_levels.push(*key));
-    //let list_of_levels: Vec<i16> = filtered_creatures
-    //  .iter()
-    //.map(|curr_creature| curr_creature.level)
-    //.collect();
     let existing_levels = filter_non_existing_levels(list_of_levels, lvl_combinations);
     let tmp = Vec::from_iter(existing_levels.iter());
     let random_combo = tmp[rand::thread_rng().gen_range(0..tmp.len())];
-    // let random_combo = tmp.choose(&mut rand::thread_rng());
     // Now, having chosen the combo, we may have only x filtered creature with level y but
     // x+1 instances of level y. We need to create a vector with duplicates to fill it up to
     // the number of instances of the required level
@@ -174,14 +174,14 @@ fn choose_random_creatures_combination(
 }
 
 fn fill_vector_if_it_does_not_contain_enough_elements(
-    curr_lvl_values: &Vec<Creature>,
+    curr_lvl_values: &[Creature],
     required_number_of_creatures_with_level: usize,
 ) -> Result<Vec<Creature>> {
     ensure!(
         !curr_lvl_values.is_empty(),
         "No creatures for the chosen level"
     );
-    let mut lvl_vec = curr_lvl_values.clone();
+    let mut lvl_vec = curr_lvl_values.to_vec();
     let creature_with_required_level = lvl_vec.len();
     if creature_with_required_level < required_number_of_creatures_with_level {
         while lvl_vec.len() < required_number_of_creatures_with_level {
@@ -247,4 +247,32 @@ fn build_filter_map(
     });
     filter_map.insert(CreatureFilter::Level, lvl_combinations);
     filter_map
+}
+
+async fn get_filtered_creatures(
+    app_state: &AppState,
+    filter_map: &HashMap<CreatureFilter, HashSet<String>>,
+    allow_weak: Option<bool>,
+    allow_elite: Option<bool>,
+) -> Result<HashSet<Creature>> {
+    let mut filtered_variants = HashSet::new();
+
+    if allow_weak.is_some() && allow_weak.unwrap() {
+        filtered_variants.extend(
+            fetch_creatures_passing_all_filters(app_state, filter_map, CreatureVariant::Weak)
+                .await?,
+        );
+    }
+    if allow_elite.is_some() && allow_elite.unwrap() {
+        filtered_variants.extend(
+            fetch_creatures_passing_all_filters(app_state, filter_map, CreatureVariant::Elite)
+                .await?,
+        );
+    }
+
+    let mut filtered_creatures =
+        fetch_creatures_passing_all_filters(app_state, filter_map, CreatureVariant::Base).await?;
+
+    filtered_creatures.extend(filtered_variants);
+    Ok(filtered_creatures)
 }

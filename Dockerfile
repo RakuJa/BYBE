@@ -1,5 +1,5 @@
 # Stage 1: Build the Rust project
-FROM rust:1.73-alpine as builder
+FROM rust:1.75-alpine as builder
 
 # Set the working directory in the container
 WORKDIR /app
@@ -12,15 +12,6 @@ COPY . .
 RUN apk add build-base
 
 RUN apk add musl-dev
-RUN cargo install cross
-
-# cross needs docker to work
-RUN apk add --update docker openrc
-RUN rc-update add docker boot
-
-# Static binary magic
-#RUN rustup target add aarch64-unknown-linux-musl
-#RUN rustup toolchain install stable-aarch64-unknown-linux-musl
 
 # Build the project with optimizations
 RUN cargo build --target x86_64-unknown-linux-musl --release
@@ -36,6 +27,9 @@ WORKDIR /app
 
 # Copy the built binary from the previous stage
 COPY --from=builder /app/target/x86_64-unknown-linux-musl/release/bybe .
+COPY --from=builder /app/database.db .
+
+ENV DATABASE_URL="sqlite:///app/database.db"
 
 # Expose the port that your Actix-Web application will listen on
 EXPOSE 25566

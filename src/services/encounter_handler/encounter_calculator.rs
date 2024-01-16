@@ -92,7 +92,7 @@ pub fn calculate_encounter_difficulty(
 
 pub fn calculate_lvl_combination_for_encounter(
     difficulty: &EncounterChallengeEnum,
-    party_levels: &Vec<i16>,
+    party_levels: &[i16],
 ) -> (i16, HashSet<Vec<i16>>) {
     // Given an encounter difficulty it calculates all possible encounter permutations
     let exp = scale_difficulty_exp(difficulty, party_levels.len() as i16);

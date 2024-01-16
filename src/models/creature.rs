@@ -1,5 +1,5 @@
 use crate::models::creature_metadata_enums::{
-    AlignmentEnum, CreatureTypeEnum, RarityEnum, SizeEnum,
+    AlignmentEnum, CreatureTypeEnum, CreatureVariant, RarityEnum, SizeEnum,
 };
 use crate::models::routers_validator_structs::FieldFilters;
 use serde::{Deserialize, Serialize};
@@ -22,7 +22,9 @@ pub struct Creature {
     pub sources: Vec<String>,
     pub traits: Vec<String>,
     pub archive_link: String,
+    pub variant_archive_link: String,
     pub creature_type: CreatureTypeEnum,
+    pub variant: CreatureVariant,
 }
 
 pub fn check_creature_pass_filters(creature: &Creature, filters: &FieldFilters) -> bool {
