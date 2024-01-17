@@ -9,7 +9,11 @@ pub fn scale_difficulty_exp(base_difficulty: &EncounterChallengeEnum, party_size
         lower_bound: convert_difficulty_enum_to_base_xp_budget(base_difficulty)
             + (party_deviation * convert_difficulty_enum_to_xp_adjustment(base_difficulty)),
         upper_bound: convert_difficulty_enum_to_base_xp_budget(&upper_difficulty)
-            + (party_deviation * convert_difficulty_enum_to_xp_adjustment(&upper_difficulty)),
+            + (party_deviation * convert_difficulty_enum_to_xp_adjustment(&upper_difficulty))
+                * match base_difficulty {
+                    EncounterChallengeEnum::Impossible => 2,
+                    _ => 1,
+                },
     }
 }
 
