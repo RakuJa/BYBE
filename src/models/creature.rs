@@ -11,7 +11,9 @@ pub struct Creature {
     pub aon_id: i32,
     pub name: String,
     pub hp: i16,
-    pub level: i8,
+    // constant value, it will never change
+    pub base_level: i8,
+    pub variant_level: i8,
     pub alignment: AlignmentEnum,
     pub size: SizeEnum,
     pub family: Option<String>,
@@ -41,7 +43,7 @@ fn check_creature_pass_greater_filters(creature: &Creature, filters: &FieldFilte
 
     let level_pass = filters
         .max_level_filter
-        .map_or(true, |max_lvl| creature.level <= max_lvl);
+        .map_or(true, |max_lvl| creature.variant_level <= max_lvl);
 
     hp_pass && level_pass
 }
@@ -53,7 +55,7 @@ fn check_creature_pass_lesser_filters(creature: &Creature, filters: &FieldFilter
 
     let level_pass = filters
         .min_level_filter
-        .map_or(true, |min_lvl| creature.level >= min_lvl);
+        .map_or(true, |min_lvl| creature.variant_level >= min_lvl);
 
     hp_pass && level_pass
 }

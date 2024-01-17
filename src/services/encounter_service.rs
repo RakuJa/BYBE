@@ -128,7 +128,10 @@ async fn calculate_random_encounter(
         results: Some(chosen_encounter.clone()),
         encounter_info: get_encounter_info(EncounterParams {
             party_levels,
-            enemy_levels: chosen_encounter.iter().map(|cr| cr.level as i16).collect(),
+            enemy_levels: chosen_encounter
+                .iter()
+                .map(|cr| cr.variant_level as i16)
+                .collect(),
         }),
     })
 }

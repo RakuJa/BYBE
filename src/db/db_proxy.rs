@@ -31,13 +31,13 @@ fn convert_creature_to_variant(creature: &Creature, level_delta: i8) -> Creature
     let hp_increase = hp_increase_by_level();
     let desired_key = hp_increase
         .keys()
-        .filter(|&&lvl| cr.level >= lvl)
+        .filter(|&&lvl| cr.variant_level >= lvl)
         .max()
         .unwrap_or(hp_increase.keys().next().unwrap_or(&0));
     cr.hp += *hp_increase.get(desired_key).unwrap_or(&0) as i16 * level_delta as i16;
     cr.hp = cr.hp.max(1);
 
-    cr.level += level_delta;
+    cr.variant_level += level_delta;
 
     if level_delta >= 1 {
         cr.variant = CreatureVariant::Elite
@@ -113,7 +113,7 @@ fn fetch_creatures_passing_single_filter(
             .filter(|creature| filter_vec.contains(creature.id.to_string().as_str()))
             .collect(),
         CreatureFilter::Level => cr_iterator
-            .filter(|creature| filter_vec.contains(creature.level.to_string().as_str()))
+            .filter(|creature| filter_vec.contains(creature.variant_level.to_string().as_str()))
             .collect(),
         CreatureFilter::Family => cr_iterator
             .filter(|creature| {
@@ -233,7 +233,7 @@ pub fn order_list_by_level(creature_list: HashSet<Creature>) -> HashMap<i16, Vec
     let mut ordered_by_level = HashMap::new();
     creature_list.iter().for_each(|creature| {
         ordered_by_level
-            .entry(creature.level as i16)
+            .entry(creature.variant_level as i16)
             .or_insert_with(Vec::new)
             .push(creature.clone());
     });
