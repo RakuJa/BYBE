@@ -1,4 +1,4 @@
-use crate::models::encounter_structs::EncounterChallengeEnum;
+use crate::models::encounter_structs::{EncounterChallengeEnum, ExpRange};
 use crate::services::encounter_handler::difficulty_utilities::scale_difficulty_exp;
 use lazy_static::lazy_static;
 use std::collections::{HashMap, HashSet};
@@ -21,10 +21,11 @@ lazy_static! {
         4 => 160,
     };
 }
-pub fn calculate_encounter_exp(party_levels: &[i8], enemy_levels: &[i8]) -> i16 {
+
+pub fn calculate_encounter_exp(party_levels: &[i16], enemy_levels: &[i16]) -> i16 {
     // Given a party and enemy party, it calculates the exp that the
     // party will get from defeating the enemy
-    let party_avg = party_levels.iter().sum::<i8>() as f32 / party_levels.len() as f32;
+    let party_avg = party_levels.iter().sum::<i16>() as f32 / party_levels.len() as f32;
 
     let exp_sum = enemy_levels
         .iter()
@@ -49,7 +50,7 @@ pub fn calculate_encounter_scaling_difficulty(
     for curr_diff in EncounterChallengeEnum::iter() {
         diff_scaled_exp_map.insert(
             curr_diff.clone(),
-            scale_difficulty_exp(&curr_diff, party_size as i16),
+            scale_difficulty_exp(&curr_diff, party_size as i16).lower_bound,
         );
     }
     diff_scaled_exp_map
@@ -93,14 +94,11 @@ pub fn calculate_encounter_difficulty(
 pub fn calculate_lvl_combination_for_encounter(
     difficulty: &EncounterChallengeEnum,
     party_levels: &[i16],
-) -> (i16, HashSet<Vec<i16>>) {
+) -> HashSet<Vec<i16>> {
     // Given an encounter difficulty it calculates all possible encounter permutations
-    let exp = scale_difficulty_exp(difficulty, party_levels.len() as i16);
+    let exp_range = scale_difficulty_exp(difficulty, party_levels.len() as i16);
     let party_avg = party_levels.iter().sum::<i16>() as f32 / party_levels.len() as f32;
-    (
-        exp,
-        calculate_lvl_combinations_for_given_exp(exp, party_avg.floor()),
-    )
+    calculate_lvl_combinations_for_given_exp(exp_range, party_avg.floor())
 }
 
 pub fn filter_combinations_outside_range(
@@ -135,14 +133,17 @@ fn convert_lvl_diff_into_exp(lvl_diff: f32, party_size: usize) -> i16 {
             0i16
         } else {
             // To avoid the party of 50 level 1 pg destroying a lvl 20
-            scale_difficulty_exp(&EncounterChallengeEnum::Impossible, party_size as i16)
+            scale_difficulty_exp(&EncounterChallengeEnum::Impossible, party_size as i16).lower_bound
         })
 }
 
-fn calculate_lvl_combinations_for_given_exp(experience: i16, party_lvl: f32) -> HashSet<Vec<i16>> {
+fn calculate_lvl_combinations_for_given_exp(
+    experience_range: ExpRange,
+    party_lvl: f32,
+) -> HashSet<Vec<i16>> {
     // Given an encounter experience it calculates all possible encounter permutations
     let exp_list = LVL_AND_EXP_MAP.values().cloned().collect::<Vec<i16>>();
-    find_combinations(exp_list, experience)
+    find_combinations(exp_list, experience_range)
         .iter()
         .map(|curr_combination| {
             curr_combination
@@ -164,31 +165,41 @@ fn convert_exp_to_lvl_diff(experience: i16) -> Option<i16> {
         .find_map(|(key, &exp)| if exp == experience { Some(*key) } else { None })
 }
 
-fn find_combinations(candidates: Vec<i16>, target: i16) -> Vec<Vec<i16>> {
+fn find_combinations(candidates: Vec<i16>, target_range: ExpRange) -> Vec<Vec<i16>> {
     // Find all the combination of numbers in the candidates vector
     // that sums up to the target. I.e coin changing problem
     fn backtrack(
         candidates: &Vec<i16>,
-        target: i16,
+        lb_target: i16,
+        ub_target: i16,
         start: usize,
         path: &mut Vec<i16>,
         result: &mut Vec<Vec<i16>>,
     ) {
-        if target == 0 {
-            // If target is reached, add the current path to results list
+        if lb_target == 0 || (lb_target < 0 && ub_target > 0) {
+            // If target is reached OR we exceeded lower bound but still not have reached upper bound,
+            // AKA we did not go over the current difficulty level,
+            // add the current path to results list
             result.push(path.clone());
         }
 
-        if target > 0 {
+        if lb_target > 0 {
             // Iterate through the candidates starting from the given index
             for i in start..candidates.len() {
                 path.push(candidates[i]);
-                backtrack(candidates, target - candidates[i], i, path, result);
+                backtrack(
+                    candidates,
+                    lb_target - candidates[i],
+                    ub_target - candidates[i],
+                    i,
+                    path,
+                    result,
+                );
                 path.pop();
             }
         }
 
-        if target < 1 {
+        if lb_target < 1 {
             // If target is negative or 0 no need to continue as
             // adding more numbers will exceed the target
         }
@@ -197,7 +208,14 @@ fn find_combinations(candidates: Vec<i16>, target: i16) -> Vec<Vec<i16>> {
     let mut result = Vec::new(); // List to store all combinations
     let mut path = Vec::new(); // Sort the candidates list for optimization
                                // Start the backtracking from the first index
-    backtrack(&candidates, target, 0, &mut path, &mut result);
+    backtrack(
+        &candidates,
+        target_range.lower_bound,
+        target_range.upper_bound,
+        0,
+        &mut path,
+        &mut result,
+    );
 
     result
 }
