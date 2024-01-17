@@ -61,6 +61,6 @@ impl Distribution<EncounterChallengeEnum> for Standard {
 }
 
 pub struct ExpRange {
-    pub(crate) lower_bound: i16,
-    pub(crate) upper_bound: i16,
+    pub lower_bound: i16,
+    pub upper_bound: i16,
 }

@@ -56,8 +56,8 @@ pub enum AlignmentEnum {
     #[serde(alias = "no", alias = "NO")]
     #[strum(to_string = "No Alignment")]
     #[serde(rename = "No Alignment")]
-    No, // no alignment
     #[default]
+    No, // no alignment
     #[serde(alias = "any", alias = "ANY")]
     #[strum(to_string = "Any")]
     #[serde(rename = "Any")]
