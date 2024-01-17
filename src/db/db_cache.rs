@@ -35,7 +35,7 @@ pub fn from_db_data_to_filter_cache(
     }
     for curr_creature in data {
         let id = curr_creature.id.to_string();
-        let lvl = curr_creature.level.to_string();
+        let lvl = curr_creature.variant_level.to_string();
         let family = if curr_creature.family.is_some() {
             curr_creature.family.unwrap()
         } else {

@@ -80,7 +80,7 @@ async fn calculate_random_encounter(
 ) -> Result<RandomEncounterGeneratorResponse> {
     let enc_diff = enc_data.challenge.unwrap_or(rand::random());
 
-    let (exp, lvl_combinations) =
+    let lvl_combinations =
         encounter_calculator::calculate_lvl_combination_for_encounter(&enc_diff, &party_levels);
     let filtered_lvl_combinations = encounter_calculator::filter_combinations_outside_range(
         lvl_combinations,
@@ -123,16 +123,16 @@ async fn calculate_random_encounter(
     let chosen_encounter =
         choose_random_creatures_combination(filtered_creatures, filtered_lvl_combinations)?;
 
-    let scaled_exp_levels = calculate_encounter_scaling_difficulty(party_levels.len());
-
     Ok(RandomEncounterGeneratorResponse {
         count: chosen_encounter.len(),
-        results: Some(chosen_encounter),
-        encounter_info: EncounterInfoResponse {
-            experience: exp,
-            challenge: enc_diff,
-            encounter_exp_levels: scaled_exp_levels,
-        },
+        results: Some(chosen_encounter.clone()),
+        encounter_info: get_encounter_info(EncounterParams {
+            party_levels,
+            enemy_levels: chosen_encounter
+                .iter()
+                .map(|cr| cr.variant_level as i16)
+                .collect(),
+        }),
     })
 }
 

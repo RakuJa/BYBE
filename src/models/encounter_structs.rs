@@ -11,9 +11,9 @@ use validator::Validate;
 #[derive(Serialize, Deserialize, ToSchema, Validate)]
 pub struct EncounterParams {
     #[validate(length(min = 1))]
-    pub party_levels: Vec<i8>,
+    pub party_levels: Vec<i16>,
     #[validate(length(min = 1))]
-    pub enemy_levels: Vec<i8>,
+    pub enemy_levels: Vec<i16>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Validate)]
@@ -58,4 +58,9 @@ impl Distribution<EncounterChallengeEnum> for Standard {
             _ => EncounterChallengeEnum::Impossible,
         }
     }
+}
+
+pub struct ExpRange {
+    pub(crate) lower_bound: i16,
+    pub(crate) upper_bound: i16,
 }
