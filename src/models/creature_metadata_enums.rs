@@ -1,64 +1,43 @@
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use strum::{Display, EnumString};
+use strum::Display;
 use utoipa::ToSchema;
 
 #[derive(
-    Serialize,
-    Deserialize,
-    ToSchema,
-    Display,
-    Eq,
-    Hash,
-    PartialEq,
-    Ord,
-    PartialOrd,
-    Default,
-    EnumString,
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
 )]
-#[strum(serialize_all = "UPPERCASE")]
 pub enum AlignmentEnum {
-    #[serde(alias = "ce", alias = "Ce")]
     #[strum(to_string = "CE")]
     #[serde(rename = "CE")]
     Ce,
-    #[serde(alias = "cn", alias = "Cn")]
     #[strum(to_string = "CN")]
     #[serde(rename = "CN")]
     Cn,
-    #[serde(alias = "cg", alias = "Cg")]
     #[strum(to_string = "CG")]
     #[serde(rename = "CG")]
     Cg,
-    #[serde(alias = "ne", alias = "Ne")]
     #[strum(to_string = "NE")]
     #[serde(rename = "NE")]
     Ne,
     #[serde(alias = "n")]
     #[strum(to_string = "N")]
     N,
-    #[serde(alias = "ng", alias = "Ng")]
     #[strum(to_string = "NG")]
     #[serde(rename = "NG")]
     Ng,
-    #[serde(alias = "le", alias = "Le")]
     #[strum(to_string = "LE")]
     #[serde(rename = "LE")]
     Le,
-    #[serde(alias = "ln", alias = "LN")]
     #[strum(to_string = "LN")]
     #[serde(rename = "LN")]
     Ln,
-    #[serde(alias = "lg", alias = "Lg")]
     #[strum(to_string = "LG")]
     #[serde(rename = "LG")]
     Lg,
-    #[serde(alias = "no", alias = "NO")]
     #[strum(to_string = "No Alignment")]
     #[serde(rename = "No Alignment")]
     #[default]
     No, // no alignment
-    #[serde(alias = "any", alias = "ANY")]
     #[strum(to_string = "Any")]
     #[serde(rename = "Any")]
     Any, // can be every alignment
@@ -120,6 +99,25 @@ pub enum CreatureVariant {
     Elite,
     #[default]
     Base,
+}
+
+impl FromStr for AlignmentEnum {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "CE" => Ok(AlignmentEnum::Ce),
+            "CN" => Ok(AlignmentEnum::Cn),
+            "CG" => Ok(AlignmentEnum::Cg),
+            "NE" => Ok(AlignmentEnum::Ne),
+            "N" => Ok(AlignmentEnum::N),
+            "NG" => Ok(AlignmentEnum::Ng),
+            "LE" => Ok(AlignmentEnum::Le),
+            "LN" => Ok(AlignmentEnum::Ln),
+            "LG" => Ok(AlignmentEnum::Lg),
+            "ANY" => Ok(AlignmentEnum::Any),
+            _ => Ok(AlignmentEnum::No),
+        }
+    }
 }
 
 impl FromStr for CreatureTypeEnum {
