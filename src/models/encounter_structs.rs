@@ -14,6 +14,7 @@ pub struct EncounterParams {
     pub party_levels: Vec<i16>,
     #[validate(length(min = 1))]
     pub enemy_levels: Vec<i16>,
+    pub is_pwl_on: bool,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Validate)]
@@ -31,6 +32,7 @@ pub struct RandomEncounterData {
     pub party_levels: Vec<i16>,
     pub allow_elite_variants: Option<bool>,
     pub allow_weak_variants: Option<bool>,
+    pub is_pwl_on: bool,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Clone)]

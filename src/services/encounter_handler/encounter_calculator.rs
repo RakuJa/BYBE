@@ -1,32 +1,57 @@
 use crate::models::encounter_structs::{EncounterChallengeEnum, ExpRange};
 use crate::services::encounter_handler::difficulty_utilities::scale_difficulty_exp;
-use lazy_static::lazy_static;
 use std::collections::{HashMap, HashSet};
 use std::ops::Neg;
 // Used to explicitly tell about the iter trait
 use strum::IntoEnumIterator;
 use validator::HasLen;
 
-static MAX_LVL_DIFF: i16 = -4;
-lazy_static! {
-    static ref LVL_AND_EXP_MAP: HashMap<i16, i16> = hashmap! {
-        -4 => 10,
-        -3 => 15,
-        -2 => 20,
-        -1 => 30,
-        0 => 40,
-        1 => 60,
-        2 => 80,
-        3 => 120,
-        4 => 160,
-    };
+fn calculate_max_lvl_diff(lvl_and_exp_map: &HashMap<i16, i16>) -> i16 {
+    match lvl_and_exp_map.keys().min() {
+        None => panic!("No valid lvl and exp map was passed. Abort"),
+        Some(max_lvl_diff) => *max_lvl_diff,
+    }
 }
 
-pub fn calculate_encounter_exp(party_levels: &[i16], enemy_levels: &[i16]) -> i16 {
+fn calculate_lvl_and_exp_map(is_pwl_on: bool) -> HashMap<i16, i16> {
+    // PWL stands for proficiency without level
+    if is_pwl_on {
+        hashmap! {
+            -7 => 9,
+            -6 => 12,
+            -5 => 14,
+            -4 => 18,
+            -3 => 21,
+            -2 => 26,
+            -1 => 32,
+            0 => 40,
+            1 => 48,
+            2 => 60,
+            3 => 72,
+            4 => 90,
+            5 => 108,
+            6 => 135,
+            7 => 160,
+        }
+    } else {
+        hashmap! {
+            -4 => 10,
+            -3 => 15,
+            -2 => 20,
+            -1 => 30,
+            0 => 40,
+            1 => 60,
+            2 => 80,
+            3 => 120,
+            4 => 160,
+        }
+    }
+}
+
+pub fn calculate_encounter_exp(party_levels: &[i16], enemy_levels: &[i16], is_pwl_on: bool) -> i16 {
     // Given a party and enemy party, it calculates the exp that the
     // party will get from defeating the enemy
     let party_avg = party_levels.iter().sum::<i16>() as f32 / party_levels.len() as f32;
-
     let exp_sum = enemy_levels
         .iter()
         .map(|&curr_enemy_lvl| {
@@ -36,7 +61,11 @@ pub fn calculate_encounter_exp(party_levels: &[i16], enemy_levels: &[i16]) -> i1
             } else {
                 enemy_lvl - party_avg
             };
-            convert_lvl_diff_into_exp(lvl_diff, party_levels.len())
+            convert_lvl_diff_into_exp(
+                lvl_diff,
+                party_levels.len(),
+                &calculate_lvl_and_exp_map(is_pwl_on),
+            )
         })
         .sum();
     exp_sum
@@ -94,11 +123,16 @@ pub fn calculate_encounter_difficulty(
 pub fn calculate_lvl_combination_for_encounter(
     difficulty: &EncounterChallengeEnum,
     party_levels: &[i16],
+    is_pwl_on: bool,
 ) -> HashSet<Vec<i16>> {
     // Given an encounter difficulty it calculates all possible encounter permutations
     let exp_range = scale_difficulty_exp(difficulty, party_levels.len() as i16);
     let party_avg = party_levels.iter().sum::<i16>() as f32 / party_levels.len() as f32;
-    calculate_lvl_combinations_for_given_exp(exp_range, party_avg.floor())
+    calculate_lvl_combinations_for_given_exp(
+        exp_range,
+        party_avg.floor(),
+        calculate_lvl_and_exp_map(is_pwl_on),
+    )
 }
 
 pub fn filter_combinations_outside_range(
@@ -124,31 +158,39 @@ pub fn filter_combinations_outside_range(
     filtered_combo
 }
 
-fn convert_lvl_diff_into_exp(lvl_diff: f32, party_size: usize) -> i16 {
+fn convert_lvl_diff_into_exp(
+    lvl_diff: f32,
+    party_size: usize,
+    lvl_and_exp_map: &HashMap<i16, i16>,
+) -> i16 {
     let lvl_diff_rounded_down = lvl_diff.floor() as i16;
-    LVL_AND_EXP_MAP
+    lvl_and_exp_map
         .get(&lvl_diff_rounded_down)
         .map(|value| value.abs())
-        .unwrap_or(if lvl_diff_rounded_down < MAX_LVL_DIFF {
-            0i16
-        } else {
-            // To avoid the party of 50 level 1 pg destroying a lvl 20
-            scale_difficulty_exp(&EncounterChallengeEnum::Impossible, party_size as i16).lower_bound
-        })
+        .unwrap_or(
+            if lvl_diff_rounded_down < calculate_max_lvl_diff(lvl_and_exp_map) {
+                0i16
+            } else {
+                // To avoid the party of 50 level 1 pg destroying a lvl 20
+                scale_difficulty_exp(&EncounterChallengeEnum::Impossible, party_size as i16)
+                    .lower_bound
+            },
+        )
 }
 
 fn calculate_lvl_combinations_for_given_exp(
     experience_range: ExpRange,
     party_lvl: f32,
+    lvl_and_exp_map: HashMap<i16, i16>,
 ) -> HashSet<Vec<i16>> {
     // Given an encounter experience it calculates all possible encounter permutations
-    let exp_list = LVL_AND_EXP_MAP.values().cloned().collect::<Vec<i16>>();
+    let exp_list = lvl_and_exp_map.values().cloned().collect::<Vec<i16>>();
     find_combinations(exp_list, experience_range)
         .iter()
         .map(|curr_combination| {
             curr_combination
                 .iter()
-                .map(|curr_exp| convert_exp_to_lvl_diff(*curr_exp))
+                .map(|curr_exp| convert_exp_to_lvl_diff(*curr_exp, &lvl_and_exp_map))
                 .filter(|a| a.is_some())
                 .map(|lvl_diff| party_lvl as i16 + lvl_diff.unwrap())
                 .collect::<Vec<i16>>()
@@ -159,8 +201,8 @@ fn calculate_lvl_combinations_for_given_exp(
         .collect::<HashSet<Vec<i16>>>()
 }
 
-fn convert_exp_to_lvl_diff(experience: i16) -> Option<i16> {
-    LVL_AND_EXP_MAP
+fn convert_exp_to_lvl_diff(experience: i16, lvl_and_exp_map: &HashMap<i16, i16>) -> Option<i16> {
+    lvl_and_exp_map
         .iter()
         .find_map(|(key, &exp)| if exp == experience { Some(*key) } else { None })
 }
