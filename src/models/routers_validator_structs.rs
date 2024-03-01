@@ -1,4 +1,6 @@
-use crate::models::creature_metadata_enums::{AlignmentEnum, RarityEnum, SizeEnum};
+use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature_metadata::rarity_enum::RarityEnum;
+use crate::models::creature_metadata::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::IntoParams;
 use validator::Validate;

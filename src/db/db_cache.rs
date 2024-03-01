@@ -34,17 +34,17 @@ pub fn from_db_data_to_filter_cache(
         };
     }
     for curr_creature in data {
-        let id = curr_creature.id.to_string();
-        let lvl = curr_creature.variant_level.to_string();
-        let family = if curr_creature.family.is_some() {
-            curr_creature.family.unwrap()
+        let id = curr_creature.core_data.id.to_string();
+        let lvl = curr_creature.variant_data.level.to_string();
+        let family = if curr_creature.core_data.family.is_some() {
+            curr_creature.core_data.family.unwrap()
         } else {
             "-".to_string()
         };
-        let alignment = curr_creature.alignment.to_string();
-        let size = curr_creature.size.to_string();
-        let rarity = curr_creature.rarity.to_string();
-        let creature_type = curr_creature.creature_type.to_string();
+        let alignment = curr_creature.core_data.alignment.to_string();
+        let size = curr_creature.core_data.size.to_string();
+        let rarity = curr_creature.core_data.rarity.to_string();
+        let creature_type = curr_creature.core_data.creature_type.to_string();
 
         if !fields_values_cache.list_of_ids.contains(&id) {
             fields_values_cache.list_of_ids.push(id);
@@ -56,21 +56,26 @@ pub fn from_db_data_to_filter_cache(
             fields_values_cache.list_of_families.push(family);
         }
 
-        curr_creature.traits.iter().for_each(|single_trait| {
-            if !fields_values_cache.list_of_traits.contains(single_trait) {
-                fields_values_cache
-                    .list_of_traits
-                    .push(single_trait.to_string())
-            }
-        });
+        curr_creature
+            .core_data
+            .traits
+            .iter()
+            .for_each(|single_trait| {
+                if !fields_values_cache.list_of_traits.contains(single_trait) {
+                    fields_values_cache
+                        .list_of_traits
+                        .push(single_trait.to_string())
+                }
+            });
 
-        curr_creature.sources.iter().for_each(|single_source| {
-            if !fields_values_cache.list_of_sources.contains(single_source) {
-                fields_values_cache
-                    .list_of_sources
-                    .push(single_source.to_string())
-            }
-        });
+        if !fields_values_cache
+            .list_of_sources
+            .contains(&curr_creature.core_data.source)
+        {
+            fields_values_cache
+                .list_of_sources
+                .push(curr_creature.core_data.source.clone());
+        }
 
         if !fields_values_cache.list_of_alignments.contains(&alignment) {
             fields_values_cache.list_of_alignments.push(alignment);

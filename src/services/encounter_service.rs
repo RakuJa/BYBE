@@ -1,19 +1,22 @@
 use crate::db::db_proxy::{fetch_creatures_passing_all_filters, order_list_by_level};
 use crate::models::creature::Creature;
 use crate::models::creature_filter_enum::CreatureFilter;
-use crate::models::creature_metadata_enums::{
-    AlignmentEnum, CreatureTypeEnum, CreatureVariant, RarityEnum, SizeEnum,
-};
+use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature_metadata::rarity_enum::RarityEnum;
+use crate::models::creature_metadata::size_enum::SizeEnum;
+use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::encounter_structs::{
     EncounterChallengeEnum, EncounterParams, RandomEncounterData,
 };
+use crate::models::response_data::ResponseCreature;
 use crate::services::encounter_handler::encounter_calculator;
 use crate::services::encounter_handler::encounter_calculator::calculate_encounter_scaling_difficulty;
 use crate::AppState;
 use anyhow::{ensure, Result};
 use counter::Counter;
 use log::warn;
-use rand::seq::SliceRandom;
+use rand::seq::IndexedRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -28,7 +31,7 @@ pub struct EncounterInfoResponse {
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct RandomEncounterGeneratorResponse {
-    results: Option<Vec<Creature>>,
+    results: Option<Vec<ResponseCreature>>,
     count: usize,
     encounter_info: EncounterInfoResponse,
 }
@@ -129,12 +132,18 @@ async fn calculate_random_encounter(
 
     Ok(RandomEncounterGeneratorResponse {
         count: chosen_encounter.len(),
-        results: Some(chosen_encounter.clone()),
+        results: Some(
+            chosen_encounter
+                .clone()
+                .into_iter()
+                .map(|x| ResponseCreature::from((x, &enc_data.response_data)))
+                .collect(),
+        ),
         encounter_info: get_encounter_info(EncounterParams {
             party_levels,
             enemy_levels: chosen_encounter
                 .iter()
-                .map(|cr| cr.variant_level as i16)
+                .map(|cr| cr.variant_data.level as i16)
                 .collect(),
             is_pwl_on,
         }),
