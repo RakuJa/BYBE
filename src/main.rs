@@ -1,6 +1,5 @@
 #[macro_use]
 extern crate maplit;
-extern crate lazy_static;
 
 mod routes;
 

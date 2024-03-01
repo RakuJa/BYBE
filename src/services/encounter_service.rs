@@ -37,6 +37,7 @@ pub fn get_encounter_info(enc_params: EncounterParams) -> EncounterInfoResponse 
     let enc_exp = encounter_calculator::calculate_encounter_exp(
         &enc_params.party_levels,
         &enc_params.enemy_levels,
+        enc_params.is_pwl_on,
     );
 
     let scaled_exp = calculate_encounter_scaling_difficulty(enc_params.party_levels.len());
@@ -79,9 +80,12 @@ async fn calculate_random_encounter(
     party_levels: Vec<i16>,
 ) -> Result<RandomEncounterGeneratorResponse> {
     let enc_diff = enc_data.challenge.unwrap_or(rand::random());
-
-    let lvl_combinations =
-        encounter_calculator::calculate_lvl_combination_for_encounter(&enc_diff, &party_levels);
+    let is_pwl_on = enc_data.is_pwl_on;
+    let lvl_combinations = encounter_calculator::calculate_lvl_combination_for_encounter(
+        &enc_diff,
+        &party_levels,
+        is_pwl_on,
+    );
     let filtered_lvl_combinations = encounter_calculator::filter_combinations_outside_range(
         lvl_combinations,
         enc_data.min_creatures,
@@ -132,6 +136,7 @@ async fn calculate_random_encounter(
                 .iter()
                 .map(|cr| cr.variant_level as i16)
                 .collect(),
+            is_pwl_on,
         }),
     })
 }
