@@ -1,124 +1,142 @@
-use crate::models::creature::{CoreCreatureData, Creature, ExtraCreatureData, VariantCreatureData};
-use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
-use crate::models::creature_metadata::rarity_enum::RarityEnum;
-use crate::models::creature_metadata::size_enum::SizeEnum;
-use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
-use crate::models::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::creature::Creature;
+use crate::models::db::raw_creature::RawCreature;
+use crate::models::db::raw_immunity::RawImmunity;
+use crate::models::db::raw_language::RawLanguage;
+use crate::models::db::raw_resistance::RawResistance;
+use crate::models::db::raw_sense::RawSense;
+use crate::models::db::raw_speed::RawSpeed;
+use crate::models::db::raw_trait::RawTrait;
+use crate::models::db::raw_weakness::RawWeakness;
 use crate::models::items::spell::Spell;
 use crate::models::items::weapon::Weapon;
-use crate::services::url_calculator::generate_archive_link;
-use serde::{Deserialize, Serialize};
-use sqlx::{Error, FromRow, Pool, Sqlite};
-
-#[derive(Serialize, Deserialize, FromRow)]
-pub struct RawCreature {
-    id: i64,
-    aon_id: Option<i64>,
-    name: String,
-    charisma: i64,
-    constitution: i64,
-    dexterity: i64,
-    intelligence: i64,
-    strength: i64,
-    wisdom: i64,
-    ac: i64,
-    hp: i64,
-    hp_detail: String,
-    ac_detail: String,
-    language_detail: Option<String>,
-    level: i64,
-    license: String,
-    remaster: bool,
-    source: String,
-    initiative_ability: String,
-    perception: i64,
-    perception_detail: String,
-    fortitude: i64,
-    reflex: i64,
-    will: i64,
-    fortitude_detail: String,
-    reflex_detail: String,
-    will_detail: String,
-    rarity: RarityEnum,
-    size: SizeEnum,
-    cr_type: CreatureTypeEnum,
-    family: Option<String>,
-    is_spell_caster: bool,
-}
-
-#[derive(Serialize, Deserialize, FromRow)]
-pub struct CreatureTrait {
-    pub name: String,
-}
-
-#[derive(Serialize, Deserialize, FromRow)]
-pub struct CreatureSource {
-    name: String,
-}
+use anyhow::Result;
+use sqlx::{Error, Pool, Sqlite};
 
 async fn from_raw_vec_to_creature(conn: &Pool<Sqlite>, raw_vec: Vec<RawCreature>) -> Vec<Creature> {
     let mut creature_list = Vec::new();
     for el in raw_vec {
-        creature_list.push(from_raw_to_creature(conn, &el).await);
+        let immunities = get_creature_immunities(conn, el.id)
+            .await
+            .unwrap_or_default();
+        let languages = get_creature_languages(conn, el.id)
+            .await
+            .unwrap_or_default();
+        let resistances = get_creature_resistances(conn, el.id)
+            .await
+            .unwrap_or_default();
+        let senses = get_creature_senses(conn, el.id).await.unwrap_or_default();
+        let speeds = get_creature_speeds(conn, el.id).await.unwrap_or_default();
+        let traits = get_creature_traits(conn, el.id).await.unwrap_or_default();
+        let weaknesses = get_creature_weaknesses(conn, el.id)
+            .await
+            .unwrap_or_default();
+        let spells = get_creature_spells(conn, el.id).await.unwrap_or_default();
+        let weapons = get_creature_weapons(conn, el.id).await.unwrap_or_default();
+        creature_list.push(Creature::from((
+            el,
+            traits,
+            weapons,
+            spells,
+            immunities,
+            languages,
+            resistances,
+            senses,
+            speeds,
+            weaknesses,
+        )));
     }
     creature_list
 }
 
-async fn from_raw_to_creature(conn: &Pool<Sqlite>, raw: &RawCreature) -> Creature {
-    let archive_link = generate_archive_link(raw.aon_id, &raw.cr_type);
+async fn get_creature_immunities(
+    conn: &Pool<Sqlite>,
+    creature_id: i64,
+) -> Result<Vec<RawImmunity>> {
+    Ok(sqlx::query_as!(
+        RawImmunity,
+        "SELECT * FROM IMMUNITY_TABLE INTERSECT SELECT immunity_id FROM IMMUNITY_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
+        creature_id
+    ).fetch_all(conn).await?)
+}
 
-    let traits = sqlx::query_as!(
-        CreatureTrait,
-        "SELECT * FROM TRAIT_TABLE INTERSECT SELECT trait_id FROM TRAIT_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)", raw.id
-    ).fetch_all(conn).await.unwrap_or_default();
-    let weapons = sqlx::query_as!(
+async fn get_creature_languages(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawLanguage>> {
+    Ok(sqlx::query_as!(
+        RawLanguage,
+        "SELECT * FROM LANGUAGE_TABLE INTERSECT SELECT language_id FROM LANGUAGE_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
+        creature_id
+    ).fetch_all(conn).await?)
+}
+
+async fn get_creature_resistances(
+    conn: &Pool<Sqlite>,
+    creature_id: i64,
+) -> Result<Vec<RawResistance>> {
+    Ok(sqlx::query_as!(
+        RawResistance,
+        "SELECT name, value FROM RESISTANCE_TABLE WHERE creature_id == ($1)",
+        creature_id
+    )
+    .fetch_all(conn)
+    .await?)
+}
+
+async fn get_creature_senses(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawSense>> {
+    Ok(sqlx::query_as!(
+        RawSense,
+        "SELECT * FROM SENSE_TABLE INTERSECT SELECT sense_id FROM SENSE_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
+        creature_id
+    ).fetch_all(conn).await?)
+}
+
+async fn get_creature_speeds(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawSpeed>> {
+    Ok(sqlx::query_as!(
+        RawSpeed,
+        "SELECT name, value FROM SPEED_TABLE WHERE creature_id == ($1)",
+        creature_id
+    )
+    .fetch_all(conn)
+    .await?)
+}
+
+async fn get_creature_weaknesses(
+    conn: &Pool<Sqlite>,
+    creature_id: i64,
+) -> Result<Vec<RawWeakness>> {
+    Ok(sqlx::query_as!(
+        RawWeakness,
+        "SELECT name, value FROM WEAKNESS_TABLE WHERE creature_id == ($1)",
+        creature_id
+    )
+    .fetch_all(conn)
+    .await?)
+}
+
+async fn get_creature_traits(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawTrait>> {
+    Ok(sqlx::query_as!(
+        RawTrait,
+        "SELECT * FROM TRAIT_TABLE INTERSECT SELECT trait_id FROM TRAIT_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
+        creature_id
+    ).fetch_all(conn).await?)
+}
+
+async fn get_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Weapon>> {
+    Ok(sqlx::query_as!(
         Weapon,
         "SELECT * FROM WEAPON_TABLE WHERE creature_id == ($1)",
-        raw.id
+        creature_id
     )
     .fetch_all(conn)
-    .await
-    .unwrap_or_default();
+    .await?)
+}
 
-    let spells = sqlx::query_as!(
+async fn get_creature_spells(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Spell>> {
+    Ok(sqlx::query_as!(
         Spell,
         "SELECT * FROM SPELL_TABLE WHERE creature_id == ($1)",
-        raw.id
+        creature_id
     )
     .fetch_all(conn)
-    .await
-    .unwrap_or_default();
-
-    let alignment_enum = AlignmentEnum::from_trait_vec(&traits, raw.remaster);
-    Creature {
-        core_data: CoreCreatureData {
-            id: raw.id as i32,
-            aon_id: raw.aon_id.map(|x| x as i32),
-            name: raw.name.clone(),
-            hp: raw.hp as i16,
-            base_level: raw.level as i8,
-            alignment: alignment_enum,
-            size: raw.size.clone(),
-            family: raw.family.clone(),
-            rarity: raw.rarity.clone(),
-            is_spell_caster: raw.is_spell_caster,
-            source: raw.source.clone(),
-            traits: traits
-                .into_iter()
-                .map(|curr_trait| curr_trait.name)
-                .collect(),
-            creature_type: raw.cr_type.clone(),
-            archive_link: archive_link.clone(),
-            variant: CreatureVariant::Base,
-            is_ranged: CoreCreatureData::is_ranged(&weapons),
-            is_melee: CoreCreatureData::is_melee(&weapons),
-        },
-        variant_data: VariantCreatureData {
-            level: raw.level as i8,
-            archive_link,
-        },
-        extra_data: ExtraCreatureData { weapons, spells },
-    }
+    .await?)
 }
 
 pub async fn fetch_creatures(conn: &Pool<Sqlite>) -> Result<Vec<Creature>, Error> {

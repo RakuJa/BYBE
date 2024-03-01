@@ -1,4 +1,4 @@
-use crate::db::db_communicator::CreatureTrait;
+use crate::models::db::raw_trait::RawTrait;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
 use strum::Display;
@@ -45,7 +45,7 @@ pub enum AlignmentEnum {
 }
 
 impl AlignmentEnum {
-    pub fn from_trait_vec(vec_of_traits: &[CreatureTrait], remastered: bool) -> AlignmentEnum {
+    pub fn from_trait_vec(vec_of_traits: &[RawTrait], remastered: bool) -> AlignmentEnum {
         if remastered {
             return AlignmentEnum::No;
         }

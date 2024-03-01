@@ -2,6 +2,7 @@ pub mod creature;
 pub mod creature_fields_enum;
 pub mod creature_filter_enum;
 pub mod creature_metadata;
+pub mod db;
 pub mod encounter_structs;
 pub mod items;
 pub mod response_data;
