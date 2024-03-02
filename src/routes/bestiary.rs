@@ -1,7 +1,16 @@
-use crate::models::creature::Creature;
-use crate::models::creature_metadata_enums::{
-    AlignmentEnum, CreatureTypeEnum, CreatureVariant, RarityEnum, SizeEnum,
-};
+use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature_metadata::rarity_enum::RarityEnum;
+use crate::models::creature_metadata::size_enum::SizeEnum;
+use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::response_data::ResponseCreature;
+use crate::models::response_data::ResponseData;
+
+use crate::models::creature::{CoreCreatureData, ExtraCreatureData, VariantCreatureData};
+
+use crate::models::items::spell::Spell;
+use crate::models::items::weapon::Weapon;
+
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
 use crate::services::bestiary_service;
 use crate::services::bestiary_service::BestiaryResponse;
@@ -45,12 +54,17 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
         ),
         components(schemas(
             BestiaryResponse,
-            Creature,
+            ResponseCreature,
             AlignmentEnum,
             RarityEnum,
             SizeEnum,
             CreatureTypeEnum,
-            CreatureVariant
+            CreatureVariant,
+            CoreCreatureData,
+            VariantCreatureData,
+            ExtraCreatureData,
+            Spell,
+            Weapon,
         ))
     )]
     struct ApiDoc;
@@ -63,7 +77,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     path = "/bestiary/list",
     tag = "bestiary",
     params(
-        FieldFilters, PaginatedRequest
+        FieldFilters, PaginatedRequest, ResponseData
     ),
     responses(
         (status=200, description = "Successful Response", body = BestiaryResponse),
@@ -75,9 +89,10 @@ pub async fn get_bestiary(
     data: web::Data<AppState>,
     filters: Query<FieldFilters>,
     pagination: Query<PaginatedRequest>,
+    response_data: Query<ResponseData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_bestiary(&data, &filters.0, &pagination.0).await,
+        bestiary_service::get_bestiary(&data, &filters.0, &pagination.0, &response_data.0).await,
     ))
 }
 
@@ -209,10 +224,11 @@ pub async fn get_creature_types_list(data: web::Data<AppState>) -> Result<impl R
     path = "/bestiary/base/{creature_id}",
     tag = "bestiary",
     params(
-        ("creature_id" = String, Path, description = "id of the creature to fetch")
+        ("creature_id" = String, Path, description = "id of the creature to fetch"),
+        ResponseData,
     ),
     responses(
-        (status=200, description = "Successful Response", body = Creature),
+        (status=200, description = "Successful Response", body = ResponseCreature),
         (status=400, description = "Bad request.")
     ),
 )]
@@ -220,9 +236,10 @@ pub async fn get_creature_types_list(data: web::Data<AppState>) -> Result<impl R
 pub async fn get_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
+    response_data: Query<ResponseData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_creature(&data, sanitize_id(&creature_id)?).await,
+        bestiary_service::get_creature(&data, sanitize_id(&creature_id)?, &response_data.0).await,
     ))
 }
 
@@ -231,10 +248,11 @@ pub async fn get_creature(
     path = "/bestiary/elite/{creature_id}",
     tag = "bestiary",
     params(
-        ("creature_id" = String, Path, description = "id of the creature to fetch")
+        ("creature_id" = String, Path, description = "id of the creature to fetch"),
+        ResponseData
     ),
     responses(
-        (status=200, description = "Successful Response", body = Creature),
+        (status=200, description = "Successful Response", body = ResponseCreature),
         (status=400, description = "Bad request.")
     ),
 )]
@@ -242,9 +260,11 @@ pub async fn get_creature(
 pub async fn get_elite_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
+    response_data: Query<ResponseData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_elite_creature(&data, sanitize_id(&creature_id)?).await,
+        bestiary_service::get_elite_creature(&data, sanitize_id(&creature_id)?, &response_data.0)
+            .await,
     ))
 }
 
@@ -253,10 +273,11 @@ pub async fn get_elite_creature(
     path = "/bestiary/weak/{creature_id}",
     tag = "bestiary",
     params(
-        ("creature_id" = String, Path, description = "id of the creature to fetch")
+        ("creature_id" = String, Path, description = "id of the creature to fetch"),
+        ResponseData,
     ),
     responses(
-        (status=200, description = "Successful Response", body = Creature),
+        (status=200, description = "Successful Response", body = ResponseCreature),
         (status=400, description = "Bad request.")
     ),
 )]
@@ -264,9 +285,11 @@ pub async fn get_elite_creature(
 pub async fn get_weak_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
+    response_data: Query<ResponseData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_weak_creature(&data, sanitize_id(&creature_id)?).await,
+        bestiary_service::get_weak_creature(&data, sanitize_id(&creature_id)?, &response_data.0)
+            .await,
     ))
 }
 

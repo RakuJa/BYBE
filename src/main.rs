@@ -9,6 +9,7 @@ use crate::routes::{bestiary, encounter, health};
 use actix_cors::Cors;
 use actix_web::http::header::{CacheControl, CacheDirective};
 use actix_web::{get, middleware, web, App, HttpResponse, HttpServer, Responder};
+use dotenvy::dotenv;
 use mini_moka::sync::Cache;
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
 use std::env;
@@ -56,6 +57,7 @@ fn init_docs(openapi: &mut utoipa::openapi::OpenApi) {
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    dotenv().ok();
     env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
     // get env vars
     let db_url = get_service_db_url();

@@ -1,13 +1,11 @@
 use crate::db::db_communicator;
-use crate::models::creature::{check_creature_pass_filters, Creature};
+use crate::models::creature::Creature;
 use std::collections::{HashMap, HashSet};
 
 use crate::db::db_cache::from_db_data_to_filter_cache;
 use crate::models::creature_fields_enum::CreatureField;
 use crate::models::creature_filter_enum::CreatureFilter;
-use crate::models::creature_metadata_enums::{
-    creature_variant_to_cache_index, creature_variant_to_level_delta, CreatureVariant,
-};
+use crate::models::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
 use crate::services::url_calculator::add_boolean_query;
 use crate::AppState;
@@ -23,7 +21,9 @@ pub async fn get_creature_by_id(
     variant: CreatureVariant,
 ) -> Option<Creature> {
     let list = get_list(app_state, variant).await;
-    list.iter().find(|creature| creature.id == id).cloned()
+    list.iter()
+        .find(|creature| creature.core_data.id == id)
+        .cloned()
 }
 
 fn convert_creature_to_variant(creature: &Creature, level_delta: i8) -> Creature {
@@ -31,24 +31,27 @@ fn convert_creature_to_variant(creature: &Creature, level_delta: i8) -> Creature
     let hp_increase = hp_increase_by_level();
     let desired_key = hp_increase
         .keys()
-        .filter(|&&lvl| cr.variant_level >= lvl)
+        .filter(|&&lvl| cr.variant_data.level >= lvl)
         .max()
         .unwrap_or(hp_increase.keys().next().unwrap_or(&0));
-    cr.hp += *hp_increase.get(desired_key).unwrap_or(&0) as i16 * level_delta as i16;
-    cr.hp = cr.hp.max(1);
+    cr.core_data.hp += *hp_increase.get(desired_key).unwrap_or(&0) as i16 * level_delta as i16;
+    cr.core_data.hp = cr.core_data.hp.max(1);
 
-    cr.variant_level += level_delta;
+    cr.variant_data.level += level_delta;
 
     if level_delta >= 1 {
-        cr.variant = CreatureVariant::Elite
+        cr.core_data.variant = CreatureVariant::Elite
     } else if level_delta <= -1 {
-        cr.variant = CreatureVariant::Weak
+        cr.core_data.variant = CreatureVariant::Weak
     } else {
-        cr.variant = CreatureVariant::Base
+        cr.core_data.variant = CreatureVariant::Base
     }
-    if cr.variant != CreatureVariant::Base {
-        cr.variant_archive_link =
-            add_boolean_query(&creature.archive_link, &cr.variant.to_string(), true);
+    if cr.core_data.variant != CreatureVariant::Base {
+        cr.variant_data.archive_link = add_boolean_query(
+            creature.core_data.archive_link.clone(),
+            &cr.core_data.variant.to_string(),
+            true,
+        );
     }
     cr
 }
@@ -69,7 +72,7 @@ pub async fn get_paginated_creatures(
 
     let filtered_list: Vec<Creature> = list
         .into_iter()
-        .filter(|x| check_creature_pass_filters(x, filters))
+        .filter(|x| Creature::is_passing_filters(x, filters))
         .collect();
 
     let curr_slice: Vec<Creature> = filtered_list
@@ -110,43 +113,62 @@ fn fetch_creatures_passing_single_filter(
     let cr_iterator = creature_list.iter().cloned();
     match field_in_which_to_filter {
         CreatureFilter::Id => cr_iterator
-            .filter(|creature| filter_vec.contains(creature.id.to_string().as_str()))
+            .filter(|creature| filter_vec.contains(creature.core_data.id.to_string().as_str()))
             .collect(),
         CreatureFilter::Level => cr_iterator
-            .filter(|creature| filter_vec.contains(creature.variant_level.to_string().as_str()))
+            .filter(|creature| {
+                filter_vec.contains(creature.variant_data.level.to_string().as_str())
+            })
             .collect(),
         CreatureFilter::Family => cr_iterator
             .filter(|creature| {
-                filter_vec.contains(creature.family.clone().unwrap_or_default().as_str())
+                filter_vec.contains(
+                    creature
+                        .core_data
+                        .family
+                        .clone()
+                        .unwrap_or_default()
+                        .as_str(),
+                )
             })
             .collect(),
         CreatureFilter::Traits => cr_iterator
             .filter(|creature| {
                 filter_vec
                     .iter()
-                    .any(|curr_trait| creature.clone().traits.contains(curr_trait))
+                    .any(|curr_trait| creature.clone().core_data.traits.contains(curr_trait))
             })
             .collect(),
         CreatureFilter::CreatureTypes => cr_iterator
-            .filter(|creature| filter_vec.contains(creature.creature_type.to_string().as_str()))
+            .filter(|creature| {
+                filter_vec.contains(creature.core_data.creature_type.to_string().as_str())
+            })
             .collect(),
         CreatureFilter::Alignment => cr_iterator
-            .filter(|creature| filter_vec.contains(creature.alignment.to_string().as_str()))
+            .filter(|creature| {
+                filter_vec.contains(creature.core_data.alignment.to_string().as_str())
+            })
             .collect(),
         CreatureFilter::Size => cr_iterator
-            .filter(|creature| filter_vec.contains(creature.size.to_string().as_str()))
+            .filter(|creature| filter_vec.contains(creature.core_data.size.to_string().as_str()))
             .collect(),
         CreatureFilter::Rarity => cr_iterator
-            .filter(|creature| filter_vec.contains(creature.rarity.to_string().as_str()))
+            .filter(|creature| filter_vec.contains(creature.core_data.rarity.to_string().as_str()))
             .collect(),
         CreatureFilter::Melee => cr_iterator
-            .filter(|creature| filter_vec.contains(creature.is_melee.to_string().as_str()))
+            .filter(|creature| {
+                filter_vec.contains(creature.core_data.is_melee.to_string().as_str())
+            })
             .collect(),
         CreatureFilter::Ranged => cr_iterator
-            .filter(|creature| filter_vec.contains(creature.is_ranged.to_string().as_str()))
+            .filter(|creature| {
+                filter_vec.contains(creature.core_data.is_ranged.to_string().as_str())
+            })
             .collect(),
         CreatureFilter::SpellCaster => cr_iterator
-            .filter(|creature| filter_vec.contains(creature.is_spell_caster.to_string().as_str()))
+            .filter(|creature| {
+                filter_vec.contains(creature.core_data.is_spell_caster.to_string().as_str())
+            })
             .collect(),
     }
 }
@@ -188,7 +210,8 @@ async fn fetch_data_from_database(
 
 async fn fetch_creatures(app_state: &AppState, variant: CreatureVariant) -> Option<Vec<Creature>> {
     let cache = &app_state.creature_cache.clone();
-    if let Some(creatures) = cache.get(&creature_variant_to_cache_index(variant.clone())) {
+    let index = &CreatureVariant::to_cache_index(&variant);
+    if let Some(creatures) = cache.get(index) {
         return Some(creatures);
     } else if let Ok(creatures) = db_communicator::fetch_creatures(&app_state.conn).await {
         cache.insert(0, creatures.clone());
@@ -198,19 +221,19 @@ async fn fetch_creatures(app_state: &AppState, variant: CreatureVariant) -> Opti
         creatures.iter().for_each(|cr| {
             weak_creatures.push(convert_creature_to_variant(
                 cr,
-                creature_variant_to_level_delta(CreatureVariant::Weak),
+                CreatureVariant::to_level_delta(&CreatureVariant::Weak),
             ));
             elite_creatures.push(convert_creature_to_variant(
                 cr,
-                creature_variant_to_level_delta(CreatureVariant::Elite),
+                CreatureVariant::to_level_delta(&CreatureVariant::Elite),
             ));
         });
         cache.insert(
-            creature_variant_to_cache_index(CreatureVariant::Weak),
+            CreatureVariant::to_cache_index(&CreatureVariant::Weak),
             weak_creatures.clone(),
         );
         cache.insert(
-            creature_variant_to_cache_index(CreatureVariant::Elite),
+            CreatureVariant::to_cache_index(&CreatureVariant::Elite),
             elite_creatures.clone(),
         );
         return match variant {
@@ -233,7 +256,7 @@ pub fn order_list_by_level(creature_list: HashSet<Creature>) -> HashMap<i16, Vec
     let mut ordered_by_level = HashMap::new();
     creature_list.iter().for_each(|creature| {
         ordered_by_level
-            .entry(creature.variant_level as i16)
+            .entry(creature.variant_data.level as i16)
             .or_insert_with(Vec::new)
             .push(creature.clone());
     });
