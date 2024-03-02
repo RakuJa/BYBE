@@ -44,12 +44,12 @@ pub enum AlignmentEnum {
     Any, // can be every alignment
 }
 
-impl AlignmentEnum {
-    pub fn from_trait_vec(vec_of_traits: &[RawTrait], remastered: bool) -> AlignmentEnum {
-        if remastered {
+impl From<(&Vec<RawTrait>, bool)> for AlignmentEnum {
+    fn from(tuple: (&Vec<RawTrait>, bool)) -> AlignmentEnum {
+        if tuple.1 {
             return AlignmentEnum::No;
         }
-        let string_traits: Vec<String> = vec_of_traits.iter().map(|x| x.name.clone()).collect();
+        let string_traits: Vec<String> = tuple.0.iter().map(|x| x.name.clone()).collect();
         let is_good = string_traits.contains(&"good".to_string());
         let is_evil = string_traits.contains(&"evil".to_string());
         let is_chaos = string_traits.contains(&"chaotic".to_string());

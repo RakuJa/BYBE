@@ -169,7 +169,7 @@ impl From<(RawCreature, Vec<RawTrait>, bool, bool, Option<String>)> for CoreCrea
         let is_melee = tuple.3;
         let archive_link = tuple.4;
 
-        let alignment_enum = AlignmentEnum::from_trait_vec(&traits, raw.remaster);
+        let alignment_enum = AlignmentEnum::from((&traits, raw.remaster));
         CoreCreatureData {
             id: raw.id as i32,
             aon_id: raw.aon_id.map(|x| x as i32),
