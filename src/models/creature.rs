@@ -33,7 +33,7 @@ pub struct CoreCreatureData {
     pub is_spell_caster: bool,
     pub is_melee: bool,
     pub is_ranged: bool,
-    pub source: String,
+    pub publication_info: PublicationInfo,
     pub traits: Vec<String>,
     pub archive_link: Option<String>,
     pub creature_type: CreatureTypeEnum,
@@ -56,6 +56,40 @@ pub struct ExtraCreatureData {
     pub senses: Vec<String>,
     pub speeds: Vec<(String, i16)>,
     pub weaknesses: Vec<(String, i16)>,
+    pub ability_scores: AbilityScores,
+    pub hp_detail: Option<String>,
+    pub ac_detail: Option<String>,
+    pub language_detail: Option<String>,
+    pub perception: i8,
+    pub perception_detail: Option<String>,
+    pub saving_throws: SavingThrows,
+}
+
+#[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
+pub struct AbilityScores {
+    pub charisma: i8,
+    pub constitution: i8,
+    pub dexterity: i8,
+    pub intelligence: i8,
+    pub strength: i8,
+    pub wisdom: i8,
+}
+
+#[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
+pub struct PublicationInfo {
+    pub license: String,
+    pub remaster: bool,
+    pub source: String,
+}
+
+#[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
+pub struct SavingThrows {
+    fortitude: i8,
+    reflex: i8,
+    will: i8,
+    fortitude_detail: Option<String>,
+    reflex_detail: Option<String>,
+    will_detail: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
@@ -181,7 +215,11 @@ impl From<(RawCreature, Vec<RawTrait>, bool, bool, Option<String>)> for CoreCrea
             family: raw.family.clone(),
             rarity: raw.rarity.clone(),
             is_spell_caster: raw.is_spell_caster,
-            source: raw.source.clone(),
+            publication_info: PublicationInfo {
+                remaster: raw.remaster,
+                source: raw.source,
+                license: raw.license,
+            },
             traits: traits
                 .into_iter()
                 .map(|curr_trait| curr_trait.name)
@@ -206,6 +244,7 @@ impl From<(i64, Option<String>)> for VariantCreatureData {
 
 impl
     From<(
+        RawCreature,
         Vec<Weapon>,
         Vec<Spell>,
         Vec<RawImmunity>,
@@ -218,6 +257,7 @@ impl
 {
     fn from(
         tuple: (
+            RawCreature,
             Vec<Weapon>,
             Vec<Spell>,
             Vec<RawImmunity>,
@@ -228,39 +268,85 @@ impl
             Vec<RawWeakness>,
         ),
     ) -> Self {
+        let raw_cr = tuple.0;
         Self {
-            weapons: tuple.0,
-            spells: tuple.1,
+            weapons: tuple.1,
+            spells: tuple.2,
             immunities: tuple
-                .2
-                .into_iter()
-                .map(|curr_trait| curr_trait.name)
-                .collect(),
-            languages: tuple
                 .3
                 .into_iter()
                 .map(|curr_trait| curr_trait.name)
                 .collect(),
-            resistances: tuple
+            languages: tuple
                 .4
+                .into_iter()
+                .map(|curr_trait| curr_trait.name)
+                .collect(),
+            resistances: tuple
+                .5
                 .into_iter()
                 .map(|curr_res| (curr_res.name, curr_res.value as i16))
                 .collect(),
             senses: tuple
-                .5
+                .6
                 .into_iter()
                 .map(|curr_trait| curr_trait.name)
                 .collect(),
             speeds: tuple
-                .6
+                .7
                 .into_iter()
                 .map(|curr_speed| (curr_speed.name, curr_speed.value as i16))
                 .collect(),
             weaknesses: tuple
-                .7
+                .8
                 .into_iter()
                 .map(|curr_weak| (curr_weak.name, curr_weak.value as i16))
                 .collect(),
+            ability_scores: AbilityScores {
+                charisma: raw_cr.charisma as i8,
+                constitution: raw_cr.constitution as i8,
+                dexterity: raw_cr.dexterity as i8,
+                intelligence: raw_cr.intelligence as i8,
+                strength: raw_cr.strength as i8,
+                wisdom: raw_cr.wisdom as i8,
+            },
+            hp_detail: if raw_cr.hp_detail.is_empty() {
+                None
+            } else {
+                Some(raw_cr.hp_detail)
+            },
+            ac_detail: if raw_cr.ac_detail.is_empty() {
+                None
+            } else {
+                Some(raw_cr.ac_detail)
+            },
+            language_detail: raw_cr.language_detail,
+            perception: raw_cr.perception as i8,
+            perception_detail: if raw_cr.perception_detail.is_empty() {
+                None
+            } else {
+                Some(raw_cr.perception_detail)
+            },
+            saving_throws: SavingThrows {
+                fortitude: raw_cr.fortitude as i8,
+                reflex: raw_cr.reflex as i8,
+                will: raw_cr.will as i8,
+                fortitude_detail: if raw_cr.fortitude_detail.is_empty() {
+                    None
+                } else {
+                    Some(raw_cr.fortitude_detail)
+                },
+                reflex_detail: if raw_cr.reflex_detail.is_empty() {
+                    None
+                } else {
+                    Some(raw_cr.reflex_detail)
+                },
+                will_detail: if raw_cr.will_detail.is_empty() {
+                    None
+                } else {
+                    Some(raw_cr.will_detail)
+                },
+            },
         }
     }
 }
@@ -311,13 +397,14 @@ impl
         Self {
             variant_data: VariantCreatureData::from((raw_creature.level, archive_link.clone())),
             core_data: CoreCreatureData::from((
-                raw_creature,
+                raw_creature.clone(),
                 traits,
                 is_ranged,
                 is_melee,
                 archive_link,
             )),
             extra_data: ExtraCreatureData::from((
+                raw_creature,
                 weapons,
                 spells,
                 immunities,

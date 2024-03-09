@@ -70,11 +70,11 @@ pub fn from_db_data_to_filter_cache(
 
         if !fields_values_cache
             .list_of_sources
-            .contains(&curr_creature.core_data.source)
+            .contains(&curr_creature.core_data.publication_info.source)
         {
             fields_values_cache
                 .list_of_sources
-                .push(curr_creature.core_data.source.clone());
+                .push(curr_creature.core_data.publication_info.source.clone());
         }
 
         if !fields_values_cache.list_of_alignments.contains(&alignment) {
