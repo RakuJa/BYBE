@@ -213,7 +213,9 @@ async fn fetch_creatures(app_state: &AppState, variant: CreatureVariant) -> Opti
     let index = &CreatureVariant::to_cache_index(&variant);
     if let Some(creatures) = cache.get(index) {
         return Some(creatures);
-    } else if let Ok(creatures) = db_communicator::fetch_creatures(&app_state.conn).await {
+    } else if let Ok(creatures) =
+        db_communicator::fetch_creatures(&app_state.conn, &app_state.creature_scales).await
+    {
         cache.insert(0, creatures.clone());
         let mut weak_creatures = Vec::new();
         let mut elite_creatures = Vec::new();

@@ -1,4 +1,5 @@
 use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature_metadata::creature_role::CreatureRole;
 use crate::models::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
@@ -6,10 +7,22 @@ use crate::models::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::response_data::ResponseCreature;
 use crate::models::response_data::ResponseData;
 
-use crate::models::creature::{CoreCreatureData, ExtraCreatureData, VariantCreatureData};
+use crate::models::creature_component::creature_combat::CreatureCombatData;
+use crate::models::creature_component::creature_combat::SavingThrows;
+use crate::models::creature_component::creature_core::CreatureCoreData;
+use crate::models::creature_component::creature_extra::AbilityScores;
+use crate::models::creature_component::creature_extra::CreatureExtraData;
+use crate::models::creature_component::creature_info::CreatureInfo;
+use crate::models::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::creature_component::creature_variant::CreatureVariantData;
 
+use crate::models::items::action::Action;
+use crate::models::items::skill::Skill;
 use crate::models::items::spell::Spell;
+use crate::models::items::spell_caster_entry::SpellCasterEntry;
 use crate::models::items::weapon::Weapon;
+
+use crate::models::creature::PublicationInfo;
 
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
 use crate::services::bestiary_service;
@@ -60,11 +73,21 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             SizeEnum,
             CreatureTypeEnum,
             CreatureVariant,
-            CoreCreatureData,
-            VariantCreatureData,
-            ExtraCreatureData,
+            CreatureCoreData,
+            CreatureVariantData,
+            CreatureExtraData,
+            CreatureCombatData,
+            CreatureSpellCasterData,
+            CreatureInfo,
             Spell,
             Weapon,
+            SavingThrows,
+            PublicationInfo,
+            AbilityScores,
+            Action,
+            Skill,
+            CreatureRole,
+            SpellCasterEntry
         ))
     )]
     struct ApiDoc;

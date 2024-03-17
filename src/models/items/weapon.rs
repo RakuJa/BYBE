@@ -39,3 +39,26 @@ pub struct Weapon {
     pub wp_type: String,
     pub creature_id: i64,
 }
+
+impl Weapon {
+    pub fn get_avg_dmg(&self) -> Option<i64> {
+        // avg dice value is
+        // AVG = (((M+1)/2)∗N)+B
+        //
+        // M = max value of the dice
+        // N = number of dices
+        // B = bonus dmg
+        let m = self
+            .die_size
+            .clone()?
+            .split_once('d')?
+            .1
+            .parse::<f64>()
+            .ok()?;
+        let n = self.n_of_dices? as f64;
+        let b = self.bonus_dmg? as f64;
+
+        let avg: f64 = (((m + 1.) / 2.) * n) + b;
+        Some(avg.floor() as i64)
+    }
+}
