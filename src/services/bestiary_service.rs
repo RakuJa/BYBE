@@ -1,6 +1,7 @@
 use crate::db::db_proxy;
 use crate::models::creature::Creature;
 use crate::models::creature_fields_enum::CreatureField;
+use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::response_data::{ResponseCreature, ResponseData};
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
@@ -91,6 +92,10 @@ pub async fn get_alignments_list(app_state: &AppState) -> Vec<String> {
 
 pub async fn get_creature_types_list(app_state: &AppState) -> Vec<String> {
     db_proxy::get_keys(app_state, CreatureField::CreatureTypes).await
+}
+
+pub async fn get_creature_roles_list() -> Vec<String> {
+    CreatureRoleEnum::list()
 }
 fn convert_result_to_bestiary_response(
     field_filters: &FieldFilters,

@@ -1,5 +1,5 @@
 use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
-use crate::models::creature_metadata::creature_role::CreatureRole;
+use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
@@ -44,6 +44,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
             .service(get_sources_list)
             .service(get_rarities_list)
             .service(get_creature_types_list)
+            .service(get_creature_roles_list)
             .service(get_sizes_list)
             .service(get_alignments_list),
     );
@@ -61,6 +62,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             get_sizes_list,
             get_alignments_list,
             get_creature_types_list,
+            get_creature_roles_list,
             get_creature,
             get_elite_creature,
             get_weak_creature,
@@ -86,7 +88,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             AbilityScores,
             Action,
             Skill,
-            CreatureRole,
+            CreatureRoleEnum,
             SpellCasterEntry
         ))
     )]
@@ -240,6 +242,23 @@ pub async fn get_creature_types_list(data: web::Data<AppState>) -> Result<impl R
     Ok(web::Json(
         bestiary_service::get_creature_types_list(&data).await,
     ))
+}
+
+#[utoipa::path(
+    get,
+    path = "/bestiary/creature_roles",
+    tag = "bestiary",
+    params(
+
+    ),
+    responses(
+        (status=200, description = "Successful Response", body = [String]),
+        (status=400, description = "Bad request.")
+    ),
+)]
+#[get("/creature_roles")]
+pub async fn get_creature_roles_list() -> Result<impl Responder> {
+    Ok(web::Json(bestiary_service::get_creature_roles_list().await))
 }
 
 #[utoipa::path(

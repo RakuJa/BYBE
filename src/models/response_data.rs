@@ -11,14 +11,14 @@ use validator::Validate;
 
 #[derive(Serialize, Deserialize, IntoParams, Default, Eq, PartialEq, Hash, Clone, Validate)]
 pub struct ResponseData {
-    pub essential_data: bool,
-    pub variant_data: bool,
-    pub extra_data: bool,
-    pub combat_data: bool,
-    pub spell_casting_data: bool,
+    pub essential_data: Option<bool>,
+    pub variant_data: Option<bool>,
+    pub extra_data: Option<bool>,
+    pub combat_data: Option<bool>,
+    pub spell_casting_data: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Hash, PartialEq)]
 pub struct ResponseCreature {
     pub core_data: Option<CreatureCoreData>,
     pub variant_data: Option<CreatureVariantData>,
@@ -33,31 +33,36 @@ impl From<(Creature, &ResponseData)> for ResponseCreature {
         let cr = value.0;
         let rd = value.1;
         Self {
-            core_data: if rd.essential_data {
+            core_data: if rd.essential_data.is_none() || !rd.essential_data.unwrap() {
+                None
+            } else {
                 Some(cr.core_data)
-            } else {
-                None
             },
-            variant_data: if rd.variant_data {
+            variant_data: if rd.variant_data.is_none() || !rd.variant_data.unwrap() {
+                None
+            } else {
                 Some(cr.variant_data)
-            } else {
-                None
             },
-            extra_data: if rd.extra_data {
+            extra_data: if rd.extra_data.is_none() || !rd.extra_data.unwrap() {
+                None
+            } else {
                 Some(cr.extra_data)
-            } else {
-                None
             },
-            info: if rd.extra_data { Some(cr.info) } else { None },
-            spell_caster_data: if rd.spell_casting_data {
+            info: if rd.extra_data.is_none() || !rd.extra_data.unwrap() {
+                None
+            } else {
+                Some(cr.info)
+            },
+            spell_caster_data: if rd.spell_casting_data.is_none() || !rd.spell_casting_data.unwrap()
+            {
+                None
+            } else {
                 Some(cr.spell_caster_data)
-            } else {
-                None
             },
-            combat_data: if rd.combat_data {
-                Some(cr.combat_data)
-            } else {
+            combat_data: if rd.combat_data.is_none() || !rd.combat_data.unwrap() {
                 None
+            } else {
+                Some(cr.combat_data)
             },
         }
     }

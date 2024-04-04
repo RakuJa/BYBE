@@ -96,6 +96,17 @@ impl Creature {
             .map_or(true, |is_spell_caster| {
                 self.core_data.is_spell_caster == is_spell_caster
             });
+        let type_pass = filters
+            .type_filter
+            .as_ref()
+            .map_or(true, |cr_type| self.core_data.creature_type == *cr_type);
+        let role_pass = filters.role_filter.as_ref().map_or(true, |cr_role| {
+            self.info.roles.iter().any(|(r, a)| {
+                r == cr_role
+                    && (filters.role_threshold.is_none()
+                        || a >= &(filters.role_threshold.unwrap() as i64))
+            })
+        });
 
         rarity_pass
             && size_pass
@@ -103,6 +114,8 @@ impl Creature {
             && is_melee_pass
             && is_ranged_pass
             && is_spell_caster_pass
+            && type_pass
+            && role_pass
     }
 
     fn check_creature_pass_string_filters(&self, filters: &FieldFilters) -> bool {
