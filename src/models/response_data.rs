@@ -11,7 +11,7 @@ use validator::Validate;
 
 #[derive(Serialize, Deserialize, IntoParams, Default, Eq, PartialEq, Hash, Clone, Validate)]
 pub struct ResponseData {
-    pub essential_data: Option<bool>,
+    pub core_data: Option<bool>,
     pub variant_data: Option<bool>,
     pub extra_data: Option<bool>,
     pub combat_data: Option<bool>,
@@ -33,7 +33,7 @@ impl From<(Creature, &ResponseData)> for ResponseCreature {
         let cr = value.0;
         let rd = value.1;
         Self {
-            core_data: if rd.essential_data.is_none() || !rd.essential_data.unwrap() {
+            core_data: if rd.core_data.is_none() || !rd.core_data.unwrap() {
                 None
             } else {
                 Some(cr.core_data)

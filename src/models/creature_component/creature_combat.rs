@@ -4,6 +4,7 @@ use crate::models::db::raw_resistance::RawResistance;
 use crate::models::db::raw_weakness::RawWeakness;
 use crate::models::items::weapon::Weapon;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
@@ -19,9 +20,9 @@ pub struct SavingThrows {
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct CreatureCombatData {
     pub weapons: Vec<Weapon>,
-    pub resistances: Vec<(String, i16)>,
+    pub resistances: BTreeMap<String, i16>,
     pub immunities: Vec<String>,
-    pub weaknesses: Vec<(String, i16)>,
+    pub weaknesses: BTreeMap<String, i16>,
     pub saving_throws: SavingThrows,
     pub ac: i8,
 }

@@ -16,14 +16,14 @@ use log::warn;
 use rand::seq::IndexedRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct EncounterInfoResponse {
     experience: i16,
     challenge: EncounterChallengeEnum,
-    encounter_exp_levels: HashMap<EncounterChallengeEnum, i16>,
+    encounter_exp_levels: BTreeMap<EncounterChallengeEnum, i16>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -46,7 +46,7 @@ pub fn get_encounter_info(enc_params: EncounterParams) -> EncounterInfoResponse 
     EncounterInfoResponse {
         experience: enc_exp,
         challenge: enc_diff,
-        encounter_exp_levels: scaled_exp,
+        encounter_exp_levels: scaled_exp.into_iter().collect(),
     }
 }
 

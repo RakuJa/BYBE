@@ -40,7 +40,9 @@ pub struct RandomEncounterData {
     pub response_data: ResponseData,
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Clone)]
+#[derive(
+    Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Ord, PartialOrd, Clone,
+)]
 pub enum EncounterChallengeEnum {
     Trivial,
     Low,

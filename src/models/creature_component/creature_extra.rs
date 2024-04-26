@@ -5,6 +5,7 @@ use crate::models::db::raw_speed::RawSpeed;
 use crate::models::items::action::Action;
 use crate::models::items::skill::Skill;
 use serde::{Deserialize, Serialize};
+use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
@@ -23,7 +24,7 @@ pub struct CreatureExtraData {
     pub skills: Vec<Skill>,
     pub languages: Vec<String>,
     pub senses: Vec<String>,
-    pub speeds: Vec<(String, i16)>,
+    pub speeds: BTreeMap<String, i16>,
     pub ability_scores: AbilityScores,
     pub hp_detail: Option<String>,
     pub ac_detail: Option<String>,

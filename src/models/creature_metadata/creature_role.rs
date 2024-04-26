@@ -256,8 +256,8 @@ fn is_skirmisher(
     // Higher than avg speed (avg ~= 25)
     score += cr_extra
         .speeds
-        .iter()
-        .map(|(_, speed_value)| calculate_lb_distance(30, *speed_value as i64))
+        .values()
+        .map(|speed_value| calculate_lb_distance(30, *speed_value as i64))
         .min()
         .unwrap_or(MISSING_FIELD_DISTANCE);
     Some(f64::E().powf(-0.2 * (score as f64)))
@@ -484,7 +484,7 @@ impl fmt::Display for CreatureRoleEnum {
                 write!(f, "Soldier")
             }
             CreatureRoleEnum::SpellCaster => {
-                write!(f, "Spellcaster")
+                write!(f, "SpellCaster")
             }
         }
     }
