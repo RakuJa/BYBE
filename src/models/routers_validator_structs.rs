@@ -1,6 +1,8 @@
 use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature_metadata::size_enum::SizeEnum;
+use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::IntoParams;
 use validator::Validate;
@@ -12,6 +14,9 @@ pub struct FieldFilters {
     pub rarity_filter: Option<RarityEnum>,
     pub size_filter: Option<SizeEnum>,
     pub alignment_filter: Option<AlignmentEnum>,
+    pub role_filter: Option<CreatureRoleEnum>,
+    pub type_filter: Option<CreatureTypeEnum>,
+    pub role_threshold: Option<i16>,
     pub min_hp_filter: Option<i16>,
     pub max_hp_filter: Option<i16>,
     pub min_level_filter: Option<i8>,

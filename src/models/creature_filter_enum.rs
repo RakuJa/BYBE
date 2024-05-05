@@ -13,4 +13,5 @@ pub enum CreatureFilter {
     SpellCaster,
     Traits,
     CreatureTypes,
+    CreatureRoles,
 }

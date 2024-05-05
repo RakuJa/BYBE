@@ -1,8 +1,9 @@
-use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
-use crate::models::creature_metadata::rarity_enum::RarityEnum;
-use crate::models::creature_metadata::size_enum::SizeEnum;
-use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
-use crate::models::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::creature_component::creature_combat::CreatureCombatData;
+use crate::models::creature_component::creature_core::CreatureCoreData;
+use crate::models::creature_component::creature_extra::CreatureExtraData;
+use crate::models::creature_component::creature_info::CreatureInfo;
+use crate::models::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::creature_component::creature_variant::CreatureVariantData;
 use crate::models::db::raw_creature::RawCreature;
 use crate::models::db::raw_immunity::RawImmunity;
 use crate::models::db::raw_language::RawLanguage;
@@ -11,72 +12,32 @@ use crate::models::db::raw_sense::RawSense;
 use crate::models::db::raw_speed::RawSpeed;
 use crate::models::db::raw_trait::RawTrait;
 use crate::models::db::raw_weakness::RawWeakness;
+use crate::models::items::action::Action;
+use crate::models::items::skill::Skill;
 use crate::models::items::spell::Spell;
 use crate::models::items::weapon::Weapon;
 use crate::models::routers_validator_structs::FieldFilters;
+use crate::models::scales_struct::creature_scales::CreatureScales;
 use crate::services::url_calculator::generate_archive_link;
+use regex::Regex;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
-pub struct CoreCreatureData {
-    pub id: i32,
-    pub aon_id: Option<i32>,
-    pub name: String,
-    pub hp: i16,
-    // constant value, it will never change
-    pub base_level: i8,
-    pub alignment: AlignmentEnum,
-    pub size: SizeEnum,
-    pub family: Option<String>,
-    pub rarity: RarityEnum,
-    pub is_spell_caster: bool,
-    pub is_melee: bool,
-    pub is_ranged: bool,
+pub struct PublicationInfo {
+    pub license: String,
+    pub remaster: bool,
     pub source: String,
-    pub traits: Vec<String>,
-    pub archive_link: Option<String>,
-    pub creature_type: CreatureTypeEnum,
-    pub variant: CreatureVariant,
-}
-
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
-pub struct VariantCreatureData {
-    pub level: i8,
-    pub archive_link: Option<String>,
-}
-
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
-pub struct ExtraCreatureData {
-    pub weapons: Vec<Weapon>,
-    pub spells: Vec<Spell>,
-    pub immunities: Vec<String>,
-    pub languages: Vec<String>,
-    pub resistances: Vec<(String, i16)>,
-    pub senses: Vec<String>,
-    pub speeds: Vec<(String, i16)>,
-    pub weaknesses: Vec<(String, i16)>,
 }
 
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
 pub struct Creature {
-    pub core_data: CoreCreatureData,
-    pub variant_data: VariantCreatureData,
-    pub extra_data: ExtraCreatureData,
-}
-
-impl CoreCreatureData {
-    pub fn is_melee(weapons: &[Weapon]) -> bool {
-        weapons
-            .iter()
-            .any(|el| el.wp_type.to_uppercase() == "MELEE")
-    }
-
-    pub fn is_ranged(weapons: &[Weapon]) -> bool {
-        weapons
-            .iter()
-            .any(|el| el.wp_type.to_uppercase() == "RANGED")
-    }
+    pub core_data: CreatureCoreData,
+    pub variant_data: CreatureVariantData,
+    pub extra_data: CreatureExtraData,
+    pub combat_data: CreatureCombatData,
+    pub spell_caster_data: CreatureSpellCasterData,
+    pub info: CreatureInfo,
 }
 
 impl Creature {
@@ -135,6 +96,17 @@ impl Creature {
             .map_or(true, |is_spell_caster| {
                 self.core_data.is_spell_caster == is_spell_caster
             });
+        let type_pass = filters
+            .type_filter
+            .as_ref()
+            .map_or(true, |cr_type| self.core_data.creature_type == *cr_type);
+        let role_pass = filters.role_filter.as_ref().map_or(true, |cr_role| {
+            self.info.roles.iter().any(|(r, a)| {
+                r == cr_role
+                    && (filters.role_threshold.is_none()
+                        || a >= &(filters.role_threshold.unwrap() as i64))
+            })
+        });
 
         rarity_pass
             && size_pass
@@ -142,6 +114,8 @@ impl Creature {
             && is_melee_pass
             && is_ranged_pass
             && is_spell_caster_pass
+            && type_pass
+            && role_pass
     }
 
     fn check_creature_pass_string_filters(&self, filters: &FieldFilters) -> bool {
@@ -161,122 +135,22 @@ impl Creature {
     }
 }
 
-impl From<(RawCreature, Vec<RawTrait>, bool, bool, Option<String>)> for CoreCreatureData {
-    fn from(tuple: (RawCreature, Vec<RawTrait>, bool, bool, Option<String>)) -> Self {
-        let raw = tuple.0;
-        let traits = tuple.1;
-        let is_ranged = tuple.2;
-        let is_melee = tuple.3;
-        let archive_link = tuple.4;
-
-        let alignment_enum = AlignmentEnum::from((&traits, raw.remaster));
-        CoreCreatureData {
-            id: raw.id as i32,
-            aon_id: raw.aon_id.map(|x| x as i32),
-            name: raw.name.clone(),
-            hp: raw.hp as i16,
-            base_level: raw.level as i8,
-            alignment: alignment_enum,
-            size: raw.size.clone(),
-            family: raw.family.clone(),
-            rarity: raw.rarity.clone(),
-            is_spell_caster: raw.is_spell_caster,
-            source: raw.source.clone(),
-            traits: traits
-                .into_iter()
-                .map(|curr_trait| curr_trait.name)
-                .collect(),
-            creature_type: raw.cr_type.clone(),
-            archive_link: archive_link.clone(),
-            variant: CreatureVariant::Base,
-            is_ranged,
-            is_melee,
-        }
-    }
-}
-
-impl From<(i64, Option<String>)> for VariantCreatureData {
-    fn from(value: (i64, Option<String>)) -> Self {
-        Self {
-            level: value.0 as i8,
-            archive_link: value.1,
-        }
-    }
-}
-
-impl
-    From<(
-        Vec<Weapon>,
-        Vec<Spell>,
-        Vec<RawImmunity>,
-        Vec<RawLanguage>,
-        Vec<RawResistance>,
-        Vec<RawSense>,
-        Vec<RawSpeed>,
-        Vec<RawWeakness>,
-    )> for ExtraCreatureData
-{
-    fn from(
-        tuple: (
-            Vec<Weapon>,
-            Vec<Spell>,
-            Vec<RawImmunity>,
-            Vec<RawLanguage>,
-            Vec<RawResistance>,
-            Vec<RawSense>,
-            Vec<RawSpeed>,
-            Vec<RawWeakness>,
-        ),
-    ) -> Self {
-        Self {
-            weapons: tuple.0,
-            spells: tuple.1,
-            immunities: tuple
-                .2
-                .into_iter()
-                .map(|curr_trait| curr_trait.name)
-                .collect(),
-            languages: tuple
-                .3
-                .into_iter()
-                .map(|curr_trait| curr_trait.name)
-                .collect(),
-            resistances: tuple
-                .4
-                .into_iter()
-                .map(|curr_res| (curr_res.name, curr_res.value as i16))
-                .collect(),
-            senses: tuple
-                .5
-                .into_iter()
-                .map(|curr_trait| curr_trait.name)
-                .collect(),
-            speeds: tuple
-                .6
-                .into_iter()
-                .map(|curr_speed| (curr_speed.name, curr_speed.value as i16))
-                .collect(),
-            weaknesses: tuple
-                .7
-                .into_iter()
-                .map(|curr_weak| (curr_weak.name, curr_weak.value as i16))
-                .collect(),
-        }
-    }
-}
-
 impl
     From<(
         RawCreature,
         Vec<RawTrait>,
         Vec<Weapon>,
         Vec<Spell>,
+        Vec<Action>,
+        Vec<Skill>,
         Vec<RawImmunity>,
         Vec<RawLanguage>,
         Vec<RawResistance>,
         Vec<RawSense>,
         Vec<RawSpeed>,
         Vec<RawWeakness>,
+        &CreatureScales,
+        &Regex,
     )> for Creature
 {
     fn from(
@@ -285,48 +159,87 @@ impl
             Vec<RawTrait>,
             Vec<Weapon>,
             Vec<Spell>,
+            Vec<Action>,
+            Vec<Skill>,
             Vec<RawImmunity>,
             Vec<RawLanguage>,
             Vec<RawResistance>,
             Vec<RawSense>,
             Vec<RawSpeed>,
             Vec<RawWeakness>,
+            &CreatureScales,
+            &Regex,
         ),
     ) -> Self {
         let raw_creature = tuple.0;
+        let traits = tuple.1;
         let weapons = tuple.2;
         let spells = tuple.3;
-        let traits = tuple.1;
-        let immunities = tuple.4;
-        let languages = tuple.5;
-        let resistances = tuple.6;
-        let senses = tuple.7;
-        let speeds = tuple.8;
-        let weaknesses = tuple.9;
+        let actions = tuple.4;
+        let skills = tuple.5;
+        let immunities = tuple.6;
+        let languages = tuple.7;
+        let resistances = tuple.8;
+        let senses = tuple.9;
+        let speeds = tuple.10;
+        let weaknesses = tuple.11;
 
         let archive_link = generate_archive_link(raw_creature.aon_id, &raw_creature.cr_type);
-        let is_ranged = CoreCreatureData::is_ranged(&weapons);
-        let is_melee = CoreCreatureData::is_melee(&weapons);
+        let is_ranged = is_ranged(&weapons);
+        let is_melee = is_melee(&weapons);
+        let core_data = CreatureCoreData::from((
+            raw_creature.clone(),
+            traits,
+            is_ranged,
+            is_melee,
+            archive_link.clone(),
+        ));
+        let extra_data = CreatureExtraData::from((
+            raw_creature.clone(),
+            actions,
+            skills,
+            languages,
+            senses,
+            speeds,
+        ));
+
+        let combat_data = CreatureCombatData::from((
+            raw_creature.clone(),
+            weapons,
+            immunities,
+            resistances,
+            weaknesses,
+        ));
+        let scales = tuple.12;
+        let spell_caster_data = CreatureSpellCasterData::from((raw_creature.clone(), spells));
+        let info = CreatureInfo::from((
+            &core_data,
+            &extra_data,
+            &combat_data,
+            &spell_caster_data,
+            scales,
+            tuple.13,
+        ));
 
         Self {
-            variant_data: VariantCreatureData::from((raw_creature.level, archive_link.clone())),
-            core_data: CoreCreatureData::from((
-                raw_creature,
-                traits,
-                is_ranged,
-                is_melee,
-                archive_link,
-            )),
-            extra_data: ExtraCreatureData::from((
-                weapons,
-                spells,
-                immunities,
-                languages,
-                resistances,
-                senses,
-                speeds,
-                weaknesses,
-            )),
+            variant_data: CreatureVariantData::from((raw_creature.level, archive_link)),
+            core_data,
+            extra_data,
+            spell_caster_data,
+            combat_data,
+            info,
         }
     }
+}
+
+fn is_melee(weapons: &[Weapon]) -> bool {
+    weapons
+        .iter()
+        .any(|el| el.wp_type.to_uppercase() == "MELEE")
+}
+
+fn is_ranged(weapons: &[Weapon]) -> bool {
+    weapons
+        .iter()
+        .any(|el| el.wp_type.to_uppercase() == "RANGED")
 }

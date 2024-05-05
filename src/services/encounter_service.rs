@@ -1,10 +1,7 @@
 use crate::db::db_proxy::{fetch_creatures_passing_all_filters, order_list_by_level};
 use crate::models::creature::Creature;
+use crate::models::creature_component::filter_struct::FilterStruct;
 use crate::models::creature_filter_enum::CreatureFilter;
-use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
-use crate::models::creature_metadata::rarity_enum::RarityEnum;
-use crate::models::creature_metadata::size_enum::SizeEnum;
-use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::encounter_structs::{
     EncounterChallengeEnum, EncounterParams, RandomEncounterData,
@@ -19,14 +16,14 @@ use log::warn;
 use rand::seq::IndexedRandom;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
-use std::collections::{HashMap, HashSet};
+use std::collections::{BTreeMap, HashMap, HashSet};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct EncounterInfoResponse {
     experience: i16,
     challenge: EncounterChallengeEnum,
-    encounter_exp_levels: HashMap<EncounterChallengeEnum, i16>,
+    encounter_exp_levels: BTreeMap<EncounterChallengeEnum, i16>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -49,7 +46,7 @@ pub fn get_encounter_info(enc_params: EncounterParams) -> EncounterInfoResponse 
     EncounterInfoResponse {
         experience: enc_exp,
         challenge: enc_diff,
-        encounter_exp_levels: scaled_exp,
+        encounter_exp_levels: scaled_exp.into_iter().collect(),
     }
 }
 
@@ -105,15 +102,16 @@ async fn calculate_random_encounter(
         !unique_levels.is_empty(),
         "There are no valid levels to chose from. Encounter could not be built"
     );
-    let filter_map = build_filter_map(
-        enc_data.families,
-        enc_data.traits,
-        enc_data.rarities,
-        enc_data.sizes,
-        enc_data.alignments,
-        enc_data.creature_types,
-        unique_levels,
-    );
+    let filter_map = build_filter_map(FilterStruct {
+        families: enc_data.families,
+        traits: enc_data.traits,
+        rarities: enc_data.rarities,
+        sizes: enc_data.sizes,
+        alignments: enc_data.alignments,
+        creature_types: enc_data.creature_types,
+        creature_roles: enc_data.creature_roles,
+        lvl_combinations: unique_levels,
+    });
 
     let filtered_creatures = get_filtered_creatures(
         app_state,
@@ -223,43 +221,48 @@ fn filter_non_existing_levels(
     result_vec
 }
 
-fn build_filter_map(
-    families: Option<Vec<String>>,
-    traits: Option<Vec<String>>,
-    rarities: Option<Vec<RarityEnum>>,
-    sizes: Option<Vec<SizeEnum>>,
-    alignments: Option<Vec<AlignmentEnum>>,
-    creature_types: Option<Vec<CreatureTypeEnum>>,
-    lvl_combinations: HashSet<String>,
-) -> HashMap<CreatureFilter, HashSet<String>> {
+fn build_filter_map(filter_enum: FilterStruct) -> HashMap<CreatureFilter, HashSet<String>> {
     let mut filter_map = HashMap::new();
-    families.map(|el| filter_map.insert(CreatureFilter::Family, HashSet::from_iter(el)));
-    traits.map(|el| filter_map.insert(CreatureFilter::Traits, HashSet::from_iter(el)));
-    rarities.map(|vec| {
+
+    filter_enum
+        .families
+        .map(|el| filter_map.insert(CreatureFilter::Family, HashSet::from_iter(el)));
+    filter_enum
+        .traits
+        .map(|el| filter_map.insert(CreatureFilter::Traits, HashSet::from_iter(el)));
+    // What no generic enum does to a mf (mother function)
+    // it could also prob be bad programming by me
+    if let Some(vec) = filter_enum.rarities {
         filter_map.insert(
             CreatureFilter::Rarity,
             HashSet::from_iter(vec.iter().map(|el| el.to_string())),
-        )
-    });
-    sizes.map(|vec| {
+        );
+    };
+    if let Some(vec) = filter_enum.sizes {
         filter_map.insert(
             CreatureFilter::Size,
             HashSet::from_iter(vec.iter().map(|el| el.to_string())),
-        )
-    });
-    alignments.map(|vec| {
+        );
+    };
+    if let Some(vec) = filter_enum.alignments {
         filter_map.insert(
             CreatureFilter::Alignment,
             HashSet::from_iter(vec.iter().map(|el| el.to_string())),
-        )
-    });
-    creature_types.map(|vec| {
+        );
+    };
+    if let Some(vec) = filter_enum.creature_types {
         filter_map.insert(
             CreatureFilter::CreatureTypes,
             HashSet::from_iter(vec.iter().map(|el| el.to_string())),
-        )
-    });
-    filter_map.insert(CreatureFilter::Level, lvl_combinations);
+        );
+    };
+    if let Some(vec) = filter_enum.creature_roles {
+        filter_map.insert(
+            CreatureFilter::CreatureRoles,
+            HashSet::from_iter(vec.iter().map(|el| el.to_string())),
+        );
+    };
+    filter_map.insert(CreatureFilter::Level, filter_enum.lvl_combinations);
     filter_map
 }
 

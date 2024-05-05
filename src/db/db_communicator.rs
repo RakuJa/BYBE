@@ -7,13 +7,34 @@ use crate::models::db::raw_sense::RawSense;
 use crate::models::db::raw_speed::RawSpeed;
 use crate::models::db::raw_trait::RawTrait;
 use crate::models::db::raw_weakness::RawWeakness;
+use crate::models::items::action::Action;
+use crate::models::items::skill::Skill;
 use crate::models::items::spell::Spell;
 use crate::models::items::weapon::Weapon;
+use crate::models::scales_struct::ability_scales::AbilityScales;
+use crate::models::scales_struct::ac_scales::AcScales;
+use crate::models::scales_struct::area_dmg_scales::AreaDmgScales;
+use crate::models::scales_struct::creature_scales::CreatureScales;
+use crate::models::scales_struct::hp_scales::HpScales;
+use crate::models::scales_struct::item_scales::ItemScales;
+use crate::models::scales_struct::perception_scales::PerceptionScales;
+use crate::models::scales_struct::res_weak_scales::ResWeakScales;
+use crate::models::scales_struct::saving_throw_scales::SavingThrowScales;
+use crate::models::scales_struct::skill_scales::SkillScales;
+use crate::models::scales_struct::spell_dc_and_atk_scales::SpellDcAndAtkScales;
+use crate::models::scales_struct::strike_bonus_scales::StrikeBonusScales;
+use crate::models::scales_struct::strike_dmg_scales::StrikeDmgScales;
 use anyhow::Result;
+use regex::Regex;
 use sqlx::{Error, Pool, Sqlite};
 
-async fn from_raw_vec_to_creature(conn: &Pool<Sqlite>, raw_vec: Vec<RawCreature>) -> Vec<Creature> {
+async fn from_raw_vec_to_creature(
+    conn: &Pool<Sqlite>,
+    scales: &CreatureScales,
+    raw_vec: Vec<RawCreature>,
+) -> Vec<Creature> {
     let mut creature_list = Vec::new();
+    let scales_dmg_regex = Regex::new(r"\((\d+)\)").ok().unwrap();
     for el in raw_vec {
         let immunities = get_creature_immunities(conn, el.id)
             .await
@@ -32,17 +53,23 @@ async fn from_raw_vec_to_creature(conn: &Pool<Sqlite>, raw_vec: Vec<RawCreature>
             .unwrap_or_default();
         let spells = get_creature_spells(conn, el.id).await.unwrap_or_default();
         let weapons = get_creature_weapons(conn, el.id).await.unwrap_or_default();
+        let actions = get_creature_actions(conn, el.id).await.unwrap_or_default();
+        let skills = get_creature_skills(conn, el.id).await.unwrap_or_default();
         creature_list.push(Creature::from((
             el,
             traits,
             weapons,
             spells,
+            actions,
+            skills,
             immunities,
             languages,
             resistances,
             senses,
             speeds,
             weaknesses,
+            scales,
+            &scales_dmg_regex,
         )));
     }
     creature_list
@@ -129,6 +156,26 @@ async fn get_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result<V
     .await?)
 }
 
+async fn get_creature_actions(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Action>> {
+    Ok(sqlx::query_as!(
+        Action,
+        "SELECT * FROM ACTION_TABLE WHERE creature_id == ($1)",
+        creature_id
+    )
+    .fetch_all(conn)
+    .await?)
+}
+
+async fn get_creature_skills(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Skill>> {
+    Ok(sqlx::query_as!(
+        Skill,
+        "SELECT name, description, modifier, proficiency FROM SKILL_TABLE WHERE creature_id == ($1)",
+        creature_id
+    )
+    .fetch_all(conn)
+    .await?)
+}
+
 async fn get_creature_spells(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Spell>> {
     Ok(sqlx::query_as!(
         Spell,
@@ -139,12 +186,110 @@ async fn get_creature_spells(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Ve
     .await?)
 }
 
-pub async fn fetch_creatures(conn: &Pool<Sqlite>) -> Result<Vec<Creature>, Error> {
+pub async fn fetch_creatures(
+    conn: &Pool<Sqlite>,
+    creature_scales: &CreatureScales,
+) -> Result<Vec<Creature>, Error> {
     Ok(from_raw_vec_to_creature(
         conn,
+        creature_scales,
         sqlx::query_as!(RawCreature, "SELECT * FROM CREATURE_TABLE ORDER BY name")
             .fetch_all(conn)
             .await?,
     )
     .await)
 }
+
+pub async fn fetch_creature_scales(conn: &Pool<Sqlite>) -> Result<CreatureScales> {
+    Ok(CreatureScales {
+        ability_scales: sqlx::query_as!(AbilityScales, "SELECT * FROM ABILITY_SCALES_TABLE",)
+            .fetch_all(conn)
+            .await?
+            .into_iter()
+            .map(|n| (n.level as i8, n))
+            .collect(),
+        ac_scales: sqlx::query_as!(AcScales, "SELECT * FROM AC_SCALES_TABLE",)
+            .fetch_all(conn)
+            .await?
+            .into_iter()
+            .map(|n| (n.level as i8, n))
+            .collect(),
+        area_dmg_scales: sqlx::query_as!(AreaDmgScales, "SELECT * FROM AREA_DAMAGE_SCALES_TABLE",)
+            .fetch_all(conn)
+            .await?
+            .into_iter()
+            .map(|n| (n.level as i8, n))
+            .collect(),
+        hp_scales: sqlx::query_as!(HpScales, "SELECT * FROM HP_SCALES_TABLE",)
+            .fetch_all(conn)
+            .await?
+            .into_iter()
+            .map(|n| (n.level as i8, n))
+            .collect(),
+        item_scales: sqlx::query_as!(ItemScales, "SELECT * FROM ITEM_SCALES_TABLE",)
+            .fetch_all(conn)
+            .await?
+            .into_iter()
+            .map(|n| (n.cr_level.clone(), n))
+            .collect(),
+        perception_scales: sqlx::query_as!(
+            PerceptionScales,
+            "SELECT * FROM PERCEPTION_SCALES_TABLE",
+        )
+        .fetch_all(conn)
+        .await?
+        .into_iter()
+        .map(|n| (n.level as i8, n))
+        .collect(),
+        res_weak_scales: sqlx::query_as!(ResWeakScales, "SELECT * FROM RES_WEAK_SCALES_TABLE",)
+            .fetch_all(conn)
+            .await?
+            .into_iter()
+            .map(|n| (n.level as i8, n))
+            .collect(),
+        saving_throw_scales: sqlx::query_as!(
+            SavingThrowScales,
+            "SELECT * FROM SAVING_THROW_SCALES_TABLE",
+        )
+        .fetch_all(conn)
+        .await?
+        .into_iter()
+        .map(|n| (n.level as i8, n))
+        .collect(),
+        skill_scales: sqlx::query_as!(SkillScales, "SELECT * FROM SKILL_SCALES_TABLE",)
+            .fetch_all(conn)
+            .await?
+            .into_iter()
+            .map(|n| (n.level as i8, n))
+            .collect(),
+        spell_dc_and_atk_scales: sqlx::query_as!(
+            SpellDcAndAtkScales,
+            "SELECT * FROM SPELL_DC_AND_ATTACK_SCALES_TABLE",
+        )
+        .fetch_all(conn)
+        .await?
+        .into_iter()
+        .map(|n| (n.level as i8, n))
+        .collect(),
+        strike_bonus_scales: sqlx::query_as!(
+            StrikeBonusScales,
+            "SELECT * FROM STRIKE_BONUS_SCALES_TABLE",
+        )
+        .fetch_all(conn)
+        .await?
+        .into_iter()
+        .map(|n| (n.level as i8, n))
+        .collect(),
+        strike_dmg_scales: sqlx::query_as!(
+            StrikeDmgScales,
+            "SELECT * FROM STRIKE_DAMAGE_SCALES_TABLE",
+        )
+        .fetch_all(conn)
+        .await?
+        .into_iter()
+        .map(|n| (n.level as i8, n))
+        .collect(),
+    })
+}
+
+// TODO: Restructure creature fetch to use transaction

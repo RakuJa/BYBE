@@ -11,6 +11,8 @@ use crate::services::url_calculator::add_boolean_query;
 use crate::AppState;
 use anyhow::Result;
 
+const ACCURACY_THRESHOLD: i64 = 50;
+
 fn hp_increase_by_level() -> HashMap<i8, u16> {
     hashmap! { 1 => 10, 2=> 15, 5=> 20, 20=> 30 }
 }
@@ -170,6 +172,14 @@ fn fetch_creatures_passing_single_filter(
                 filter_vec.contains(creature.core_data.is_spell_caster.to_string().as_str())
             })
             .collect(),
+        CreatureFilter::CreatureRoles => cr_iterator
+            .filter(|creature| {
+                creature.info.roles.iter().any(|(role, accuracy)| {
+                    accuracy >= &ACCURACY_THRESHOLD
+                        && filter_vec.contains(role.to_string().as_str())
+                })
+            })
+            .collect(),
     }
 }
 
@@ -189,7 +199,6 @@ pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String>
             CreatureField::Alignment => runtime_fields_values.list_of_alignments,
             CreatureField::Level => runtime_fields_values.list_of_levels,
             CreatureField::CreatureTypes => runtime_fields_values.list_of_creature_types,
-
             _ => vec![],
         };
         x.sort();
@@ -213,7 +222,9 @@ async fn fetch_creatures(app_state: &AppState, variant: CreatureVariant) -> Opti
     let index = &CreatureVariant::to_cache_index(&variant);
     if let Some(creatures) = cache.get(index) {
         return Some(creatures);
-    } else if let Ok(creatures) = db_communicator::fetch_creatures(&app_state.conn).await {
+    } else if let Ok(creatures) =
+        db_communicator::fetch_creatures(&app_state.conn, &app_state.creature_scales).await
+    {
         cache.insert(0, creatures.clone());
         let mut weak_creatures = Vec::new();
         let mut elite_creatures = Vec::new();

@@ -1,5 +1,5 @@
 # Stage 1: Build the Rust project
-FROM rust:1.75-alpine as builder
+FROM rust:1-alpine as builder
 
 # Set the working directory in the container
 WORKDIR /app

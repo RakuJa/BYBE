@@ -5,6 +5,7 @@ mod routes;
 
 use crate::db::db_cache::RuntimeFieldsValues;
 use crate::models::creature::Creature;
+use crate::models::scales_struct::creature_scales::CreatureScales;
 use crate::routes::{bestiary, encounter, health};
 use actix_cors::Cors;
 use actix_web::http::header::{CacheControl, CacheDirective};
@@ -26,6 +27,7 @@ pub struct AppState {
     conn: Pool<Sqlite>,
     creature_cache: Cache<i32, Vec<Creature>>,
     runtime_fields_cache: Cache<i32, RuntimeFieldsValues>,
+    creature_scales: CreatureScales,
 }
 
 #[utoipa::path(get, path = "/")]
@@ -87,6 +89,10 @@ async fn main() -> std::io::Result<()> {
         // Create the cache.
         .build();
 
+    let creature_scales = db::db_communicator::fetch_creature_scales(&pool)
+        .await
+        .expect("Could not establish valid connection with the database.. Startup failed");
+
     log::info!(
         "starting HTTP server at http://{}:{}",
         service_ip.as_str(),
@@ -127,6 +133,7 @@ async fn main() -> std::io::Result<()> {
                 conn: pool.clone(),
                 creature_cache: cr_cache.clone(),
                 runtime_fields_cache: fields_cache.clone(),
+                creature_scales: creature_scales.clone(),
             }))
     })
     .bind((get_service_ip(), get_service_port()))?
