@@ -91,7 +91,6 @@ pub async fn get_alignments_list(app_state: &AppState) -> Vec<String> {
 pub async fn get_creature_types_list(app_state: &AppState) -> Vec<String> {
     proxy::get_keys(app_state, CreatureField::CreatureTypes).await
 }
-//
 
 pub async fn get_creature_roles_list() -> Vec<String> {
     CreatureRoleEnum::list()
