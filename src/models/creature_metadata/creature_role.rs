@@ -11,7 +11,6 @@ use std::fmt;
 use std::str::FromStr;
 use strum::{EnumIter, IntoEnumIterator};
 use utoipa::ToSchema;
-use validator::HasLen;
 
 const MISSING_FIELD_DISTANCE: u16 = 20;
 
@@ -388,14 +387,14 @@ fn is_skill_paragon(
 
     // many skills at moderate or high and potentially one or two extreme skills;
     // Many is kinda up in the air, I'll set 70%
-    let cr_skill_amount = cr_extra.skills.length() * 70 / 100;
+    let cr_skill_amount = cr_extra.skills.len() as i64 * 70 / 100;
     // if there aren't at least 70% of skill in the moderate-high range
     score += (cr_extra
         .skills
         .iter()
         .filter(|x| x.modifier >= saving_scales.moderate)
         .count() as i64
-        - cr_skill_amount as i64)
+        - cr_skill_amount)
         .unsigned_abs() as u16;
     // at least two special ability to use the creature's skills in combat
     if cr_extra

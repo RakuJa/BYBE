@@ -4,7 +4,6 @@ use std::collections::{HashMap, HashSet};
 use std::ops::Neg;
 // Used to explicitly tell about the iter trait
 use strum::IntoEnumIterator;
-use validator::HasLen;
 
 fn calculate_max_lvl_diff(lvl_and_exp_map: &HashMap<i64, i64>) -> i64 {
     match lvl_and_exp_map.keys().min() {
@@ -151,7 +150,7 @@ pub fn filter_combinations_outside_range(
     }
     let mut filtered_combo = HashSet::new();
     combinations.iter().for_each(|curr_combo| {
-        if curr_combo.length() >= lower as u64 && curr_combo.length() <= upper as u64 {
+        if curr_combo.len() >= lower as usize && curr_combo.len() <= upper as usize {
             filtered_combo.insert(curr_combo.clone());
         }
     });

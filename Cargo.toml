@@ -24,10 +24,11 @@ unsafe_code = "forbid"
 actix-web = "4.5.1"
 actix-cors = "0.7.0"
 actix-web-validator = "5.0.1"
+# Cannot be updated until actix-web updates validator dependency
 validator = {version="0.16.1", features = ["derive"]}
 
-utoipa = { version = "4.2.0", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "6.0.0", features = ["actix-web"] }
+utoipa = { version = "4.2.3", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "7.0.1", features = ["actix-web"] }
 
 sqlx = { version = "0.7.4", features = ["runtime-async-std", "sqlite"] }
 mini-moka = "0.10.3"
