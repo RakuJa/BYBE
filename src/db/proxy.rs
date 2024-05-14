@@ -3,7 +3,6 @@ use std::collections::{HashMap, HashSet};
 
 use crate::db::cache::from_db_data_to_filter_cache;
 use crate::db::data_providers::fetcher;
-use crate::db::data_providers::fetcher::get_creatures_core_data_with_filters;
 use crate::models::creature_fields_enum::CreatureField;
 use crate::models::creature_filter_enum::CreatureFilter;
 use crate::models::creature_metadata::variant_enum::CreatureVariant;
@@ -84,7 +83,7 @@ pub async fn get_paginated_creatures(
     filters: &FieldFilters,
     pagination: &PaginatedRequest,
 ) -> Result<(u32, Vec<Creature>)> {
-    let list = get_list(app_state, CreatureVariant::Base, pagination).await;
+    let list = get_list(app_state, CreatureVariant::Base).await;
 
     let filtered_list: Vec<Creature> = list
         .into_iter()
@@ -106,7 +105,7 @@ pub async fn fetch_creatures_passing_all_filters(
     key_value_filters: &HashMap<CreatureFilter, HashSet<String>>,
 ) -> Result<Vec<Creature>> {
     Ok(
-        get_creatures_core_data_with_filters(&app_state.conn, key_value_filters)
+        fetcher::get_creatures_core_data_with_filters(&app_state.conn, key_value_filters)
             .await?
             .into_iter()
             .map(Creature::from_core)
@@ -134,12 +133,11 @@ pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String>
     x
 }
 
-async fn fetch_creatures_from_db(
+async fn fetch_all_creatures_from_db(
     app_state: &AppState,
     variant: CreatureVariant,
-    pagination: &PaginatedRequest,
 ) -> Option<Vec<Creature>> {
-    let raw_cr = fetcher::get_creatures_core_data(&app_state.conn, pagination).await;
+    let raw_cr = fetcher::get_all_creatures_core_data(&app_state.conn).await;
     if raw_cr.is_err() {
         None
     } else {
@@ -164,12 +162,8 @@ async fn fetch_creatures_from_db(
 
 ///
 /// Infallible method, it will expose a vector representing the values fetched from db
-async fn get_list(
-    app_state: &AppState,
-    variant: CreatureVariant,
-    pagination: &PaginatedRequest,
-) -> Vec<Creature> {
-    if let Some(db_data) = fetch_creatures_from_db(app_state, variant, pagination).await {
+async fn get_list(app_state: &AppState, variant: CreatureVariant) -> Vec<Creature> {
+    if let Some(db_data) = fetch_all_creatures_from_db(app_state, variant).await {
         return db_data;
     }
     vec![]

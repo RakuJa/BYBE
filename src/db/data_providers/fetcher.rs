@@ -38,6 +38,7 @@ use crate::models::scales_struct::spell_dc_and_atk_scales::SpellDcAndAtkScales;
 use crate::models::scales_struct::strike_bonus_scales::StrikeBonusScales;
 use crate::models::scales_struct::strike_dmg_scales::StrikeDmgScales;
 use anyhow::Result;
+use cached::proc_macro::once;
 use sqlx::{FromRow, Pool, Sqlite};
 use std::collections::{HashMap, HashSet};
 
@@ -405,7 +406,8 @@ pub async fn get_creatures_core_data_with_filters(
     Ok(unite_essential_with_derived_fetching_traits(conn, cr_essential, cr_derived).await)
 }
 
-//#[once(sync_writes = true, result = true)]
+/// Gets all the creatures core it can find with the given pagination as boundaries
+/// for the search. It's an unstable method and will break if the DB is modified during runtime.
 pub async fn get_creatures_core_data(
     conn: &Pool<Sqlite>,
     paginated_request: &PaginatedRequest,
@@ -417,6 +419,19 @@ pub async fn get_creatures_core_data(
     let cr_essential = get_creatures_core_essential_data(conn, paginated_request).await?;
     let cr_derived = get_creatures_core_derived_data(conn, paginated_request).await?;
     Ok(unite_essential_with_derived_fetching_traits(conn, cr_essential, cr_derived).await)
+}
+
+#[once(sync_writes = true, result = true)]
+/// Gets all the creatures core that it can find, without pagination
+pub async fn get_all_creatures_core_data(conn: &Pool<Sqlite>) -> Result<Vec<CreatureCoreData>> {
+    get_creatures_core_data(
+        conn,
+        &PaginatedRequest {
+            cursor: 0,
+            page_size: -1,
+        },
+    )
+    .await
 }
 
 pub async fn get_creature_extra_data(
