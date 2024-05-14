@@ -8,7 +8,7 @@ use crate::models::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::routers_validator_structs::PaginatedRequest;
-use anyhow::Result;
+use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Sqlite};
 
@@ -112,7 +112,7 @@ async fn update_role_column_value(
     .execute(conn)
     .await?;
     if x.rows_affected() < 1 {
-        panic!("Error encountered with creature id: {creature_id}. Could not update role: {role}")
+        bail!("Error encountered with creature id: {creature_id}. Could not update role: {role}")
     }
     Ok(())
 }
