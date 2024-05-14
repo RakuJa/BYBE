@@ -3,9 +3,7 @@ extern crate maplit;
 
 mod routes;
 
-use crate::db::db_cache::RuntimeFieldsValues;
-use crate::models::creature::Creature;
-use crate::models::scales_struct::creature_scales::CreatureScales;
+use crate::db::cache::RuntimeFieldsValues;
 use crate::routes::{bestiary, encounter, health};
 use actix_cors::Cors;
 use actix_web::http::header::{CacheControl, CacheDirective};
@@ -25,9 +23,7 @@ mod services;
 #[derive(Clone)]
 pub struct AppState {
     conn: Pool<Sqlite>,
-    creature_cache: Cache<i32, Vec<Creature>>,
     runtime_fields_cache: Cache<i32, RuntimeFieldsValues>,
-    creature_scales: CreatureScales,
 }
 
 #[utoipa::path(get, path = "/")]
@@ -66,20 +62,14 @@ async fn main() -> std::io::Result<()> {
     let service_ip = get_service_ip();
     let service_port = get_service_port();
 
+    log::info!("Starting DB connection & creation of required tables",);
+
     // establish connection to database
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
         .connect(&db_url)
         .await
         .expect("Error building connection pool");
-
-    let cr_cache = Cache::builder()
-        // Time to live (TTL): 1 week
-        .time_to_live(Duration::from_secs(604800))
-        // Time to idle (TTI):  1 week
-        // .time_to_idle(Duration::from_secs( 5 * 60))
-        // Create the cache.
-        .build();
 
     let fields_cache = Cache::builder()
         // Time to live (TTL): 1 week
@@ -89,10 +79,9 @@ async fn main() -> std::io::Result<()> {
         // Create the cache.
         .build();
 
-    let creature_scales = db::db_communicator::fetch_creature_scales(&pool)
+    db::cr_core_initializer::update_creature_core_table(&pool)
         .await
-        .expect("Could not establish valid connection with the database.. Startup failed");
-
+        .expect("Could not initialize correctly core creature table.. Startup failed");
     log::info!(
         "starting HTTP server at http://{}:{}",
         service_ip.as_str(),
@@ -131,9 +120,7 @@ async fn main() -> std::io::Result<()> {
             )
             .app_data(web::Data::new(AppState {
                 conn: pool.clone(),
-                creature_cache: cr_cache.clone(),
                 runtime_fields_cache: fields_cache.clone(),
-                creature_scales: creature_scales.clone(),
             }))
     })
     .bind((get_service_ip(), get_service_port()))?

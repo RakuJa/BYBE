@@ -1,16 +1,17 @@
 use serde::{Deserialize, Serialize};
+use sqlx::Type;
 use std::str::FromStr;
 use strum::Display;
 use utoipa::ToSchema;
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
+    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default, Type,
 )]
 pub enum CreatureTypeEnum {
     #[default]
     #[serde(alias = "monster", alias = "MONSTER")]
     #[strum(to_string = "Monster")]
-    #[serde(rename = "Monster")]
+    #[serde(rename = "MONSTER")]
     Monster,
     #[serde(alias = "npc", alias = "NPC")]
     #[strum(to_string = "NPC")]
@@ -18,9 +19,21 @@ pub enum CreatureTypeEnum {
     Npc,
 }
 
+impl From<String> for CreatureTypeEnum {
+    fn from(value: String) -> Self {
+        CreatureTypeEnum::from_str(value.as_str()).unwrap_or_default()
+    }
+}
+
 impl From<Option<String>> for CreatureTypeEnum {
     fn from(value: Option<String>) -> Self {
         CreatureTypeEnum::from_str(value.unwrap_or_default().as_str()).unwrap_or_default()
+    }
+}
+
+impl From<&Option<String>> for CreatureTypeEnum {
+    fn from(value: &Option<String>) -> Self {
+        CreatureTypeEnum::from_str(value.clone().unwrap_or_default().as_str()).unwrap_or_default()
     }
 }
 
@@ -40,15 +53,6 @@ impl Clone for CreatureTypeEnum {
         match self {
             CreatureTypeEnum::Monster => CreatureTypeEnum::Monster,
             CreatureTypeEnum::Npc => CreatureTypeEnum::Npc,
-        }
-    }
-}
-
-impl CreatureTypeEnum {
-    pub fn to_url_string(&self) -> &str {
-        match self {
-            CreatureTypeEnum::Monster => "Monsters",
-            CreatureTypeEnum::Npc => "NPCs",
         }
     }
 }

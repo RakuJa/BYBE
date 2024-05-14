@@ -1,11 +1,21 @@
 use crate::models::db::raw_trait::RawTrait;
 use serde::{Deserialize, Serialize};
 use std::str::FromStr;
-use strum::Display;
+use strum::{Display, EnumIter};
 use utoipa::ToSchema;
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default,
+    Serialize,
+    Deserialize,
+    ToSchema,
+    Display,
+    Eq,
+    Hash,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Default,
+    EnumIter,
 )]
 pub enum AlignmentEnum {
     #[strum(to_string = "CE")]
@@ -46,14 +56,19 @@ pub enum AlignmentEnum {
 
 impl From<(&Vec<RawTrait>, bool)> for AlignmentEnum {
     fn from(tuple: (&Vec<RawTrait>, bool)) -> AlignmentEnum {
+        // If remaster then it's always no alignment
         if tuple.1 {
             return AlignmentEnum::No;
         }
-        let string_traits: Vec<String> = tuple.0.iter().map(|x| x.name.clone()).collect();
-        let is_good = string_traits.contains(&"good".to_string());
-        let is_evil = string_traits.contains(&"evil".to_string());
-        let is_chaos = string_traits.contains(&"chaotic".to_string());
-        let is_lawful = string_traits.contains(&"lawful".to_string());
+        let string_traits: Vec<String> = tuple
+            .0
+            .iter()
+            .map(|x| x.name.clone().to_uppercase())
+            .collect();
+        let is_good = string_traits.contains(&"GOOD".to_string());
+        let is_evil = string_traits.contains(&"EVIL".to_string());
+        let is_chaos = string_traits.contains(&"CHAOTIC".to_string());
+        let is_lawful = string_traits.contains(&"LAWFUL".to_string());
         if is_good {
             if is_chaos {
                 return AlignmentEnum::Cg;
@@ -97,6 +112,43 @@ impl FromStr for AlignmentEnum {
             "LG" => Ok(AlignmentEnum::Lg),
             "ANY" => Ok(AlignmentEnum::Any),
             _ => Ok(AlignmentEnum::No),
+        }
+    }
+}
+
+impl AlignmentEnum {
+    pub fn to_traits(&self) -> Vec<String> {
+        match self {
+            AlignmentEnum::Ce => {
+                vec![String::from("chaotic"), String::from("evil")]
+            }
+            AlignmentEnum::Cn => {
+                vec![String::from("chaotic"), String::from("neutral")]
+            }
+            AlignmentEnum::Cg => {
+                vec![String::from("chaotic"), String::from("good")]
+            }
+            AlignmentEnum::Ne => {
+                vec![String::from("neutral"), String::from("evil")]
+            }
+            AlignmentEnum::N => {
+                vec![String::from("neutral")]
+            }
+            AlignmentEnum::Ng => {
+                vec![String::from("neutral"), String::from("good")]
+            }
+            AlignmentEnum::Le => {
+                vec![String::from("lawful"), String::from("evil")]
+            }
+            AlignmentEnum::Ln => {
+                vec![String::from("lawful"), String::from("neutral")]
+            }
+            AlignmentEnum::Lg => {
+                vec![String::from("lawful"), String::from("good")]
+            }
+            AlignmentEnum::No | AlignmentEnum::Any => {
+                vec![]
+            }
         }
     }
 }

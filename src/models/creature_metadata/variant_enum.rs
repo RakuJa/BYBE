@@ -23,19 +23,11 @@ impl Clone for CreatureVariant {
 }
 
 impl CreatureVariant {
-    pub fn to_level_delta(&self) -> i8 {
+    pub fn to_level_delta(&self) -> i64 {
         match self {
             CreatureVariant::Weak => -1,
             CreatureVariant::Elite => 1,
             CreatureVariant::Base => 0,
-        }
-    }
-
-    pub fn to_cache_index(&self) -> i32 {
-        match self {
-            CreatureVariant::Base => 0,
-            CreatureVariant::Weak => 1,
-            CreatureVariant::Elite => 2,
         }
     }
 }

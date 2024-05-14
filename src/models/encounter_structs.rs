@@ -3,7 +3,7 @@ use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
-use crate::models::response_data::ResponseData;
+use crate::models::response_data::OptionalData;
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -14,9 +14,9 @@ use validator::Validate;
 #[derive(Serialize, Deserialize, ToSchema, Validate)]
 pub struct EncounterParams {
     #[validate(length(min = 1))]
-    pub party_levels: Vec<i16>,
+    pub party_levels: Vec<i64>,
     #[validate(length(min = 1))]
-    pub enemy_levels: Vec<i16>,
+    pub enemy_levels: Vec<i64>,
     pub is_pwl_on: bool,
 }
 
@@ -33,11 +33,11 @@ pub struct RandomEncounterData {
     pub min_creatures: Option<u8>,
     pub max_creatures: Option<u8>,
     #[validate(length(min = 1))]
-    pub party_levels: Vec<i16>,
+    pub party_levels: Vec<i64>,
     pub allow_elite_variants: Option<bool>,
     pub allow_weak_variants: Option<bool>,
     pub is_pwl_on: bool,
-    pub response_data: ResponseData,
+    pub response_data: OptionalData,
 }
 
 #[derive(
@@ -70,6 +70,6 @@ impl Distribution<EncounterChallengeEnum> for Standard {
 }
 
 pub struct ExpRange {
-    pub lower_bound: i16,
-    pub upper_bound: i16,
+    pub lower_bound: i64,
+    pub upper_bound: i64,
 }
