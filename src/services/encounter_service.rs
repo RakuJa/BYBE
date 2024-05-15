@@ -114,9 +114,9 @@ async fn calculate_random_encounter(
 
     let filtered_creatures = get_filtered_creatures(
         app_state,
-        &filter_map,
-        // enc_data.allow_weak_variants,
-        // enc_data.allow_elite_variants,
+        filter_map,
+        enc_data.allow_weak_variants.is_some_and(|x| x),
+        enc_data.allow_elite_variants.is_some_and(|x| x),
     )
     .await?;
 
@@ -267,7 +267,9 @@ fn build_filter_map(filter_enum: FilterStruct) -> HashMap<CreatureFilter, HashSe
 
 async fn get_filtered_creatures(
     app_state: &AppState,
-    filter_map: &HashMap<CreatureFilter, HashSet<String>>,
+    filter_map: HashMap<CreatureFilter, HashSet<String>>,
+    allow_weak: bool,
+    allow_elite: bool,
 ) -> Result<Vec<Creature>> {
-    get_creatures_passing_all_filters(app_state, filter_map).await
+    get_creatures_passing_all_filters(app_state, filter_map, allow_weak, allow_elite).await
 }

@@ -3,19 +3,15 @@ use std::collections::{HashMap, HashSet};
 
 use crate::db::cache::from_db_data_to_filter_cache;
 use crate::db::data_providers::fetcher;
+use crate::models::creature_component::creature_core::CreatureCoreData;
 use crate::models::creature_fields_enum::CreatureField;
 use crate::models::creature_filter_enum::CreatureFilter;
 use crate::models::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::response_data::OptionalData;
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
-use crate::services::url_calculator::add_boolean_query;
 use crate::AppState;
 use anyhow::Result;
 use cached::proc_macro::once;
-
-fn hp_increase_by_level() -> HashMap<i64, i64> {
-    hashmap! { 1 => 10, 2=> 15, 5=> 20, 20=> 30 }
-}
 
 pub async fn get_creature_by_id(
     app_state: &AppState,
@@ -23,45 +19,10 @@ pub async fn get_creature_by_id(
     variant: &CreatureVariant,
     optional_data: &OptionalData,
 ) -> Option<Creature> {
-    let cr = fetcher::fetch_creature_by_id(&app_state.conn, optional_data, id).await;
-    if cr.is_err() {
-        return None;
-    }
-    let creature = cr.unwrap();
-    Some(convert_creature_to_variant(
-        &creature,
-        variant.to_level_delta(),
-    ))
-}
-
-fn convert_creature_to_variant(creature: &Creature, level_delta: i64) -> Creature {
-    let mut cr = creature.clone();
-    let hp_increase = hp_increase_by_level();
-    let desired_key = hp_increase
-        .keys()
-        .filter(|&&lvl| cr.variant_data.level >= lvl)
-        .max()
-        .unwrap_or(hp_increase.keys().next().unwrap_or(&0));
-    cr.core_data.essential.hp += *hp_increase.get(desired_key).unwrap_or(&0) * level_delta;
-    cr.core_data.essential.hp = cr.core_data.essential.hp.max(1);
-
-    cr.variant_data.level += level_delta;
-
-    if level_delta >= 1 {
-        cr.variant_data.variant = CreatureVariant::Elite
-    } else if level_delta <= -1 {
-        cr.variant_data.variant = CreatureVariant::Weak
-    } else {
-        cr.variant_data.variant = CreatureVariant::Base
-    }
-    if cr.variant_data.variant != CreatureVariant::Base {
-        cr.variant_data.archive_link = add_boolean_query(
-            creature.core_data.derived.archive_link.clone(),
-            &cr.variant_data.variant.to_string(),
-            true,
-        );
-    }
-    cr
+    let creature = fetcher::fetch_creature_by_id(&app_state.conn, optional_data, id)
+        .await
+        .ok()?;
+    Some(creature.convert_creature_to_variant(variant))
 }
 
 pub async fn get_weak_creature_by_id(
@@ -103,15 +64,41 @@ pub async fn get_paginated_creatures(
 
 pub async fn get_creatures_passing_all_filters(
     app_state: &AppState,
-    key_value_filters: &HashMap<CreatureFilter, HashSet<String>>,
+    key_value_filters: HashMap<CreatureFilter, HashSet<String>>,
+    fetch_weak: bool,
+    fetch_elite: bool,
 ) -> Result<Vec<Creature>> {
-    Ok(
-        fetcher::fetch_creatures_core_data_with_filters(&app_state.conn, key_value_filters)
-            .await?
-            .into_iter()
-            .map(Creature::from_core)
-            .collect(),
-    )
+    let mut creature_vec = Vec::new();
+    let empty_set = HashSet::new();
+    let level_vec = key_value_filters
+        .get(&CreatureFilter::Level)
+        .unwrap_or(&empty_set)
+        .clone();
+    let modified_filters =
+        prepare_filters_for_db_communication(key_value_filters, fetch_weak, fetch_elite);
+    for core in
+        fetcher::fetch_creatures_core_data_with_filters(&app_state.conn, &modified_filters).await?
+    {
+        // We have fetched creature with level +1 if weak is allowed or level-1 if elite is allowed
+        // (or both). Now we catalogue correctly giving them the elite or weak variant, this does not
+        // mean that if we have [0,1,2,3] in the filter and allow_elite => [-1,0,1,2,3] then
+        // a creature of level 1 will always be considered the elite variant of level 0. We'll
+        // duplicate the data and will have a base 0 for level 0 and elite 0 for level 1
+        if fetch_weak && level_vec.contains(&(core.essential.level - 1).to_string()) {
+            creature_vec.push(Creature::from_core_with_variant(
+                core.clone(),
+                &CreatureVariant::Weak,
+            ));
+        }
+        if fetch_elite && level_vec.contains(&(core.essential.level + 1).to_string()) {
+            creature_vec.push(Creature::from_core_with_variant(
+                core.clone(),
+                &CreatureVariant::Elite,
+            ));
+        }
+        creature_vec.push(Creature::from_core(core));
+    }
+    Ok(creature_vec)
 }
 
 pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String> {
@@ -137,30 +124,25 @@ pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String>
 /// Gets all the creature core data from the DB. It will not fetch data outside of variant and core.
 /// It will cache the result.
 #[once(sync_writes = true, result = true)]
-async fn get_all_creatures_from_db(app_state: &AppState) -> Result<Vec<Creature>> {
-    Ok(fetcher::fetch_creatures_core_data(
+async fn get_all_creatures_from_db(app_state: &AppState) -> Result<Vec<CreatureCoreData>> {
+    fetcher::fetch_creatures_core_data(
         &app_state.conn,
         &PaginatedRequest {
             cursor: 0,
             page_size: -1,
         },
     )
-    .await?
-    .into_iter()
-    .map(Creature::from_core)
-    .collect())
+    .await
 }
 
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec
 async fn get_list(app_state: &AppState, variant: CreatureVariant) -> Vec<Creature> {
     if let Ok(creatures) = get_all_creatures_from_db(app_state).await {
         return match variant {
-            CreatureVariant::Base => creatures,
+            CreatureVariant::Base => creatures.into_iter().map(Creature::from_core).collect(),
             _ => creatures
-                .iter()
-                .map(|cr| {
-                    convert_creature_to_variant(cr, CreatureVariant::to_level_delta(&variant))
-                })
+                .into_iter()
+                .map(|cr| Creature::from_core_with_variant(cr, &variant))
                 .collect(),
         };
     }
@@ -176,4 +158,35 @@ pub fn order_list_by_level(creature_list: Vec<Creature>) -> HashMap<i64, Vec<Cre
             .push(creature.clone());
     });
     ordered_by_level
+}
+
+/// Used to prepare the filters for db communication.
+/// The level must be adjusted if elite/weak must be fetched.
+///Example if we allow weak then we can fetch creature with level +1 => weak = level
+fn prepare_filters_for_db_communication(
+    key_value_filters: HashMap<CreatureFilter, HashSet<String>>,
+    fetch_weak: bool,
+    fetch_elite: bool,
+) -> HashMap<CreatureFilter, HashSet<String>> {
+    key_value_filters
+        .into_iter()
+        .map(|(key, values)| match key {
+            CreatureFilter::Level => {
+                let mut new_values = HashSet::new();
+                for str_level in values {
+                    if let Ok(level) = str_level.parse::<i64>() {
+                        if fetch_weak {
+                            new_values.insert((level + 1).to_string());
+                        }
+                        if fetch_elite {
+                            new_values.insert((level - 1).to_string());
+                        }
+                        new_values.insert(level.to_string());
+                    }
+                }
+                (key, new_values)
+            }
+            _ => (key, values),
+        })
+        .collect()
 }

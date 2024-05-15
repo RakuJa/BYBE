@@ -12,14 +12,9 @@ pub fn next_url_calculator(
     format!("{}{}{}", base_url, filter_query, pagination_query)
 }
 
-pub fn add_boolean_query(url: Option<String>, key: &String, value: bool) -> Option<String> {
-    match url {
-        Some(mut x) => {
-            x.push_str(&format!("&{}={}", key, value));
-            Some(x)
-        }
-        None => None,
-    }
+pub fn add_boolean_query(url: &Option<String>, key: &String, value: bool) -> Option<String> {
+    url.as_ref()
+        .map(|base_url| format!("{}&{}={}", base_url, key, value))
 }
 
 fn filter_query_calculator(field_filters: &FieldFilters) -> String {

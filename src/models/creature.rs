@@ -18,6 +18,13 @@ pub struct Creature {
 }
 
 impl Creature {
+    pub fn convert_creature_to_variant(self, variant: &CreatureVariant) -> Creature {
+        let mut cr = Self::from_core_with_variant(self.core_data, variant);
+        cr.extra_data = self.extra_data;
+        cr.combat_data = self.combat_data;
+        cr.spell_caster_data = self.spell_caster_data;
+        cr
+    }
     pub fn from_core(core: CreatureCoreData) -> Creature {
         let level = core.essential.level;
         let archive_link = core.derived.archive_link.clone();
@@ -27,6 +34,27 @@ impl Creature {
                 variant: CreatureVariant::Base,
                 level,
                 archive_link,
+            },
+            extra_data: None,
+            combat_data: None,
+            spell_caster_data: None,
+        }
+    }
+
+    pub fn from_core_with_variant(
+        mut core: CreatureCoreData,
+        creature_variant: &CreatureVariant,
+    ) -> Creature {
+        let (hp, variant_archive_link) = creature_variant.get_variant_hp_and_link(&core);
+        let base_level = core.essential.level;
+        let level_delta = creature_variant.to_level_delta();
+        core.essential.hp = hp;
+        Self {
+            core_data: core,
+            variant_data: CreatureVariantData {
+                variant: creature_variant.clone(),
+                level: base_level + level_delta,
+                archive_link: variant_archive_link,
             },
             extra_data: None,
             combat_data: None,
