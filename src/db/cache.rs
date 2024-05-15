@@ -1,4 +1,4 @@
-use crate::db::data_providers::fetcher::get_unique_values_of_field;
+use crate::db::data_providers::fetcher::fetch_unique_values_of_field;
 use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::AppState;
 use strum::IntoEnumIterator;
@@ -30,26 +30,26 @@ pub async fn from_db_data_to_filter_cache(app_state: &AppState) -> RuntimeFields
         };
     }
     let fields_values_cache = RuntimeFieldsValues {
-        list_of_levels: get_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "level")
+        list_of_levels: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "level")
             .await
             .unwrap_or_default(),
-        list_of_families: get_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "family")
+        list_of_families: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "family")
             .await
             .unwrap(),
-        list_of_traits: get_unique_values_of_field(&app_state.conn, "TRAIT_TABLE", "name")
+        list_of_traits: fetch_unique_values_of_field(&app_state.conn, "TRAIT_TABLE", "name")
             .await
             .unwrap_or_default(),
-        list_of_sources: get_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "source")
+        list_of_sources: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "source")
             .await
             .unwrap_or_default(),
         list_of_alignments: AlignmentEnum::iter().map(|x| x.to_string()).collect(),
-        list_of_sizes: get_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "size")
+        list_of_sizes: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "size")
             .await
             .unwrap_or_default(),
-        list_of_rarities: get_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "rarity")
+        list_of_rarities: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "rarity")
             .await
             .unwrap_or_default(),
-        list_of_creature_types: get_unique_values_of_field(
+        list_of_creature_types: fetch_unique_values_of_field(
             &app_state.conn,
             "CREATURE_CORE",
             "cr_type",

@@ -38,11 +38,10 @@ use crate::models::scales_struct::spell_dc_and_atk_scales::SpellDcAndAtkScales;
 use crate::models::scales_struct::strike_bonus_scales::StrikeBonusScales;
 use crate::models::scales_struct::strike_dmg_scales::StrikeDmgScales;
 use anyhow::Result;
-use cached::proc_macro::once;
 use sqlx::{FromRow, Pool, Sqlite};
 use std::collections::{HashMap, HashSet};
 
-async fn get_creature_immunities(
+async fn fetch_creature_immunities(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<Vec<RawImmunity>> {
@@ -53,7 +52,10 @@ async fn get_creature_immunities(
     ).fetch_all(conn).await?)
 }
 
-async fn get_creature_languages(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawLanguage>> {
+async fn fetch_creature_languages(
+    conn: &Pool<Sqlite>,
+    creature_id: i64,
+) -> Result<Vec<RawLanguage>> {
     Ok(sqlx::query_as!(
         RawLanguage,
         "SELECT * FROM LANGUAGE_TABLE INTERSECT SELECT language_id FROM LANGUAGE_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
@@ -61,7 +63,7 @@ async fn get_creature_languages(conn: &Pool<Sqlite>, creature_id: i64) -> Result
     ).fetch_all(conn).await?)
 }
 
-async fn get_creature_resistances(
+async fn fetch_creature_resistances(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<Vec<RawResistance>> {
@@ -74,7 +76,7 @@ async fn get_creature_resistances(
     .await?)
 }
 
-async fn get_creature_senses(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawSense>> {
+async fn fetch_creature_senses(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawSense>> {
     Ok(sqlx::query_as!(
         RawSense,
         "SELECT * FROM SENSE_TABLE INTERSECT SELECT sense_id FROM SENSE_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
@@ -82,7 +84,7 @@ async fn get_creature_senses(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Ve
     ).fetch_all(conn).await?)
 }
 
-async fn get_creature_speeds(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawSpeed>> {
+async fn fetch_creature_speeds(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawSpeed>> {
     Ok(sqlx::query_as!(
         RawSpeed,
         "SELECT name, value FROM SPEED_TABLE WHERE creature_id == ($1)",
@@ -92,7 +94,7 @@ async fn get_creature_speeds(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Ve
     .await?)
 }
 
-async fn get_creature_weaknesses(
+async fn fetch_creature_weaknesses(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<Vec<RawWeakness>> {
@@ -105,7 +107,10 @@ async fn get_creature_weaknesses(
     .await?)
 }
 
-async fn get_creature_saving_throws(conn: &Pool<Sqlite>, creature_id: i64) -> Result<SavingThrows> {
+async fn fetch_creature_saving_throws(
+    conn: &Pool<Sqlite>,
+    creature_id: i64,
+) -> Result<SavingThrows> {
     Ok(
         sqlx::query_as!(
             SavingThrows,
@@ -115,7 +120,7 @@ async fn get_creature_saving_throws(conn: &Pool<Sqlite>, creature_id: i64) -> Re
     )
 }
 
-async fn get_creature_ability_scores(
+async fn fetch_creature_ability_scores(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<AbilityScores> {
@@ -128,7 +133,7 @@ async fn get_creature_ability_scores(
     )
 }
 
-async fn get_creature_ac(conn: &Pool<Sqlite>, creature_id: i64) -> Result<i8> {
+async fn fetch_creature_ac(conn: &Pool<Sqlite>, creature_id: i64) -> Result<i8> {
     Ok(
         sqlx::query_scalar("SELECT ac FROM CREATURE_TABLE WHERE id = $1")
             .bind(creature_id)
@@ -137,7 +142,7 @@ async fn get_creature_ac(conn: &Pool<Sqlite>, creature_id: i64) -> Result<i8> {
     )
 }
 
-async fn get_creature_ac_detail(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Option<String>> {
+async fn fetch_creature_ac_detail(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Option<String>> {
     Ok(
         sqlx::query_scalar("SELECT ac_detail FROM CREATURE_TABLE WHERE id = $1 LIMIT 1")
             .bind(creature_id)
@@ -146,7 +151,7 @@ async fn get_creature_ac_detail(conn: &Pool<Sqlite>, creature_id: i64) -> Result
     )
 }
 
-async fn get_creature_hp_detail(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Option<String>> {
+async fn fetch_creature_hp_detail(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Option<String>> {
     Ok(
         sqlx::query_scalar("SELECT hp_detail FROM CREATURE_TABLE WHERE id = $1 LIMIT 1")
             .bind(creature_id)
@@ -155,7 +160,7 @@ async fn get_creature_hp_detail(conn: &Pool<Sqlite>, creature_id: i64) -> Result
     )
 }
 
-async fn get_creature_language_detail(
+async fn fetch_creature_language_detail(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<Option<String>> {
@@ -167,7 +172,7 @@ async fn get_creature_language_detail(
     )
 }
 
-async fn get_creature_perception(conn: &Pool<Sqlite>, creature_id: i64) -> Result<i8> {
+async fn fetch_creature_perception(conn: &Pool<Sqlite>, creature_id: i64) -> Result<i8> {
     Ok(
         sqlx::query_scalar("SELECT perception FROM CREATURE_TABLE WHERE id = $1 LIMIT 1")
             .bind(creature_id)
@@ -176,7 +181,7 @@ async fn get_creature_perception(conn: &Pool<Sqlite>, creature_id: i64) -> Resul
     )
 }
 
-async fn get_creature_perception_detail(
+async fn fetch_creature_perception_detail(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<Option<String>> {
@@ -188,7 +193,7 @@ async fn get_creature_perception_detail(
     )
 }
 
-async fn get_creature_traits(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawTrait>> {
+async fn fetch_creature_traits(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawTrait>> {
     Ok(sqlx::query_as!(
         RawTrait,
         "SELECT * FROM TRAIT_TABLE INTERSECT SELECT trait_id FROM TRAIT_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
@@ -196,7 +201,7 @@ async fn get_creature_traits(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Ve
     ).fetch_all(conn).await?)
 }
 
-async fn get_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Weapon>> {
+async fn fetch_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Weapon>> {
     Ok(sqlx::query_as!(
         Weapon,
         "SELECT * FROM WEAPON_TABLE WHERE creature_id == ($1)",
@@ -206,7 +211,7 @@ async fn get_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result<V
     .await?)
 }
 
-async fn get_creature_actions(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Action>> {
+async fn fetch_creature_actions(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Action>> {
     Ok(sqlx::query_as!(
         Action,
         "SELECT * FROM ACTION_TABLE WHERE creature_id == ($1)",
@@ -216,7 +221,7 @@ async fn get_creature_actions(conn: &Pool<Sqlite>, creature_id: i64) -> Result<V
     .await?)
 }
 
-async fn get_creature_skills(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Skill>> {
+async fn fetch_creature_skills(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Skill>> {
     Ok(sqlx::query_as!(
         Skill,
         "SELECT name, description, modifier, proficiency FROM SKILL_TABLE WHERE creature_id == ($1)",
@@ -226,7 +231,7 @@ async fn get_creature_skills(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Ve
     .await?)
 }
 
-async fn get_creature_spells(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Spell>> {
+async fn fetch_creature_spells(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Spell>> {
     Ok(sqlx::query_as!(
         Spell,
         "SELECT * FROM SPELL_TABLE WHERE creature_id == ($1)",
@@ -236,7 +241,7 @@ async fn get_creature_spells(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Ve
     .await?)
 }
 
-async fn get_creature_spell_caster_entry(
+async fn fetch_creature_spell_caster_entry(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<SpellCasterEntry> {
@@ -247,7 +252,7 @@ async fn get_creature_spell_caster_entry(
     ).fetch_one(conn).await?)
 }
 
-async fn get_creatures_core_essential_data(
+async fn fetch_creatures_core_essential_data(
     conn: &Pool<Sqlite>,
     paginated_request: &PaginatedRequest,
 ) -> Result<Vec<EssentialData>> {
@@ -263,7 +268,7 @@ async fn get_creatures_core_essential_data(
     .fetch_all(conn)
     .await?)
 }
-async fn get_creatures_core_derived_data(
+async fn fetch_creatures_core_derived_data(
     conn: &Pool<Sqlite>,
     paginated_request: &PaginatedRequest,
 ) -> Result<Vec<DerivedData>> {
@@ -281,10 +286,13 @@ async fn get_creatures_core_derived_data(
     .await?)
 }
 
-async fn get_creature_core_data(conn: &Pool<Sqlite>, creature_id: i64) -> Result<CreatureCoreData> {
-    let essential = get_creature_essential_data(conn, creature_id).await?;
-    let derived = get_creature_derived_data(conn, creature_id).await?;
-    let traits = get_creature_traits(conn, creature_id)
+async fn fetch_creature_core_data(
+    conn: &Pool<Sqlite>,
+    creature_id: i64,
+) -> Result<CreatureCoreData> {
+    let essential = fetch_creature_essential_data(conn, creature_id).await?;
+    let derived = fetch_creature_derived_data(conn, creature_id).await?;
+    let traits = fetch_creature_traits(conn, creature_id)
         .await
         .unwrap_or_default();
     let is_remaster = essential.remaster;
@@ -296,7 +304,7 @@ async fn get_creature_core_data(conn: &Pool<Sqlite>, creature_id: i64) -> Result
     })
 }
 
-async fn get_creature_essential_data(
+async fn fetch_creature_essential_data(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<EssentialData> {
@@ -311,7 +319,7 @@ async fn get_creature_essential_data(
     .await?)
 }
 
-async fn get_creature_derived_data(conn: &Pool<Sqlite>, creature_id: i64) -> Result<DerivedData> {
+async fn fetch_creature_derived_data(conn: &Pool<Sqlite>, creature_id: i64) -> Result<DerivedData> {
     Ok(sqlx::query_as!(
         DerivedData,
         "SELECT
@@ -332,7 +340,7 @@ async fn unite_essential_with_derived_fetching_traits(
 ) -> Vec<CreatureCoreData> {
     let mut cr_core: Vec<CreatureCoreData> = Vec::new();
     for (essential, derived) in essential_data.into_iter().zip(derived_data) {
-        let traits = get_creature_traits(conn, essential.id)
+        let traits = fetch_creature_traits(conn, essential.id)
             .await
             .unwrap_or_default();
         let is_remaster = essential.remaster;
@@ -351,7 +359,7 @@ struct MyString {
     my_str: String,
 }
 
-pub async fn get_unique_values_of_field(
+pub async fn fetch_unique_values_of_field(
     conn: &Pool<Sqlite>,
     table: &str,
     field: &str,
@@ -363,12 +371,12 @@ pub async fn get_unique_values_of_field(
     Ok(x.iter().map(|x| x.my_str.clone()).collect())
 }
 
-pub async fn get_creature_by_id(
+pub async fn fetch_creature_by_id(
     conn: &Pool<Sqlite>,
     optional_data: &OptionalData,
     id: i64,
 ) -> Result<Creature> {
-    let core_data = get_creature_core_data(conn, id).await?;
+    let core_data = fetch_creature_core_data(conn, id).await?;
     let level = core_data.essential.level;
     let archive_link = core_data.derived.archive_link.clone();
     Ok(Creature {
@@ -379,24 +387,24 @@ pub async fn get_creature_by_id(
             archive_link,
         },
         extra_data: if optional_data.extra_data.is_some_and(|x| x) {
-            Some(get_creature_extra_data(conn, id).await?)
+            Some(fetch_creature_extra_data(conn, id).await?)
         } else {
             None
         },
         combat_data: if optional_data.combat_data.is_some_and(|x| x) {
-            Some(get_creature_combat_data(conn, id).await?)
+            Some(fetch_creature_combat_data(conn, id).await?)
         } else {
             None
         },
         spell_caster_data: if optional_data.spell_casting_data.is_some_and(|x| x) {
-            Some(get_creature_spell_caster_data(conn, id).await?)
+            Some(fetch_creature_spell_caster_data(conn, id).await?)
         } else {
             None
         },
     })
 }
 
-pub async fn get_creatures_core_data_with_filters(
+pub async fn fetch_creatures_core_data_with_filters(
     conn: &Pool<Sqlite>,
     key_value_filters: &HashMap<CreatureFilter, HashSet<String>>,
 ) -> Result<Vec<CreatureCoreData>> {
@@ -408,7 +416,7 @@ pub async fn get_creatures_core_data_with_filters(
 
 /// Gets all the creatures core it can find with the given pagination as boundaries
 /// for the search. It's an unstable method and will break if the DB is modified during runtime.
-pub async fn get_creatures_core_data(
+pub async fn fetch_creatures_core_data(
     conn: &Pool<Sqlite>,
     paginated_request: &PaginatedRequest,
 ) -> Result<Vec<CreatureCoreData>> {
@@ -416,49 +424,36 @@ pub async fn get_creatures_core_data(
     // 1) THE DB DOES NOT CHANGE DURING EXECUTION, OTHERWISE THIS IS BAD
     // 2) THEY FETCH FROM THE SAME TABLE, GUARANTEE OF ORDER. ESSENTIAL COULD FETCH
     // FROM CREATURE_TABLE BUT WE DO NOT HAVE THE ORDER GUARANTEE
-    let cr_essential = get_creatures_core_essential_data(conn, paginated_request).await?;
-    let cr_derived = get_creatures_core_derived_data(conn, paginated_request).await?;
+    let cr_essential = fetch_creatures_core_essential_data(conn, paginated_request).await?;
+    let cr_derived = fetch_creatures_core_derived_data(conn, paginated_request).await?;
     Ok(unite_essential_with_derived_fetching_traits(conn, cr_essential, cr_derived).await)
 }
 
-#[once(sync_writes = true, result = true)]
-/// Gets all the creatures core that it can find, without pagination
-pub async fn get_all_creatures_core_data(conn: &Pool<Sqlite>) -> Result<Vec<CreatureCoreData>> {
-    get_creatures_core_data(
-        conn,
-        &PaginatedRequest {
-            cursor: 0,
-            page_size: -1,
-        },
-    )
-    .await
-}
-
-pub async fn get_creature_extra_data(
+pub async fn fetch_creature_extra_data(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<CreatureExtraData> {
-    let actions = get_creature_actions(conn, creature_id)
+    let actions = fetch_creature_actions(conn, creature_id)
         .await
         .unwrap_or_default();
-    let skills = get_creature_skills(conn, creature_id)
+    let skills = fetch_creature_skills(conn, creature_id)
         .await
         .unwrap_or_default();
-    let languages = get_creature_languages(conn, creature_id)
+    let languages = fetch_creature_languages(conn, creature_id)
         .await
         .unwrap_or_default();
-    let senses = get_creature_senses(conn, creature_id)
+    let senses = fetch_creature_senses(conn, creature_id)
         .await
         .unwrap_or_default();
-    let speeds = get_creature_speeds(conn, creature_id)
+    let speeds = fetch_creature_speeds(conn, creature_id)
         .await
         .unwrap_or_default();
-    let ability_scores = get_creature_ability_scores(conn, creature_id).await?;
-    let hp_detail = get_creature_hp_detail(conn, creature_id).await?;
-    let ac_detail = get_creature_ac_detail(conn, creature_id).await?;
-    let language_detail = get_creature_language_detail(conn, creature_id).await?;
-    let perception = get_creature_perception(conn, creature_id).await?;
-    let perception_detail = get_creature_perception_detail(conn, creature_id).await?;
+    let ability_scores = fetch_creature_ability_scores(conn, creature_id).await?;
+    let hp_detail = fetch_creature_hp_detail(conn, creature_id).await?;
+    let ac_detail = fetch_creature_ac_detail(conn, creature_id).await?;
+    let language_detail = fetch_creature_language_detail(conn, creature_id).await?;
+    let perception = fetch_creature_perception(conn, creature_id).await?;
+    let perception_detail = fetch_creature_perception_detail(conn, creature_id).await?;
 
     Ok(CreatureExtraData {
         actions,
@@ -478,24 +473,24 @@ pub async fn get_creature_extra_data(
     })
 }
 
-pub async fn get_creature_combat_data(
+pub async fn fetch_creature_combat_data(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<CreatureCombatData> {
-    let weapons = get_creature_weapons(conn, creature_id)
+    let weapons = fetch_creature_weapons(conn, creature_id)
         .await
         .unwrap_or_default();
-    let resistances = get_creature_resistances(conn, creature_id)
+    let resistances = fetch_creature_resistances(conn, creature_id)
         .await
         .unwrap_or_default();
-    let immunities = get_creature_immunities(conn, creature_id)
+    let immunities = fetch_creature_immunities(conn, creature_id)
         .await
         .unwrap_or_default();
-    let weaknesses = get_creature_weaknesses(conn, creature_id)
+    let weaknesses = fetch_creature_weaknesses(conn, creature_id)
         .await
         .unwrap_or_default();
-    let saving_throws = get_creature_saving_throws(conn, creature_id).await?;
-    let creature_ac = get_creature_ac(conn, creature_id).await?;
+    let saving_throws = fetch_creature_saving_throws(conn, creature_id).await?;
+    let creature_ac = fetch_creature_ac(conn, creature_id).await?;
     Ok(CreatureCombatData {
         weapons,
         resistances: resistances
@@ -512,19 +507,19 @@ pub async fn get_creature_combat_data(
     })
 }
 
-pub async fn get_creature_spell_caster_data(
+pub async fn fetch_creature_spell_caster_data(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<CreatureSpellCasterData> {
-    let spells = get_creature_spells(conn, creature_id).await?;
-    let spell_caster_entry = get_creature_spell_caster_entry(conn, creature_id).await?;
+    let spells = fetch_creature_spells(conn, creature_id).await?;
+    let spell_caster_entry = fetch_creature_spell_caster_entry(conn, creature_id).await?;
     Ok(CreatureSpellCasterData {
         spells,
         spell_caster_entry,
     })
 }
 
-pub async fn get_creature_scales(conn: &Pool<Sqlite>) -> Result<CreatureScales> {
+pub async fn fetch_creature_scales(conn: &Pool<Sqlite>) -> Result<CreatureScales> {
     Ok(CreatureScales {
         ability_scales: sqlx::query_as!(AbilityScales, "SELECT * FROM ABILITY_SCALES_TABLE",)
             .fetch_all(conn)

@@ -1,6 +1,6 @@
 use crate::db::data_providers::fetcher::{
-    get_creature_combat_data, get_creature_extra_data, get_creature_scales,
-    get_creature_spell_caster_data,
+    fetch_creature_combat_data, fetch_creature_extra_data, fetch_creature_scales,
+    fetch_creature_spell_caster_data,
 };
 use crate::models::creature_component::creature_core::EssentialData;
 use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
@@ -19,7 +19,7 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
         cursor: 0,
         page_size: -1,
     };
-    let scales = get_creature_scales(conn).await?;
+    let scales = fetch_creature_scales(conn).await?;
     for cr in get_creatures_raw_essential_data(conn, &pagination).await? {
         let essential_data = EssentialData {
             id: cr.id,
@@ -35,9 +35,9 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
             source: cr.source,
             cr_type: CreatureTypeEnum::from(cr.cr_type),
         };
-        let extra_data = get_creature_extra_data(conn, essential_data.id).await?;
-        let combat_data = get_creature_combat_data(conn, essential_data.id).await?;
-        let spell_caster_data = get_creature_spell_caster_data(conn, essential_data.id).await?;
+        let extra_data = fetch_creature_extra_data(conn, essential_data.id).await?;
+        let combat_data = fetch_creature_combat_data(conn, essential_data.id).await?;
+        let spell_caster_data = fetch_creature_spell_caster_data(conn, essential_data.id).await?;
         let roles = CreatureRoleEnum::from_creature_with_given_scales(
             &essential_data,
             &extra_data,

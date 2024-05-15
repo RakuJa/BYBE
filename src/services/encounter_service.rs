@@ -1,4 +1,4 @@
-use crate::db::proxy::{fetch_creatures_passing_all_filters, order_list_by_level};
+use crate::db::proxy::{get_creatures_passing_all_filters, order_list_by_level};
 use crate::models::creature::Creature;
 use crate::models::creature_component::filter_struct::FilterStruct;
 use crate::models::creature_filter_enum::CreatureFilter;
@@ -269,5 +269,5 @@ async fn get_filtered_creatures(
     app_state: &AppState,
     filter_map: &HashMap<CreatureFilter, HashSet<String>>,
 ) -> Result<Vec<Creature>> {
-    fetch_creatures_passing_all_filters(app_state, filter_map).await
+    get_creatures_passing_all_filters(app_state, filter_map).await
 }

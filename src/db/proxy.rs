@@ -11,6 +11,7 @@ use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
 use crate::services::url_calculator::add_boolean_query;
 use crate::AppState;
 use anyhow::Result;
+use cached::proc_macro::once;
 
 fn hp_increase_by_level() -> HashMap<i64, i64> {
     hashmap! { 1 => 10, 2=> 15, 5=> 20, 20=> 30 }
@@ -22,7 +23,7 @@ pub async fn get_creature_by_id(
     variant: &CreatureVariant,
     optional_data: &OptionalData,
 ) -> Option<Creature> {
-    let cr = fetcher::get_creature_by_id(&app_state.conn, optional_data, id).await;
+    let cr = fetcher::fetch_creature_by_id(&app_state.conn, optional_data, id).await;
     if cr.is_err() {
         return None;
     }
@@ -100,12 +101,12 @@ pub async fn get_paginated_creatures(
     Ok((curr_slice.len() as u32, curr_slice))
 }
 
-pub async fn fetch_creatures_passing_all_filters(
+pub async fn get_creatures_passing_all_filters(
     app_state: &AppState,
     key_value_filters: &HashMap<CreatureFilter, HashSet<String>>,
 ) -> Result<Vec<Creature>> {
     Ok(
-        fetcher::get_creatures_core_data_with_filters(&app_state.conn, key_value_filters)
+        fetcher::fetch_creatures_core_data_with_filters(&app_state.conn, key_value_filters)
             .await?
             .into_iter()
             .map(Creature::from_core)
@@ -133,38 +134,35 @@ pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String>
     x
 }
 
-async fn fetch_all_creatures_from_db(
-    app_state: &AppState,
-    variant: CreatureVariant,
-) -> Option<Vec<Creature>> {
-    let raw_cr = fetcher::get_all_creatures_core_data(&app_state.conn).await;
-    if raw_cr.is_err() {
-        None
-    } else {
-        let creatures = raw_cr
-            .unwrap()
-            .into_iter()
-            .map(Creature::from_core)
-            .collect();
-        match variant {
-            CreatureVariant::Base => Some(creatures),
-            _ => Some(
-                creatures
-                    .iter()
-                    .map(|cr| {
-                        convert_creature_to_variant(cr, CreatureVariant::to_level_delta(&variant))
-                    })
-                    .collect(),
-            ),
-        }
-    }
+/// Gets all the creature core data from the DB. It will not fetch data outside of variant and core.
+/// It will cache the result.
+#[once(sync_writes = true, result = true)]
+async fn get_all_creatures_from_db(app_state: &AppState) -> Result<Vec<Creature>> {
+    Ok(fetcher::fetch_creatures_core_data(
+        &app_state.conn,
+        &PaginatedRequest {
+            cursor: 0,
+            page_size: -1,
+        },
+    )
+    .await?
+    .into_iter()
+    .map(Creature::from_core)
+    .collect())
 }
 
-///
-/// Infallible method, it will expose a vector representing the values fetched from db
+/// Infallible method, it will expose a vector representing the values fetched from db or empty vec
 async fn get_list(app_state: &AppState, variant: CreatureVariant) -> Vec<Creature> {
-    if let Some(db_data) = fetch_all_creatures_from_db(app_state, variant).await {
-        return db_data;
+    if let Ok(creatures) = get_all_creatures_from_db(app_state).await {
+        return match variant {
+            CreatureVariant::Base => creatures,
+            _ => creatures
+                .iter()
+                .map(|cr| {
+                    convert_creature_to_variant(cr, CreatureVariant::to_level_delta(&variant))
+                })
+                .collect(),
+        };
     }
     vec![]
 }
