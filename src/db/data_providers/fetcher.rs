@@ -371,6 +371,13 @@ pub async fn fetch_unique_values_of_field(
     Ok(x.iter().map(|x| x.my_str.clone()).collect())
 }
 
+pub async fn fetch_traits_associated_with_creatures(conn: &Pool<Sqlite>) -> Result<Vec<String>> {
+    let x: Vec<MyString> = sqlx::query_as(
+        "SELECT tt.name AS my_str FROM TRAIT_CREATURE_ASSOCIATION_TABLE tcat LEFT JOIN TRAIT_TABLE tt ON tcat.trait_id = tt.name GROUP BY tt.name"
+    ).fetch_all(conn).await?;
+    Ok(x.iter().map(|x| x.my_str.clone()).collect())
+}
+
 pub async fn fetch_creature_by_id(
     conn: &Pool<Sqlite>,
     optional_data: &OptionalData,

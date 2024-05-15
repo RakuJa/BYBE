@@ -1,4 +1,6 @@
-use crate::db::data_providers::fetcher::fetch_unique_values_of_field;
+use crate::db::data_providers::fetcher::{
+    fetch_traits_associated_with_creatures, fetch_unique_values_of_field,
+};
 use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::AppState;
 use strum::IntoEnumIterator;
@@ -36,7 +38,7 @@ pub async fn from_db_data_to_filter_cache(app_state: &AppState) -> RuntimeFields
         list_of_families: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "family")
             .await
             .unwrap(),
-        list_of_traits: fetch_unique_values_of_field(&app_state.conn, "TRAIT_TABLE", "name")
+        list_of_traits: fetch_traits_associated_with_creatures(&app_state.conn)
             .await
             .unwrap_or_default(),
         list_of_sources: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "source")
