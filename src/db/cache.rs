@@ -2,6 +2,7 @@ use crate::db::data_providers::fetcher::{
     fetch_traits_associated_with_creatures, fetch_unique_values_of_field,
 };
 use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::AppState;
 use strum::IntoEnumIterator;
 
@@ -51,13 +52,7 @@ pub async fn from_db_data_to_filter_cache(app_state: &AppState) -> RuntimeFields
         list_of_rarities: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "rarity")
             .await
             .unwrap_or_default(),
-        list_of_creature_types: fetch_unique_values_of_field(
-            &app_state.conn,
-            "CREATURE_CORE",
-            "cr_type",
-        )
-        .await
-        .unwrap_or_default(),
+        list_of_creature_types: CreatureTypeEnum::iter().map(|x| x.to_string()).collect(),
     };
     cache.insert(0, fields_values_cache.clone());
     fields_values_cache

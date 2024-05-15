@@ -10,6 +10,8 @@ use crate::models::response_data::ResponseCreature;
 use crate::models::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature_component::creature_combat::SavingThrows;
 use crate::models::creature_component::creature_core::CreatureCoreData;
+use crate::models::creature_component::creature_core::DerivedData;
+use crate::models::creature_component::creature_core::EssentialData;
 use crate::models::creature_component::creature_extra::AbilityScores;
 use crate::models::creature_component::creature_extra::CreatureExtraData;
 use crate::models::creature_component::creature_spell_caster::CreatureSpellCasterData;
@@ -73,6 +75,8 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             CreatureTypeEnum,
             CreatureVariant,
             CreatureCoreData,
+            EssentialData,
+            DerivedData,
             CreatureVariantData,
             CreatureExtraData,
             CreatureCombatData,

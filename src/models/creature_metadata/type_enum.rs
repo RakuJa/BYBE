@@ -1,17 +1,26 @@
 use serde::{Deserialize, Serialize};
 use sqlx::Type;
 use std::str::FromStr;
-use strum::Display;
+use strum::{Display, EnumIter};
 use utoipa::ToSchema;
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default, Type,
+    Serialize,
+    Deserialize,
+    ToSchema,
+    Display,
+    Eq,
+    Hash,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Default,
+    Type,
+    EnumIter,
 )]
 pub enum CreatureTypeEnum {
     #[default]
     #[serde(alias = "monster", alias = "MONSTER")]
-    #[strum(to_string = "Monster")]
-    #[serde(rename = "MONSTER")]
     Monster,
     #[serde(alias = "npc", alias = "NPC")]
     #[strum(to_string = "NPC")]

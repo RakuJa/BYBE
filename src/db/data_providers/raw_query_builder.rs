@@ -32,7 +32,7 @@ pub fn prepare_filtered_get_creatures_core(
     if !where_query.is_empty() {
         where_query = format!("WHERE {where_query}")
     }
-    format!("SELECT * FROM CREATURE_CORE {where_query}")
+    format!("SELECT * FROM CREATURE_CORE {where_query} ORDER BY RANDOM() LIMIT 20")
 }
 
 /// Prepares a 'bounded AND statement' aka checks if all the columns are in the bound given
