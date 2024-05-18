@@ -8,7 +8,7 @@ use crate::models::creature_component::creature_extra::{AbilityScores, CreatureE
 use crate::models::creature_component::creature_spell_caster::CreatureSpellCasterData;
 use crate::models::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature_filter_enum::CreatureFilter;
-use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature_metadata::alignment_enum::{AlignmentEnum, ALIGNMENT_TRAITS};
 use crate::models::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::db::raw_immunity::RawImmunity;
 use crate::models::db::raw_language::RawLanguage;
@@ -308,7 +308,11 @@ async fn update_creatures_core_with_traits(
             .await
             .unwrap_or_default();
         let is_remaster = core.essential.remaster;
-        core.traits = traits.iter().map(|x| x.name.clone()).collect();
+        core.traits = traits
+            .iter()
+            .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.name.as_str().to_uppercase()))
+            .map(|x| x.name.clone())
+            .collect();
         core.alignment = AlignmentEnum::from((&traits, is_remaster));
     }
     creature_core_data
@@ -333,9 +337,18 @@ pub async fn fetch_unique_values_of_field(
 
 pub async fn fetch_traits_associated_with_creatures(conn: &Pool<Sqlite>) -> Result<Vec<String>> {
     let x: Vec<MyString> = sqlx::query_as(
-        "SELECT tt.name AS my_str FROM TRAIT_CREATURE_ASSOCIATION_TABLE tcat LEFT JOIN TRAIT_TABLE tt ON tcat.trait_id = tt.name GROUP BY tt.name"
-    ).fetch_all(conn).await?;
-    Ok(x.iter().map(|x| x.my_str.clone()).collect())
+        "
+        SELECT
+            tt.name AS my_str
+        FROM TRAIT_CREATURE_ASSOCIATION_TABLE tcat
+            LEFT JOIN TRAIT_TABLE tt ON tcat.trait_id = tt.name GROUP BY tt.name",
+    )
+    .fetch_all(conn)
+    .await?;
+    Ok(x.iter()
+        .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.my_str.as_str().to_uppercase()))
+        .map(|x| x.my_str.clone())
+        .collect())
 }
 
 pub async fn fetch_creature_by_id(

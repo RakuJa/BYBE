@@ -54,6 +54,8 @@ pub enum AlignmentEnum {
     Any, // can be every alignment
 }
 
+pub const ALIGNMENT_TRAITS: [&str; 4] = ["GOOD", "EVIL", "CHAOTIC", "LAWFUL"];
+
 impl From<(&Vec<RawTrait>, bool)> for AlignmentEnum {
     fn from(tuple: (&Vec<RawTrait>, bool)) -> AlignmentEnum {
         // If remaster then it's always no alignment
@@ -120,31 +122,31 @@ impl AlignmentEnum {
     pub fn to_traits(&self) -> Vec<String> {
         match self {
             AlignmentEnum::Ce => {
-                vec![String::from("chaotic"), String::from("evil")]
+                vec![String::from("CHAOTIC"), String::from("EVIL")]
             }
             AlignmentEnum::Cn => {
-                vec![String::from("chaotic"), String::from("neutral")]
+                vec![String::from("CHAOTIC"), String::from("NEUTRAL")]
             }
             AlignmentEnum::Cg => {
-                vec![String::from("chaotic"), String::from("good")]
+                vec![String::from("CHAOTIC"), String::from("GOOD")]
             }
             AlignmentEnum::Ne => {
-                vec![String::from("neutral"), String::from("evil")]
+                vec![String::from("NEUTRAL"), String::from("EVIL")]
             }
             AlignmentEnum::N => {
-                vec![String::from("neutral")]
+                vec![String::from("NEUTRAL")]
             }
             AlignmentEnum::Ng => {
-                vec![String::from("neutral"), String::from("good")]
+                vec![String::from("NEUTRAL"), String::from("GOOD")]
             }
             AlignmentEnum::Le => {
-                vec![String::from("lawful"), String::from("evil")]
+                vec![String::from("LAWFUL"), String::from("EVIL")]
             }
             AlignmentEnum::Ln => {
-                vec![String::from("lawful"), String::from("neutral")]
+                vec![String::from("LAWFUL"), String::from("NEUTRAL")]
             }
             AlignmentEnum::Lg => {
-                vec![String::from("lawful"), String::from("good")]
+                vec![String::from("LAWFUL"), String::from("GOOD")]
             }
             AlignmentEnum::No | AlignmentEnum::Any => {
                 vec![]
