@@ -3,12 +3,12 @@ use crate::models::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
 use serde::{Deserialize, Serialize};
-use sqlx::FromRow;
+use sqlx::sqlite::SqliteRow;
+use sqlx::{Error, FromRow, Row};
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, FromRow)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct CreatureCoreData {
-    // If they ever do a valid flatten for sqlx, derive it for nested struct
     pub essential: EssentialData,
     pub derived: DerivedData,
     pub traits: Vec<String>,
@@ -45,4 +45,42 @@ pub struct DerivedData {
     pub sniper_percentage: i64,
     pub soldier_percentage: i64,
     pub spell_caster_percentage: i64,
+}
+
+impl<'r> FromRow<'r, SqliteRow> for CreatureCoreData {
+    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+        let rarity: String = row.try_get("rarity")?;
+        let size: String = row.try_get("size")?;
+        Ok(CreatureCoreData {
+            essential: EssentialData {
+                id: row.try_get("id")?,
+                aon_id: row.try_get("aon_id").ok(),
+                name: row.try_get("name")?,
+                hp: row.try_get("hp")?,
+                level: row.try_get("level")?,
+                size: SizeEnum::from(size),
+                family: row.try_get("family").unwrap_or(String::from("-")),
+                rarity: RarityEnum::from(rarity),
+                license: row.try_get("license")?,
+                remaster: row.try_get("remaster")?,
+                source: row.try_get("source")?,
+                cr_type: CreatureTypeEnum::from(row.try_get("cr_type").ok()),
+            },
+            derived: DerivedData {
+                archive_link: row.try_get("archive_link").ok(),
+                is_melee: row.try_get("is_melee")?,
+                is_ranged: row.try_get("is_ranged")?,
+                is_spell_caster: row.try_get("is_spell_caster")?,
+                brute_percentage: row.try_get("brute_percentage")?,
+                magical_striker_percentage: row.try_get("magical_striker_percentage")?,
+                skill_paragon_percentage: row.try_get("skill_paragon_percentage")?,
+                skirmisher_percentage: row.try_get("skirmisher_percentage")?,
+                sniper_percentage: row.try_get("sniper_percentage")?,
+                soldier_percentage: row.try_get("soldier_percentage")?,
+                spell_caster_percentage: row.try_get("spell_caster_percentage")?,
+            },
+            traits: vec![],
+            alignment: Default::default(),
+        })
+    }
 }

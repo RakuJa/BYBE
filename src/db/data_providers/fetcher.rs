@@ -252,40 +252,6 @@ async fn fetch_creature_spell_caster_entry(
     ).fetch_one(conn).await?)
 }
 
-async fn fetch_creatures_core_essential_data(
-    conn: &Pool<Sqlite>,
-    paginated_request: &PaginatedRequest,
-) -> Result<Vec<EssentialData>> {
-    Ok(sqlx::query_as!(
-        EssentialData,
-        "SELECT
-            id, aon_id, name, hp, level, size, family, rarity,
-            license, remaster, source, cr_type
-        FROM CREATURE_CORE ORDER BY name LIMIT ?,?",
-        paginated_request.cursor,
-        paginated_request.page_size
-    )
-    .fetch_all(conn)
-    .await?)
-}
-async fn fetch_creatures_core_derived_data(
-    conn: &Pool<Sqlite>,
-    paginated_request: &PaginatedRequest,
-) -> Result<Vec<DerivedData>> {
-    Ok(sqlx::query_as!(
-        DerivedData,
-        "SELECT
-            archive_link, is_melee, is_ranged, is_spell_caster, brute_percentage,
-            magical_striker_percentage, skill_paragon_percentage, skirmisher_percentage,
-            sniper_percentage, soldier_percentage, spell_caster_percentage
-        FROM CREATURE_CORE ORDER BY name LIMIT ?,?",
-        paginated_request.cursor,
-        paginated_request.page_size
-    )
-    .fetch_all(conn)
-    .await?)
-}
-
 async fn fetch_creature_core_data(
     conn: &Pool<Sqlite>,
     creature_id: i64,
@@ -333,25 +299,19 @@ async fn fetch_creature_derived_data(conn: &Pool<Sqlite>, creature_id: i64) -> R
     .await?)
 }
 
-async fn unite_essential_with_derived_fetching_traits(
+async fn update_creatures_core_with_traits(
     conn: &Pool<Sqlite>,
-    essential_data: Vec<EssentialData>,
-    derived_data: Vec<DerivedData>,
+    mut creature_core_data: Vec<CreatureCoreData>,
 ) -> Vec<CreatureCoreData> {
-    let mut cr_core: Vec<CreatureCoreData> = Vec::new();
-    for (essential, derived) in essential_data.into_iter().zip(derived_data) {
-        let traits = fetch_creature_traits(conn, essential.id)
+    for core in &mut creature_core_data {
+        let traits = fetch_creature_traits(conn, core.essential.id)
             .await
             .unwrap_or_default();
-        let is_remaster = essential.remaster;
-        cr_core.push(CreatureCoreData {
-            essential,
-            derived,
-            traits: traits.iter().map(|x| x.name.clone()).collect(),
-            alignment: AlignmentEnum::from((&traits, is_remaster)),
-        });
+        let is_remaster = core.essential.remaster;
+        core.traits = traits.iter().map(|x| x.name.clone()).collect();
+        core.alignment = AlignmentEnum::from((&traits, is_remaster));
     }
-    cr_core
+    creature_core_data
 }
 
 #[derive(FromRow)]
@@ -416,24 +376,23 @@ pub async fn fetch_creatures_core_data_with_filters(
     key_value_filters: &HashMap<CreatureFilter, HashSet<String>>,
 ) -> Result<Vec<CreatureCoreData>> {
     let query = prepare_filtered_get_creatures_core(key_value_filters);
-    let cr_essential: Vec<EssentialData> = sqlx::query_as(query.as_str()).fetch_all(conn).await?;
-    let cr_derived: Vec<DerivedData> = sqlx::query_as(query.as_str()).fetch_all(conn).await?;
-    Ok(unite_essential_with_derived_fetching_traits(conn, cr_essential, cr_derived).await)
+    let core_data: Vec<CreatureCoreData> = sqlx::query_as(query.as_str()).fetch_all(conn).await?;
+    Ok(update_creatures_core_with_traits(conn, core_data).await)
 }
 
 /// Gets all the creatures core it can find with the given pagination as boundaries
-/// for the search. It's an unstable method and will break if the DB is modified during runtime.
+/// for the search.
 pub async fn fetch_creatures_core_data(
     conn: &Pool<Sqlite>,
     paginated_request: &PaginatedRequest,
 ) -> Result<Vec<CreatureCoreData>> {
-    // IMPORTANT! THIS TWO QUERIES ARE VALID ONLY BECAUSE:
-    // 1) THE DB DOES NOT CHANGE DURING EXECUTION, OTHERWISE THIS IS BAD
-    // 2) THEY FETCH FROM THE SAME TABLE, GUARANTEE OF ORDER. ESSENTIAL COULD FETCH
-    // FROM CREATURE_TABLE BUT WE DO NOT HAVE THE ORDER GUARANTEE
-    let cr_essential = fetch_creatures_core_essential_data(conn, paginated_request).await?;
-    let cr_derived = fetch_creatures_core_derived_data(conn, paginated_request).await?;
-    Ok(unite_essential_with_derived_fetching_traits(conn, cr_essential, cr_derived).await)
+    let cr_core: Vec<CreatureCoreData> =
+        sqlx::query_as("SELECT * FROM CREATURE_CORE ORDER BY name LIMIT ?,?")
+            .bind(paginated_request.cursor)
+            .bind(paginated_request.page_size)
+            .fetch_all(conn)
+            .await?;
+    Ok(update_creatures_core_with_traits(conn, cr_core).await)
 }
 
 pub async fn fetch_creature_extra_data(
