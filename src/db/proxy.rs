@@ -1,17 +1,23 @@
 use crate::models::creature::Creature;
 use std::collections::{HashMap, HashSet};
 
-use crate::db::cache::from_db_data_to_filter_cache;
 use crate::db::data_providers::fetcher;
+use crate::db::data_providers::fetcher::{
+    fetch_traits_associated_with_creatures, fetch_unique_values_of_field,
+};
 use crate::models::creature_component::creature_core::CreatureCoreData;
+use crate::models::creature_component::fields_unique_values_struct::FieldsUniqueValuesStruct;
 use crate::models::creature_fields_enum::CreatureField;
 use crate::models::creature_filter_enum::CreatureFilter;
+use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::response_data::OptionalData;
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
 use crate::AppState;
 use anyhow::Result;
 use cached::proc_macro::once;
+use strum::IntoEnumIterator;
 
 pub async fn get_creature_by_id(
     app_state: &AppState,
@@ -102,7 +108,7 @@ pub async fn get_creatures_passing_all_filters(
 }
 
 pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String> {
-    let runtime_fields_values = from_db_data_to_filter_cache(app_state).await;
+    let runtime_fields_values = get_all_keys(app_state).await;
     let mut x = match field {
         CreatureField::Size => runtime_fields_values.list_of_sizes,
         CreatureField::Rarity => runtime_fields_values.list_of_rarities,
@@ -119,6 +125,33 @@ pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String>
     };
     x.sort();
     x
+}
+
+/// Gets all the runtime keys (each table column unique values). It will cache the result
+#[once(sync_writes = true)]
+async fn get_all_keys(app_state: &AppState) -> FieldsUniqueValuesStruct {
+    FieldsUniqueValuesStruct {
+        list_of_levels: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "level")
+            .await
+            .unwrap_or_default(),
+        list_of_families: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "family")
+            .await
+            .unwrap(),
+        list_of_traits: fetch_traits_associated_with_creatures(&app_state.conn)
+            .await
+            .unwrap_or_default(),
+        list_of_sources: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "source")
+            .await
+            .unwrap_or_default(),
+        list_of_alignments: AlignmentEnum::iter().map(|x| x.to_string()).collect(),
+        list_of_sizes: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "size")
+            .await
+            .unwrap_or_default(),
+        list_of_rarities: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "rarity")
+            .await
+            .unwrap_or_default(),
+        list_of_creature_types: CreatureTypeEnum::iter().map(|x| x.to_string()).collect(),
+    }
 }
 
 /// Gets all the creature core data from the DB. It will not fetch data outside of variant and core.

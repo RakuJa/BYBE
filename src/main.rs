@@ -3,16 +3,13 @@ extern crate maplit;
 
 mod routes;
 
-use crate::db::cache::RuntimeFieldsValues;
 use crate::routes::{bestiary, encounter, health};
 use actix_cors::Cors;
 use actix_web::http::header::{CacheControl, CacheDirective};
 use actix_web::{get, middleware, web, App, HttpResponse, HttpServer, Responder};
 use dotenvy::dotenv;
-use mini_moka::sync::Cache;
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
 use std::env;
-use std::time::Duration;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -23,7 +20,6 @@ mod services;
 #[derive(Clone)]
 pub struct AppState {
     conn: Pool<Sqlite>,
-    runtime_fields_cache: Cache<i32, RuntimeFieldsValues>,
 }
 
 #[utoipa::path(get, path = "/")]
@@ -71,14 +67,6 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Error building connection pool");
 
-    let fields_cache = Cache::builder()
-        // Time to live (TTL): 1 week
-        .time_to_live(Duration::from_secs(604800))
-        // Time to idle (TTI):  1 week
-        // .time_to_idle(Duration::from_secs( 5 * 60))
-        // Create the cache.
-        .build();
-
     db::cr_core_initializer::update_creature_core_table(&pool)
         .await
         .expect("Could not initialize correctly core creature table.. Startup failed");
@@ -118,10 +106,7 @@ async fn main() -> std::io::Result<()> {
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
-            .app_data(web::Data::new(AppState {
-                conn: pool.clone(),
-                runtime_fields_cache: fields_cache.clone(),
-            }))
+            .app_data(web::Data::new(AppState { conn: pool.clone() }))
     })
     .bind((get_service_ip(), get_service_port()))?
     .run()
