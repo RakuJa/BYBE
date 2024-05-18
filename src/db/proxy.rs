@@ -118,9 +118,9 @@ pub async fn get_keys(app_state: &AppState, field: CreatureField) -> Vec<String>
         CreatureField::Family => runtime_fields_values.list_of_families,
         CreatureField::Traits => runtime_fields_values.list_of_traits,
         CreatureField::Sources => runtime_fields_values.list_of_sources,
-        CreatureField::Alignment => runtime_fields_values.list_of_alignments,
+        CreatureField::Alignment => AlignmentEnum::iter().map(|x| x.to_string()).collect(),
         CreatureField::Level => runtime_fields_values.list_of_levels,
-        CreatureField::CreatureTypes => runtime_fields_values.list_of_creature_types,
+        CreatureField::CreatureTypes => CreatureTypeEnum::iter().map(|x| x.to_string()).collect(),
         _ => vec![],
     };
     x.sort();
@@ -143,14 +143,12 @@ async fn get_all_keys(app_state: &AppState) -> FieldsUniqueValuesStruct {
         list_of_sources: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "source")
             .await
             .unwrap_or_default(),
-        list_of_alignments: AlignmentEnum::iter().map(|x| x.to_string()).collect(),
         list_of_sizes: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "size")
             .await
             .unwrap_or_default(),
         list_of_rarities: fetch_unique_values_of_field(&app_state.conn, "CREATURE_CORE", "rarity")
             .await
             .unwrap_or_default(),
-        list_of_creature_types: CreatureTypeEnum::iter().map(|x| x.to_string()).collect(),
     }
 }
 

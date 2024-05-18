@@ -4,8 +4,6 @@ pub struct FieldsUniqueValuesStruct {
     pub list_of_families: Vec<String>,
     pub list_of_traits: Vec<String>,
     pub list_of_sources: Vec<String>,
-    pub list_of_alignments: Vec<String>,
     pub list_of_sizes: Vec<String>,
     pub list_of_rarities: Vec<String>,
-    pub list_of_creature_types: Vec<String>,
 }
