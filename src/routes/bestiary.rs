@@ -4,15 +4,16 @@ use crate::models::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::response_data::OptionalData;
 use crate::models::response_data::ResponseCreature;
-use crate::models::response_data::ResponseData;
 
 use crate::models::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature_component::creature_combat::SavingThrows;
 use crate::models::creature_component::creature_core::CreatureCoreData;
+use crate::models::creature_component::creature_core::DerivedData;
+use crate::models::creature_component::creature_core::EssentialData;
 use crate::models::creature_component::creature_extra::AbilityScores;
 use crate::models::creature_component::creature_extra::CreatureExtraData;
-use crate::models::creature_component::creature_info::CreatureInfo;
 use crate::models::creature_component::creature_spell_caster::CreatureSpellCasterData;
 use crate::models::creature_component::creature_variant::CreatureVariantData;
 
@@ -21,8 +22,6 @@ use crate::models::items::skill::Skill;
 use crate::models::items::spell::Spell;
 use crate::models::items::spell_caster_entry::SpellCasterEntry;
 use crate::models::items::weapon::Weapon;
-
-use crate::models::creature::PublicationInfo;
 
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
 use crate::services::bestiary_service;
@@ -76,15 +75,15 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             CreatureTypeEnum,
             CreatureVariant,
             CreatureCoreData,
+            EssentialData,
+            DerivedData,
             CreatureVariantData,
             CreatureExtraData,
             CreatureCombatData,
             CreatureSpellCasterData,
-            CreatureInfo,
             Spell,
             Weapon,
             SavingThrows,
-            PublicationInfo,
             AbilityScores,
             Action,
             Skill,
@@ -102,7 +101,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     path = "/bestiary/list",
     tag = "bestiary",
     params(
-        FieldFilters, PaginatedRequest, ResponseData
+        FieldFilters, PaginatedRequest
     ),
     responses(
         (status=200, description = "Successful Response", body = BestiaryResponse),
@@ -114,10 +113,9 @@ pub async fn get_bestiary(
     data: web::Data<AppState>,
     filters: Query<FieldFilters>,
     pagination: Query<PaginatedRequest>,
-    response_data: Query<ResponseData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_bestiary(&data, &filters.0, &pagination.0, &response_data.0).await,
+        bestiary_service::get_bestiary(&data, &filters.0, &pagination.0).await,
     ))
 }
 
@@ -267,7 +265,7 @@ pub async fn get_creature_roles_list() -> Result<impl Responder> {
     tag = "bestiary",
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
-        ResponseData,
+        OptionalData,
     ),
     responses(
         (status=200, description = "Successful Response", body = ResponseCreature),
@@ -278,10 +276,10 @@ pub async fn get_creature_roles_list() -> Result<impl Responder> {
 pub async fn get_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
-    response_data: Query<ResponseData>,
+    optional_data: Query<OptionalData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_creature(&data, sanitize_id(&creature_id)?, &response_data.0).await,
+        bestiary_service::get_creature(&data, sanitize_id(&creature_id)?, &optional_data.0).await,
     ))
 }
 
@@ -291,7 +289,7 @@ pub async fn get_creature(
     tag = "bestiary",
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
-        ResponseData
+        OptionalData
     ),
     responses(
         (status=200, description = "Successful Response", body = ResponseCreature),
@@ -302,7 +300,7 @@ pub async fn get_creature(
 pub async fn get_elite_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
-    response_data: Query<ResponseData>,
+    response_data: Query<OptionalData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_elite_creature(&data, sanitize_id(&creature_id)?, &response_data.0)
@@ -316,7 +314,7 @@ pub async fn get_elite_creature(
     tag = "bestiary",
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
-        ResponseData,
+        OptionalData,
     ),
     responses(
         (status=200, description = "Successful Response", body = ResponseCreature),
@@ -327,7 +325,7 @@ pub async fn get_elite_creature(
 pub async fn get_weak_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
-    response_data: Query<ResponseData>,
+    response_data: Query<OptionalData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_weak_creature(&data, sanitize_id(&creature_id)?, &response_data.0)
@@ -335,8 +333,8 @@ pub async fn get_weak_creature(
     ))
 }
 
-fn sanitize_id(creature_id: &str) -> Result<i32> {
-    let id = creature_id.parse::<i32>();
+fn sanitize_id(creature_id: &str) -> Result<i64> {
+    let id = creature_id.parse::<i64>();
     match id {
         Ok(s) => Ok(s),
         Err(e) => Err(error::ErrorNotFound(e)),

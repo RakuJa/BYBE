@@ -1,4 +1,3 @@
-use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
 
 pub fn next_url_calculator(
@@ -13,24 +12,9 @@ pub fn next_url_calculator(
     format!("{}{}{}", base_url, filter_query, pagination_query)
 }
 
-pub fn generate_archive_link(id: Option<i64>, creature_type: &CreatureTypeEnum) -> Option<String> {
-    id.map(|x| {
-        format!(
-            "https://2e.aonprd.com/{}.aspx?ID={}",
-            CreatureTypeEnum::to_url_string(creature_type),
-            x
-        )
-    })
-}
-
-pub fn add_boolean_query(url: Option<String>, key: &String, value: bool) -> Option<String> {
-    match url {
-        Some(mut x) => {
-            x.push_str(&format!("&{}={}", key, value));
-            Some(x)
-        }
-        None => None,
-    }
+pub fn add_boolean_query(url: &Option<String>, key: &String, value: bool) -> Option<String> {
+    url.as_ref()
+        .map(|base_url| format!("{}&{}={}", base_url, key, value))
 }
 
 fn filter_query_calculator(field_filters: &FieldFilters) -> String {

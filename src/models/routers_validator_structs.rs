@@ -16,17 +16,17 @@ pub struct FieldFilters {
     pub alignment_filter: Option<AlignmentEnum>,
     pub role_filter: Option<CreatureRoleEnum>,
     pub type_filter: Option<CreatureTypeEnum>,
-    pub role_threshold: Option<i16>,
-    pub min_hp_filter: Option<i16>,
-    pub max_hp_filter: Option<i16>,
-    pub min_level_filter: Option<i8>,
-    pub max_level_filter: Option<i8>,
+    pub role_threshold: Option<i64>,
+    pub min_hp_filter: Option<i64>,
+    pub max_hp_filter: Option<i64>,
+    pub min_level_filter: Option<i64>,
+    pub max_level_filter: Option<i64>,
     pub is_melee_filter: Option<bool>,
     pub is_ranged_filter: Option<bool>,
     pub is_spell_caster_filter: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, IntoParams, Validate)]
+#[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash)]
 pub struct PaginatedRequest {
     pub cursor: u32,
     #[validate(range(min = -1, max = 100))]

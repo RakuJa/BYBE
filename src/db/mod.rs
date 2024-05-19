@@ -1,3 +1,3 @@
-pub mod db_cache;
-pub mod db_communicator;
-pub mod db_proxy;
+pub mod cr_core_initializer;
+pub mod data_providers;
+pub mod proxy;

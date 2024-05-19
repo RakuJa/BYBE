@@ -1,70 +1,86 @@
-use crate::models::creature::PublicationInfo;
 use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
-use crate::models::creature_metadata::variant_enum::CreatureVariant;
-use crate::models::db::raw_creature::RawCreature;
-use crate::models::db::raw_trait::RawTrait;
 use serde::{Deserialize, Serialize};
+use sqlx::sqlite::SqliteRow;
+use sqlx::{Error, FromRow, Row};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct CreatureCoreData {
-    pub id: i32,
-    pub aon_id: Option<i32>,
-    pub name: String,
-    pub hp: i16,
-    // constant value, it will never change
-    pub base_level: i8,
+    pub essential: EssentialData,
+    pub derived: DerivedData,
+    pub traits: Vec<String>,
     pub alignment: AlignmentEnum,
+}
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, FromRow)]
+pub struct EssentialData {
+    pub id: i64,
+    pub aon_id: Option<i64>,
+    pub name: String,
+    pub hp: i64,
+    pub level: i64,
     pub size: SizeEnum,
-    pub family: Option<String>,
+    pub family: String,
     pub rarity: RarityEnum,
+    pub license: String,
+    pub remaster: bool,
+    pub source: String,
+    pub cr_type: CreatureTypeEnum,
+}
+
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, FromRow)]
+pub struct DerivedData {
+    pub archive_link: Option<String>,
+
     pub is_melee: bool,
     pub is_ranged: bool,
     pub is_spell_caster: bool,
-    pub publication_info: PublicationInfo,
-    pub traits: Vec<String>,
-    pub archive_link: Option<String>,
-    pub creature_type: CreatureTypeEnum,
-    pub variant: CreatureVariant,
+
+    pub brute_percentage: i64,
+    pub magical_striker_percentage: i64,
+    pub skill_paragon_percentage: i64,
+    pub skirmisher_percentage: i64,
+    pub sniper_percentage: i64,
+    pub soldier_percentage: i64,
+    pub spell_caster_percentage: i64,
 }
 
-impl From<(RawCreature, Vec<RawTrait>, bool, bool, Option<String>)> for CreatureCoreData {
-    fn from(tuple: (RawCreature, Vec<RawTrait>, bool, bool, Option<String>)) -> Self {
-        let raw = tuple.0;
-        let traits = tuple.1;
-        let is_ranged = tuple.2;
-        let is_melee = tuple.3;
-        let archive_link = tuple.4;
-
-        let alignment_enum = AlignmentEnum::from((&traits, raw.remaster));
-        CreatureCoreData {
-            id: raw.id as i32,
-            aon_id: raw.aon_id.map(|x| x as i32),
-            name: raw.name.clone(),
-            hp: raw.hp as i16,
-            base_level: raw.level as i8,
-            alignment: alignment_enum,
-            size: raw.size.clone(),
-            family: raw.family.clone(),
-            rarity: raw.rarity.clone(),
-            is_spell_caster: raw.spell_casting_name.is_some(),
-            publication_info: PublicationInfo {
-                remaster: raw.remaster,
-                source: raw.source,
-                license: raw.license,
+impl<'r> FromRow<'r, SqliteRow> for CreatureCoreData {
+    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+        let rarity: String = row.try_get("rarity")?;
+        let size: String = row.try_get("size")?;
+        Ok(CreatureCoreData {
+            essential: EssentialData {
+                id: row.try_get("id")?,
+                aon_id: row.try_get("aon_id").ok(),
+                name: row.try_get("name")?,
+                hp: row.try_get("hp")?,
+                level: row.try_get("level")?,
+                size: SizeEnum::from(size),
+                family: row.try_get("family").unwrap_or(String::from("-")),
+                rarity: RarityEnum::from(rarity),
+                license: row.try_get("license")?,
+                remaster: row.try_get("remaster")?,
+                source: row.try_get("source")?,
+                cr_type: CreatureTypeEnum::from(row.try_get("cr_type").ok()),
             },
-            traits: traits
-                .into_iter()
-                .map(|curr_trait| curr_trait.name)
-                .collect(),
-            creature_type: raw.cr_type.clone(),
-            archive_link: archive_link.clone(),
-            variant: CreatureVariant::Base,
-            is_ranged,
-            is_melee,
-        }
+            derived: DerivedData {
+                archive_link: row.try_get("archive_link").ok(),
+                is_melee: row.try_get("is_melee")?,
+                is_ranged: row.try_get("is_ranged")?,
+                is_spell_caster: row.try_get("is_spell_caster")?,
+                brute_percentage: row.try_get("brute_percentage")?,
+                magical_striker_percentage: row.try_get("magical_striker_percentage")?,
+                skill_paragon_percentage: row.try_get("skill_paragon_percentage")?,
+                skirmisher_percentage: row.try_get("skirmisher_percentage")?,
+                sniper_percentage: row.try_get("sniper_percentage")?,
+                soldier_percentage: row.try_get("soldier_percentage")?,
+                spell_caster_percentage: row.try_get("spell_caster_percentage")?,
+            },
+            traits: vec![],
+            alignment: Default::default(),
+        })
     }
 }
