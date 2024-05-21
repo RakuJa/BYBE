@@ -1,4 +1,4 @@
-use crate::models::creature_filter_enum::CreatureFilter;
+use crate::models::creature::creature_filter_enum::CreatureFilter;
 use log::debug;
 use std::collections::{HashMap, HashSet};
 
@@ -41,6 +41,7 @@ pub fn prepare_filtered_get_creatures_core(
                 simple_core_query
                     .push_str(prepare_bounded_check(value, ACCURACY_THRESHOLD, 100).as_str())
             }
+            _ => (),
         }
     }
     let mut where_query = simple_core_query.to_string();

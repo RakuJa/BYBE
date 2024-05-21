@@ -1,13 +1,13 @@
-use crate::db::data_providers::fetcher::{
+use crate::db::data_providers::creature_fetcher::{
     fetch_creature_combat_data, fetch_creature_extra_data, fetch_creature_scales,
     fetch_creature_spell_caster_data, fetch_creature_traits,
 };
-use crate::models::creature_component::creature_core::EssentialData;
-use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
-use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
-use crate::models::creature_metadata::rarity_enum::RarityEnum;
-use crate::models::creature_metadata::size_enum::SizeEnum;
-use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::creature::creature_component::creature_core::EssentialData;
+use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
+use crate::models::creature::creature_metadata::rarity_enum::RarityEnum;
+use crate::models::creature::creature_metadata::size_enum::SizeEnum;
+use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::routers_validator_structs::PaginatedRequest;
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};

@@ -1,13 +1,23 @@
+use crate::db::data_providers::generic_fetcher::MyString;
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_creatures_core;
-use crate::models::creature::Creature;
-use crate::models::creature_component::creature_combat::{CreatureCombatData, SavingThrows};
-use crate::models::creature_component::creature_core::CreatureCoreData;
-use crate::models::creature_component::creature_extra::{AbilityScores, CreatureExtraData};
-use crate::models::creature_component::creature_spell_caster::CreatureSpellCasterData;
-use crate::models::creature_component::creature_variant::CreatureVariantData;
-use crate::models::creature_filter_enum::CreatureFilter;
-use crate::models::creature_metadata::alignment_enum::ALIGNMENT_TRAITS;
-use crate::models::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::creature::creature_component::creature_combat::{
+    CreatureCombatData, SavingThrows,
+};
+use crate::models::creature::creature_component::creature_core::CreatureCoreData;
+use crate::models::creature::creature_component::creature_extra::{
+    AbilityScores, CreatureExtraData,
+};
+use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
+use crate::models::creature::creature_filter_enum::CreatureFilter;
+use crate::models::creature::creature_metadata::alignment_enum::ALIGNMENT_TRAITS;
+use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::creature::creature_struct::Creature;
+use crate::models::creature::items::action::Action;
+use crate::models::creature::items::skill::Skill;
+use crate::models::creature::items::spell::Spell;
+use crate::models::creature::items::spell_caster_entry::SpellCasterEntry;
+use crate::models::creature::items::weapon::Weapon;
 use crate::models::db::raw_immunity::RawImmunity;
 use crate::models::db::raw_language::RawLanguage;
 use crate::models::db::raw_resistance::RawResistance;
@@ -15,11 +25,6 @@ use crate::models::db::raw_sense::RawSense;
 use crate::models::db::raw_speed::RawSpeed;
 use crate::models::db::raw_trait::RawTrait;
 use crate::models::db::raw_weakness::RawWeakness;
-use crate::models::items::action::Action;
-use crate::models::items::skill::Skill;
-use crate::models::items::spell::Spell;
-use crate::models::items::spell_caster_entry::SpellCasterEntry;
-use crate::models::items::weapon::Weapon;
 use crate::models::response_data::OptionalData;
 use crate::models::routers_validator_structs::PaginatedRequest;
 use crate::models::scales_struct::ability_scales::AbilityScales;
@@ -36,7 +41,7 @@ use crate::models::scales_struct::spell_dc_and_atk_scales::SpellDcAndAtkScales;
 use crate::models::scales_struct::strike_bonus_scales::StrikeBonusScales;
 use crate::models::scales_struct::strike_dmg_scales::StrikeDmgScales;
 use anyhow::Result;
-use sqlx::{FromRow, Pool, Sqlite};
+use sqlx::{Pool, Sqlite};
 use std::collections::{HashMap, HashSet};
 
 async fn fetch_creature_immunities(
@@ -279,23 +284,6 @@ async fn update_creatures_core_with_traits(
             .collect();
     }
     creature_core_data
-}
-
-#[derive(FromRow)]
-struct MyString {
-    my_str: String,
-}
-
-pub async fn fetch_unique_values_of_field(
-    conn: &Pool<Sqlite>,
-    table: &str,
-    field: &str,
-) -> Result<Vec<String>> {
-    let query = format!(
-        "SELECT CAST(t1.{field} AS TEXT) AS my_str FROM ((SELECT DISTINCT ({field}) FROM {table})) t1"
-    );
-    let x: Vec<MyString> = sqlx::query_as(query.as_str()).fetch_all(conn).await?;
-    Ok(x.iter().map(|x| x.my_str.clone()).collect())
 }
 
 pub async fn fetch_traits_associated_with_creatures(conn: &Pool<Sqlite>) -> Result<Vec<String>> {

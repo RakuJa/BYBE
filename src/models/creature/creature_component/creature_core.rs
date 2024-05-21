@@ -1,7 +1,7 @@
-use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
-use crate::models::creature_metadata::rarity_enum::RarityEnum;
-use crate::models::creature_metadata::size_enum::SizeEnum;
-use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature::creature_metadata::rarity_enum::RarityEnum;
+use crate::models::creature::creature_metadata::size_enum::SizeEnum;
+use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Error, FromRow, Row};

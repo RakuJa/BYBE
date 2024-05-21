@@ -1,4 +1,4 @@
-use crate::models::creature_component::creature_core::CreatureCoreData;
+use crate::models::creature::creature_component::creature_core::CreatureCoreData;
 use crate::services::url_calculator::add_boolean_query;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

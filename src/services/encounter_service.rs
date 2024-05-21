@@ -1,7 +1,7 @@
-use crate::db::proxy::{get_creatures_passing_all_filters, order_list_by_level};
-use crate::models::creature::Creature;
-use crate::models::creature_component::filter_struct::FilterStruct;
-use crate::models::creature_filter_enum::CreatureFilter;
+use crate::db::bestiary_proxy::{get_creatures_passing_all_filters, order_list_by_level};
+use crate::models::creature::creature_component::filter_struct::FilterStruct;
+use crate::models::creature::creature_filter_enum::CreatureFilter;
+use crate::models::creature::creature_struct::Creature;
 use crate::models::encounter_structs::{
     EncounterChallengeEnum, EncounterParams, RandomEncounterData,
 };

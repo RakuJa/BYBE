@@ -1,4 +1,4 @@
-use crate::models::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 

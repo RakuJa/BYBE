@@ -1,5 +1,5 @@
-use crate::models::items::action::Action;
-use crate::models::items::skill::Skill;
+use crate::models::creature::items::action::Action;
+use crate::models::creature::items::skill::Skill;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use utoipa::ToSchema;

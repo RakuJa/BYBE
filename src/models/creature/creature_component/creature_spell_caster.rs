@@ -1,5 +1,5 @@
-use crate::models::items::spell::Spell;
-use crate::models::items::spell_caster_entry::SpellCasterEntry;
+use crate::models::creature::items::spell::Spell;
+use crate::models::creature::items::spell_caster_entry::SpellCasterEntry;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 

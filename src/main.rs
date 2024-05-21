@@ -3,7 +3,7 @@ extern crate maplit;
 
 mod routes;
 
-use crate::routes::{bestiary, encounter, health};
+use crate::routes::{bestiary, encounter, health, shop};
 use actix_cors::Cors;
 use actix_web::http::header::{CacheControl, CacheDirective};
 use actix_web::{get, middleware, web, App, HttpResponse, HttpServer, Responder};
@@ -47,6 +47,7 @@ fn init_docs(openapi: &mut utoipa::openapi::OpenApi) {
     health::init_docs(openapi);
     bestiary::init_docs(openapi);
     encounter::init_docs(openapi);
+    shop::init_docs(openapi);
 }
 
 #[actix_web::main]
@@ -103,6 +104,7 @@ async fn main() -> std::io::Result<()> {
             .configure(health::init_endpoints)
             .configure(bestiary::init_endpoints)
             .configure(encounter::init_endpoints)
+            .configure(shop::init_endpoints)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )

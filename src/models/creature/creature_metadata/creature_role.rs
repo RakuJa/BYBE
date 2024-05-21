@@ -1,7 +1,7 @@
-use crate::models::creature_component::creature_combat::CreatureCombatData;
-use crate::models::creature_component::creature_core::EssentialData;
-use crate::models::creature_component::creature_extra::CreatureExtraData;
-use crate::models::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
+use crate::models::creature::creature_component::creature_core::EssentialData;
+use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
+use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
 use crate::models::scales_struct::creature_scales::CreatureScales;
 use num_traits::float::FloatConst;
 use regex::Regex;
@@ -296,7 +296,8 @@ pub fn is_soldier(
 
     score += wp_distance.unwrap_or(MISSING_FIELD_DISTANCE);
     if !cr_extra.actions.iter().any(|x| {
-        x.category.as_str().to_uppercase() == "OFFENSIVE"
+        x.category.is_some()
+            && x.category.clone().unwrap().as_str().to_uppercase() == "OFFENSIVE"
             && x.action_type.as_str().to_uppercase() == "ACTION"
     }) {
         score += MISSING_FIELD_DISTANCE;
@@ -401,7 +402,8 @@ fn is_skill_paragon(
         .actions
         .iter()
         .filter(|x| {
-            x.category.as_str().to_uppercase() == "OFFENSIVE"
+            x.category.is_some()
+                && x.category.clone().unwrap().as_str().to_uppercase() == "OFFENSIVE"
                 && x.action_type.as_str().to_uppercase() == "ACTION"
         })
         .count()
