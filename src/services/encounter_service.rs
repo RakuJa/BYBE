@@ -245,8 +245,8 @@ fn build_filter_map(filter_enum: FilterStruct) -> HashMap<CreatureFilter, HashSe
     };
     if let Some(vec) = filter_enum.alignments {
         filter_map.insert(
-            CreatureFilter::Traits,
-            HashSet::from_iter(vec.iter().flat_map(|x| x.to_traits())),
+            CreatureFilter::Alignment,
+            HashSet::from_iter(vec.iter().map(|x| x.to_string())),
         );
     };
     if let Some(vec) = filter_enum.creature_types {

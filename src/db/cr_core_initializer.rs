@@ -1,8 +1,9 @@
 use crate::db::data_providers::fetcher::{
     fetch_creature_combat_data, fetch_creature_extra_data, fetch_creature_scales,
-    fetch_creature_spell_caster_data,
+    fetch_creature_spell_caster_data, fetch_creature_traits,
 };
 use crate::models::creature_component::creature_core::EssentialData;
+use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature_metadata::size_enum::SizeEnum;
@@ -21,6 +22,9 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
     };
     let scales = fetch_creature_scales(conn).await?;
     for cr in get_creatures_raw_essential_data(conn, &pagination).await? {
+        let traits = fetch_creature_traits(conn, cr.id).await?;
+        let alignment = AlignmentEnum::from((&traits, cr.remaster));
+        update_alignment_column_value(conn, alignment.to_string(), cr.id).await?;
         let essential_data = EssentialData {
             id: cr.id,
             aon_id: cr.aon_id,
@@ -34,6 +38,7 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
             remaster: cr.remaster,
             source: cr.source,
             cr_type: CreatureTypeEnum::from(cr.cr_type),
+            alignment,
         };
         let extra_data = fetch_creature_extra_data(conn, essential_data.id).await?;
         let combat_data = fetch_creature_combat_data(conn, essential_data.id).await?;
@@ -45,6 +50,7 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
             &spell_caster_data,
             &scales,
         );
+
         for (curr_role, curr_percentage) in roles {
             update_role_column_value(conn, curr_role, curr_percentage, essential_data.id).await?;
         }
@@ -113,6 +119,24 @@ async fn update_role_column_value(
     .await?;
     if x.rows_affected() < 1 {
         bail!("Error encountered with creature id: {creature_id}. Could not update role: {role}")
+    }
+    Ok(())
+}
+
+async fn update_alignment_column_value(
+    conn: &Pool<Sqlite>,
+    alignment: String,
+    creature_id: i64,
+) -> Result<()> {
+    let x = sqlx::query!(
+        "UPDATE CREATURE_CORE SET alignment = ? WHERE id = ?",
+        alignment,
+        creature_id
+    )
+    .execute(conn)
+    .await?;
+    if x.rows_affected() < 1 {
+        bail!("Error encountered with creature id: {creature_id}. Could not update alignment: {alignment}")
     }
     Ok(())
 }

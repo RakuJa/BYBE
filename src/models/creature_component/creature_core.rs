@@ -12,7 +12,6 @@ pub struct CreatureCoreData {
     pub essential: EssentialData,
     pub derived: DerivedData,
     pub traits: Vec<String>,
-    pub alignment: AlignmentEnum,
 }
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, FromRow)]
 pub struct EssentialData {
@@ -28,6 +27,7 @@ pub struct EssentialData {
     pub remaster: bool,
     pub source: String,
     pub cr_type: CreatureTypeEnum,
+    pub alignment: AlignmentEnum,
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, FromRow)]
@@ -51,6 +51,7 @@ impl<'r> FromRow<'r, SqliteRow> for CreatureCoreData {
     fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
         let rarity: String = row.try_get("rarity")?;
         let size: String = row.try_get("size")?;
+        let alignment: String = row.try_get("alignment")?;
         Ok(CreatureCoreData {
             essential: EssentialData {
                 id: row.try_get("id")?,
@@ -65,6 +66,7 @@ impl<'r> FromRow<'r, SqliteRow> for CreatureCoreData {
                 remaster: row.try_get("remaster")?,
                 source: row.try_get("source")?,
                 cr_type: CreatureTypeEnum::from(row.try_get("cr_type").ok()),
+                alignment: AlignmentEnum::from(alignment),
             },
             derived: DerivedData {
                 archive_link: row.try_get("archive_link").ok(),
@@ -80,7 +82,6 @@ impl<'r> FromRow<'r, SqliteRow> for CreatureCoreData {
                 spell_caster_percentage: row.try_get("spell_caster_percentage")?,
             },
             traits: vec![],
-            alignment: Default::default(),
         })
     }
 }

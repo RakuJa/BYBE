@@ -22,7 +22,8 @@ pub async fn create_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
         family TEXT NOT NULL DEFAULT '-',
         license TEXT NOT NULL DEFAULT '',
         source TEXT NOT NULL DEFAULT '',
-        remaster BOOL NOT NULL DEFAULT 0
+        remaster BOOL NOT NULL DEFAULT 0,
+        alignment TEXT NOT NULL DEFAULT NO
     )"
     )
     .execute(conn)

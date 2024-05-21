@@ -101,10 +101,9 @@ impl Creature {
             .size_filter
             .as_ref()
             .map_or(true, |size| self.core_data.essential.size == *size);
-        let alignment_pass = filters
-            .alignment_filter
-            .as_ref()
-            .map_or(true, |alignment| self.core_data.alignment == *alignment);
+        let alignment_pass = filters.alignment_filter.as_ref().map_or(true, |alignment| {
+            self.core_data.essential.alignment == *alignment
+        });
         let is_melee_pass = filters
             .is_melee_filter
             .map_or(true, |is_melee| self.core_data.derived.is_melee == is_melee);
