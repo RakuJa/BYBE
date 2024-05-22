@@ -261,7 +261,11 @@ async fn fetch_creature_core_data(
             .await?;
     cr_core.traits = fetch_creature_traits(conn, creature_id)
         .await
-        .unwrap_or_default();
+        .unwrap_or_default()
+        .iter()
+        .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.as_str().to_uppercase()))
+        .cloned()
+        .collect();
     Ok(cr_core)
 }
 
