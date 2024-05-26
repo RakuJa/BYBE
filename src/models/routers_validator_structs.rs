@@ -4,6 +4,7 @@ use crate::models::creature::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
+use crate::models::pf_version_enum::PathfinderVersionEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::IntoParams;
 use validator::Validate;
@@ -30,6 +31,7 @@ pub struct CreatureFieldFilters {
     pub is_melee_filter: Option<bool>,
     pub is_ranged_filter: Option<bool>,
     pub is_spell_caster_filter: Option<bool>,
+    pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 
 #[derive(Serialize, Deserialize, IntoParams, Validate)]
@@ -65,6 +67,7 @@ pub struct ItemFieldFilters {
     pub type_filter: Option<ItemTypeEnum>,
     pub rarity_filter: Option<RarityEnum>,
     pub size_filter: Option<SizeEnum>,
+    pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 
 #[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash)]

@@ -5,6 +5,7 @@ use crate::models::creature::creature_component::creature_spell_caster::Creature
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::routers_validator_structs::CreatureFieldFilters;
 use serde::{Deserialize, Serialize};
 
@@ -133,7 +134,11 @@ impl Creature {
                         self.core_data.derived.spell_caster_percentage >= t
                     }
                 }
-            })
+            }) && match filters.pathfinder_version.clone().unwrap_or_default() {
+                PathfinderVersionEnum::Legacy => !self.core_data.essential.remaster,
+                PathfinderVersionEnum::Remaster => self.core_data.essential.remaster,
+                PathfinderVersionEnum::Any => true,
+            }
     }
 
     fn check_creature_pass_string_filters(&self, filters: &CreatureFieldFilters) -> bool {

@@ -9,6 +9,7 @@ use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::response_data::OptionalData;
 use crate::models::routers_validator_structs::{CreatureFieldFilters, PaginatedRequest};
 use crate::AppState;
@@ -72,10 +73,9 @@ pub async fn get_creatures_passing_all_filters(
     fetch_elite: bool,
 ) -> Result<Vec<Creature>> {
     let mut creature_vec = Vec::new();
-    let empty_set = HashSet::new();
     let level_vec = key_value_filters
         .get(&CreatureFilter::Level)
-        .unwrap_or(&empty_set)
+        .unwrap_or(&HashSet::new())
         .clone();
     let modified_filters =
         prepare_filters_for_db_communication(key_value_filters, fetch_weak, fetch_elite);
@@ -123,6 +123,9 @@ pub async fn get_all_possible_values_of_filter(
         CreatureFilter::Level => runtime_fields_values.list_of_levels,
         CreatureFilter::CreatureTypes => CreatureTypeEnum::iter().map(|x| x.to_string()).collect(),
         CreatureFilter::CreatureRoles => CreatureRoleEnum::iter().map(|x| x.to_string()).collect(),
+        CreatureFilter::PathfinderVersion => PathfinderVersionEnum::iter()
+            .map(|x| x.to_string())
+            .collect(),
     };
     x.sort();
     x

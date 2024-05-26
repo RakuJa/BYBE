@@ -16,6 +16,7 @@ use crate::models::creature::creature_component::creature_extra::AbilityScores;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
 use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
+use crate::models::pf_version_enum::PathfinderVersionEnum;
 
 use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
@@ -88,7 +89,8 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             Action,
             Skill,
             CreatureRoleEnum,
-            SpellCasterEntry
+            SpellCasterEntry,
+            PathfinderVersionEnum
         ))
     )]
     struct ApiDoc;

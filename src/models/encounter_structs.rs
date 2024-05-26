@@ -3,6 +3,7 @@ use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::pf_version_enum::PathfinderVersionEnum;
 use rand::distributions::{Distribution, Standard};
 use rand::Rng;
 use serde::{Deserialize, Serialize};
@@ -36,6 +37,7 @@ pub struct RandomEncounterData {
     pub allow_elite_variants: Option<bool>,
     pub allow_weak_variants: Option<bool>,
     pub is_pwl_on: bool,
+    pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 
 #[derive(

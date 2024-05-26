@@ -27,6 +27,7 @@ pub enum CreatureFilter {
     CreatureTypes,
     #[serde(alias = "creature_roles", alias = "CREATURE_ROLE")]
     CreatureRoles,
+    PathfinderVersion,
 }
 
 impl fmt::Display for CreatureFilter {
@@ -57,13 +58,16 @@ impl fmt::Display for CreatureFilter {
                 write!(f, "traits")
             }
             CreatureFilter::CreatureTypes => {
-                write!(f, "creature_types")
+                write!(f, "cr_type")
             }
             CreatureFilter::CreatureRoles => {
                 write!(f, "creature_roles")
             }
             CreatureFilter::Alignment => {
                 write!(f, "alignment")
+            }
+            CreatureFilter::PathfinderVersion => {
+                write!(f, "remaster")
             }
             CreatureFilter::Sources => {
                 write!(f, "sources")
