@@ -1,9 +1,14 @@
 use crate::db::data_providers::generic_fetcher::MyString;
+use crate::db::data_providers::raw_query_builder::prepare_filtered_get_items;
 use crate::models::db::raw_trait::RawTrait;
+use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::routers_validator_structs::PaginatedRequest;
+use crate::models::shop_structs::ShopFilterQuery;
 use anyhow::Result;
-use sqlx::{Pool, Sqlite};
+use log::debug;
+use rand::Rng;
+use sqlx::{query_as, Pool, Sqlite};
 
 pub async fn fetch_item_by_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<Item> {
     let mut item: Item =
@@ -63,4 +68,42 @@ async fn update_items_with_traits(conn: &Pool<Sqlite>, mut items: Vec<Item>) -> 
             .collect();
     }
     items
+}
+
+pub async fn fetch_items_with_filters(
+    conn: &Pool<Sqlite>,
+    filters: &ShopFilterQuery,
+) -> Result<Vec<Item>> {
+    let result: Vec<Item> = query_as(prepare_filtered_get_items(filters).as_str())
+        .fetch_all(conn)
+        .await?;
+    let equipment: Vec<Item> = result
+        .iter()
+        .filter(|x| x.item_type == ItemTypeEnum::Equipment)
+        .cloned()
+        .collect();
+    let consumables: Vec<Item> = result
+        .iter()
+        .filter(|x| x.item_type == ItemTypeEnum::Consumable)
+        .cloned()
+        .collect();
+
+    if result.len() as i64 >= filters.n_of_consumables + filters.n_of_equipment {
+        debug!("Result vector is the correct size, no more operations needed");
+        return Ok(result);
+    }
+    debug!("Result vector is not the correct size, duplicating random elements..");
+    // We clone, otherwise we increment the probability of the same item being copied n times
+    let mut item_vec = result.clone();
+    for _ in 0..(equipment.len() as i64 - filters.n_of_equipment) {
+        if let Some(x) = equipment.get(rand::thread_rng().gen_range(0..equipment.len())) {
+            item_vec.push(x.clone());
+        }
+    }
+    for _ in 0..(consumables.len() as i64 - filters.n_of_consumables) {
+        if let Some(x) = consumables.get(rand::thread_rng().gen_range(0..consumables.len())) {
+            item_vec.push(x.clone());
+        }
+    }
+    Ok(result)
 }

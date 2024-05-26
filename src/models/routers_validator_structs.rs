@@ -5,8 +5,9 @@ use crate::models::creature::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
+use rand::Rng;
 use serde::{Deserialize, Serialize};
-use utoipa::IntoParams;
+use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
 #[derive(Serialize, Deserialize, IntoParams, Validate)]
@@ -84,5 +85,23 @@ impl Default for PaginatedRequest {
             cursor: 0,
             page_size: 100,
         }
+    }
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Validate, Eq, PartialEq, Hash, Clone)]
+pub struct Dice {
+    #[validate(range(min = 1, max = 255))]
+    pub n_of_dices: u8,
+    #[validate(range(min = 2, max = 255))]
+    pub dice_size: u8,
+}
+
+impl Dice {
+    pub fn roll(&self) -> i64 {
+        let mut roll_result = 0;
+        for _ in 0..self.n_of_dices {
+            roll_result += rand::thread_rng().gen_range(1..=self.dice_size) as i64
+        }
+        roll_result
     }
 }

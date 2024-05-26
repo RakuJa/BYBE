@@ -5,7 +5,6 @@ use crate::models::creature::creature_struct::Creature;
 use crate::models::encounter_structs::{
     EncounterChallengeEnum, EncounterParams, RandomEncounterData,
 };
-use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::response_data::ResponseCreature;
 use crate::services::encounter_handler::encounter_calculator;
 use crate::services::encounter_handler::encounter_calculator::calculate_encounter_scaling_difficulty;
@@ -266,15 +265,7 @@ fn build_filter_map(filter_enum: FilterStruct) -> HashMap<CreatureFilter, HashSe
     filter_map.insert(CreatureFilter::Level, filter_enum.lvl_combinations);
     filter_map.insert(
         CreatureFilter::PathfinderVersion,
-        HashSet::from_iter(match filter_enum.pathfinder_version {
-            // The db column is a boolean called "remaster" so we translate the enum to
-            // FALSE if legacy, TRUE if remaster and TRUE, FALSE if both
-            PathfinderVersionEnum::Legacy => vec![String::from("FALSE")].into_iter(),
-            PathfinderVersionEnum::Remaster => vec![String::from("TRUE")].into_iter(),
-            PathfinderVersionEnum::Any => {
-                vec![String::from("TRUE"), String::from("FALSE")].into_iter()
-            }
-        }),
+        HashSet::from_iter(filter_enum.pathfinder_version.to_db_value()),
     );
     filter_map
 }

@@ -1,11 +1,12 @@
 use serde::{Deserialize, Serialize};
 use sqlx::Type;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
-use strum::{Display, EnumIter};
+use strum::EnumIter;
 use utoipa::ToSchema;
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Type, EnumIter,
+    Serialize, Deserialize, ToSchema, Eq, Hash, PartialEq, Ord, PartialOrd, Type, EnumIter,
 )]
 pub enum ItemTypeEnum {
     #[serde(alias = "consumable", alias = "CONSUMABLE")]
@@ -30,6 +31,19 @@ impl FromStr for ItemTypeEnum {
             "CONSUMABLE" => Ok(ItemTypeEnum::Consumable),
             "EQUIPMENT" => Ok(ItemTypeEnum::Equipment),
             _ => Err(()),
+        }
+    }
+}
+
+impl Display for ItemTypeEnum {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ItemTypeEnum::Consumable => {
+                write!(f, "consumable")
+            }
+            ItemTypeEnum::Equipment => {
+                write!(f, "equipment")
+            }
         }
     }
 }

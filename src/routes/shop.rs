@@ -1,26 +1,39 @@
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
+use crate::models::item::item_struct::Item;
 use crate::models::response_data::ResponseItem;
+use crate::models::routers_validator_structs::Dice;
 use crate::models::routers_validator_structs::{ItemFieldFilters, PaginatedRequest};
+use crate::models::shop_structs::RandomShopData;
+use crate::models::shop_structs::ShopTypeEnum;
 use crate::services::shop_service;
 use crate::services::shop_service::ShopListingResponse;
 use crate::AppState;
 use actix_web::web::Query;
-use actix_web::{error, get, web, Responder};
+use actix_web::{error, get, post, web, Responder};
 use utoipa::OpenApi;
 
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/shop")
             .service(get_item)
-            .service(get_shop_listing),
+            .service(get_shop_listing)
+            .service(get_random_shop_listing),
     );
 }
 
 pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     #[derive(OpenApi)]
     #[openapi(
-        paths(get_shop_listing, get_item),
-        components(schemas(ResponseItem, ItemTypeEnum, ShopListingResponse))
+        paths(get_shop_listing, get_item, get_random_shop_listing),
+        components(schemas(
+            ResponseItem,
+            ItemTypeEnum,
+            ShopListingResponse,
+            Item,
+            RandomShopData,
+            Dice,
+            ShopTypeEnum
+        ))
     )]
     struct ApiDoc;
 
@@ -47,6 +60,32 @@ pub async fn get_shop_listing(
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         shop_service::get_shop_listing(&data, &filters.0, &pagination.0).await,
+    ))
+}
+
+#[utoipa::path(
+    post,
+    path = "/shop/generator",
+    tag = "shop",
+    request_body(
+        content = RandomShopData,
+        content_type = "application/json",
+    ),
+    params(
+
+    ),
+    responses(
+        (status=200, description = "Successful Response", body = RandomShopData),
+        (status=400, description = "Bad request.")
+    ),
+)]
+#[post("/generator")]
+pub async fn get_random_shop_listing(
+    data: web::Data<AppState>,
+    web::Json(body): web::Json<RandomShopData>,
+) -> actix_web::Result<impl Responder> {
+    Ok(web::Json(
+        shop_service::generate_random_shop_listing(&data, &body).await,
     ))
 }
 

@@ -3,6 +3,7 @@ use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::item::item_fields_enum::{FieldsUniqueValuesStruct, ItemField};
 use crate::models::item::item_struct::Item;
 use crate::models::routers_validator_structs::{ItemFieldFilters, PaginatedRequest};
+use crate::models::shop_structs::ShopFilterQuery;
 use crate::AppState;
 use anyhow::Result;
 use cached::proc_macro::once;
@@ -12,6 +13,13 @@ pub async fn get_item_by_id(app_state: &AppState, id: i64) -> Option<Item> {
     shop_fetcher::fetch_item_by_id(&app_state.conn, id)
         .await
         .ok()
+}
+
+pub async fn get_filtered_items(
+    app_state: &AppState,
+    filters: &ShopFilterQuery,
+) -> Result<Vec<Item>> {
+    shop_fetcher::fetch_items_with_filters(&app_state.conn, filters).await
 }
 
 pub async fn get_paginated_items(

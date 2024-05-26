@@ -11,3 +11,17 @@ pub enum PathfinderVersionEnum {
     #[default]
     Any,
 }
+
+impl PathfinderVersionEnum {
+    pub fn to_db_value(&self) -> Vec<String> {
+        match self {
+            // The db column is a boolean called "remaster" so we translate the enum to
+            // FALSE if legacy, TRUE if remaster and TRUE, FALSE if both
+            PathfinderVersionEnum::Legacy => vec![String::from("FALSE")],
+            PathfinderVersionEnum::Remaster => vec![String::from("TRUE")],
+            PathfinderVersionEnum::Any => {
+                vec![String::from("TRUE"), String::from("FALSE")]
+            }
+        }
+    }
+}

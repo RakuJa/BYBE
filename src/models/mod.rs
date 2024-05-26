@@ -6,4 +6,4 @@ pub mod pf_version_enum;
 pub mod response_data;
 pub mod routers_validator_structs;
 pub mod scales_struct;
-mod shop_structs;
+pub mod shop_structs;

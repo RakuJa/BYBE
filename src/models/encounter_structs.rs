@@ -30,7 +30,9 @@ pub struct RandomEncounterData {
     pub creature_types: Option<Vec<CreatureTypeEnum>>,
     pub creature_roles: Option<Vec<CreatureRoleEnum>>,
     pub challenge: Option<EncounterChallengeEnum>,
+    #[validate(range(min = 1, max = 30))]
     pub min_creatures: Option<u8>,
+    #[validate(range(min = 1, max = 30))]
     pub max_creatures: Option<u8>,
     #[validate(length(min = 1))]
     pub party_levels: Vec<i64>,
