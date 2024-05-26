@@ -5,6 +5,7 @@ use crate::models::creature_component::creature_spell_caster::CreatureSpellCaste
 use crate::models::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::routers_validator_structs::FieldFilters;
 use serde::{Deserialize, Serialize};
 
@@ -142,6 +143,12 @@ impl Creature {
                 }
             });
 
+        let version_pass = match filters.pathfinder_version.clone().unwrap_or_default() {
+            PathfinderVersionEnum::Legacy => !self.core_data.essential.remaster,
+            PathfinderVersionEnum::Remaster => self.core_data.essential.remaster,
+            PathfinderVersionEnum::Any => true,
+        };
+
         rarity_pass
             && size_pass
             && alignment_pass
@@ -150,6 +157,7 @@ impl Creature {
             && is_spell_caster_pass
             && type_pass
             && role_pass
+            && version_pass
     }
 
     fn check_creature_pass_string_filters(&self, filters: &FieldFilters) -> bool {

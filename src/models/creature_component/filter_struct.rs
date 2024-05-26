@@ -3,6 +3,7 @@ use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::pf_version_enum::PathfinderVersionEnum;
 use std::collections::HashSet;
 
 pub struct FilterStruct {
@@ -14,4 +15,5 @@ pub struct FilterStruct {
     pub creature_types: Option<Vec<CreatureTypeEnum>>,
     pub creature_roles: Option<Vec<CreatureRoleEnum>>,
     pub lvl_combinations: HashSet<String>,
+    pub pathfinder_version: PathfinderVersionEnum,
 }

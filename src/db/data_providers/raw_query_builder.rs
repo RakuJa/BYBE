@@ -11,6 +11,7 @@ pub fn prepare_filtered_get_creatures_core(
     for (key, value) in key_value_filters {
         match key {
             CreatureFilter::Level
+            | CreatureFilter::PathfinderVersion
             | CreatureFilter::Melee
             | CreatureFilter::Ranged
             | CreatureFilter::SpellCaster => {

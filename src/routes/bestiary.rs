@@ -1,12 +1,3 @@
-use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
-use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
-use crate::models::creature_metadata::rarity_enum::RarityEnum;
-use crate::models::creature_metadata::size_enum::SizeEnum;
-use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
-use crate::models::creature_metadata::variant_enum::CreatureVariant;
-use crate::models::response_data::OptionalData;
-use crate::models::response_data::ResponseCreature;
-
 use crate::models::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature_component::creature_combat::SavingThrows;
 use crate::models::creature_component::creature_core::CreatureCoreData;
@@ -16,6 +7,15 @@ use crate::models::creature_component::creature_extra::AbilityScores;
 use crate::models::creature_component::creature_extra::CreatureExtraData;
 use crate::models::creature_component::creature_spell_caster::CreatureSpellCasterData;
 use crate::models::creature_component::creature_variant::CreatureVariantData;
+use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
+use crate::models::creature_metadata::rarity_enum::RarityEnum;
+use crate::models::creature_metadata::size_enum::SizeEnum;
+use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::pf_version_enum::PathfinderVersionEnum;
+use crate::models::response_data::OptionalData;
+use crate::models::response_data::ResponseCreature;
 
 use crate::models::items::action::Action;
 use crate::models::items::skill::Skill;
@@ -88,7 +88,8 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             Action,
             Skill,
             CreatureRoleEnum,
-            SpellCasterEntry
+            SpellCasterEntry,
+            PathfinderVersionEnum
         ))
     )]
     struct ApiDoc;
