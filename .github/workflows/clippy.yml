@@ -1,6 +1,5 @@
-on: push
-name: Clippy check
-
+on:
+  workflow_call:
 # Make sure CI fails on all warnings, including Clippy lints
 env:
   RUSTFLAGS: "-Dwarnings"
