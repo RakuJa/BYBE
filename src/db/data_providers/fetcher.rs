@@ -1,14 +1,12 @@
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_creatures_core;
 use crate::models::creature::Creature;
 use crate::models::creature_component::creature_combat::{CreatureCombatData, SavingThrows};
-use crate::models::creature_component::creature_core::{
-    CreatureCoreData, DerivedData, EssentialData,
-};
+use crate::models::creature_component::creature_core::CreatureCoreData;
 use crate::models::creature_component::creature_extra::{AbilityScores, CreatureExtraData};
 use crate::models::creature_component::creature_spell_caster::CreatureSpellCasterData;
 use crate::models::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature_filter_enum::CreatureFilter;
-use crate::models::creature_metadata::alignment_enum::{AlignmentEnum, ALIGNMENT_TRAITS};
+use crate::models::creature_metadata::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::db::raw_immunity::RawImmunity;
 use crate::models::db::raw_language::RawLanguage;
@@ -193,12 +191,12 @@ async fn fetch_creature_perception_detail(
     )
 }
 
-async fn fetch_creature_traits(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawTrait>> {
+pub async fn fetch_creature_traits(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<String>> {
     Ok(sqlx::query_as!(
         RawTrait,
         "SELECT * FROM TRAIT_TABLE INTERSECT SELECT trait_id FROM TRAIT_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
         creature_id
-    ).fetch_all(conn).await?)
+    ).fetch_all(conn).await?.iter().map(|x| x.name.clone()).collect())
 }
 
 async fn fetch_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Weapon>> {
@@ -256,47 +254,19 @@ async fn fetch_creature_core_data(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<CreatureCoreData> {
-    let essential = fetch_creature_essential_data(conn, creature_id).await?;
-    let derived = fetch_creature_derived_data(conn, creature_id).await?;
-    let traits = fetch_creature_traits(conn, creature_id)
+    let mut cr_core: CreatureCoreData =
+        sqlx::query_as("SELECT * FROM CREATURE_CORE WHERE id = ? ORDER BY name LIMIT 1")
+            .bind(creature_id)
+            .fetch_one(conn)
+            .await?;
+    cr_core.traits = fetch_creature_traits(conn, creature_id)
         .await
-        .unwrap_or_default();
-    let is_remaster = essential.remaster;
-    Ok(CreatureCoreData {
-        essential,
-        derived,
-        traits: traits.iter().map(|x| x.name.clone()).collect(),
-        alignment: AlignmentEnum::from((&traits, is_remaster)),
-    })
-}
-
-async fn fetch_creature_essential_data(
-    conn: &Pool<Sqlite>,
-    creature_id: i64,
-) -> Result<EssentialData> {
-    Ok(sqlx::query_as!(
-        EssentialData,
-        "SELECT id, aon_id, name, hp, level, size, family, rarity,
-            license, remaster, source, cr_type
-        FROM CREATURE_CORE WHERE id = ? ORDER BY name LIMIT 1",
-        creature_id,
-    )
-    .fetch_one(conn)
-    .await?)
-}
-
-async fn fetch_creature_derived_data(conn: &Pool<Sqlite>, creature_id: i64) -> Result<DerivedData> {
-    Ok(sqlx::query_as!(
-        DerivedData,
-        "SELECT
-            archive_link, is_melee, is_ranged, is_spell_caster, brute_percentage,
-            magical_striker_percentage, skill_paragon_percentage, skirmisher_percentage,
-            sniper_percentage, soldier_percentage, spell_caster_percentage
-         FROM CREATURE_CORE WHERE id = ? ORDER BY name LIMIT 1",
-        creature_id,
-    )
-    .fetch_one(conn)
-    .await?)
+        .unwrap_or_default()
+        .iter()
+        .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.as_str().to_uppercase()))
+        .cloned()
+        .collect();
+    Ok(cr_core)
 }
 
 async fn update_creatures_core_with_traits(
@@ -304,16 +274,13 @@ async fn update_creatures_core_with_traits(
     mut creature_core_data: Vec<CreatureCoreData>,
 ) -> Vec<CreatureCoreData> {
     for core in &mut creature_core_data {
-        let traits = fetch_creature_traits(conn, core.essential.id)
+        core.traits = fetch_creature_traits(conn, core.essential.id)
             .await
-            .unwrap_or_default();
-        let is_remaster = core.essential.remaster;
-        core.traits = traits
+            .unwrap_or_default()
             .iter()
-            .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.name.as_str().to_uppercase()))
-            .map(|x| x.name.clone())
+            .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.as_str().to_uppercase()))
+            .cloned()
             .collect();
-        core.alignment = AlignmentEnum::from((&traits, is_remaster));
     }
     creature_core_data
 }

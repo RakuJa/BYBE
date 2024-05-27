@@ -21,7 +21,7 @@ build = "build/main.rs"
 unsafe_code = "forbid"
 
 [dependencies]
-actix-web = "4.5.1"
+actix-web = "4.6.0"
 actix-cors = "0.7.0"
 actix-web-validator = "5.0.1"
 # Cannot be updated until actix-web updates validator dependency

@@ -3,6 +3,7 @@ use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature_metadata::rarity_enum::RarityEnum;
 use crate::models::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::pf_version_enum::PathfinderVersionEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::IntoParams;
 use validator::Validate;
@@ -24,6 +25,7 @@ pub struct FieldFilters {
     pub is_melee_filter: Option<bool>,
     pub is_ranged_filter: Option<bool>,
     pub is_spell_caster_filter: Option<bool>,
+    pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 
 #[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash)]

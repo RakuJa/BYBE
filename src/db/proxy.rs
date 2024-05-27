@@ -75,10 +75,9 @@ pub async fn get_creatures_passing_all_filters(
     fetch_elite: bool,
 ) -> Result<Vec<Creature>> {
     let mut creature_vec = Vec::new();
-    let empty_set = HashSet::new();
     let level_vec = key_value_filters
         .get(&CreatureFilter::Level)
-        .unwrap_or(&empty_set)
+        .unwrap_or(&HashSet::new())
         .clone();
     let modified_filters =
         prepare_filters_for_db_communication(key_value_filters, fetch_weak, fetch_elite);

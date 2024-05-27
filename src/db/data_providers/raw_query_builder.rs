@@ -11,6 +11,7 @@ pub fn prepare_filtered_get_creatures_core(
     for (key, value) in key_value_filters {
         match key {
             CreatureFilter::Level
+            | CreatureFilter::PathfinderVersion
             | CreatureFilter::Melee
             | CreatureFilter::Ranged
             | CreatureFilter::SpellCaster => {
@@ -22,6 +23,7 @@ pub fn prepare_filtered_get_creatures_core(
                 )
             }
             CreatureFilter::Family
+            | CreatureFilter::Alignment
             | CreatureFilter::Size
             | CreatureFilter::Rarity
             | CreatureFilter::CreatureTypes => {
@@ -33,18 +35,23 @@ pub fn prepare_filtered_get_creatures_core(
                 )
             }
             CreatureFilter::Traits => trait_query.push_str(prepare_trait_filter(value).as_str()),
-            CreatureFilter::CreatureRoles => simple_core_query
-                .push_str(prepare_bounded_check(value, 0, ACCURACY_THRESHOLD).as_str()),
+            CreatureFilter::CreatureRoles => {
+                if !simple_core_query.is_empty() {
+                    simple_core_query.push_str(" AND ")
+                }
+                simple_core_query
+                    .push_str(prepare_bounded_check(value, ACCURACY_THRESHOLD, 100).as_str())
+            }
         }
     }
     let mut where_query = simple_core_query.to_string();
     if !trait_query.is_empty() {
-        where_query.push_str(format!("AND id IN ({trait_query})").as_str());
-    };
+        where_query.push_str(format!(" AND id IN ({trait_query}) GROUP BY cc.id").as_str())
+    }
     if !where_query.is_empty() {
         where_query = format!("WHERE {where_query}");
     }
-    let query = format!("SELECT * FROM CREATURE_CORE {where_query} ORDER BY RANDOM() LIMIT 20");
+    let query = format!("SELECT * FROM CREATURE_CORE cc {where_query} ORDER BY RANDOM() LIMIT 20");
     debug!("{}", query);
     query
 }
@@ -57,12 +64,9 @@ fn prepare_bounded_check(
     upper_bound: i64,
 ) -> String {
     let mut bounded_query = String::new();
-    if column_names.is_empty() {
-        return bounded_query;
-    }
     for column in column_names {
         if !bounded_query.is_empty() {
-            bounded_query.push_str(" AND ");
+            bounded_query.push_str(" OR ");
         }
         bounded_query.push_str(
             format!("({column} >= {lower_bound} AND {column} <= {upper_bound})").as_str(),
@@ -84,13 +88,15 @@ fn prepare_trait_filter(column_values: &HashSet<String>) -> String {
     if !in_string.is_empty() {
         let select_query = "SELECT tcat.creature_id FROM TRAIT_CREATURE_ASSOCIATION_TABLE";
         let inner_query = format!("SELECT * FROM TRAIT_TABLE tt WHERE {in_string}");
-        return format!("{select_query} tcat RIGHT JOIN ({inner_query}) jt ON tcat.trait_id = jt.name GROUP BY tcat.creature_id");
+        return format!(
+            "{select_query} tcat RIGHT JOIN ({inner_query}) jt ON tcat.trait_id = jt.name"
+        );
     }
     in_string
 }
 
 /// Prepares an 'in' statement in the following format. Assuming a string value
-/// "field in ('el1', 'el2', 'el3')"
+/// "UPPER(field) in (UPPER('el1'), UPPER('el2'), UPPER('el3'))"
 fn prepare_in_statement_for_string_type(
     column_name: &str,
     column_values: &HashSet<String>,
