@@ -114,27 +114,28 @@ impl Creature {
                 .type_filter
                 .as_ref()
                 .map_or(true, |cr_type| self.core_data.essential.cr_type == *cr_type)
-            && filters.role_threshold.is_none()
-            || filters.role_filter.as_ref().map_or(true, |cr_role| {
-                let t = filters.role_threshold.unwrap_or(0);
-                match cr_role {
-                    CreatureRoleEnum::Brute => self.core_data.derived.brute_percentage >= t,
-                    CreatureRoleEnum::MagicalStriker => {
-                        self.core_data.derived.magical_striker_percentage >= t
+            && (filters.role_threshold.is_none()
+                || filters.role_filter.as_ref().map_or(true, |cr_role| {
+                    let t = filters.role_threshold.unwrap_or(0);
+                    match cr_role {
+                        CreatureRoleEnum::Brute => self.core_data.derived.brute_percentage >= t,
+                        CreatureRoleEnum::MagicalStriker => {
+                            self.core_data.derived.magical_striker_percentage >= t
+                        }
+                        CreatureRoleEnum::SkillParagon => {
+                            self.core_data.derived.skill_paragon_percentage >= t
+                        }
+                        CreatureRoleEnum::Skirmisher => {
+                            self.core_data.derived.skirmisher_percentage >= t
+                        }
+                        CreatureRoleEnum::Sniper => self.core_data.derived.sniper_percentage >= t,
+                        CreatureRoleEnum::Soldier => self.core_data.derived.soldier_percentage >= t,
+                        CreatureRoleEnum::SpellCaster => {
+                            self.core_data.derived.spell_caster_percentage >= t
+                        }
                     }
-                    CreatureRoleEnum::SkillParagon => {
-                        self.core_data.derived.skill_paragon_percentage >= t
-                    }
-                    CreatureRoleEnum::Skirmisher => {
-                        self.core_data.derived.skirmisher_percentage >= t
-                    }
-                    CreatureRoleEnum::Sniper => self.core_data.derived.sniper_percentage >= t,
-                    CreatureRoleEnum::Soldier => self.core_data.derived.soldier_percentage >= t,
-                    CreatureRoleEnum::SpellCaster => {
-                        self.core_data.derived.spell_caster_percentage >= t
-                    }
-                }
-            }) && match filters.pathfinder_version.clone().unwrap_or_default() {
+                }))
+            && match filters.pathfinder_version.clone().unwrap_or_default() {
                 PathfinderVersionEnum::Legacy => !self.core_data.essential.remaster,
                 PathfinderVersionEnum::Remaster => self.core_data.essential.remaster,
                 PathfinderVersionEnum::Any => true,
