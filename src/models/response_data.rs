@@ -40,11 +40,11 @@ impl From<Creature> for ResponseCreature {
 
 #[derive(Serialize, Deserialize, Clone, ToSchema)]
 pub struct ResponseItem {
-    pub item: Item,
+    pub core_item: Item,
 }
 
 impl From<Item> for ResponseItem {
     fn from(value: Item) -> Self {
-        Self { item: value }
+        Self { core_item: value }
     }
 }
