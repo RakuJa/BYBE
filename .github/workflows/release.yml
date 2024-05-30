@@ -1,4 +1,7 @@
-on: [release]
+on:
+  release:
+    types:
+      - published
 
 jobs:
   changelog:
@@ -19,11 +22,36 @@ jobs:
           OUTPUT: CHANGELOG.md
           GITHUB_REPO: ${{ github.repository }}
 
-      - name: Commit
+      - name: Create Changelog Branch
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           set +e
+          git switch -c update_changelog
           git add CHANGELOG.md
-          git commit --no-verify -m "Update changelog"
-          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git master
+          git commit --no-verify -m "Update changelog after release"
+          git push -f https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git update_changelog
+
+
+      - name: Create Changelog Pull Request
+        id: cpr
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: Update changelog after release
+          committer: github-actions[bot] <41898282+github-actions[bot]@users.noreply.github.com>
+          author: ${{ github.actor }} <${{ github.actor_id }}+${{ github.actor }}@users.noreply.github.com>
+          signoff: false
+          base: master
+          branch: update_changelog
+          delete-branch: true
+          title: 'Update changelog after release'
+          body: |
+            Automatic changelog update using git cliff
+            - Auto-generated after latest release
+            :artificial_satellite: :rocket: :newspaper:
+          labels: |
+            documentation
+          assignees: RakuJa
+          reviewers: RakuJa
+          draft: false

@@ -2,8 +2,9 @@ on:
   pull_request:
     types: [opened, synchronize, edited, review_requested, ready_for_review]
 name: PR
-env:
-  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+permissions:
+  contents: read
 
 jobs:
   format:

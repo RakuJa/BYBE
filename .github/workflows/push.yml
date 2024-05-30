@@ -4,6 +4,9 @@ on:
       - "*"
 name: Push
 
+permissions:
+  contents: read
+
 jobs:
   clippy_check:
     runs-on: ubuntu-latest
