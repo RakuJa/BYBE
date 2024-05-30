@@ -97,7 +97,7 @@ pub async fn get_random_shop_listing(
         ("item_id" = String, Path, description = "id of the item to fetch")
     ),
     responses(
-        (status=200, description = "Successful Response", body = ResponseCreature),
+        (status=200, description = "Successful Response", body = ResponseItem),
         (status=400, description = "Bad request.")
     ),
 )]
