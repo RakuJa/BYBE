@@ -1,5 +1,5 @@
-on: [push, pull_request]
-name: Push on main or PR
+on: [push]
+name: Push
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
@@ -12,17 +12,14 @@ jobs:
         run: cargo clippy --all-targets --all-features
   format:
     runs-on: ubuntu-latest
-    permissions:
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@nightly
+      - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
       - uses: mbrobbel/rustfmt-check@master
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          mode: review
   changelog:
     name: Generate changelog
     runs-on: ubuntu-latest
