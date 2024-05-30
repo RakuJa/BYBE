@@ -1,6 +1,4 @@
 on: [release]
-env:
-  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 
 jobs:
   changelog:
@@ -28,4 +26,4 @@ jobs:
           set +e
           git add CHANGELOG.md
           git commit --no-verify -m "Update changelog"
-          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git ${{ env.BRANCH_NAME }}
+          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git master
