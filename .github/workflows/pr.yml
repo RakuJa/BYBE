@@ -1,6 +1,10 @@
-on: pull_request
+on:
+  pull_request:
+    types: [opened, synchronize, edited, review_requested, ready_for_review]
+name: PR
 
-name: Rustfmt
+permissions:
+  contents: read
 
 jobs:
   format:
