@@ -34,6 +34,8 @@ pub async fn get_paginated_items(
         .filter(|x| Item::is_passing_filters(x, filters))
         .collect();
 
+    let total_item_count = filtered_list.len();
+
     let curr_slice: Vec<Item> = filtered_list
         .iter()
         .skip(pagination.cursor as usize)
@@ -41,7 +43,7 @@ pub async fn get_paginated_items(
         .cloned()
         .collect();
 
-    Ok((curr_slice.len() as u32, curr_slice))
+    Ok((total_item_count as u32, curr_slice))
 }
 
 /// Gets all the items from the DB.

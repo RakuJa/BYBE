@@ -14,6 +14,7 @@ use utoipa::ToSchema;
 pub struct ShopListingResponse {
     results: Option<Vec<ResponseItem>>,
     count: usize,
+    total: usize,
     next: Option<String>,
 }
 
@@ -68,12 +69,14 @@ pub async fn generate_random_shop_listing(
                 results: Some(result.into_iter().map(ResponseItem::from).collect()),
                 count: n_of_items,
                 next: None,
+                total: n_of_items,
             }
         }
         Err(_) => ShopListingResponse {
             results: None,
             count: 0,
             next: None,
+            total: 0,
         },
     }
 }
@@ -95,16 +98,22 @@ fn convert_result_to_shop_response(
                 results: Some(item.into_iter().map(ResponseItem::from).collect()),
                 count: n_of_items,
                 next: if n_of_items >= pagination.page_size as usize {
-                    Some(shop_next_url_calculator(field_filters, pagination, res.0))
+                    Some(shop_next_url_calculator(
+                        field_filters,
+                        pagination,
+                        n_of_items as u32,
+                    ))
                 } else {
                     None
                 },
+                total: res.0 as usize,
             }
         }
         Err(_) => ShopListingResponse {
             results: None,
             count: 0,
             next: None,
+            total: 0,
         },
     }
 }
