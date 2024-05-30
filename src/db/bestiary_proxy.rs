@@ -56,6 +56,8 @@ pub async fn get_paginated_creatures(
         .filter(|x| Creature::is_passing_filters(x, filters))
         .collect();
 
+    let total_creature_count = filtered_list.len();
+
     let curr_slice: Vec<Creature> = filtered_list
         .iter()
         .skip(pagination.cursor as usize)
@@ -63,7 +65,7 @@ pub async fn get_paginated_creatures(
         .cloned()
         .collect();
 
-    Ok((curr_slice.len() as u32, curr_slice))
+    Ok((total_creature_count as u32, curr_slice))
 }
 
 pub async fn get_creatures_passing_all_filters(

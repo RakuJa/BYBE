@@ -16,6 +16,7 @@ use utoipa::ToSchema;
 pub struct BestiaryResponse {
     results: Option<Vec<ResponseCreature>>,
     count: usize,
+    total: usize,
     next: Option<String>,
 }
 
@@ -112,16 +113,18 @@ fn convert_result_to_bestiary_response(
                     Some(bestiary_next_url_calculator(
                         field_filters,
                         pagination,
-                        res.0,
+                        cr_length as u32,
                     ))
                 } else {
                     None
                 },
+                total: res.0 as usize,
             }
         }
         Err(_) => BestiaryResponse {
             results: None,
             count: 0,
+            total: 0,
             next: None,
         },
     }
