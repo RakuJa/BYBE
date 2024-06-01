@@ -16,6 +16,7 @@
 - Browse and filter a list of all creatures.
 - Balance encounters based on your party size and level.
 - Generate random encounters based on your requirements.
+- Support for both remaster and legacy content.
 - More to come...
 
 ## Requirements
@@ -28,7 +29,7 @@ Built using:
 ## Installation guide - Local
 
 1. Install [Rust](https://www.rust-lang.org/tools/install) on your machine.
-2. Populate the SQLite database.
+2. Populate the SQLite database (public release date TBA).
 3. Clone this repository:
 
 ```
