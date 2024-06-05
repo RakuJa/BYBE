@@ -3,6 +3,7 @@ use std::collections::{HashMap, HashSet};
 
 use crate::db::data_providers::creature_fetcher::fetch_traits_associated_with_creatures;
 use crate::db::data_providers::{creature_fetcher, generic_fetcher};
+use crate::models::bestiary_structs::{BestiaryPaginatedRequest, CreatureSortEnum};
 use crate::models::creature::creature_component::creature_core::CreatureCoreData;
 use crate::models::creature::creature_filter_enum::{CreatureFilter, FieldsUniqueValuesStruct};
 use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
@@ -11,7 +12,7 @@ use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::response_data::OptionalData;
-use crate::models::routers_validator_structs::{CreatureFieldFilters, PaginatedRequest};
+use crate::models::routers_validator_structs::{CreatureFieldFilters, OrderEnum};
 use crate::AppState;
 use anyhow::Result;
 use cached::proc_macro::once;
@@ -47,21 +48,69 @@ pub async fn get_elite_creature_by_id(
 pub async fn get_paginated_creatures(
     app_state: &AppState,
     filters: &CreatureFieldFilters,
-    pagination: &PaginatedRequest,
+    pagination: &BestiaryPaginatedRequest,
 ) -> Result<(u32, Vec<Creature>)> {
     let list = get_list(app_state, CreatureVariant::Base).await;
 
-    let filtered_list: Vec<Creature> = list
+    let mut filtered_list: Vec<Creature> = list
         .into_iter()
         .filter(|x| Creature::is_passing_filters(x, filters))
         .collect();
 
     let total_creature_count = filtered_list.len();
 
+    filtered_list.sort_by(|a, b| {
+        let cmp = match pagination
+            .bestiary_sort_data
+            .sort_by
+            .clone()
+            .unwrap_or_default()
+        {
+            CreatureSortEnum::Id => a.core_data.essential.id.cmp(&b.core_data.essential.id),
+            CreatureSortEnum::Name => a.core_data.essential.name.cmp(&b.core_data.essential.name),
+            CreatureSortEnum::Level => a
+                .core_data
+                .essential
+                .level
+                .cmp(&b.core_data.essential.level),
+            CreatureSortEnum::Trait => a
+                .core_data
+                .traits
+                .join(", ")
+                .cmp(&b.core_data.traits.join(", ")),
+            CreatureSortEnum::Size => a.core_data.essential.size.cmp(&b.core_data.essential.size),
+            CreatureSortEnum::Type => a
+                .core_data
+                .essential
+                .cr_type
+                .cmp(&b.core_data.essential.cr_type),
+            CreatureSortEnum::Hp => a.core_data.essential.hp.cmp(&b.core_data.essential.hp),
+            CreatureSortEnum::Rarity => a
+                .core_data
+                .essential
+                .rarity
+                .cmp(&b.core_data.essential.rarity),
+            CreatureSortEnum::Family => a
+                .core_data
+                .essential
+                .family
+                .cmp(&b.core_data.essential.family),
+        };
+        match pagination
+            .bestiary_sort_data
+            .order_by
+            .clone()
+            .unwrap_or_default()
+        {
+            OrderEnum::Ascending => cmp,
+            OrderEnum::Descending => cmp.reverse(),
+        }
+    });
+
     let curr_slice: Vec<Creature> = filtered_list
         .iter()
-        .skip(pagination.cursor as usize)
-        .take(pagination.page_size as usize)
+        .skip(pagination.paginated_request.cursor as usize)
+        .take(pagination.paginated_request.page_size as usize)
         .cloned()
         .collect();
 
@@ -182,14 +231,7 @@ async fn get_all_keys(app_state: &AppState) -> FieldsUniqueValuesStruct {
 /// It will cache the result.
 #[once(sync_writes = true, result = true)]
 async fn get_all_creatures_from_db(app_state: &AppState) -> Result<Vec<CreatureCoreData>> {
-    creature_fetcher::fetch_creatures_core_data(
-        &app_state.conn,
-        &PaginatedRequest {
-            cursor: 0,
-            page_size: -1,
-        },
-    )
-    .await
+    creature_fetcher::fetch_creatures_core_data(&app_state.conn, 0, -1).await
 }
 
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec

@@ -1,7 +1,7 @@
-use crate::models::creature::creature_metadata::rarity_enum::RarityEnum;
-use crate::models::creature::creature_metadata::size_enum::SizeEnum;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::routers_validator_structs::ItemFieldFilters;
+use crate::models::shared::rarity_enum::RarityEnum;
+use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Error, FromRow, Row};

@@ -2,8 +2,8 @@ use crate::db::shop_proxy;
 use crate::models::item::item_fields_enum::ItemField;
 use crate::models::item::item_struct::Item;
 use crate::models::response_data::ResponseItem;
-use crate::models::routers_validator_structs::{ItemFieldFilters, PaginatedRequest};
-use crate::models::shop_structs::{RandomShopData, ShopFilterQuery};
+use crate::models::routers_validator_structs::ItemFieldFilters;
+use crate::models::shop_structs::{RandomShopData, ShopFilterQuery, ShopPaginatedRequest};
 use crate::services::url_calculator::shop_next_url_calculator;
 use crate::AppState;
 use serde::{Deserialize, Serialize};
@@ -28,7 +28,7 @@ pub async fn get_item(app_state: &AppState, id: i64) -> HashMap<String, Option<R
 pub async fn get_shop_listing(
     app_state: &AppState,
     field_filter: &ItemFieldFilters,
-    pagination: &PaginatedRequest,
+    pagination: &ShopPaginatedRequest,
 ) -> ShopListingResponse {
     convert_result_to_shop_response(
         field_filter,
@@ -87,7 +87,7 @@ pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
 
 fn convert_result_to_shop_response(
     field_filters: &ItemFieldFilters,
-    pagination: &PaginatedRequest,
+    pagination: &ShopPaginatedRequest,
     result: anyhow::Result<(u32, Vec<Item>)>,
 ) -> ShopListingResponse {
     match result {
@@ -97,7 +97,7 @@ fn convert_result_to_shop_response(
             ShopListingResponse {
                 results: Some(item.into_iter().map(ResponseItem::from).collect()),
                 count: n_of_items,
-                next: if n_of_items >= pagination.page_size as usize {
+                next: if n_of_items >= pagination.paginated_request.page_size as usize {
                     Some(shop_next_url_calculator(
                         field_filters,
                         pagination,

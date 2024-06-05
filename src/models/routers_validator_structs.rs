@@ -1,12 +1,13 @@
 use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
-use crate::models::creature::creature_metadata::rarity_enum::RarityEnum;
-use crate::models::creature::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
+use crate::models::shared::rarity_enum::RarityEnum;
+use crate::models::shared::size_enum::SizeEnum;
 use rand::Rng;
 use serde::{Deserialize, Serialize};
+use strum::Display;
 use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
@@ -71,7 +72,16 @@ pub struct ItemFieldFilters {
     pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 
-#[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display)]
+pub enum OrderEnum {
+    #[default]
+    #[serde(alias = "ascending", alias = "ASCENDING")]
+    Ascending,
+    #[serde(alias = "descending", alias = "DESCENDING")]
+    Descending,
+}
+
+#[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash, ToSchema)]
 pub struct PaginatedRequest {
     #[validate(range(min = 0))]
     pub cursor: u32,

@@ -2,8 +2,8 @@ use crate::db::data_providers::{generic_fetcher, shop_fetcher};
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::item::item_fields_enum::{FieldsUniqueValuesStruct, ItemField};
 use crate::models::item::item_struct::Item;
-use crate::models::routers_validator_structs::{ItemFieldFilters, PaginatedRequest};
-use crate::models::shop_structs::ShopFilterQuery;
+use crate::models::routers_validator_structs::{ItemFieldFilters, OrderEnum};
+use crate::models::shop_structs::{ItemSortEnum, ShopFilterQuery, ShopPaginatedRequest};
 use crate::AppState;
 use anyhow::Result;
 use cached::proc_macro::once;
@@ -25,21 +25,44 @@ pub async fn get_filtered_items(
 pub async fn get_paginated_items(
     app_state: &AppState,
     filters: &ItemFieldFilters,
-    pagination: &PaginatedRequest,
+    pagination: &ShopPaginatedRequest,
 ) -> Result<(u32, Vec<Item>)> {
     let list = get_list(app_state).await;
 
-    let filtered_list: Vec<Item> = list
+    let mut filtered_list: Vec<Item> = list
         .into_iter()
         .filter(|x| Item::is_passing_filters(x, filters))
         .collect();
 
     let total_item_count = filtered_list.len();
 
+    filtered_list.sort_by(|a, b| {
+        let cmp = match pagination
+            .shop_sort_data
+            .sort_by
+            .clone()
+            .unwrap_or_default()
+        {
+            ItemSortEnum::Id => a.id.cmp(&b.id),
+            ItemSortEnum::Name => a.name.cmp(&b.name),
+            ItemSortEnum::Level => a.level.cmp(&b.level),
+            ItemSortEnum::Type => a.item_type.cmp(&b.item_type),
+        };
+        match pagination
+            .shop_sort_data
+            .order_by
+            .clone()
+            .unwrap_or_default()
+        {
+            OrderEnum::Ascending => cmp,
+            OrderEnum::Descending => cmp.reverse(),
+        }
+    });
+
     let curr_slice: Vec<Item> = filtered_list
         .iter()
-        .skip(pagination.cursor as usize)
-        .take(pagination.page_size as usize)
+        .skip(pagination.paginated_request.cursor as usize)
+        .take(pagination.paginated_request.page_size as usize)
         .cloned()
         .collect();
 
@@ -50,14 +73,7 @@ pub async fn get_paginated_items(
 /// It will cache the result.
 #[once(sync_writes = true, result = true)]
 async fn get_all_items_from_db(app_state: &AppState) -> Result<Vec<Item>> {
-    shop_fetcher::fetch_items(
-        &app_state.conn,
-        &PaginatedRequest {
-            cursor: 0,
-            page_size: -1,
-        },
-    )
-    .await
+    shop_fetcher::fetch_items(&app_state.conn, 0, -1).await
 }
 
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec

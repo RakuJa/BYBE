@@ -5,10 +5,9 @@ use crate::db::data_providers::creature_fetcher::{
 use crate::models::creature::creature_component::creature_core::EssentialData;
 use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
-use crate::models::creature::creature_metadata::rarity_enum::RarityEnum;
-use crate::models::creature::creature_metadata::size_enum::SizeEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
-use crate::models::routers_validator_structs::PaginatedRequest;
+use crate::models::shared::rarity_enum::RarityEnum;
+use crate::models::shared::size_enum::SizeEnum;
 use anyhow::{bail, Result};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Sqlite};
@@ -16,12 +15,8 @@ use sqlx::{FromRow, Pool, Sqlite};
 /// Handler for startup, first creature_core initialization. Then it shouldn't be used
 
 pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
-    let pagination = PaginatedRequest {
-        cursor: 0,
-        page_size: -1,
-    };
     let scales = fetch_creature_scales(conn).await?;
-    for cr in get_creatures_raw_essential_data(conn, &pagination).await? {
+    for cr in get_creatures_raw_essential_data(conn, 0, -1).await? {
         let traits = fetch_creature_traits(conn, cr.id).await?;
         let alignment = AlignmentEnum::from((&traits, cr.remaster));
         update_alignment_column_value(conn, alignment.to_string(), cr.id).await?;
@@ -143,7 +138,8 @@ async fn update_alignment_column_value(
 
 async fn get_creatures_raw_essential_data(
     conn: &Pool<Sqlite>,
-    paginated_request: &PaginatedRequest,
+    cursor: u32,
+    page_size: i16,
 ) -> Result<Vec<RawEssentialData>> {
     Ok(sqlx::query_as!(
         RawEssentialData,
@@ -151,8 +147,8 @@ async fn get_creatures_raw_essential_data(
             id, aon_id, name, hp, level, size, family, rarity,
             license, remaster, source, cr_type
         FROM CREATURE_TABLE ORDER BY name LIMIT ?,?",
-        paginated_request.cursor,
-        paginated_request.page_size
+        cursor,
+        page_size
     )
     .fetch_all(conn)
     .await?)

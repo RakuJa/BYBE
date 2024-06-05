@@ -1,8 +1,8 @@
 use crate::models::pf_version_enum::PathfinderVersionEnum;
-use crate::models::routers_validator_structs::Dice;
+use crate::models::routers_validator_structs::{Dice, OrderEnum, PaginatedRequest};
 use serde::{Deserialize, Serialize};
-use strum::EnumIter;
-use utoipa::ToSchema;
+use strum::{Display, EnumIter};
+use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
 #[derive(
@@ -36,4 +36,30 @@ pub struct ShopFilterQuery {
     pub n_of_equipment: i64,
     pub n_of_consumables: i64,
     pub pathfinder_version: PathfinderVersionEnum,
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display)]
+pub enum ItemSortEnum {
+    #[serde(alias = "id", alias = "ID")]
+    Id,
+    #[default]
+    #[serde(alias = "name", alias = "NAME")]
+    Name,
+    #[serde(alias = "level", alias = "LEVEL")]
+    Level,
+    #[serde(alias = "type", alias = "TYPE")]
+    Type,
+}
+
+#[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash, Default)]
+pub struct ShopSortData {
+    // Optional here for swagger, kinda bad but w/e
+    pub sort_by: Option<ItemSortEnum>,
+    pub order_by: Option<OrderEnum>,
+}
+
+#[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash)]
+pub struct ShopPaginatedRequest {
+    pub paginated_request: PaginatedRequest,
+    pub shop_sort_data: ShopSortData,
 }

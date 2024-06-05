@@ -1,4 +1,4 @@
-use crate::models::creature::creature_metadata::rarity_enum::RarityEnum;
+use crate::models::shared::rarity_enum::RarityEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 

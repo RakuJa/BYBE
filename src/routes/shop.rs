@@ -1,10 +1,11 @@
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::response_data::ResponseItem;
-use crate::models::routers_validator_structs::Dice;
-use crate::models::routers_validator_structs::{ItemFieldFilters, PaginatedRequest};
-use crate::models::shop_structs::RandomShopData;
+use crate::models::routers_validator_structs::ItemFieldFilters;
+use crate::models::routers_validator_structs::{Dice, PaginatedRequest};
 use crate::models::shop_structs::ShopTypeEnum;
+use crate::models::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
+use crate::models::shop_structs::{RandomShopData, ShopSortData};
 use crate::services::shop_service;
 use crate::services::shop_service::ShopListingResponse;
 use crate::AppState;
@@ -32,7 +33,8 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             Item,
             RandomShopData,
             Dice,
-            ShopTypeEnum
+            ShopTypeEnum,
+            ItemSortEnum,
         ))
     )]
     struct ApiDoc;
@@ -45,7 +47,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     path = "/shop/list",
     tag = "shop",
     params(
-        ItemFieldFilters, PaginatedRequest
+        ItemFieldFilters, PaginatedRequest, ShopSortData
     ),
     responses(
         (status=200, description = "Successful Response", body = ShopListingResponse),
@@ -57,9 +59,18 @@ pub async fn get_shop_listing(
     data: web::Data<AppState>,
     filters: Query<ItemFieldFilters>,
     pagination: Query<PaginatedRequest>,
+    sort_data: Query<ShopSortData>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shop_service::get_shop_listing(&data, &filters.0, &pagination.0).await,
+        shop_service::get_shop_listing(
+            &data,
+            &filters.0,
+            &ShopPaginatedRequest {
+                paginated_request: pagination.0,
+                shop_sort_data: sort_data.0,
+            },
+        )
+        .await,
     ))
 }
 

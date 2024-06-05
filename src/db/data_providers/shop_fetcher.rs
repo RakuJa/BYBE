@@ -3,7 +3,6 @@ use crate::db::data_providers::raw_query_builder::prepare_filtered_get_items;
 use crate::models::db::raw_trait::RawTrait;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_struct::Item;
-use crate::models::routers_validator_structs::PaginatedRequest;
 use crate::models::shop_structs::ShopFilterQuery;
 use anyhow::Result;
 use log::debug;
@@ -25,13 +24,10 @@ pub async fn fetch_item_by_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<Item>
     Ok(item)
 }
 
-pub async fn fetch_items(
-    conn: &Pool<Sqlite>,
-    paginated_request: &PaginatedRequest,
-) -> Result<Vec<Item>> {
+pub async fn fetch_items(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> Result<Vec<Item>> {
     let items: Vec<Item> = sqlx::query_as("SELECT * FROM ITEM_TABLE ORDER BY name LIMIT ?,?")
-        .bind(paginated_request.cursor)
-        .bind(paginated_request.page_size)
+        .bind(cursor)
+        .bind(page_size)
         .fetch_all(conn)
         .await?;
     Ok(update_items_with_traits(conn, items).await)

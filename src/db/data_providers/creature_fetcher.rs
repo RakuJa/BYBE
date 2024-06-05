@@ -26,7 +26,6 @@ use crate::models::db::raw_speed::RawSpeed;
 use crate::models::db::raw_trait::RawTrait;
 use crate::models::db::raw_weakness::RawWeakness;
 use crate::models::response_data::OptionalData;
-use crate::models::routers_validator_structs::PaginatedRequest;
 use crate::models::scales_struct::ability_scales::AbilityScales;
 use crate::models::scales_struct::ac_scales::AcScales;
 use crate::models::scales_struct::area_dmg_scales::AreaDmgScales;
@@ -352,12 +351,13 @@ pub async fn fetch_creatures_core_data_with_filters(
 /// for the search.
 pub async fn fetch_creatures_core_data(
     conn: &Pool<Sqlite>,
-    paginated_request: &PaginatedRequest,
+    cursor: u32,
+    page_size: i16,
 ) -> Result<Vec<CreatureCoreData>> {
     let cr_core: Vec<CreatureCoreData> =
         sqlx::query_as("SELECT * FROM CREATURE_CORE ORDER BY name LIMIT ?,?")
-            .bind(paginated_request.cursor)
-            .bind(paginated_request.page_size)
+            .bind(cursor)
+            .bind(page_size)
             .fetch_all(conn)
             .await?;
     Ok(update_creatures_core_with_traits(conn, cr_core).await)

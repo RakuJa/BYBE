@@ -1,28 +1,56 @@
-use crate::models::routers_validator_structs::{
-    CreatureFieldFilters, ItemFieldFilters, PaginatedRequest,
-};
+use crate::models::bestiary_structs::BestiaryPaginatedRequest;
+use crate::models::routers_validator_structs::{CreatureFieldFilters, ItemFieldFilters};
+use crate::models::shop_structs::ShopPaginatedRequest;
 
 pub fn shop_next_url_calculator(
     field_filters: &ItemFieldFilters,
-    pagination: &PaginatedRequest,
+    pagination: &ShopPaginatedRequest,
     next_cursor: u32,
 ) -> String {
     let base_url = "https://backbybe.fly.dev/bestiary/list/";
     let filter_query = shop_filter_query_calculator(field_filters);
 
-    let pagination_query = format!("&cursor={}&page_size={}", next_cursor, pagination.page_size);
+    let pagination_query = format!(
+        "&cursor={}&page_size={}&sort_by={}&order_by={}",
+        next_cursor,
+        pagination.paginated_request.page_size,
+        pagination
+            .shop_sort_data
+            .sort_by
+            .clone()
+            .unwrap_or_default(),
+        pagination
+            .shop_sort_data
+            .order_by
+            .clone()
+            .unwrap_or_default()
+    );
     format!("{}{}{}", base_url, filter_query, pagination_query)
 }
 
 pub fn bestiary_next_url_calculator(
     field_filters: &CreatureFieldFilters,
-    pagination: &PaginatedRequest,
+    pagination: &BestiaryPaginatedRequest,
     next_cursor: u32,
 ) -> String {
     let base_url = "https://backbybe.fly.dev/bestiary/list/";
     let filter_query = creature_filter_query_calculator(field_filters);
 
-    let pagination_query = format!("&cursor={}&page_size={}", next_cursor, pagination.page_size);
+    let pagination_query = format!(
+        "&cursor={}&page_size={}&sort_by={}&order_by={}",
+        next_cursor,
+        pagination.paginated_request.page_size,
+        pagination
+            .bestiary_sort_data
+            .sort_by
+            .clone()
+            .unwrap_or_default(),
+        pagination
+            .bestiary_sort_data
+            .order_by
+            .clone()
+            .unwrap_or_default()
+    );
     format!("{}{}{}", base_url, filter_query, pagination_query)
 }
 

@@ -1,10 +1,11 @@
 use crate::db::bestiary_proxy;
+use crate::models::bestiary_structs::BestiaryPaginatedRequest;
 use crate::models::creature::creature_filter_enum::CreatureFilter;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::creature::creature_struct::Creature;
 use crate::models::response_data::{OptionalData, ResponseCreature};
-use crate::models::routers_validator_structs::{CreatureFieldFilters, PaginatedRequest};
+use crate::models::routers_validator_structs::CreatureFieldFilters;
 use crate::services::url_calculator::bestiary_next_url_calculator;
 use crate::AppState;
 use anyhow::Result;
@@ -56,7 +57,7 @@ pub async fn get_weak_creature(
 pub async fn get_bestiary(
     app_state: &AppState,
     field_filter: &CreatureFieldFilters,
-    pagination: &PaginatedRequest,
+    pagination: &BestiaryPaginatedRequest,
 ) -> BestiaryResponse {
     convert_result_to_bestiary_response(
         field_filter,
@@ -99,7 +100,7 @@ pub async fn get_creature_roles_list() -> Vec<String> {
 }
 fn convert_result_to_bestiary_response(
     field_filters: &CreatureFieldFilters,
-    pagination: &PaginatedRequest,
+    pagination: &BestiaryPaginatedRequest,
     result: Result<(u32, Vec<Creature>)>,
 ) -> BestiaryResponse {
     match result {
@@ -109,7 +110,7 @@ fn convert_result_to_bestiary_response(
             BestiaryResponse {
                 results: Some(cr.into_iter().map(ResponseCreature::from).collect()),
                 count: cr_length,
-                next: if cr_length >= pagination.page_size as usize {
+                next: if cr_length >= pagination.paginated_request.page_size as usize {
                     Some(bestiary_next_url_calculator(
                         field_filters,
                         pagination,
