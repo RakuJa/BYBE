@@ -1,7 +1,10 @@
 use crate::db::data_providers::{generic_fetcher, shop_fetcher};
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::item::armor_struct::Armor;
 use crate::models::item::item_fields_enum::{FieldsUniqueValuesStruct, ItemField};
 use crate::models::item::item_struct::Item;
+use crate::models::item::weapon_struct::Weapon;
+use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::{ItemFieldFilters, OrderEnum};
 use crate::models::shop_structs::{ItemSortEnum, ShopFilterQuery, ShopPaginatedRequest};
 use crate::AppState;
@@ -9,7 +12,7 @@ use anyhow::Result;
 use cached::proc_macro::once;
 use strum::IntoEnumIterator;
 
-pub async fn get_item_by_id(app_state: &AppState, id: i64) -> Option<Item> {
+pub async fn get_item_by_id(app_state: &AppState, id: i64) -> Option<ResponseItem> {
     shop_fetcher::fetch_item_by_id(&app_state.conn, id)
         .await
         .ok()
@@ -26,12 +29,12 @@ pub async fn get_paginated_items(
     app_state: &AppState,
     filters: &ItemFieldFilters,
     pagination: &ShopPaginatedRequest,
-) -> Result<(u32, Vec<Item>)> {
+) -> Result<(u32, Vec<ResponseItem>)> {
     let list = get_list(app_state).await;
 
-    let mut filtered_list: Vec<Item> = list
+    let mut filtered_list: Vec<ResponseItem> = list
         .into_iter()
-        .filter(|x| Item::is_passing_filters(x, filters))
+        .filter(|x| Item::is_passing_filters(&x.core_item, filters))
         .collect();
 
     let total_item_count = filtered_list.len();
@@ -43,10 +46,10 @@ pub async fn get_paginated_items(
             .clone()
             .unwrap_or_default()
         {
-            ItemSortEnum::Id => a.id.cmp(&b.id),
-            ItemSortEnum::Name => a.name.cmp(&b.name),
-            ItemSortEnum::Level => a.level.cmp(&b.level),
-            ItemSortEnum::Type => a.item_type.cmp(&b.item_type),
+            ItemSortEnum::Id => a.core_item.id.cmp(&b.core_item.id),
+            ItemSortEnum::Name => a.core_item.name.cmp(&b.core_item.name),
+            ItemSortEnum::Level => a.core_item.level.cmp(&b.core_item.level),
+            ItemSortEnum::Type => a.core_item.item_type.cmp(&b.core_item.item_type),
         };
         match pagination
             .shop_sort_data
@@ -59,7 +62,7 @@ pub async fn get_paginated_items(
         }
     });
 
-    let curr_slice: Vec<Item> = filtered_list
+    let curr_slice: Vec<ResponseItem> = filtered_list
         .iter()
         .skip(pagination.paginated_request.cursor as usize)
         .take(pagination.paginated_request.page_size as usize)
@@ -70,15 +73,46 @@ pub async fn get_paginated_items(
 }
 
 /// Gets all the items from the DB.
-/// It will cache the result.
-#[once(sync_writes = true, result = true)]
 async fn get_all_items_from_db(app_state: &AppState) -> Result<Vec<Item>> {
     shop_fetcher::fetch_items(&app_state.conn, 0, -1).await
 }
 
+/// Gets all the weapons from the DB.
+async fn get_all_weapons_from_db(app_state: &AppState) -> Result<Vec<Weapon>> {
+    shop_fetcher::fetch_weapons(&app_state.conn, 0, -1).await
+}
+
+/// Gets all the armors from the DB.
+async fn get_all_armors_from_db(app_state: &AppState) -> Result<Vec<Armor>> {
+    shop_fetcher::fetch_armors(&app_state.conn, 0, -1).await
+}
+
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec
-async fn get_list(app_state: &AppState) -> Vec<Item> {
-    get_all_items_from_db(app_state).await.unwrap_or(vec![])
+#[once(sync_writes = true)]
+async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
+    let mut response_vec = Vec::new();
+    for el in get_all_items_from_db(app_state).await.unwrap_or(vec![]) {
+        response_vec.push(ResponseItem {
+            core_item: el,
+            weapon_data: None,
+            armor_data: None,
+        })
+    }
+    for el in get_all_weapons_from_db(app_state).await.unwrap_or(vec![]) {
+        response_vec.push(ResponseItem {
+            core_item: el.item_core,
+            weapon_data: Some(el.weapon_core),
+            armor_data: None,
+        })
+    }
+    for el in get_all_armors_from_db(app_state).await.unwrap_or(vec![]) {
+        response_vec.push(ResponseItem {
+            core_item: el.item_core,
+            weapon_data: None,
+            armor_data: Some(el.armor_core),
+        })
+    }
+    response_vec
 }
 
 pub async fn get_all_possible_values_of_filter(

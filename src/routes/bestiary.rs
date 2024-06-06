@@ -23,7 +23,7 @@ use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::creature::items::spell::Spell;
 use crate::models::creature::items::spell_caster_entry::SpellCasterEntry;
-use crate::models::creature::items::weapon::Weapon;
+use crate::models::item::weapon_struct::Weapon;
 
 use crate::models::bestiary_structs::CreatureSortEnum;
 use crate::models::bestiary_structs::{BestiaryPaginatedRequest, BestiarySortData};

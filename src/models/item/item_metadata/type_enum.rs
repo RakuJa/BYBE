@@ -13,6 +13,10 @@ pub enum ItemTypeEnum {
     Consumable,
     #[serde(alias = "equipment", alias = "EQUIPMENT")]
     Equipment,
+    #[serde(alias = "weapon", alias = "WEAPON")]
+    Weapon,
+    #[serde(alias = "armor", alias = "ARMOR")]
+    Armor,
 }
 
 impl Clone for ItemTypeEnum {
@@ -20,6 +24,8 @@ impl Clone for ItemTypeEnum {
         match self {
             ItemTypeEnum::Consumable => ItemTypeEnum::Consumable,
             ItemTypeEnum::Equipment => ItemTypeEnum::Equipment,
+            ItemTypeEnum::Armor => ItemTypeEnum::Armor,
+            ItemTypeEnum::Weapon => ItemTypeEnum::Weapon,
         }
     }
 }
@@ -30,6 +36,8 @@ impl FromStr for ItemTypeEnum {
         match s.to_uppercase().as_str() {
             "CONSUMABLE" => Ok(ItemTypeEnum::Consumable),
             "EQUIPMENT" => Ok(ItemTypeEnum::Equipment),
+            "WEAPON" | "MELEE" => Ok(ItemTypeEnum::Weapon),
+            "ARMOR" => Ok(ItemTypeEnum::Armor),
             _ => Err(()),
         }
     }
@@ -43,6 +51,55 @@ impl Display for ItemTypeEnum {
             }
             ItemTypeEnum::Equipment => {
                 write!(f, "equipment")
+            }
+            ItemTypeEnum::Weapon => {
+                write!(f, "weapon")
+            }
+            ItemTypeEnum::Armor => {
+                write!(f, "armor")
+            }
+        }
+    }
+}
+
+#[derive(
+    Serialize, Deserialize, ToSchema, Eq, Hash, PartialEq, Ord, PartialOrd, Type, EnumIter,
+)]
+pub enum WeaponTypeEnum {
+    #[serde(alias = "melee", alias = "MELEE")]
+    Melee,
+    #[serde(alias = "ranged", alias = "RANGED")]
+    Ranged,
+}
+
+impl Clone for WeaponTypeEnum {
+    fn clone(&self) -> WeaponTypeEnum {
+        match self {
+            WeaponTypeEnum::Ranged => WeaponTypeEnum::Ranged,
+            WeaponTypeEnum::Melee => WeaponTypeEnum::Melee,
+        }
+    }
+}
+
+impl FromStr for WeaponTypeEnum {
+    type Err = ();
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_uppercase().as_str() {
+            "RANGED" => Ok(WeaponTypeEnum::Ranged),
+            "WEAPON" | "MELEE" => Ok(WeaponTypeEnum::Melee),
+            _ => Err(()),
+        }
+    }
+}
+
+impl Display for WeaponTypeEnum {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WeaponTypeEnum::Melee => {
+                write!(f, "melee")
+            }
+            WeaponTypeEnum::Ranged => {
+                write!(f, "ranged")
             }
         }
     }

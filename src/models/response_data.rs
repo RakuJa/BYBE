@@ -4,7 +4,9 @@ use crate::models::creature::creature_component::creature_extra::CreatureExtraDa
 use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature::creature_struct::Creature;
+use crate::models::item::armor_struct::ArmorData;
 use crate::models::item::item_struct::Item;
+use crate::models::item::weapon_struct::WeaponData;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
@@ -41,10 +43,16 @@ impl From<Creature> for ResponseCreature {
 #[derive(Serialize, Deserialize, Clone, ToSchema)]
 pub struct ResponseItem {
     pub core_item: Item,
+    pub weapon_data: Option<WeaponData>,
+    pub armor_data: Option<ArmorData>,
 }
 
 impl From<Item> for ResponseItem {
     fn from(value: Item) -> Self {
-        Self { core_item: value }
+        Self {
+            core_item: value,
+            weapon_data: None,
+            armor_data: None,
+        }
     }
 }

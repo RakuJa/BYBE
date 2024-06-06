@@ -1,36 +1,159 @@
-use crate::db::data_providers::generic_fetcher::MyString;
+use crate::db::data_providers::generic_fetcher::{
+    fetch_armor_runes, fetch_item_traits, fetch_weapon_runes, MyString,
+};
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_items;
-use crate::models::db::raw_trait::RawTrait;
+use crate::models::item::armor_struct::{Armor, ArmorData};
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_struct::Item;
+use crate::models::item::weapon_struct::{Weapon, WeaponData};
+use crate::models::response_data::ResponseItem;
 use crate::models::shop_structs::ShopFilterQuery;
 use anyhow::Result;
 use log::debug;
 use rand::Rng;
 use sqlx::{query_as, Pool, Sqlite};
 
-pub async fn fetch_item_by_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<Item> {
+pub async fn fetch_item_by_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<ResponseItem> {
     let mut item: Item =
         sqlx::query_as("SELECT * FROM ITEM_TABLE WHERE id = ? ORDER BY name LIMIT 1")
             .bind(item_id)
             .fetch_one(conn)
             .await?;
-    item.traits = fetch_item_traits(conn, item_id)
-        .await
-        .unwrap_or_default()
-        .iter()
-        .map(|x| x.name.clone())
-        .collect();
-    Ok(item)
+    item.traits = fetch_item_traits(conn, item_id).await?;
+    Ok(match item.item_type {
+        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => ResponseItem::from(item),
+        ItemTypeEnum::Weapon => ResponseItem {
+            core_item: item,
+            weapon_data: fetch_weapon_data_by_item_id(conn, item_id).await.ok(),
+            armor_data: None,
+        },
+        ItemTypeEnum::Armor => ResponseItem {
+            core_item: item,
+            weapon_data: None,
+            armor_data: fetch_armor_data_by_item_id(conn, item_id).await.ok(),
+        },
+    })
+}
+
+async fn fetch_weapon_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<Weapon> {
+    let mut weapon: Weapon =
+        sqlx::query_as("
+        SELECT wt.*,
+        it.name, it.bulk, it.quantity, it.base_item, it.category, it.description, it.hardness, it.hp,
+        it.level, it.price, it.usage, it.item_group, it.item_type, it.material_grade, it.size,
+        it.material_type, it.number_of_uses, it.license, it.remaster, it.source, it.rarity
+        FROM WEAPON_TABLE wt
+        LEFT JOIN ITEM_TABLE it ON wt.base_item_id = it.id
+        WHERE wt.base_item_id = ($1)
+        ")
+            .bind(item_id)
+            .fetch_one(conn)
+            .await?;
+    weapon.item_core.traits = fetch_item_traits(conn, item_id).await?;
+    weapon.weapon_core.property_runes = fetch_weapon_runes(conn, weapon.weapon_core.id).await?;
+    Ok(weapon)
+}
+
+async fn fetch_armor_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<Armor> {
+    let mut armor: Armor =
+        sqlx::query_as("
+        SELECT at.*,
+        it.name, it.bulk, it.quantity, it.base_item, it.category, it.description, it.hardness, it.hp,
+        it.level, it.price, it.usage, it.item_group, it.item_type, it.material_grade, it.size,
+        it.material_type, it.number_of_uses, it.license, it.remaster, it.source, it.rarity
+        FROM ARMOR_TABLE at
+        LEFT JOIN ITEM_TABLE it ON at.base_item_id = it.id
+        WHERE at.base_item_id = ($1)
+        ")
+            .bind(item_id)
+            .fetch_one(conn)
+            .await?;
+    armor.item_core.traits = fetch_item_traits(conn, item_id).await?;
+    armor.armor_core.property_runes = fetch_armor_runes(conn, armor.armor_core.id).await?;
+    Ok(armor)
+}
+
+async fn fetch_weapon_data_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<WeaponData> {
+    Ok(fetch_weapon_by_item_id(conn, item_id).await?.weapon_core)
+}
+
+async fn fetch_armor_data_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<ArmorData> {
+    Ok(fetch_armor_by_item_id(conn, item_id).await?.armor_core)
 }
 
 pub async fn fetch_items(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> Result<Vec<Item>> {
-    let items: Vec<Item> = sqlx::query_as("SELECT * FROM ITEM_TABLE ORDER BY name LIMIT ?,?")
-        .bind(cursor)
-        .bind(page_size)
-        .fetch_all(conn)
-        .await?;
+    let items: Vec<Item> = sqlx::query_as(
+        "
+        SELECT * FROM ITEM_TABLE it
+        LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat
+        ON it.id = icat.item_id WHERE icat.item_id IS NULL
+        ORDER BY name LIMIT ?,?",
+    )
+    .bind(cursor)
+    .bind(page_size)
+    .fetch_all(conn)
+    .await?;
     Ok(update_items_with_traits(conn, items).await)
+}
+
+pub async fn fetch_weapons(
+    conn: &Pool<Sqlite>,
+    cursor: u32,
+    page_size: i16,
+) -> Result<Vec<Weapon>> {
+    let x: Vec<Weapon> = sqlx::query_as(
+        "
+        SELECT wt.*,
+        it.name, it.bulk, it.quantity, it.base_item, it.category, it.description, it.hardness, it.hp,
+        it.level, it.price, it.usage, it.item_group, it.item_type, it.material_grade, it.size,
+        it.material_type, it.number_of_uses, it.license, it.remaster, it.source, it.rarity
+        FROM WEAPON_TABLE wt
+        LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat
+        ON wt.base_item_id = icat.item_id
+        LEFT JOIN ITEM_TABLE it ON wt.base_item_id = it.id
+        WHERE icat.item_id IS NULL
+        ORDER BY name LIMIT ?,?
+    ",
+    )
+    .bind(cursor)
+    .bind(page_size)
+    .fetch_all(conn)
+    .await?;
+    let mut result_vec = Vec::new();
+    for mut el in x {
+        el.item_core.traits = fetch_item_traits(conn, el.item_core.id).await?;
+        el.weapon_core.property_runes = fetch_weapon_runes(conn, el.weapon_core.id).await?;
+        result_vec.push(Weapon {
+            item_core: el.item_core,
+            weapon_core: el.weapon_core,
+        })
+    }
+    Ok(result_vec)
+}
+
+pub async fn fetch_armors(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> Result<Vec<Armor>> {
+    let x: Vec<Armor> = sqlx::query_as(
+        "
+        SELECT * FROM ARMOR_TABLE at
+        LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat
+        ON at.base_item_id = acat.item_id WHERE acat.item_id IS NULL
+        ORDER BY name LIMIT ?,?
+    ",
+    )
+    .bind(cursor)
+    .bind(page_size)
+    .fetch_all(conn)
+    .await?;
+    let mut result_vec = Vec::new();
+    for mut el in x {
+        el.item_core.traits = fetch_item_traits(conn, el.item_core.id).await?;
+        el.armor_core.property_runes = fetch_armor_runes(conn, el.armor_core.id).await?;
+        result_vec.push(Armor {
+            item_core: el.item_core,
+            armor_core: el.armor_core,
+        })
+    }
+    Ok(result_vec)
 }
 
 pub async fn fetch_traits_associated_with_items(conn: &Pool<Sqlite>) -> Result<Vec<String>> {
@@ -46,22 +169,9 @@ pub async fn fetch_traits_associated_with_items(conn: &Pool<Sqlite>) -> Result<V
     Ok(x.iter().map(|x| x.my_str.clone()).collect())
 }
 
-async fn fetch_item_traits(conn: &Pool<Sqlite>, item_id: i64) -> Result<Vec<RawTrait>> {
-    Ok(sqlx::query_as!(
-        RawTrait,
-        "SELECT * FROM TRAIT_TABLE INTERSECT SELECT trait_id FROM TRAIT_ITEM_ASSOCIATION_TABLE WHERE item_id == ($1)",
-        item_id
-    ).fetch_all(conn).await?)
-}
-
 async fn update_items_with_traits(conn: &Pool<Sqlite>, mut items: Vec<Item>) -> Vec<Item> {
     for item in &mut items {
-        item.traits = fetch_item_traits(conn, item.id)
-            .await
-            .unwrap_or_default()
-            .iter()
-            .map(|x| x.name.clone())
-            .collect();
+        item.traits = fetch_item_traits(conn, item.id).await.unwrap_or(vec![]);
     }
     items
 }
@@ -70,36 +180,47 @@ pub async fn fetch_items_with_filters(
     conn: &Pool<Sqlite>,
     filters: &ShopFilterQuery,
 ) -> Result<Vec<Item>> {
-    let result: Vec<Item> = query_as(prepare_filtered_get_items(filters).as_str())
+    let items: Vec<Item> = query_as(prepare_filtered_get_items(filters).as_str())
         .fetch_all(conn)
         .await?;
-    let equipment: Vec<Item> = result
+    let equipment: Vec<&Item> = items
         .iter()
         .filter(|x| x.item_type == ItemTypeEnum::Equipment)
-        .cloned()
         .collect();
-    let consumables: Vec<Item> = result
+    let weapons: Vec<&Item> = items
+        .iter()
+        .filter(|x| x.item_type == ItemTypeEnum::Weapon)
+        .collect();
+    let armors: Vec<&Item> = items
+        .iter()
+        .filter(|x| x.item_type == ItemTypeEnum::Armor)
+        .collect();
+    let consumables: Vec<&Item> = items
         .iter()
         .filter(|x| x.item_type == ItemTypeEnum::Consumable)
-        .cloned()
         .collect();
 
-    if result.len() as i64 >= filters.n_of_consumables + filters.n_of_equipment {
+    if items.len() as i64 >= filters.n_of_consumables + filters.n_of_equipment {
         debug!("Result vector is the correct size, no more operations needed");
-        return Ok(result);
+        return Ok(items);
     }
     debug!("Result vector is not the correct size, duplicating random elements..");
     // We clone, otherwise we increment the probability of the same item being copied n times
-    let mut item_vec = result.clone();
-    for _ in 0..(equipment.len() as i64 - filters.n_of_equipment) {
-        if let Some(x) = equipment.get(rand::thread_rng().gen_range(0..equipment.len())) {
-            item_vec.push(x.clone());
+    let mut item_vec = fill_item_vec_to_len(&equipment, filters.n_of_equipment);
+
+    item_vec.extend(fill_item_vec_to_len(&consumables, filters.n_of_consumables));
+    item_vec.extend(fill_item_vec_to_len(&weapons, filters.n_of_weapons));
+    item_vec.extend(fill_item_vec_to_len(&armors, filters.n_of_armors));
+
+    Ok(items)
+}
+
+fn fill_item_vec_to_len(item_vec: &[&Item], desired_len: i64) -> Vec<Item> {
+    let mut og_vec: Vec<Item> = item_vec.iter().map(|x| (*x).clone()).collect();
+    for _ in 0..(item_vec.len() as i64 - desired_len) {
+        if let Some(x) = item_vec.get(rand::thread_rng().gen_range(0..item_vec.len())) {
+            og_vec.push((*x).clone());
         }
     }
-    for _ in 0..(consumables.len() as i64 - filters.n_of_consumables) {
-        if let Some(x) = consumables.get(rand::thread_rng().gen_range(0..consumables.len())) {
-            item_vec.push(x.clone());
-        }
-    }
-    Ok(result)
+    og_vec
 }

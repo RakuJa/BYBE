@@ -27,8 +27,23 @@ pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String
         max_level,
         &supported_pf_versions,
     );
+    let weapon_query = prepare_item_subquery(
+        &ItemTypeEnum::Weapon,
+        n_of_equipment,
+        min_level,
+        max_level,
+        &supported_pf_versions,
+    );
+    let armor_query = prepare_item_subquery(
+        &ItemTypeEnum::Armor,
+        n_of_equipment,
+        min_level,
+        max_level,
+        &supported_pf_versions,
+    );
     let query = format!(
-        "SELECT * FROM ITEM_TABLE WHERE id IN ( {equipment_query} ) OR id IN ({consumable_query} )"
+        "SELECT * FROM ITEM_TABLE WHERE id IN ( {equipment_query} ) OR id IN ({consumable_query} )
+        OR id IN ({weapon_query} ) OR id IN ({armor_query} )"
     );
     debug!("{}", query);
     query
@@ -184,9 +199,17 @@ fn prepare_item_subquery(
     let initial_statement = "SELECT id FROM ITEM_TABLE";
     let filter_by_version = prepare_in_statement_for_generic_type("remaster", supported_pf_version);
     let filter_by_level = prepare_bounded_check(&String::from("level"), min_level, max_level);
-    format!("{initial_statement} WHERE {filter_by_level} AND {filter_by_version} AND id IN ( {item_type_query} ) ORDER BY RANDOM() LIMIT {n_of_item}")
+    format!(
+        "{initial_statement} WHERE {filter_by_level} AND {filter_by_version}
+         AND id IN ( {item_type_query} ) ORDER BY RANDOM() LIMIT {n_of_item}"
+    )
 }
 
 fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum) -> String {
-    format!("SELECT id FROM ITEM_TABLE WHERE UPPER(item_type) = UPPER('{item_type}')")
+    format!(
+        "SELECT id FROM ITEM_TABLE it
+     LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat ON it.id = icat.item_id
+     WHERE icat.item_id IS NULL
+     AND UPPER(item_type) = UPPER('{item_type}')"
+    )
 }

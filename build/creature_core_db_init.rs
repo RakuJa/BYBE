@@ -46,14 +46,25 @@ async fn create_temporary_table(conn: &Pool<Sqlite>) -> Result<()> {
         ct.license,
         ct.source,
         ct.remaster,
-        CASE WHEN wt.creature_id IS NOT NULL AND UPPER(wt.wp_type)='MELEE' THEN TRUE ELSE FALSE END AS is_melee,
-        CASE WHEN wt.creature_id IS NOT NULL AND UPPER(wt.wp_type)='RANGED' THEN TRUE ELSE FALSE END AS is_ranged,
+      	CASE WHEN ct.id IN (
+      		SELECT creature_id FROM (
+      			SELECT wcat.creature_id, base_item_id FROM ITEM_CREATURE_ASSOCIATION_TABLE wcat LEFT JOIN (
+      				SELECT * FROM WEAPON_TABLE w1 WHERE UPPER(w1.weapon_type) = 'MELEE'
+      			) wt ON base_item_id = wcat.item_id
+      		)
+  		) THEN TRUE ELSE FALSE END AS is_melee,
+  		      	CASE WHEN ct.id IN (
+      		SELECT creature_id FROM (
+      			SELECT wcat.creature_id, base_item_id FROM ITEM_CREATURE_ASSOCIATION_TABLE wcat LEFT JOIN (
+      				SELECT * FROM WEAPON_TABLE w1 WHERE UPPER(w1.weapon_type) = 'RANGED'
+      			) wt ON base_item_id = wcat.item_id
+      		)
+  		) THEN TRUE ELSE FALSE END AS is_ranged,
         CASE WHEN st.creature_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_spell_caster,
         CASE WHEN ct.aon_id IS NOT NULL THEN CONCAT('https://2e.aonprd.com/', CAST(UPPER(COALESCE(UPPER(ct.cr_type) , 'MONSTER')) AS TEXT), 's' , '.aspx?ID=', CAST(ct.aon_id AS TEXT)) ELSE NULL END AS archive_link,
         COALESCE(ct.cr_type , 'Monster') AS cr_type,
         COALESCE(ct.family , '-') AS family
         FROM CREATURE_TABLE ct
-        LEFT JOIN WEAPON_TABLE wt ON ct.id = wt.creature_id
         LEFT JOIN SPELL_TABLE st ON ct.id = st.creature_id
         GROUP BY ct.id;
     "

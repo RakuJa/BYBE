@@ -17,14 +17,14 @@ use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::creature::items::spell::Spell;
 use crate::models::creature::items::spell_caster_entry::SpellCasterEntry;
-use crate::models::creature::items::weapon::Weapon;
 use crate::models::db::raw_immunity::RawImmunity;
 use crate::models::db::raw_language::RawLanguage;
 use crate::models::db::raw_resistance::RawResistance;
 use crate::models::db::raw_sense::RawSense;
 use crate::models::db::raw_speed::RawSpeed;
-use crate::models::db::raw_trait::RawTrait;
 use crate::models::db::raw_weakness::RawWeakness;
+use crate::models::item::item_struct::Item;
+use crate::models::item::weapon_struct::Weapon;
 use crate::models::response_data::OptionalData;
 use crate::models::scales_struct::ability_scales::AbilityScales;
 use crate::models::scales_struct::ac_scales::AcScales;
@@ -197,20 +197,39 @@ async fn fetch_creature_perception_detail(
 
 pub async fn fetch_creature_traits(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<String>> {
     Ok(sqlx::query_as!(
-        RawTrait,
-        "SELECT * FROM TRAIT_TABLE INTERSECT SELECT trait_id FROM TRAIT_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
+        MyString,
+        "SELECT name AS my_str FROM TRAIT_TABLE INTERSECT SELECT trait_id FROM TRAIT_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
         creature_id
-    ).fetch_all(conn).await?.iter().map(|x| x.name.clone()).collect())
+    ).fetch_all(conn).await?.into_iter().map(|x| x.my_str).collect())
 }
 
 async fn fetch_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Weapon>> {
-    Ok(sqlx::query_as!(
-        Weapon,
-        "SELECT * FROM WEAPON_TABLE WHERE creature_id == ($1)",
-        creature_id
+    let weapons: Vec<Weapon> = sqlx::query_as("
+        SELECT wt.*,
+        it.name, it.bulk, it.quantity, it.base_item, it.category, it.description, it.hardness, it.hp,
+        it.level, it.price, it.usage, it.item_group, it.item_type, it.material_grade, it.size,
+        it.material_type, it.number_of_uses, it.license, it.remaster, it.source, it.rarity
+        FROM WEAPON_TABLE wt LEFT JOIN ITEM_TABLE it ON it.id = wt.base_item_id
+        WHERE base_item_id IN (
+            SELECT item_id FROM ITEM_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)
+        )",
     )
+    .bind(creature_id)
     .fetch_all(conn)
-    .await?)
+    .await?;
+    Ok(weapons)
+}
+
+async fn fetch_creature_items(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Item>> {
+    let items: Vec<Item> = sqlx::query_as(
+        "SELECT * FROM ITEM_TABLE WHERE id IN (
+            SELECT item_id FROM ITEM_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)
+        )",
+    )
+    .bind(creature_id)
+    .fetch_all(conn)
+    .await?;
+    Ok(items)
 }
 
 async fn fetch_creature_actions(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Action>> {
@@ -367,6 +386,9 @@ pub async fn fetch_creature_extra_data(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<CreatureExtraData> {
+    let items = fetch_creature_items(conn, creature_id)
+        .await
+        .unwrap_or_default();
     let actions = fetch_creature_actions(conn, creature_id)
         .await
         .unwrap_or_default();
@@ -392,6 +414,7 @@ pub async fn fetch_creature_extra_data(
     Ok(CreatureExtraData {
         actions,
         skills,
+        items,
         languages: languages.iter().map(|x| x.name.clone()).collect(),
         senses: senses.iter().map(|x| x.name.clone()).collect(),
         speeds: speeds

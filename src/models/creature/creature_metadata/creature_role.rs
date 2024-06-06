@@ -2,6 +2,7 @@ use crate::models::creature::creature_component::creature_combat::CreatureCombat
 use crate::models::creature::creature_component::creature_core::EssentialData;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
 use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::scales_struct::creature_scales::CreatureScales;
 use num_traits::float::FloatConst;
 use regex::Regex;
@@ -163,12 +164,14 @@ fn is_brute(
         .filter(|wp| wp.get_avg_dmg().is_some())
         .map(|wp| {
             let avg_dmg = wp.get_avg_dmg().unwrap();
-            let x = calculate_lb_distance(atk_bonus_scales.high, wp.to_hit_bonus)
-                + calculate_lb_distance(scales_high_avg, avg_dmg);
+            let x = calculate_lb_distance(
+                atk_bonus_scales.high,
+                wp.weapon_core.to_hit_bonus.unwrap_or(0),
+            ) + calculate_lb_distance(scales_high_avg, avg_dmg);
             let y = calculate_dist(
                 atk_bonus_scales.moderate,
                 atk_bonus_scales.high,
-                wp.to_hit_bonus,
+                wp.weapon_core.to_hit_bonus.unwrap_or(0),
             ) + calculate_lb_distance(scales_extreme_avg, avg_dmg);
             x.min(y)
         })
@@ -216,11 +219,15 @@ fn is_sniper(
     let wp_distance = cr_combat
         .weapons
         .iter()
-        .filter(|wp| wp.get_avg_dmg().is_some() && wp.wp_type.to_uppercase() == "RANGED")
+        .filter(|wp| {
+            wp.get_avg_dmg().is_some() && wp.weapon_core.weapon_type == WeaponTypeEnum::Ranged
+        })
         .map(|wp| {
             let avg_dmg = wp.get_avg_dmg().unwrap();
-            calculate_lb_distance(atk_bonus_scales.high, wp.to_hit_bonus)
-                + calculate_lb_distance(scales_mod_avg, avg_dmg)
+            calculate_lb_distance(
+                atk_bonus_scales.high,
+                wp.weapon_core.to_hit_bonus.unwrap_or(0),
+            ) + calculate_lb_distance(scales_mod_avg, avg_dmg)
         })
         .min();
     score += wp_distance.unwrap_or(MISSING_FIELD_DISTANCE);
@@ -289,8 +296,10 @@ pub fn is_soldier(
         .iter()
         .filter(|wp| wp.get_avg_dmg().is_some())
         .map(|wp| {
-            calculate_lb_distance(atk_bonus_scales.high, wp.to_hit_bonus)
-                + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
+            calculate_lb_distance(
+                atk_bonus_scales.high,
+                wp.weapon_core.to_hit_bonus.unwrap_or(0),
+            ) + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
         })
         .min();
 
@@ -335,8 +344,10 @@ pub fn is_magical_striker(
         .iter()
         .filter(|wp| wp.get_avg_dmg().is_some())
         .map(|wp| {
-            calculate_lb_distance(atk_bonus_scales.high, wp.to_hit_bonus)
-                + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
+            calculate_lb_distance(
+                atk_bonus_scales.high,
+                wp.weapon_core.to_hit_bonus.unwrap_or(0),
+            ) + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
         })
         .min();
     score += wp_distance.unwrap_or(MISSING_FIELD_DISTANCE);

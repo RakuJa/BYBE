@@ -2,24 +2,28 @@ use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
+use ordered_float::OrderedFloat;
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Error, FromRow, Row};
 use std::str::FromStr;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Hash, Eq, PartialEq)]
 pub struct Item {
     pub id: i64,
     pub name: String,
-    pub bulk: f64,
+    pub bulk: OrderedFloat<f64>,
+    pub quantity: i64,
+    pub base_item: Option<String>,
     pub category: Option<String>,
     pub description: String,
     pub hardness: i64,
     pub hp: i64,
     pub level: i64,
     pub price: i64, // in cp,
-    pub usage: String,
+    pub usage: Option<String>,
+    pub group: Option<String>,
     pub item_type: ItemTypeEnum,
     pub material_grade: Option<String>,
     pub material_type: Option<String>,
@@ -40,10 +44,13 @@ impl<'r> FromRow<'r, SqliteRow> for Item {
         let rarity: String = row.try_get("rarity")?;
         let size: String = row.try_get("size")?;
         let type_str: String = row.try_get("item_type")?;
+        let bulk: f64 = row.try_get("bulk")?;
         Ok(Item {
             id: row.try_get("id")?,
             name: row.try_get("name")?,
-            bulk: row.try_get("bulk")?,
+            bulk: OrderedFloat::from(bulk),
+            quantity: row.try_get("quantity")?,
+            base_item: row.try_get("base_item")?,
             category: row.try_get("category").ok(),
             description: row.try_get("description")?,
             hardness: row.try_get("hardness")?,
@@ -61,6 +68,7 @@ impl<'r> FromRow<'r, SqliteRow> for Item {
             traits: vec![],
             usage: row.try_get("usage")?,
             number_of_uses: row.try_get("number_of_uses").ok(),
+            group: row.try_get("item_group")?,
         })
     }
 }
@@ -76,7 +84,7 @@ impl Item {
     fn check_item_pass_ub_filters(&self, filters: &ItemFieldFilters) -> bool {
         filters
             .max_bulk_filter
-            .map_or(true, |max_bulk| self.bulk <= max_bulk)
+            .map_or(true, |max_bulk| self.bulk <= OrderedFloat(max_bulk))
             && filters
                 .max_hardness_filter
                 .map_or(true, |max_hard| self.hardness <= max_hard)
@@ -101,7 +109,7 @@ impl Item {
     fn check_item_pass_lb_filters(&self, filters: &ItemFieldFilters) -> bool {
         filters
             .min_bulk_filter
-            .map_or(true, |min_bulk| self.bulk >= min_bulk)
+            .map_or(true, |min_bulk| self.bulk >= OrderedFloat(min_bulk))
             && filters
                 .min_hardness_filter
                 .map_or(true, |min_hard| self.hardness >= min_hard)

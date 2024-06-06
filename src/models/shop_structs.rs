@@ -35,6 +35,8 @@ pub struct ShopFilterQuery {
     pub max_level: u8,
     pub n_of_equipment: i64,
     pub n_of_consumables: i64,
+    pub n_of_weapons: i64,
+    pub n_of_armors: i64,
     pub pathfinder_version: PathfinderVersionEnum,
 }
 

@@ -1,11 +1,13 @@
 use crate::db::shop_proxy;
 use crate::models::item::item_fields_enum::ItemField;
-use crate::models::item::item_struct::Item;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::ItemFieldFilters;
-use crate::models::shop_structs::{RandomShopData, ShopFilterQuery, ShopPaginatedRequest};
+use crate::models::shop_structs::{
+    RandomShopData, ShopFilterQuery, ShopPaginatedRequest, ShopTypeEnum,
+};
 use crate::services::url_calculator::shop_next_url_calculator;
 use crate::AppState;
+use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use utoipa::ToSchema;
@@ -21,7 +23,7 @@ pub struct ShopListingResponse {
 pub async fn get_item(app_state: &AppState, id: i64) -> HashMap<String, Option<ResponseItem>> {
     hashmap! {
         String::from("results") =>
-        shop_proxy::get_item_by_id(app_state, id).await.map(ResponseItem::from)
+        shop_proxy::get_item_by_id(app_state, id).await
     }
 }
 
@@ -44,20 +46,44 @@ pub async fn generate_random_shop_listing(
     let min_level = shop_data.min_level.unwrap_or(0);
     let max_level = shop_data.max_level.unwrap_or(30);
 
-    let _shop_type = shop_data.shop_type.clone().unwrap_or_default();
+    let shop_type = shop_data.shop_type.clone().unwrap_or_default();
     let n_of_consumables: i64 = shop_data.consumable_dices.iter().map(|x| x.roll()).sum();
-    let n_of_equipment: i64 = shop_data.equipment_dices.iter().map(|x| x.roll()).sum();
+    let n_of_equipables: i64 = shop_data.equipment_dices.iter().map(|x| x.roll()).sum();
+    let (n_of_equipment, n_of_armors, n_of_weapons) = match shop_type {
+        ShopTypeEnum::Blacksmith => {
+            let n_of_forged_items = thread_rng().gen_range((n_of_equipables / 2)..=n_of_equipables);
+            let n_of_weapons = thread_rng().gen_range(0..=n_of_forged_items);
+            let n_of_armors = n_of_forged_items - n_of_weapons;
+            (
+                n_of_equipables - n_of_forged_items,
+                n_of_weapons,
+                n_of_armors,
+            )
+        }
+        ShopTypeEnum::Alchemist => (n_of_equipables, 0, 0),
+        ShopTypeEnum::General => {
+            let n_of_forged_items = thread_rng().gen_range(0..=n_of_equipables / 2);
+            let n_of_weapons = thread_rng().gen_range(0..=n_of_forged_items);
+            let n_of_armors = n_of_forged_items - n_of_weapons;
+            (
+                n_of_equipables - n_of_forged_items,
+                n_of_weapons,
+                n_of_armors,
+            )
+        }
+    };
 
     let pathfinder_version = shop_data.pathfinder_version.clone().unwrap_or_default();
 
     match shop_proxy::get_filtered_items(
         app_state,
         &ShopFilterQuery {
-            //shop_type,
             min_level,
             max_level,
             n_of_equipment,
             n_of_consumables,
+            n_of_weapons,
+            n_of_armors,
             pathfinder_version,
         },
     )
@@ -88,14 +114,14 @@ pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
 fn convert_result_to_shop_response(
     field_filters: &ItemFieldFilters,
     pagination: &ShopPaginatedRequest,
-    result: anyhow::Result<(u32, Vec<Item>)>,
+    result: anyhow::Result<(u32, Vec<ResponseItem>)>,
 ) -> ShopListingResponse {
     match result {
         Ok(res) => {
-            let item: Vec<Item> = res.1;
+            let item: Vec<ResponseItem> = res.1;
             let n_of_items = item.len();
             ShopListingResponse {
-                results: Some(item.into_iter().map(ResponseItem::from).collect()),
+                results: Some(item),
                 count: n_of_items,
                 next: if n_of_items >= pagination.paginated_request.page_size as usize {
                     Some(shop_next_url_calculator(

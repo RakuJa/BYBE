@@ -1,4 +1,4 @@
-use crate::models::creature::items::weapon::Weapon;
+use crate::models::item::weapon_struct::Weapon;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
