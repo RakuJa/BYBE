@@ -86,7 +86,7 @@ pub async fn get_shop_listing(
 
     ),
     responses(
-        (status=200, description = "Successful Response", body = RandomShopData),
+        (status=200, description = "Successful Response", body = ShopListingResponse),
         (status=400, description = "Bad request.")
     ),
 )]
