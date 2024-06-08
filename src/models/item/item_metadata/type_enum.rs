@@ -36,7 +36,7 @@ impl FromStr for ItemTypeEnum {
         match s.to_uppercase().as_str() {
             "CONSUMABLE" => Ok(ItemTypeEnum::Consumable),
             "EQUIPMENT" => Ok(ItemTypeEnum::Equipment),
-            "WEAPON" | "MELEE" => Ok(ItemTypeEnum::Weapon),
+            "WEAPON" => Ok(ItemTypeEnum::Weapon),
             "ARMOR" => Ok(ItemTypeEnum::Armor),
             _ => Err(()),
         }
@@ -70,6 +70,8 @@ pub enum WeaponTypeEnum {
     Melee,
     #[serde(alias = "ranged", alias = "RANGED")]
     Ranged,
+    #[serde(alias = "generic", alias = "GENERIC")]
+    Generic,
 }
 
 impl Clone for WeaponTypeEnum {
@@ -77,6 +79,7 @@ impl Clone for WeaponTypeEnum {
         match self {
             WeaponTypeEnum::Ranged => WeaponTypeEnum::Ranged,
             WeaponTypeEnum::Melee => WeaponTypeEnum::Melee,
+            WeaponTypeEnum::Generic => WeaponTypeEnum::Generic,
         }
     }
 }
@@ -86,7 +89,8 @@ impl FromStr for WeaponTypeEnum {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
             "RANGED" => Ok(WeaponTypeEnum::Ranged),
-            "WEAPON" | "MELEE" => Ok(WeaponTypeEnum::Melee),
+            "MELEE" => Ok(WeaponTypeEnum::Melee),
+            "GENERIC" => Ok(WeaponTypeEnum::Generic),
             _ => Err(()),
         }
     }
@@ -100,6 +104,9 @@ impl Display for WeaponTypeEnum {
             }
             WeaponTypeEnum::Ranged => {
                 write!(f, "ranged")
+            }
+            WeaponTypeEnum::Generic => {
+                write!(f, "generic")
             }
         }
     }

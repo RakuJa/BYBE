@@ -23,6 +23,7 @@ use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::creature::items::spell::Spell;
 use crate::models::creature::items::spell_caster_entry::SpellCasterEntry;
+use crate::models::item::armor_struct::Armor;
 use crate::models::item::weapon_struct::Weapon;
 
 use crate::models::bestiary_structs::CreatureSortEnum;
@@ -87,6 +88,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             CreatureSpellCasterData,
             Spell,
             Weapon,
+            Armor,
             SavingThrows,
             AbilityScores,
             Action,

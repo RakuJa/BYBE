@@ -62,7 +62,7 @@ pub async fn generate_random_shop_listing(
         }
         ShopTypeEnum::Alchemist => (n_of_equipables, 0, 0),
         ShopTypeEnum::General => {
-            let n_of_forged_items = thread_rng().gen_range(0..=n_of_equipables / 2);
+            let n_of_forged_items = thread_rng().gen_range(0..=(n_of_equipables / 2));
             let n_of_weapons = thread_rng().gen_range(0..=n_of_forged_items);
             let n_of_armors = n_of_forged_items - n_of_weapons;
             (

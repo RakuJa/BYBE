@@ -1,4 +1,4 @@
-use crate::db::data_providers::generic_fetcher::MyString;
+use crate::db::data_providers::generic_fetcher::{fetch_armor_runes, fetch_weapon_runes, MyString};
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_creatures_core;
 use crate::models::creature::creature_component::creature_combat::{
     CreatureCombatData, SavingThrows,
@@ -23,6 +23,7 @@ use crate::models::db::raw_resistance::RawResistance;
 use crate::models::db::raw_sense::RawSense;
 use crate::models::db::raw_speed::RawSpeed;
 use crate::models::db::raw_weakness::RawWeakness;
+use crate::models::item::armor_struct::Armor;
 use crate::models::item::item_struct::Item;
 use crate::models::item::weapon_struct::Weapon;
 use crate::models::response_data::OptionalData;
@@ -204,27 +205,68 @@ pub async fn fetch_creature_traits(conn: &Pool<Sqlite>, creature_id: i64) -> Res
 }
 
 async fn fetch_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Weapon>> {
-    let weapons: Vec<Weapon> = sqlx::query_as("
-        SELECT wt.*,
-        it.name, it.bulk, it.quantity, it.base_item, it.category, it.description, it.hardness, it.hp,
-        it.level, it.price, it.usage, it.item_group, it.item_type, it.material_grade, it.size,
-        it.material_type, it.number_of_uses, it.license, it.remaster, it.source, it.rarity
+    let weapons: Vec<Weapon> = sqlx::query_as(
+        "
+        SELECT wt.id AS weapon_id, wt.bonus_dmg, wt.to_hit_bonus, wt.dmg_type,
+        wt.number_of_dice, wt.die_size, wt.splash_dmg, wt.n_of_potency_runes,
+        wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
+        it.*
         FROM WEAPON_TABLE wt LEFT JOIN ITEM_TABLE it ON it.id = wt.base_item_id
         WHERE base_item_id IN (
             SELECT item_id FROM ITEM_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)
-        )",
+        )
+        GROUP BY it.id
+        ORDER BY name
+        ",
     )
     .bind(creature_id)
     .fetch_all(conn)
     .await?;
-    Ok(weapons)
+    let mut result_vec = Vec::new();
+    for mut el in weapons {
+        el.weapon_data.property_runes = fetch_weapon_runes(conn, el.weapon_data.id)
+            .await
+            .unwrap_or(vec![]);
+        result_vec.push(el)
+    }
+    Ok(result_vec)
+}
+
+async fn fetch_creature_armors(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Armor>> {
+    let armors: Vec<Armor> = sqlx::query_as(
+        "
+        SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
+        at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id,
+        it.*
+        FROM ARMOR_TABLE at LEFT JOIN ITEM_TABLE it ON it.id = at.base_item_id
+        WHERE base_item_id IN (
+            SELECT item_id FROM ITEM_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)
+        )
+        GROUP BY it.id
+        ORDER BY name
+        ",
+    )
+    .bind(creature_id)
+    .fetch_all(conn)
+    .await?;
+    let mut result_vec = Vec::new();
+    for mut el in armors {
+        el.armor_data.property_runes = fetch_armor_runes(conn, el.armor_data.id)
+            .await
+            .unwrap_or(vec![]);
+        result_vec.push(el)
+    }
+    Ok(result_vec)
 }
 
 async fn fetch_creature_items(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Item>> {
     let items: Vec<Item> = sqlx::query_as(
         "SELECT * FROM ITEM_TABLE WHERE id IN (
             SELECT item_id FROM ITEM_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)
-        )",
+            )
+            AND id NOT IN (SELECT base_item_id FROM ARMOR_TABLE)
+            AND id NOT IN (SELECT base_item_id FROM WEAPON_TABLE)
+            ",
     )
     .bind(creature_id)
     .fetch_all(conn)
@@ -437,6 +479,9 @@ pub async fn fetch_creature_combat_data(
     let weapons = fetch_creature_weapons(conn, creature_id)
         .await
         .unwrap_or_default();
+    let armors = fetch_creature_armors(conn, creature_id)
+        .await
+        .unwrap_or_default();
     let resistances = fetch_creature_resistances(conn, creature_id)
         .await
         .unwrap_or_default();
@@ -450,6 +495,7 @@ pub async fn fetch_creature_combat_data(
     let creature_ac = fetch_creature_ac(conn, creature_id).await?;
     Ok(CreatureCombatData {
         weapons,
+        armors,
         resistances: resistances
             .iter()
             .map(|x| (x.name.clone(), x.value as i16))

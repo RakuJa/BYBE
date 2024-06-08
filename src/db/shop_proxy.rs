@@ -101,7 +101,7 @@ async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
     for el in get_all_weapons_from_db(app_state).await.unwrap_or(vec![]) {
         response_vec.push(ResponseItem {
             core_item: el.item_core,
-            weapon_data: Some(el.weapon_core),
+            weapon_data: Some(el.weapon_data),
             armor_data: None,
         })
     }
@@ -109,7 +109,7 @@ async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
         response_vec.push(ResponseItem {
             core_item: el.item_core,
             weapon_data: None,
-            armor_data: Some(el.armor_core),
+            armor_data: Some(el.armor_data),
         })
     }
     response_vec

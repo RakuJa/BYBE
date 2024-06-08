@@ -1,5 +1,8 @@
+use crate::models::item::armor_struct::ArmorData;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
+use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::item::item_struct::Item;
+use crate::models::item::weapon_struct::WeaponData;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::routers_validator_structs::{Dice, PaginatedRequest};
@@ -35,6 +38,9 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             Dice,
             ShopTypeEnum,
             ItemSortEnum,
+            WeaponData,
+            ArmorData,
+            WeaponTypeEnum
         ))
     )]
     struct ApiDoc;

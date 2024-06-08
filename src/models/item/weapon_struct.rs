@@ -9,7 +9,7 @@ use utoipa::ToSchema;
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct Weapon {
     pub item_core: Item,
-    pub weapon_core: WeaponData,
+    pub weapon_data: WeaponData,
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
@@ -35,8 +35,8 @@ impl<'r> FromRow<'r, SqliteRow> for Weapon {
         let wp_type = WeaponTypeEnum::from_str(row.try_get("weapon_type")?);
         Ok(Weapon {
             item_core,
-            weapon_core: WeaponData {
-                id: row.try_get("id")?,
+            weapon_data: WeaponData {
+                id: row.try_get("weapon_id")?,
                 bonus_dmg: row.try_get("bonus_dmg")?,
                 to_hit_bonus: row.try_get("to_hit_bonus")?,
                 dmg_type: row.try_get("dmg_type")?,
@@ -63,15 +63,15 @@ impl Weapon {
         // N = number of dices
         // B = bonus dmg
         let m = self
-            .weapon_core
+            .weapon_data
             .die_size
             .clone()?
             .split_once('d')?
             .1
             .parse::<f64>()
             .ok()?;
-        let n = self.weapon_core.number_of_dice? as f64;
-        let b = self.weapon_core.bonus_dmg as f64;
+        let n = self.weapon_data.number_of_dice? as f64;
+        let b = self.weapon_data.bonus_dmg as f64;
 
         let avg: f64 = (((m + 1.) / 2.) * n) + b;
         Some(avg.floor() as i64)

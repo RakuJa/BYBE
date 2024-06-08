@@ -7,36 +7,34 @@ use std::collections::{HashMap, HashSet};
 const ACCURACY_THRESHOLD: i64 = 50;
 
 pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String {
-    let n_of_equipment = shop_filter_query.n_of_equipment;
-    let n_of_consumables = shop_filter_query.n_of_consumables;
     let supported_pf_versions =
         HashSet::from_iter(shop_filter_query.pathfinder_version.to_db_value());
     let min_level = shop_filter_query.min_level as i64;
     let max_level = shop_filter_query.max_level as i64;
     let equipment_query = prepare_item_subquery(
         &ItemTypeEnum::Equipment,
-        n_of_equipment,
+        shop_filter_query.n_of_equipment,
         min_level,
         max_level,
         &supported_pf_versions,
     );
     let consumable_query = prepare_item_subquery(
         &ItemTypeEnum::Consumable,
-        n_of_consumables,
+        shop_filter_query.n_of_consumables,
         min_level,
         max_level,
         &supported_pf_versions,
     );
     let weapon_query = prepare_item_subquery(
         &ItemTypeEnum::Weapon,
-        n_of_equipment,
+        shop_filter_query.n_of_weapons,
         min_level,
         max_level,
         &supported_pf_versions,
     );
     let armor_query = prepare_item_subquery(
         &ItemTypeEnum::Armor,
-        n_of_equipment,
+        shop_filter_query.n_of_armors,
         min_level,
         max_level,
         &supported_pf_versions,

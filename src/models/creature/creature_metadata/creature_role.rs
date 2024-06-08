@@ -166,12 +166,12 @@ fn is_brute(
             let avg_dmg = wp.get_avg_dmg().unwrap();
             let x = calculate_lb_distance(
                 atk_bonus_scales.high,
-                wp.weapon_core.to_hit_bonus.unwrap_or(0),
+                wp.weapon_data.to_hit_bonus.unwrap_or(0),
             ) + calculate_lb_distance(scales_high_avg, avg_dmg);
             let y = calculate_dist(
                 atk_bonus_scales.moderate,
                 atk_bonus_scales.high,
-                wp.weapon_core.to_hit_bonus.unwrap_or(0),
+                wp.weapon_data.to_hit_bonus.unwrap_or(0),
             ) + calculate_lb_distance(scales_extreme_avg, avg_dmg);
             x.min(y)
         })
@@ -220,13 +220,13 @@ fn is_sniper(
         .weapons
         .iter()
         .filter(|wp| {
-            wp.get_avg_dmg().is_some() && wp.weapon_core.weapon_type == WeaponTypeEnum::Ranged
+            wp.get_avg_dmg().is_some() && wp.weapon_data.weapon_type == WeaponTypeEnum::Ranged
         })
         .map(|wp| {
             let avg_dmg = wp.get_avg_dmg().unwrap();
             calculate_lb_distance(
                 atk_bonus_scales.high,
-                wp.weapon_core.to_hit_bonus.unwrap_or(0),
+                wp.weapon_data.to_hit_bonus.unwrap_or(0),
             ) + calculate_lb_distance(scales_mod_avg, avg_dmg)
         })
         .min();
@@ -298,7 +298,7 @@ pub fn is_soldier(
         .map(|wp| {
             calculate_lb_distance(
                 atk_bonus_scales.high,
-                wp.weapon_core.to_hit_bonus.unwrap_or(0),
+                wp.weapon_data.to_hit_bonus.unwrap_or(0),
             ) + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
         })
         .min();
@@ -346,7 +346,7 @@ pub fn is_magical_striker(
         .map(|wp| {
             calculate_lb_distance(
                 atk_bonus_scales.high,
-                wp.weapon_core.to_hit_bonus.unwrap_or(0),
+                wp.weapon_data.to_hit_bonus.unwrap_or(0),
             ) + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
         })
         .min();
