@@ -51,6 +51,7 @@ pub async fn get_paginated_items(
             ItemSortEnum::Name => a.core_item.name.cmp(&b.core_item.name),
             ItemSortEnum::Level => a.core_item.level.cmp(&b.core_item.level),
             ItemSortEnum::Type => a.core_item.item_type.cmp(&b.core_item.item_type),
+            ItemSortEnum::Rarity => a.core_item.rarity.cmp(&b.core_item.rarity),
         };
         match pagination
             .shop_sort_data

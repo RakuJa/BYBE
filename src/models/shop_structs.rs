@@ -52,6 +52,8 @@ pub enum ItemSortEnum {
     Level,
     #[serde(alias = "type", alias = "TYPE")]
     Type,
+    #[serde(alias = "rarity", alias = "RARITY")]
+    Rarity,
 }
 
 #[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash, Default)]
