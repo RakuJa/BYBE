@@ -266,6 +266,10 @@ pub async fn fetch_items_with_filters(
         .iter()
         .filter(|x| x.item_type == ItemTypeEnum::Armor)
         .collect();
+    let shields: Vec<&Item> = items
+        .iter()
+        .filter(|x| x.item_type == ItemTypeEnum::Shield)
+        .collect();
     let consumables: Vec<&Item> = items
         .iter()
         .filter(|x| x.item_type == ItemTypeEnum::Consumable)
@@ -281,6 +285,7 @@ pub async fn fetch_items_with_filters(
     item_vec.extend(fill_item_vec_to_len(&consumables, filters.n_of_consumables));
     item_vec.extend(fill_item_vec_to_len(&weapons, filters.n_of_weapons));
     item_vec.extend(fill_item_vec_to_len(&armors, filters.n_of_armors));
+    item_vec.extend(fill_item_vec_to_len(&shields, filters.n_of_shields));
 
     Ok(item_vec)
 }

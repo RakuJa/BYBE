@@ -49,26 +49,38 @@ pub async fn generate_random_shop_listing(
     let shop_type = shop_data.shop_type.clone().unwrap_or_default();
     let n_of_consumables: i64 = shop_data.consumable_dices.iter().map(|x| x.roll()).sum();
     let n_of_equipables: i64 = shop_data.equipment_dices.iter().map(|x| x.roll()).sum();
-    let (n_of_equipment, n_of_armors, n_of_weapons) = match shop_type {
+    let (n_of_equipment, n_of_armors, n_of_weapons, n_of_shields) = match shop_type {
         ShopTypeEnum::Blacksmith => {
+            // This will never panic if n_of_equipables >= 1 and dice sum should always be at least 1.
+            // if 1<=n<2 => n/2 = 0..n
+            // TLDR we know that it will never panic.
             let n_of_forged_items = thread_rng().gen_range((n_of_equipables / 2)..=n_of_equipables);
-            let n_of_weapons = thread_rng().gen_range(0..=n_of_forged_items);
-            let n_of_armors = n_of_forged_items - n_of_weapons;
+            let forged_items_tuple = get_forged_items_tuple(n_of_forged_items);
             (
                 n_of_equipables - n_of_forged_items,
-                n_of_weapons,
-                n_of_armors,
+                forged_items_tuple.0,
+                forged_items_tuple.1,
+                forged_items_tuple.2,
             )
         }
-        ShopTypeEnum::Alchemist => (n_of_equipables, 0, 0),
+        ShopTypeEnum::Alchemist => (n_of_equipables, 0, 0, 0),
         ShopTypeEnum::General => {
-            let n_of_forged_items = thread_rng().gen_range(0..=(n_of_equipables / 2));
-            let n_of_weapons = thread_rng().gen_range(0..=n_of_forged_items);
-            let n_of_armors = n_of_forged_items - n_of_weapons;
+            // This can panic if n_of_equipables is <=1,
+            // n=1 => n/2 = 0, 0..0 panic!
+            // we manually set it as 1 in that case
+            let n_of_forged_items = thread_rng().gen_range(
+                0..=if n_of_equipables > 1 {
+                    n_of_equipables / 2
+                } else {
+                    1
+                },
+            );
+            let forged_items_tuple = get_forged_items_tuple(n_of_forged_items);
             (
                 n_of_equipables - n_of_forged_items,
-                n_of_weapons,
-                n_of_armors,
+                forged_items_tuple.0,
+                forged_items_tuple.1,
+                forged_items_tuple.2,
             )
         }
     };
@@ -84,6 +96,7 @@ pub async fn generate_random_shop_listing(
             n_of_consumables,
             n_of_weapons,
             n_of_armors,
+            n_of_shields,
             pathfinder_version,
         },
     )
@@ -109,6 +122,35 @@ pub async fn generate_random_shop_listing(
 
 pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
     shop_proxy::get_all_possible_values_of_filter(app_state, ItemField::Traits).await
+}
+
+/// Gets the n of: weapons, armors, shields (in this order).
+/// Changing order is considered a BREAKING CHANGE.
+/// Calculating it randomly from the n of forged items.
+fn get_forged_items_tuple(n_of_forged_items: i64) -> (i64, i64, i64) {
+    // This can panic if n=0.
+    // n<2 => 0..1, ok!
+    // n<1 => 0..0, panic!
+    // if that's the case we return 0 manually
+    let n_of_weapons = if n_of_forged_items > 0 {
+        thread_rng().gen_range(n_of_forged_items / 2..=n_of_forged_items)
+    } else {
+        0
+    };
+    let n_of_armors = n_of_forged_items - n_of_weapons;
+    // This can panic if we do not have enough armors (n<3).
+    // n<3 => 1..1, panic!
+    // n=3 => 1..2, ok!
+    // if that's the case we return 0 manually
+    // We take at least 1 shield if there are >3 armor
+    // (shield will never be > armor,
+    // with n>3 => (n/3)+1 is always < n
+    let n_of_shields = if n_of_armors >= 3 {
+        thread_rng().gen_range(1..(n_of_armors / 3) + 1)
+    } else {
+        0
+    };
+    (n_of_weapons, n_of_armors - n_of_shields, n_of_shields)
 }
 
 fn convert_result_to_shop_response(

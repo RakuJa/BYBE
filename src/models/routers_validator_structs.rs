@@ -102,15 +102,25 @@ impl Default for PaginatedRequest {
 pub struct Dice {
     #[validate(range(min = 1, max = 255))]
     pub n_of_dices: u8,
-    #[validate(range(min = 2, max = 255))]
+    // 1 needs to be an option, to allow 100d1 => 100
+    #[validate(range(min = 1, max = 255))]
     pub dice_size: u8,
 }
 
 impl Dice {
+    /// Dice roll will roll n dices with each roll in the range of 1<=result<=dice_size.
+    /// It returns the sum of n_of_dices rolls.
+    /// IT SHOULD NEVER BE <1, OTHERWISE WE BREAK THE CONTRACT OF THE METHOD.
     pub fn roll(&self) -> i64 {
         let mut roll_result = 0;
         for _ in 0..self.n_of_dices {
-            roll_result += rand::thread_rng().gen_range(1..=self.dice_size) as i64
+            // gen_range panics if n<2 (1..1), panic!
+            // so we directly return 1 if that's the case
+            roll_result += if self.dice_size > 1 {
+                rand::thread_rng().gen_range(1..=self.dice_size) as i64
+            } else {
+                1
+            }
         }
         roll_result
     }

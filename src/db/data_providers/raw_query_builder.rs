@@ -39,9 +39,16 @@ pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String
         max_level,
         &supported_pf_versions,
     );
+    let shield_query = prepare_item_subquery(
+        &ItemTypeEnum::Shield,
+        shop_filter_query.n_of_shields,
+        min_level,
+        max_level,
+        &supported_pf_versions,
+    );
     let query = format!(
         "SELECT * FROM ITEM_TABLE WHERE id IN ( {equipment_query} ) OR id IN ({consumable_query} )
-        OR id IN ({weapon_query} ) OR id IN ({armor_query} )"
+        OR id IN ({weapon_query} ) OR id IN ({armor_query} ) OR id IN ({shield_query} )"
     );
     debug!("{}", query);
     query
