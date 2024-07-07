@@ -1,4 +1,6 @@
-use crate::db::data_providers::generic_fetcher::{fetch_armor_runes, fetch_weapon_runes, MyString};
+use crate::db::data_providers::generic_fetcher::{
+    fetch_armor_runes, fetch_item_traits, fetch_weapon_runes, MyString,
+};
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_creatures_core;
 use crate::models::creature::creature_component::creature_combat::{
     CreatureCombatData, SavingThrows,
@@ -25,6 +27,7 @@ use crate::models::db::raw_speed::RawSpeed;
 use crate::models::db::raw_weakness::RawWeakness;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::item_struct::Item;
+use crate::models::item::shield_struct::Shield;
 use crate::models::item::weapon_struct::Weapon;
 use crate::models::response_data::OptionalData;
 use crate::models::scales_struct::ability_scales::AbilityScales;
@@ -224,6 +227,10 @@ async fn fetch_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result
     .await?;
     let mut result_vec = Vec::new();
     for mut el in weapons {
+        el.item_core.traits = fetch_item_traits(conn, el.item_core.id)
+            .await
+            .unwrap_or(vec![]);
+        el.item_core.quantity = fetch_item_quantity(conn, creature_id, el.item_core.id).await;
         el.weapon_data.property_runes = fetch_weapon_runes(conn, el.weapon_data.id)
             .await
             .unwrap_or(vec![]);
@@ -251,9 +258,40 @@ async fn fetch_creature_armors(conn: &Pool<Sqlite>, creature_id: i64) -> Result<
     .await?;
     let mut result_vec = Vec::new();
     for mut el in armors {
+        el.item_core.traits = fetch_item_traits(conn, el.item_core.id)
+            .await
+            .unwrap_or(vec![]);
+        el.item_core.quantity = fetch_item_quantity(conn, creature_id, el.item_core.id).await;
         el.armor_data.property_runes = fetch_armor_runes(conn, el.armor_data.id)
             .await
             .unwrap_or(vec![]);
+        result_vec.push(el)
+    }
+    Ok(result_vec)
+}
+
+async fn fetch_creature_shields(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Shield>> {
+    let shields: Vec<Shield> = sqlx::query_as(
+        "
+        SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty,
+        it.*
+        FROM SHIELD_TABLE st LEFT JOIN ITEM_TABLE it ON it.id = st.base_item_id
+        WHERE base_item_id IN (
+            SELECT item_id FROM ITEM_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)
+        )
+        GROUP BY it.id
+        ORDER BY name
+        ",
+    )
+    .bind(creature_id)
+    .fetch_all(conn)
+    .await?;
+    let mut result_vec = Vec::new();
+    for mut el in shields {
+        el.item_core.traits = fetch_item_traits(conn, el.item_core.id)
+            .await
+            .unwrap_or(vec![]);
+        el.item_core.quantity = fetch_item_quantity(conn, creature_id, el.item_core.id).await;
         result_vec.push(el)
     }
     Ok(result_vec)
@@ -266,12 +304,36 @@ async fn fetch_creature_items(conn: &Pool<Sqlite>, creature_id: i64) -> Result<V
             )
             AND id NOT IN (SELECT base_item_id FROM ARMOR_TABLE)
             AND id NOT IN (SELECT base_item_id FROM WEAPON_TABLE)
+            AND id NOT IN (SELECT base_item_id FROM SHIELD_TABLE)
             ",
     )
     .bind(creature_id)
     .fetch_all(conn)
     .await?;
-    Ok(items)
+    let mut result_vec = Vec::new();
+    for mut el in items {
+        el.traits = fetch_item_traits(conn, el.id).await.unwrap_or(vec![]);
+        el.quantity = fetch_item_quantity(conn, creature_id, el.id).await;
+        result_vec.push(el)
+    }
+    Ok(result_vec)
+}
+/// Quantities are present ONLY for creature's item.
+/// It needs to be fetched from the association table.
+/// It defaults to 1 if error are found
+async fn fetch_item_quantity(conn: &Pool<Sqlite>, creature_id: i64, item_id: i64) -> i64 {
+    match sqlx::query!(
+        "SELECT quantity FROM ITEM_CREATURE_ASSOCIATION_TABLE WHERE
+         creature_id == ($1) AND item_id == ($2)",
+        creature_id,
+        item_id
+    )
+    .fetch_one(conn)
+    .await
+    {
+        Ok(r) => r.quantity,
+        Err(_) => 1,
+    }
 }
 
 async fn fetch_creature_actions(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Action>> {
@@ -482,6 +544,9 @@ pub async fn fetch_creature_combat_data(
     let armors = fetch_creature_armors(conn, creature_id)
         .await
         .unwrap_or_default();
+    let shields = fetch_creature_shields(conn, creature_id)
+        .await
+        .unwrap_or_default();
     let resistances = fetch_creature_resistances(conn, creature_id)
         .await
         .unwrap_or_default();
@@ -496,6 +561,7 @@ pub async fn fetch_creature_combat_data(
     Ok(CreatureCombatData {
         weapons,
         armors,
+        shields,
         resistances: resistances
             .iter()
             .map(|x| (x.name.clone(), x.value as i16))

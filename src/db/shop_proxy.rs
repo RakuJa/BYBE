@@ -3,6 +3,7 @@ use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::item_fields_enum::{FieldsUniqueValuesStruct, ItemField};
 use crate::models::item::item_struct::Item;
+use crate::models::item::shield_struct::Shield;
 use crate::models::item::weapon_struct::Weapon;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::{ItemFieldFilters, OrderEnum};
@@ -87,6 +88,11 @@ async fn get_all_armors_from_db(app_state: &AppState) -> Result<Vec<Armor>> {
     shop_fetcher::fetch_armors(&app_state.conn, 0, -1).await
 }
 
+/// Gets all the shields from the DB.
+async fn get_all_shields_from_db(app_state: &AppState) -> Result<Vec<Shield>> {
+    shop_fetcher::fetch_shields(&app_state.conn, 0, -1).await
+}
+
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec
 #[once(sync_writes = true)]
 async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
@@ -96,6 +102,7 @@ async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
             core_item: el,
             weapon_data: None,
             armor_data: None,
+            shield_data: None,
         })
     }
     for el in get_all_weapons_from_db(app_state).await.unwrap_or(vec![]) {
@@ -103,6 +110,7 @@ async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
             core_item: el.item_core,
             weapon_data: Some(el.weapon_data),
             armor_data: None,
+            shield_data: None,
         })
     }
     for el in get_all_armors_from_db(app_state).await.unwrap_or(vec![]) {
@@ -110,6 +118,15 @@ async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
             core_item: el.item_core,
             weapon_data: None,
             armor_data: Some(el.armor_data),
+            shield_data: None,
+        })
+    }
+    for el in get_all_shields_from_db(app_state).await.unwrap() {
+        response_vec.push(ResponseItem {
+            core_item: el.item_core,
+            weapon_data: None,
+            armor_data: None,
+            shield_data: Some(el.shield_data),
         })
     }
     response_vec

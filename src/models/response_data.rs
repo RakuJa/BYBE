@@ -6,6 +6,7 @@ use crate::models::creature::creature_component::creature_variant::CreatureVaria
 use crate::models::creature::creature_struct::Creature;
 use crate::models::item::armor_struct::ArmorData;
 use crate::models::item::item_struct::Item;
+use crate::models::item::shield_struct::ShieldData;
 use crate::models::item::weapon_struct::WeaponData;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
@@ -45,6 +46,7 @@ pub struct ResponseItem {
     pub core_item: Item,
     pub weapon_data: Option<WeaponData>,
     pub armor_data: Option<ArmorData>,
+    pub shield_data: Option<ShieldData>,
 }
 
 impl From<Item> for ResponseItem {
@@ -53,6 +55,7 @@ impl From<Item> for ResponseItem {
             core_item: value,
             weapon_data: None,
             armor_data: None,
+            shield_data: None,
         }
     }
 }

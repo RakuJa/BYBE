@@ -17,6 +17,8 @@ pub enum ItemTypeEnum {
     Weapon,
     #[serde(alias = "armor", alias = "ARMOR")]
     Armor,
+    #[serde(alias = "shield", alias = "SHIELD")]
+    Shield,
 }
 
 impl Clone for ItemTypeEnum {
@@ -26,6 +28,7 @@ impl Clone for ItemTypeEnum {
             ItemTypeEnum::Equipment => ItemTypeEnum::Equipment,
             ItemTypeEnum::Armor => ItemTypeEnum::Armor,
             ItemTypeEnum::Weapon => ItemTypeEnum::Weapon,
+            ItemTypeEnum::Shield => ItemTypeEnum::Shield,
         }
     }
 }
@@ -38,6 +41,7 @@ impl FromStr for ItemTypeEnum {
             "EQUIPMENT" => Ok(ItemTypeEnum::Equipment),
             "WEAPON" => Ok(ItemTypeEnum::Weapon),
             "ARMOR" => Ok(ItemTypeEnum::Armor),
+            "SHIELD" => Ok(ItemTypeEnum::Shield),
             _ => Err(()),
         }
     }
@@ -57,6 +61,9 @@ impl Display for ItemTypeEnum {
             }
             ItemTypeEnum::Armor => {
                 write!(f, "armor")
+            }
+            ItemTypeEnum::Shield => {
+                write!(f, "shield")
             }
         }
     }

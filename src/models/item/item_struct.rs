@@ -49,7 +49,9 @@ impl<'r> FromRow<'r, SqliteRow> for Item {
             id: row.try_get("id")?,
             name: row.try_get("name")?,
             bulk: OrderedFloat::from(bulk),
-            quantity: row.try_get("quantity")?,
+            // Db table does not contain this information. Only creature's items
+            // have a quantity !=1. So we default to 1 and then fetch when needed.
+            quantity: 1,
             base_item: row.try_get("base_item")?,
             category: row.try_get("category").ok(),
             description: row.try_get("description")?,

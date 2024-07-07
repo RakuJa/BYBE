@@ -5,6 +5,7 @@ use crate::db::data_providers::raw_query_builder::prepare_filtered_get_items;
 use crate::models::item::armor_struct::{Armor, ArmorData};
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_struct::Item;
+use crate::models::item::shield_struct::{Shield, ShieldData};
 use crate::models::item::weapon_struct::{Weapon, WeaponData};
 use crate::models::response_data::ResponseItem;
 use crate::models::shop_structs::ShopFilterQuery;
@@ -26,11 +27,19 @@ pub async fn fetch_item_by_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<Respo
             core_item: item,
             weapon_data: fetch_weapon_data_by_item_id(conn, item_id).await.ok(),
             armor_data: None,
+            shield_data: None,
         },
         ItemTypeEnum::Armor => ResponseItem {
             core_item: item,
             weapon_data: None,
             armor_data: fetch_armor_data_by_item_id(conn, item_id).await.ok(),
+            shield_data: None,
+        },
+        ItemTypeEnum::Shield => ResponseItem {
+            core_item: item,
+            weapon_data: None,
+            armor_data: None,
+            shield_data: fetch_shield_data_by_item_id(conn, item_id).await.ok(),
         },
     })
 }
@@ -74,12 +83,33 @@ async fn fetch_armor_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<Arm
     Ok(armor)
 }
 
+async fn fetch_shield_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<Shield> {
+    let mut shield: Shield = sqlx::query_as(
+        "
+        SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty,
+        it.*
+        FROM SHIELD_TABLE at
+        LEFT JOIN ITEM_TABLE it ON st.base_item_id = it.id
+        WHERE st.base_item_id = ($1)
+        ",
+    )
+    .bind(item_id)
+    .fetch_one(conn)
+    .await?;
+    shield.item_core.traits = fetch_item_traits(conn, item_id).await?;
+    Ok(shield)
+}
+
 async fn fetch_weapon_data_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<WeaponData> {
     Ok(fetch_weapon_by_item_id(conn, item_id).await?.weapon_data)
 }
 
 async fn fetch_armor_data_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<ArmorData> {
     Ok(fetch_armor_by_item_id(conn, item_id).await?.armor_data)
+}
+
+async fn fetch_shield_data_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<ShieldData> {
+    Ok(fetch_shield_by_item_id(conn, item_id).await?.shield_data)
 }
 
 pub async fn fetch_items(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> Result<Vec<Item>> {
@@ -123,7 +153,7 @@ pub async fn fetch_weapons(
     .await?;
     let mut result_vec = Vec::new();
     for mut el in x {
-        el.item_core.traits = fetch_item_traits(conn, el.weapon_data.id).await?;
+        el.item_core.traits = fetch_item_traits(conn, el.item_core.id).await?;
         el.weapon_data.property_runes = fetch_weapon_runes(conn, el.weapon_data.id).await?;
         result_vec.push(Weapon {
             item_core: el.item_core,
@@ -159,6 +189,39 @@ pub async fn fetch_armors(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> R
         result_vec.push(Armor {
             item_core: el.item_core,
             armor_data: el.armor_data,
+        })
+    }
+    Ok(result_vec)
+}
+
+pub async fn fetch_shields(
+    conn: &Pool<Sqlite>,
+    cursor: u32,
+    page_size: i16,
+) -> Result<Vec<Shield>> {
+    let x: Vec<Shield> = sqlx::query_as(
+        "
+        SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty,
+        it.*
+        FROM SHIELD_TABLE st
+        LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat
+        ON st.base_item_id = icat.item_id
+        LEFT JOIN ITEM_TABLE it ON st.base_item_id = it.id
+        WHERE icat.item_id IS NULL
+        GROUP BY it.id
+        ORDER BY name LIMIT ?,?
+    ",
+    )
+    .bind(cursor)
+    .bind(page_size)
+    .fetch_all(conn)
+    .await?;
+    let mut result_vec = Vec::new();
+    for mut el in x {
+        el.item_core.traits = fetch_item_traits(conn, el.item_core.id).await?;
+        result_vec.push(Shield {
+            item_core: el.item_core,
+            shield_data: el.shield_data,
         })
     }
     Ok(result_vec)
