@@ -1,4 +1,5 @@
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
+use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
@@ -163,6 +164,10 @@ impl Item {
                     .to_lowercase()
                     .contains(cat.to_lowercase().as_str())
             }
-        })
+        }) && match filters.pathfinder_version.clone().unwrap_or_default() {
+            PathfinderVersionEnum::Legacy => !self.remaster,
+            PathfinderVersionEnum::Remaster => self.remaster,
+            PathfinderVersionEnum::Any => true,
+        }
     }
 }

@@ -6,9 +6,12 @@ use utoipa::ToSchema;
     Serialize, Deserialize, Eq, PartialEq, Hash, Default, ToSchema, Clone, EnumIter, Display,
 )]
 pub enum PathfinderVersionEnum {
+    #[serde(alias = "legacy", alias = "LEGACY")]
     Legacy,
+    #[serde(alias = "remaster", alias = "REMASTER")]
     Remaster,
     #[default]
+    #[serde(alias = "any", alias = "ANY")]
     Any,
 }
 

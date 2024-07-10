@@ -46,12 +46,18 @@ pub struct RandomEncounterData {
     Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Ord, PartialOrd, Clone,
 )]
 pub enum EncounterChallengeEnum {
+    #[serde(alias = "trivial", alias = "TRIVIAL")]
     Trivial,
+    #[serde(alias = "low", alias = "LOW")]
     Low,
     #[default]
+    #[serde(alias = "moderate", alias = "MODERATE")]
     Moderate,
+    #[serde(alias = "severe", alias = "SEVERE")]
     Severe,
+    #[serde(alias = "extreme", alias = "EXTREME")]
     Extreme,
+    #[serde(alias = "impossible", alias = "IMPOSSIBLE")]
     Impossible,
     // Impossible = 320 with chara adjust 60, invented by me but what else can I do?
     // Pathfinder 2E thinks that a GM will only try out extreme encounter at maximum
