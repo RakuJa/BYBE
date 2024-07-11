@@ -26,6 +26,26 @@ impl Creature {
         cr.spell_caster_data = self.spell_caster_data;
         cr
     }
+
+    pub fn convert_creature_to_pwl(self) -> Creature {
+        let pwl_mod = if self.core_data.essential.level >= 0 {
+            self.core_data.essential.level as u64
+        } else {
+            0
+        };
+
+        Creature {
+            core_data: self.core_data,
+            variant_data: self.variant_data,
+            extra_data: self.extra_data.map(|x| x.convert_from_base_to_pwl(pwl_mod)),
+            combat_data: self
+                .combat_data
+                .map(|x| x.convert_from_base_to_pwl(pwl_mod)),
+            spell_caster_data: self
+                .spell_caster_data
+                .map(|x| x.convert_from_base_to_pwl(pwl_mod)),
+        }
+    }
     pub fn from_core(core: CreatureCoreData) -> Creature {
         let level = core.essential.level;
         let archive_link = core.derived.archive_link.clone();

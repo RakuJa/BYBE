@@ -29,7 +29,7 @@ use crate::models::item::armor_struct::Armor;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::Shield;
 use crate::models::item::weapon_struct::Weapon;
-use crate::models::response_data::OptionalData;
+use crate::models::response_data::ResponseDataModifiers;
 use crate::models::scales_struct::ability_scales::AbilityScales;
 use crate::models::scales_struct::ac_scales::AcScales;
 use crate::models::scales_struct::area_dmg_scales::AreaDmgScales;
@@ -430,34 +430,41 @@ pub async fn fetch_traits_associated_with_creatures(conn: &Pool<Sqlite>) -> Resu
 
 pub async fn fetch_creature_by_id(
     conn: &Pool<Sqlite>,
-    optional_data: &OptionalData,
+    variant: &CreatureVariant,
+    response_data_mods: &ResponseDataModifiers,
     id: i64,
 ) -> Result<Creature> {
     let core_data = fetch_creature_core_data(conn, id).await?;
     let level = core_data.essential.level;
     let archive_link = core_data.derived.archive_link.clone();
-    Ok(Creature {
+    let cr = Creature {
         core_data,
         variant_data: CreatureVariantData {
             variant: CreatureVariant::Base,
             level,
             archive_link,
         },
-        extra_data: if optional_data.extra_data.is_some_and(|x| x) {
+        extra_data: if response_data_mods.extra_data.is_some_and(|x| x) {
             Some(fetch_creature_extra_data(conn, id).await?)
         } else {
             None
         },
-        combat_data: if optional_data.combat_data.is_some_and(|x| x) {
+        combat_data: if response_data_mods.combat_data.is_some_and(|x| x) {
             Some(fetch_creature_combat_data(conn, id).await?)
         } else {
             None
         },
-        spell_caster_data: if optional_data.spell_casting_data.is_some_and(|x| x) {
+        spell_caster_data: if response_data_mods.spell_casting_data.is_some_and(|x| x) {
             Some(fetch_creature_spell_caster_data(conn, id).await?)
         } else {
             None
         },
+    }
+    .convert_creature_to_variant(variant);
+    Ok(if response_data_mods.is_pwl_on.unwrap_or(false) {
+        cr
+    } else {
+        cr.convert_creature_to_pwl()
     })
 }
 

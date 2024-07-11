@@ -4,7 +4,7 @@ use crate::models::creature::creature_filter_enum::CreatureFilter;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::creature::creature_struct::Creature;
-use crate::models::response_data::{OptionalData, ResponseCreature};
+use crate::models::response_data::{ResponseCreature, ResponseDataModifiers};
 use crate::models::routers_validator_structs::CreatureFieldFilters;
 use crate::services::url_calculator::bestiary_next_url_calculator;
 use crate::AppState;
@@ -24,33 +24,33 @@ pub struct BestiaryResponse {
 pub async fn get_creature(
     app_state: &AppState,
     id: i64,
-    optional_data: &OptionalData,
+    response_data_mods: &ResponseDataModifiers,
 ) -> HashMap<String, Option<ResponseCreature>> {
     hashmap! {
         String::from("results") =>
-        bestiary_proxy::get_creature_by_id(app_state, id, &CreatureVariant::Base, optional_data).await.map(ResponseCreature::from)
+        bestiary_proxy::get_creature_by_id(app_state, id, &CreatureVariant::Base, response_data_mods).await.map(ResponseCreature::from)
     }
 }
 
 pub async fn get_elite_creature(
     app_state: &AppState,
     id: i64,
-    optional_data: &OptionalData,
+    response_data_mods: &ResponseDataModifiers,
 ) -> HashMap<String, Option<ResponseCreature>> {
     hashmap! {
         String::from("results") =>
-        bestiary_proxy::get_elite_creature_by_id(app_state, id, optional_data).await.map(ResponseCreature::from)
+        bestiary_proxy::get_elite_creature_by_id(app_state, id, response_data_mods).await.map(ResponseCreature::from)
     }
 }
 
 pub async fn get_weak_creature(
     app_state: &AppState,
     id: i64,
-    optional_data: &OptionalData,
+    response_data_mods: &ResponseDataModifiers,
 ) -> HashMap<String, Option<ResponseCreature>> {
     hashmap! {
         String::from("results") =>
-        bestiary_proxy::get_weak_creature_by_id(app_state, id, optional_data).await.map(ResponseCreature::from)
+        bestiary_proxy::get_weak_creature_by_id(app_state, id, response_data_mods).await.map(ResponseCreature::from)
     }
 }
 
