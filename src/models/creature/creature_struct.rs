@@ -19,11 +19,21 @@ pub struct Creature {
 }
 
 impl Creature {
-    pub fn convert_creature_to_variant(self, variant: &CreatureVariant) -> Creature {
-        let mut cr = Self::from_core_with_variant(self.core_data, variant);
-        cr.extra_data = self.extra_data;
-        cr.combat_data = self.combat_data;
-        cr.spell_caster_data = self.spell_caster_data;
+    /// Decrease the creature’s level by 1; if the creature is level 1, instead decrease its level by 2.
+    /// Decrease the creature’s HP based on its starting level.
+    /// Decrease the creature’s AC, attack modifiers, DCs, saving throws, Perception, and skill modifiers by 2.
+    /// Decrease the damage of its Strikes and other offensive abilities by 2. If the creature has limits on how many times or how often it can use an ability (such as a spellcaster’s spells or a dragon’s breath), decrease the damage by 4 instead.
+    pub fn convert_creature_to_variant(self, variant: CreatureVariant) -> Creature {
+        let mut cr = Self::from_core_with_variant(self.core_data, variant.clone());
+        cr.extra_data = self
+            .extra_data
+            .map(|x| x.convert_from_base_to_variant(&variant));
+        cr.combat_data = self
+            .combat_data
+            .map(|x| x.convert_from_base_to_variant(&variant));
+        cr.spell_caster_data = self
+            .spell_caster_data
+            .map(|x| x.convert_from_base_to_variant(&variant));
         cr
     }
 
@@ -64,17 +74,18 @@ impl Creature {
 
     pub fn from_core_with_variant(
         mut core: CreatureCoreData,
-        creature_variant: &CreatureVariant,
+        creature_variant: CreatureVariant,
     ) -> Creature {
-        let (hp, variant_archive_link) = creature_variant.get_variant_hp_and_link(&core);
-        let base_level = core.essential.level;
-        let level_delta = creature_variant.to_level_delta();
-        core.essential.hp = hp;
+        let variant_hp = creature_variant.get_variant_hp(core.essential.hp, core.essential.level);
+        let variant_archive_link =
+            creature_variant.get_variant_archive_link(core.derived.archive_link.clone());
+        let variant_level = creature_variant.get_variant_level(core.essential.level);
+        core.essential.hp = variant_hp;
         Self {
             core_data: core,
             variant_data: CreatureVariantData {
-                variant: creature_variant.clone(),
-                level: base_level + level_delta,
+                variant: creature_variant,
+                level: variant_level,
                 archive_link: variant_archive_link,
             },
             extra_data: None,

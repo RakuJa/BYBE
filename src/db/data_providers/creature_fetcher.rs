@@ -430,7 +430,7 @@ pub async fn fetch_traits_associated_with_creatures(conn: &Pool<Sqlite>) -> Resu
 
 pub async fn fetch_creature_by_id(
     conn: &Pool<Sqlite>,
-    variant: &CreatureVariant,
+    variant: CreatureVariant,
     response_data_mods: &ResponseDataModifiers,
     id: i64,
 ) -> Result<Creature> {

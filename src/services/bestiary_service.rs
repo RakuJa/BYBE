@@ -28,7 +28,7 @@ pub async fn get_creature(
 ) -> HashMap<String, Option<ResponseCreature>> {
     hashmap! {
         String::from("results") =>
-        bestiary_proxy::get_creature_by_id(app_state, id, &CreatureVariant::Base, response_data_mods).await.map(ResponseCreature::from)
+        bestiary_proxy::get_creature_by_id(app_state, id, CreatureVariant::Base, response_data_mods).await.map(ResponseCreature::from)
     }
 }
 
