@@ -119,6 +119,7 @@ pub async fn fetch_items(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> Re
         LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat
         ON it.id = icat.item_id WHERE icat.item_id IS NULL
         AND UPPER(item_type) == 'EQUIPMENT' OR UPPER(item_type) == 'CONSUMABLE'
+        GROUP BY it.id
         ORDER BY name LIMIT ?,?",
     )
     .bind(cursor)
