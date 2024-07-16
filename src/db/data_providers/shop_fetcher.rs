@@ -88,7 +88,7 @@ async fn fetch_shield_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<Sh
         "
         SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty,
         it.*
-        FROM SHIELD_TABLE at
+        FROM SHIELD_TABLE st
         LEFT JOIN ITEM_TABLE it ON st.base_item_id = it.id
         WHERE st.base_item_id = ($1)
         ",
