@@ -81,6 +81,7 @@ impl Creature {
             creature_variant.get_variant_archive_link(core.derived.archive_link.clone());
         let variant_level = creature_variant.get_variant_level(core.essential.level);
         core.essential.hp = variant_hp;
+        core.essential.level = variant_level;
         Self {
             core_data: core,
             variant_data: CreatureVariantData {
