@@ -462,9 +462,9 @@ pub async fn fetch_creature_by_id(
     }
     .convert_creature_to_variant(variant);
     Ok(if response_data_mods.is_pwl_on.unwrap_or(false) {
-        cr
-    } else {
         cr.convert_creature_to_pwl()
+    } else {
+        cr
     })
 }
 
