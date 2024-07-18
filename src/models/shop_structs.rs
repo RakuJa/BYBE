@@ -8,7 +8,7 @@ use validator::Validate;
 #[derive(
     Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Ord, PartialOrd, Clone,
 )]
-pub enum ShopTypeEnum {
+pub enum ShopTemplateEnum {
     Blacksmith,
     Alchemist,
     #[default]
@@ -25,7 +25,7 @@ pub struct RandomShopData {
     pub equipment_dices: Vec<Dice>,
     #[validate(length(min = 1))]
     pub consumable_dices: Vec<Dice>,
-    pub shop_type: Option<ShopTypeEnum>,
+    pub shop_template: Option<ShopTemplateEnum>,
     pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 

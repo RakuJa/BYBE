@@ -8,7 +8,7 @@ use crate::models::item::weapon_struct::WeaponData;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::routers_validator_structs::{Dice, PaginatedRequest};
-use crate::models::shop_structs::ShopTypeEnum;
+use crate::models::shop_structs::ShopTemplateEnum;
 use crate::models::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
 use crate::models::shop_structs::{RandomShopData, ShopSortData};
 use crate::services::shop_service;
@@ -38,7 +38,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             Item,
             RandomShopData,
             Dice,
-            ShopTypeEnum,
+            ShopTemplateEnum,
             ItemSortEnum,
             DamageData,
             WeaponData,
