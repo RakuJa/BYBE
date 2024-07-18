@@ -47,19 +47,18 @@ async fn create_temporary_table(conn: &Pool<Sqlite>) -> Result<()> {
         ct.source,
         ct.remaster,
       	CASE WHEN ct.id IN (
-      		SELECT creature_id FROM (
-      			SELECT wcat.creature_id, base_item_id FROM ITEM_CREATURE_ASSOCIATION_TABLE wcat LEFT JOIN (
-      				SELECT * FROM WEAPON_TABLE w1 WHERE UPPER(w1.weapon_type) = 'MELEE'
-      			) wt ON base_item_id = wcat.item_id
-      		)
+      		SELECT wcat.creature_id
+                FROM WEAPON_CREATURE_ASSOCIATION_TABLE wcat LEFT JOIN (
+	                SELECT * FROM WEAPON_TABLE w1 WHERE UPPER(w1.weapon_type) = 'MELEE'
+                ) wt ON base_item_id = wcat.weapon_id
   		) THEN TRUE ELSE FALSE END AS is_melee,
-  		      	CASE WHEN ct.id IN (
-      		SELECT creature_id FROM (
-      			SELECT wcat.creature_id, base_item_id FROM ITEM_CREATURE_ASSOCIATION_TABLE wcat LEFT JOIN (
-      				SELECT * FROM WEAPON_TABLE w1 WHERE UPPER(w1.weapon_type) = 'RANGED'
-      			) wt ON base_item_id = wcat.item_id
-      		)
-  		) THEN TRUE ELSE FALSE END AS is_ranged,
+        CASE WHEN ct.id IN (
+            SELECT wcat.creature_id
+            FROM WEAPON_CREATURE_ASSOCIATION_TABLE wcat LEFT JOIN (
+                SELECT * FROM WEAPON_TABLE w1 WHERE UPPER(w1.weapon_type) = 'MELEE'
+            ) wt ON base_item_id = wcat.weapon_id
+        )
+  		THEN TRUE ELSE FALSE END AS is_ranged,
         CASE WHEN st.creature_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_spell_caster,
         CASE WHEN ct.aon_id IS NOT NULL THEN CONCAT('https://2e.aonprd.com/', CAST(UPPER(COALESCE(UPPER(ct.cr_type) , 'MONSTER')) AS TEXT), 's' , '.aspx?ID=', CAST(ct.aon_id AS TEXT)) ELSE NULL END AS archive_link,
         COALESCE(ct.cr_type , 'Monster') AS cr_type,

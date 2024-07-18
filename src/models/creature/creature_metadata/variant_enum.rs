@@ -50,7 +50,7 @@ impl CreatureVariant {
                 if base_lvl == -1 || base_lvl == 0 {
                     base_lvl + 2
                 } else {
-                    base_lvl - 1
+                    base_lvl + 1
                 }
             }
             CreatureVariant::Base => base_lvl,

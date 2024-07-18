@@ -211,10 +211,26 @@ fn prepare_item_subquery(
 }
 
 fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum) -> String {
+    let (item_id_field, type_query) = match item_type {
+        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => {
+            ("id", "AND UPPER(item_type) = UPPER('{item_type}')")
+        }
+        // There is no need for an and statement here, we already fetch from the "private" table.
+        // Item instead contains a lot of item_type (it's the base for weapon/shield/etc)
+        ItemTypeEnum::Weapon | ItemTypeEnum::Armor | ItemTypeEnum::Shield => ("base_item_id", ""),
+    };
+    let tass_item_id_field = match item_type {
+        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => "item_id",
+        ItemTypeEnum::Weapon => "weapon_id",
+        ItemTypeEnum::Armor => "armor_id",
+        ItemTypeEnum::Shield => "shield_id",
+    };
     format!(
-        "SELECT id FROM ITEM_TABLE it
-     LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat ON it.id = icat.item_id
-     WHERE icat.item_id IS NULL
-     AND UPPER(item_type) = UPPER('{item_type}')"
+        "
+        SELECT {item_id_field} FROM {} tmain
+        LEFT OUTER JOIN {} tass ON tmain.id = tass.{tass_item_id_field}
+        WHERE tass.{tass_item_id_field} IS NULL {type_query}",
+        item_type.to_db_main_table_name(),
+        item_type.to_db_association_table_name(),
     )
 }

@@ -1,7 +1,7 @@
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::shield_struct::Shield;
-use crate::models::item::weapon_struct::Weapon;
+use crate::models::item::weapon_struct::{DamageData, Weapon};
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
@@ -54,8 +54,18 @@ impl CreatureCombatData {
             .weapons
             .into_iter()
             .map(|mut wp| {
-                wp.weapon_data.bonus_dmg += modifier;
                 wp.weapon_data.splash_dmg = wp.weapon_data.splash_dmg.map(|dmg| dmg + modifier);
+                wp.weapon_data.damage_data = wp
+                    .weapon_data
+                    .damage_data
+                    .iter()
+                    .map(|x| DamageData {
+                        id: x.id,
+                        bonus_dmg: x.bonus_dmg + modifier,
+                        dmg_type: x.dmg_type.clone(),
+                        dice: x.dice.clone(),
+                    })
+                    .collect();
                 wp
             })
             .collect();

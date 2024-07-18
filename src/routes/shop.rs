@@ -3,6 +3,7 @@ use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::ShieldData;
+use crate::models::item::weapon_struct::DamageData;
 use crate::models::item::weapon_struct::WeaponData;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::ItemFieldFilters;
@@ -39,6 +40,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             Dice,
             ShopTypeEnum,
             ItemSortEnum,
+            DamageData,
             WeaponData,
             ArmorData,
             ShieldData,

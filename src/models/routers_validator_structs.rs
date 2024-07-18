@@ -124,4 +124,39 @@ impl Dice {
         }
         roll_result
     }
+
+    pub fn get_avg_dmg(&self, bonus_dmg: f64) -> i64 {
+        // avg dice value is
+        // AVG = (((M+1)/2)∗N)+B
+        //
+        // M = max value of the dice
+        // N = number of dices
+        // B = bonus dmg
+        let m = self.dice_size as f64;
+        let n = self.n_of_dices as f64;
+        let b = bonus_dmg;
+        let avg: f64 = (((m + 1.) / 2.) * n) + b;
+        avg.floor() as i64
+    }
+
+    pub fn from_optional_dice_number_and_size(
+        n_of_dices: Option<u8>,
+        dice_size: Option<u8>,
+    ) -> Option<Dice> {
+        match (n_of_dices, dice_size) {
+            (Some(n), Some(s)) => Some(Dice {
+                n_of_dices: n,
+                dice_size: s,
+            }),
+            (None, Some(s)) => Some(Dice {
+                n_of_dices: 1,
+                dice_size: s,
+            }),
+            (Some(n), None) => Some(Dice {
+                n_of_dices: n,
+                dice_size: 1,
+            }),
+            (_, _) => None,
+        }
+    }
 }
