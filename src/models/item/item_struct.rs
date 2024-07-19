@@ -168,6 +168,10 @@ impl Item {
             PathfinderVersionEnum::Legacy => !self.remaster,
             PathfinderVersionEnum::Remaster => self.remaster,
             PathfinderVersionEnum::Any => true,
-        }
+        } && filters.source_filter.as_ref().map_or(true, |source| {
+            self.source
+                .to_lowercase()
+                .contains(source.to_lowercase().as_str())
+        })
     }
 }

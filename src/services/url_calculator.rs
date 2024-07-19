@@ -140,6 +140,10 @@ fn shop_filter_query_calculator(field_filters: &ItemFieldFilters) -> String {
             .clone()
             .map(|cat| format!("category_filter={}", cat)),
         field_filters
+            .source_filter
+            .clone()
+            .map(|source| format!("source_filter={}", source)),
+        field_filters
             .min_hardness_filter
             .map(|hn| format!("min_hardness_filter={}", hn)),
         field_filters

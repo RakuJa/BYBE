@@ -54,6 +54,8 @@ pub enum ItemSortEnum {
     Type,
     #[serde(alias = "rarity", alias = "RARITY")]
     Rarity,
+    #[serde(alias = "source", alias = "SOURCE")]
+    Source,
 }
 
 #[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash, Default)]

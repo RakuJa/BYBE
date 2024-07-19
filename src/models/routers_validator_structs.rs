@@ -40,6 +40,7 @@ pub struct CreatureFieldFilters {
 pub struct ItemFieldFilters {
     pub name_filter: Option<String>,
     pub category_filter: Option<String>,
+    pub source_filter: Option<String>,
 
     #[validate(range(min = 0.))]
     pub min_bulk_filter: Option<f64>,

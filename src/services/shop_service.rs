@@ -1,5 +1,4 @@
 use crate::db::shop_proxy;
-use crate::models::item::item_fields_enum::ItemField;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::shop_structs::{
@@ -120,8 +119,8 @@ pub async fn generate_random_shop_listing(
     }
 }
 
-pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
-    shop_proxy::get_all_possible_values_of_filter(app_state, ItemField::Traits).await
+pub async fn get_sources_list(app_state: &AppState) -> Vec<String> {
+    shop_proxy::get_all_sources(app_state).await
 }
 
 /// Gets the n of: weapons, armors, shields (in this order).

@@ -1,5 +1,5 @@
 use crate::db::data_providers::generic_fetcher::{
-    fetch_armor_runes, fetch_item_traits, fetch_weapon_damage_data, fetch_weapon_runes, MyString,
+    fetch_armor_runes, fetch_item_traits, fetch_weapon_damage_data, fetch_weapon_runes,
 };
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_items;
 use crate::models::item::armor_struct::{Armor, ArmorData};
@@ -226,19 +226,6 @@ pub async fn fetch_shields(
         })
     }
     Ok(result_vec)
-}
-
-pub async fn fetch_traits_associated_with_items(conn: &Pool<Sqlite>) -> Result<Vec<String>> {
-    let x: Vec<MyString> = sqlx::query_as(
-        "
-        SELECT
-            tt.name AS my_str
-        FROM TRAIT_ITEM_ASSOCIATION_TABLE tiat
-            LEFT JOIN TRAIT_TABLE tt ON tiat.trait_id = tt.name GROUP BY tt.name",
-    )
-    .fetch_all(conn)
-    .await?;
-    Ok(x.iter().map(|x| x.my_str.clone()).collect())
 }
 
 async fn update_items_with_traits(conn: &Pool<Sqlite>, mut items: Vec<Item>) -> Vec<Item> {

@@ -23,6 +23,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
         web::scope("/shop")
             .service(get_item)
             .service(get_shop_listing)
+            .service(get_sources_list)
             .service(get_random_shop_listing),
     );
 }
@@ -134,7 +135,7 @@ pub async fn get_item(
 
 #[utoipa::path(
     get,
-    path = "/shop/traits",
+    path = "/shop/sources",
     tag = "shop",
     params(
 
@@ -144,9 +145,9 @@ pub async fn get_item(
         (status=400, description = "Bad request.")
     ),
 )]
-#[get("/traits")]
-pub async fn get_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(shop_service::get_traits_list(&data).await))
+#[get("/sources")]
+pub async fn get_sources_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+    Ok(web::Json(shop_service::get_sources_list(&data).await))
 }
 
 fn sanitize_id(creature_id: &str) -> actix_web::Result<i64> {
