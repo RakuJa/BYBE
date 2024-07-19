@@ -31,7 +31,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
 pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     #[derive(OpenApi)]
     #[openapi(
-        paths(get_shop_listing, get_item, get_random_shop_listing),
+        paths(get_shop_listing, get_item, get_random_shop_listing, get_sources_list),
         components(schemas(
             ResponseItem,
             ItemTypeEnum,
