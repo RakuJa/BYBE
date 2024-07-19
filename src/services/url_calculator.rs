@@ -7,7 +7,7 @@ pub fn shop_next_url_calculator(
     pagination: &ShopPaginatedRequest,
     next_cursor: u32,
 ) -> String {
-    let base_url = "https://backbybe.fly.dev/bestiary/list/";
+    let base_url = "https://backbybe.fly.dev/shop/list/";
     let filter_query = shop_filter_query_calculator(field_filters);
 
     let pagination_query = format!(
@@ -126,23 +126,11 @@ fn creature_filter_query_calculator(field_filters: &CreatureFieldFilters) -> Str
 fn shop_filter_query_calculator(field_filters: &ItemFieldFilters) -> String {
     let queries: Vec<String> = [
         field_filters
-            .name_filter
-            .clone()
-            .map(|name| format!("name_filter={}", name)),
-        field_filters
             .min_bulk_filter
             .map(|bulk| format!("min_bulk_filter={}", bulk)),
         field_filters
             .max_bulk_filter
             .map(|bulk| format!("max_bulk_filter={}", bulk)),
-        field_filters
-            .category_filter
-            .clone()
-            .map(|cat| format!("category_filter={}", cat)),
-        field_filters
-            .source_filter
-            .clone()
-            .map(|source| format!("source_filter={}", source)),
         field_filters
             .min_hardness_filter
             .map(|hn| format!("min_hardness_filter={}", hn)),
@@ -173,18 +161,6 @@ fn shop_filter_query_calculator(field_filters: &ItemFieldFilters) -> String {
         field_filters
             .max_n_of_uses_filter
             .map(|uses| format!("max_n_of_uses_filter={}", uses)),
-        field_filters
-            .type_filter
-            .clone()
-            .map(|x| format!("type_filter={}", x)),
-        field_filters
-            .rarity_filter
-            .clone()
-            .map(|rar| format!("rarity_filter={}", rar)),
-        field_filters
-            .size_filter
-            .clone()
-            .map(|size| format!("size_filter={}", size)),
     ]
     .iter()
     .filter_map(|opt| opt.clone())

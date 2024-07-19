@@ -40,6 +40,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             RandomShopData,
             Dice,
             ShopTemplateEnum,
+            ItemFieldFilters,
             ItemSortEnum,
             DamageData,
             WeaponData,
@@ -54,28 +55,32 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
 }
 
 #[utoipa::path(
-    get,
+    post,
     path = "/shop/list",
     tag = "shop",
+    request_body(
+        content = ItemFieldFilters,
+        content_type = "application/json",
+    ),
     params(
-        ItemFieldFilters, PaginatedRequest, ShopSortData
+        PaginatedRequest, ShopSortData
     ),
     responses(
         (status=200, description = "Successful Response", body = ShopListingResponse),
         (status=400, description = "Bad request.")
     ),
 )]
-#[get("/list")]
+#[post("/list")]
 pub async fn get_shop_listing(
     data: web::Data<AppState>,
-    filters: Query<ItemFieldFilters>,
+    web::Json(body): web::Json<ItemFieldFilters>,
     pagination: Query<PaginatedRequest>,
     sort_data: Query<ShopSortData>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         shop_service::get_shop_listing(
             &data,
-            &filters.0,
+            &body,
             &ShopPaginatedRequest {
                 paginated_request: pagination.0,
                 shop_sort_data: sort_data.0,

@@ -14,6 +14,7 @@ use validator::Validate;
 #[derive(Serialize, Deserialize, IntoParams, Validate)]
 pub struct CreatureFieldFilters {
     pub name_filter: Option<String>,
+    pub source_filter: Option<String>,
     pub family_filter: Option<String>,
     pub rarity_filter: Option<RarityEnum>,
     pub size_filter: Option<SizeEnum>,
@@ -36,11 +37,11 @@ pub struct CreatureFieldFilters {
     pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 
-#[derive(Serialize, Deserialize, IntoParams, Validate)]
+#[derive(Serialize, Deserialize, IntoParams, ToSchema, Validate)]
 pub struct ItemFieldFilters {
     pub name_filter: Option<String>,
-    pub category_filter: Option<String>,
-    pub source_filter: Option<String>,
+    pub category_filter: Option<Vec<String>>,
+    pub source_filter: Option<Vec<String>>,
 
     #[validate(range(min = 0.))]
     pub min_bulk_filter: Option<f64>,
@@ -67,9 +68,9 @@ pub struct ItemFieldFilters {
     #[validate(range(min = 0))]
     pub max_n_of_uses_filter: Option<i64>,
 
-    pub type_filter: Option<ItemTypeEnum>,
-    pub rarity_filter: Option<RarityEnum>,
-    pub size_filter: Option<SizeEnum>,
+    pub type_filter: Option<Vec<ItemTypeEnum>>,
+    pub rarity_filter: Option<Vec<RarityEnum>>,
+    pub size_filter: Option<Vec<SizeEnum>>,
     pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 
