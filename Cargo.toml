@@ -1,6 +1,6 @@
 [package]
 name = "bybe"
-version = "1.3.0"
+version = "2.0.0"
 authors = ["RakuJa"]
 
 # Compiler info
@@ -21,31 +21,33 @@ build = "build/main.rs"
 unsafe_code = "forbid"
 
 [dependencies]
-actix-web = "4.6.0"
+actix-web = "4.8.0"
 actix-cors = "0.7.0"
-actix-web-validator = "5.0.1"
-# Cannot be updated until actix-web updates validator dependency
-validator = {version="0.16.1", features = ["derive"]}
+validator = {version="0.18.1", features = ["derive"]}
 
-utoipa = { version = "4.2.3", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "7.0.1", features = ["actix-web"] }
+utoipa = { version = "5.0.0-alpha.0", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "7.1.1-alpha.0", features = ["actix-web"] }
 
 sqlx = { version = "0.7.4", features = ["runtime-async-std", "sqlite"] }
-cached = { version = "0.51.3", features = ["async"] }
+cached = { version = "0.52.0", features = ["async"] }
 
 anyhow = "1.0.86"
-serde = { version = "1.0.202", features = ["derive"] }
-serde_json = "1.0.117"
-strum = {version="0.26.2", features = ["derive"]}
+serde = { version = "1.0.204", features = ["derive"] }
+serde_json = "1.0.120"
+strum = {version="0.26.3", features = ["derive"]}
 rand = "0.9.0-alpha.1"
-counter = "0.5.7"
+counter = "0.6.0"
+ordered-float = { version = "4", features = ["serde"]}
+num-traits = "0.2.19"
+maplit = "1.0.2"
+
+regex = "1.10.5"
+
 dotenvy = "0.15.7"
-regex = "1.10.4"
 
 env_logger = "0.11.3"
-log = "0.4.21"
-maplit = "1.0.2"
-num-traits = "0.2.19"
+log = "0.4.22"
+once_cell = "1.19.0"
 
 [build-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "rt"] }

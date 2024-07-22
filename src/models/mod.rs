@@ -1,12 +1,11 @@
+pub mod bestiary_structs;
 pub mod creature;
-pub mod creature_component;
-pub mod creature_fields_enum;
-pub mod creature_filter_enum;
-pub mod creature_metadata;
 pub mod db;
 pub mod encounter_structs;
-pub mod items;
+pub mod item;
 pub mod pf_version_enum;
 pub mod response_data;
 pub mod routers_validator_structs;
 pub mod scales_struct;
+pub mod shared;
+pub mod shop_structs;

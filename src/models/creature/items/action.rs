@@ -1,4 +1,4 @@
-use crate::models::creature_metadata::rarity_enum::RarityEnum;
+use crate::models::shared::rarity_enum::RarityEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
@@ -8,7 +8,7 @@ pub struct Action {
     pub name: String,
     pub action_type: String,
     pub n_of_actions: Option<i64>,
-    pub category: String,
+    pub category: Option<String>,
     pub description: String,
 
     pub license: String,

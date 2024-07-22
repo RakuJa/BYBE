@@ -1,5 +1,6 @@
-use crate::models::items::action::Action;
-use crate::models::items::skill::Skill;
+use crate::models::creature::items::action::Action;
+use crate::models::creature::items::skill::Skill;
+use crate::models::item::item_struct::Item;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
@@ -18,6 +19,7 @@ pub struct AbilityScores {
 pub struct CreatureExtraData {
     pub actions: Vec<Action>,
     pub skills: Vec<Skill>,
+    pub items: Vec<Item>,
     pub languages: Vec<String>,
     pub senses: Vec<String>,
     pub speeds: BTreeMap<String, i16>,

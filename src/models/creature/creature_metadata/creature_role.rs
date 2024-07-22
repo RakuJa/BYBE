@@ -1,9 +1,11 @@
-use crate::models::creature_component::creature_combat::CreatureCombatData;
-use crate::models::creature_component::creature_core::EssentialData;
-use crate::models::creature_component::creature_extra::CreatureExtraData;
-use crate::models::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
+use crate::models::creature::creature_component::creature_core::EssentialData;
+use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
+use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::scales_struct::creature_scales::CreatureScales;
 use num_traits::float::FloatConst;
+use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
@@ -29,6 +31,12 @@ pub enum CreatureRoleEnum {
     SpellCaster,
 }
 
+fn get_dmg_from_regex(raw_str: &str) -> Option<i64> {
+    // It will only initialize it once.
+    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\((\d+)\)").unwrap());
+    RE.captures(raw_str)?.get(1)?.as_str().parse::<i64>().ok()
+}
+
 impl CreatureRoleEnum {
     pub fn to_db_column(&self) -> String {
         match self {
@@ -48,17 +56,16 @@ impl CreatureRoleEnum {
         cr_spells: &CreatureSpellCasterData,
         scales: &CreatureScales,
     ) -> BTreeMap<CreatureRoleEnum, i64> {
-        let dmg_scales_regex = Regex::new(r"\((\d+)\)").unwrap();
         let mut roles = BTreeMap::new();
         roles.insert(
             Self::Brute,
-            is_brute(cr_core, cr_extra, cr_combat, scales, &dmg_scales_regex)
+            is_brute(cr_core, cr_extra, cr_combat, scales)
                 .map(|x| (x * 100.).round() as i64)
                 .unwrap_or(0),
         );
         roles.insert(
             Self::MagicalStriker,
-            is_magical_striker(cr_core, cr_spells, cr_combat, scales, &dmg_scales_regex)
+            is_magical_striker(cr_core, cr_spells, cr_combat, scales)
                 .map(|x| (x * 100.).round() as i64)
                 .unwrap_or(0),
         );
@@ -76,13 +83,13 @@ impl CreatureRoleEnum {
         );
         roles.insert(
             Self::Sniper,
-            is_sniper(cr_core, cr_extra, cr_combat, scales, &dmg_scales_regex)
+            is_sniper(cr_core, cr_extra, cr_combat, scales)
                 .map(|x| (x * 100.).round() as i64)
                 .unwrap_or(0),
         );
         roles.insert(
             Self::Soldier,
-            is_soldier(cr_core, cr_extra, cr_combat, scales, &dmg_scales_regex)
+            is_soldier(cr_core, cr_extra, cr_combat, scales)
                 .map(|x| (x * 100.).round() as i64)
                 .unwrap_or(0),
         );
@@ -105,7 +112,6 @@ fn is_brute(
     cr_extra: &CreatureExtraData,
     cr_combat: &CreatureCombatData,
     scales: &CreatureScales,
-    re: &Regex,
 ) -> Option<f64> {
     let mut score: u16 = 0;
     let lvl = cr_core.level;
@@ -144,18 +150,8 @@ fn is_brute(
     let atk_bonus_scales = scales.strike_bonus_scales.get(&lvl)?;
     let dmg_scales = scales.strike_dmg_scales.get(&lvl)?;
 
-    let scales_extreme_avg = re
-        .captures(dmg_scales.extreme.as_str())?
-        .get(1)?
-        .as_str()
-        .parse::<i64>()
-        .ok()?;
-    let scales_high_avg = re
-        .captures(dmg_scales.high.as_str())?
-        .get(1)?
-        .as_str()
-        .parse::<i64>()
-        .ok()?;
+    let scales_extreme_avg = get_dmg_from_regex(dmg_scales.extreme.as_str())?;
+    let scales_high_avg = get_dmg_from_regex(dmg_scales.high.as_str())?;
     // high attack bonus and high damage OR moderate attack bonus and extreme damage
     let wp_distance = cr_combat
         .weapons
@@ -163,12 +159,14 @@ fn is_brute(
         .filter(|wp| wp.get_avg_dmg().is_some())
         .map(|wp| {
             let avg_dmg = wp.get_avg_dmg().unwrap();
-            let x = calculate_lb_distance(atk_bonus_scales.high, wp.to_hit_bonus)
-                + calculate_lb_distance(scales_high_avg, avg_dmg);
+            let x = calculate_lb_distance(
+                atk_bonus_scales.high,
+                wp.weapon_data.to_hit_bonus.unwrap_or(0),
+            ) + calculate_lb_distance(scales_high_avg, avg_dmg);
             let y = calculate_dist(
                 atk_bonus_scales.moderate,
                 atk_bonus_scales.high,
-                wp.to_hit_bonus,
+                wp.weapon_data.to_hit_bonus.unwrap_or(0),
             ) + calculate_lb_distance(scales_extreme_avg, avg_dmg);
             x.min(y)
         })
@@ -184,7 +182,6 @@ fn is_sniper(
     cr_extra: &CreatureExtraData,
     cr_combat: &CreatureCombatData,
     scales: &CreatureScales,
-    re: &Regex,
 ) -> Option<f64> {
     let mut score: u16 = 0;
     let lvl = cr_core.level;
@@ -205,22 +202,21 @@ fn is_sniper(
     // moderate to low HP; skipped
     let atk_bonus_scales = scales.strike_bonus_scales.get(&lvl)?;
     let dmg_scales = scales.strike_dmg_scales.get(&lvl)?;
-    let scales_mod_avg = re
-        .captures(dmg_scales.moderate.as_str())?
-        .get(1)?
-        .as_str()
-        .parse::<i64>()
-        .ok()?;
+    let scales_mod_avg = get_dmg_from_regex(dmg_scales.moderate.as_str())?;
     // ranged Strikes have high attack bonus and damage or
     // moderate attack bonus and extreme damage (melee Strikes are weaker)
     let wp_distance = cr_combat
         .weapons
         .iter()
-        .filter(|wp| wp.get_avg_dmg().is_some() && wp.wp_type.to_uppercase() == "RANGED")
+        .filter(|wp| {
+            wp.get_avg_dmg().is_some() && wp.weapon_data.weapon_type == WeaponTypeEnum::Ranged
+        })
         .map(|wp| {
             let avg_dmg = wp.get_avg_dmg().unwrap();
-            calculate_lb_distance(atk_bonus_scales.high, wp.to_hit_bonus)
-                + calculate_lb_distance(scales_mod_avg, avg_dmg)
+            calculate_lb_distance(
+                atk_bonus_scales.high,
+                wp.weapon_data.to_hit_bonus.unwrap_or(0),
+            ) + calculate_lb_distance(scales_mod_avg, avg_dmg)
         })
         .min();
     score += wp_distance.unwrap_or(MISSING_FIELD_DISTANCE);
@@ -261,7 +257,6 @@ pub fn is_soldier(
     cr_extra: &CreatureExtraData,
     cr_combat: &CreatureCombatData,
     scales: &CreatureScales,
-    re: &Regex,
 ) -> Option<f64> {
     let mut score: u16 = 0;
     let lvl = cr_core.level;
@@ -276,27 +271,24 @@ pub fn is_soldier(
     score += calculate_lb_distance(saving_scales.high, cr_combat.saving_throws.fortitude);
     let atk_bonus_scales = scales.strike_bonus_scales.get(&lvl)?;
     let dmg_scales = scales.strike_dmg_scales.get(&lvl)?;
-    let scales_high_avg = re
-        .captures(dmg_scales.high.as_str())?
-        .get(1)?
-        .as_str()
-        .parse::<i64>()
-        .ok()?;
+    let scales_high_avg = get_dmg_from_regex(dmg_scales.high.as_str())?;
     // high attack bonus and high damage;
-
     let wp_distance = cr_combat
         .weapons
         .iter()
         .filter(|wp| wp.get_avg_dmg().is_some())
         .map(|wp| {
-            calculate_lb_distance(atk_bonus_scales.high, wp.to_hit_bonus)
-                + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
+            calculate_lb_distance(
+                atk_bonus_scales.high,
+                wp.weapon_data.to_hit_bonus.unwrap_or(0),
+            ) + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
         })
         .min();
 
     score += wp_distance.unwrap_or(MISSING_FIELD_DISTANCE);
     if !cr_extra.actions.iter().any(|x| {
-        x.category.as_str().to_uppercase() == "OFFENSIVE"
+        x.category.is_some()
+            && x.category.clone().unwrap().as_str().to_uppercase() == "OFFENSIVE"
             && x.action_type.as_str().to_uppercase() == "ACTION"
     }) {
         score += MISSING_FIELD_DISTANCE;
@@ -316,26 +308,22 @@ pub fn is_magical_striker(
     cr_spell: &CreatureSpellCasterData,
     cr_combat: &CreatureCombatData,
     scales: &CreatureScales,
-    re: &Regex,
 ) -> Option<f64> {
     let mut score: u16 = 0;
     let lvl = cr_core.level;
     let atk_bonus_scales = scales.strike_bonus_scales.get(&lvl)?;
     let dmg_scales = scales.strike_dmg_scales.get(&lvl)?;
-    let scales_high_avg = re
-        .captures(dmg_scales.high.as_str())?
-        .get(1)?
-        .as_str()
-        .parse::<i64>()
-        .ok()?;
+    let scales_high_avg = get_dmg_from_regex(dmg_scales.high.as_str())?;
     // high attack bonus and high damage;
     let wp_distance = cr_combat
         .weapons
         .iter()
         .filter(|wp| wp.get_avg_dmg().is_some())
         .map(|wp| {
-            calculate_lb_distance(atk_bonus_scales.high, wp.to_hit_bonus)
-                + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
+            calculate_lb_distance(
+                atk_bonus_scales.high,
+                wp.weapon_data.to_hit_bonus.unwrap_or(0),
+            ) + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
         })
         .min();
     score += wp_distance.unwrap_or(MISSING_FIELD_DISTANCE);
@@ -401,7 +389,8 @@ fn is_skill_paragon(
         .actions
         .iter()
         .filter(|x| {
-            x.category.as_str().to_uppercase() == "OFFENSIVE"
+            x.category.is_some()
+                && x.category.clone().unwrap().as_str().to_uppercase() == "OFFENSIVE"
                 && x.action_type.as_str().to_uppercase() == "ACTION"
         })
         .count()

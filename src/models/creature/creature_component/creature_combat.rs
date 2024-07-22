@@ -1,4 +1,6 @@
-use crate::models::items::weapon::Weapon;
+use crate::models::item::armor_struct::Armor;
+use crate::models::item::shield_struct::Shield;
+use crate::models::item::weapon_struct::Weapon;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
@@ -16,6 +18,8 @@ pub struct SavingThrows {
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct CreatureCombatData {
     pub weapons: Vec<Weapon>,
+    pub armors: Vec<Armor>,
+    pub shields: Vec<Shield>,
     pub resistances: BTreeMap<String, i16>,
     pub immunities: Vec<String>,
     pub weaknesses: BTreeMap<String, i16>,

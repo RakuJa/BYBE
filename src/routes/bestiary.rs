@@ -1,34 +1,39 @@
-use crate::models::creature_component::creature_combat::CreatureCombatData;
-use crate::models::creature_component::creature_combat::SavingThrows;
-use crate::models::creature_component::creature_core::CreatureCoreData;
-use crate::models::creature_component::creature_core::DerivedData;
-use crate::models::creature_component::creature_core::EssentialData;
-use crate::models::creature_component::creature_extra::AbilityScores;
-use crate::models::creature_component::creature_extra::CreatureExtraData;
-use crate::models::creature_component::creature_spell_caster::CreatureSpellCasterData;
-use crate::models::creature_component::creature_variant::CreatureVariantData;
-use crate::models::creature_metadata::alignment_enum::AlignmentEnum;
-use crate::models::creature_metadata::creature_role::CreatureRoleEnum;
-use crate::models::creature_metadata::rarity_enum::RarityEnum;
-use crate::models::creature_metadata::size_enum::SizeEnum;
-use crate::models::creature_metadata::type_enum::CreatureTypeEnum;
-use crate::models::creature_metadata::variant_enum::CreatureVariant;
-use crate::models::pf_version_enum::PathfinderVersionEnum;
+use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
+use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::response_data::OptionalData;
 use crate::models::response_data::ResponseCreature;
+use crate::models::routers_validator_structs::OrderEnum;
+use crate::models::shared::rarity_enum::RarityEnum;
+use crate::models::shared::size_enum::SizeEnum;
 
-use crate::models::items::action::Action;
-use crate::models::items::skill::Skill;
-use crate::models::items::spell::Spell;
-use crate::models::items::spell_caster_entry::SpellCasterEntry;
-use crate::models::items::weapon::Weapon;
+use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
+use crate::models::creature::creature_component::creature_combat::SavingThrows;
+use crate::models::creature::creature_component::creature_core::CreatureCoreData;
+use crate::models::creature::creature_component::creature_core::DerivedData;
+use crate::models::creature::creature_component::creature_core::EssentialData;
+use crate::models::creature::creature_component::creature_extra::AbilityScores;
+use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
+use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
+use crate::models::pf_version_enum::PathfinderVersionEnum;
 
-use crate::models::routers_validator_structs::{FieldFilters, PaginatedRequest};
+use crate::models::creature::items::action::Action;
+use crate::models::creature::items::skill::Skill;
+use crate::models::creature::items::spell::Spell;
+use crate::models::creature::items::spell_caster_entry::SpellCasterEntry;
+use crate::models::item::armor_struct::Armor;
+use crate::models::item::weapon_struct::Weapon;
+
+use crate::models::bestiary_structs::CreatureSortEnum;
+use crate::models::bestiary_structs::{BestiaryPaginatedRequest, BestiarySortData};
+use crate::models::routers_validator_structs::{CreatureFieldFilters, PaginatedRequest};
 use crate::services::bestiary_service;
 use crate::services::bestiary_service::BestiaryResponse;
 use crate::AppState;
+use actix_web::web::Query;
 use actix_web::{error, get, web, Responder, Result};
-use actix_web_validator::Query;
 use utoipa::OpenApi;
 
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
@@ -83,13 +88,16 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             CreatureSpellCasterData,
             Spell,
             Weapon,
+            Armor,
             SavingThrows,
             AbilityScores,
             Action,
             Skill,
             CreatureRoleEnum,
             SpellCasterEntry,
-            PathfinderVersionEnum
+            PathfinderVersionEnum,
+            OrderEnum,
+            CreatureSortEnum
         ))
     )]
     struct ApiDoc;
@@ -102,7 +110,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     path = "/bestiary/list",
     tag = "bestiary",
     params(
-        FieldFilters, PaginatedRequest
+        CreatureFieldFilters, PaginatedRequest, BestiarySortData
     ),
     responses(
         (status=200, description = "Successful Response", body = BestiaryResponse),
@@ -112,11 +120,20 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
 #[get("/list")]
 pub async fn get_bestiary(
     data: web::Data<AppState>,
-    filters: Query<FieldFilters>,
+    filters: Query<CreatureFieldFilters>,
     pagination: Query<PaginatedRequest>,
+    sort_data: Query<BestiarySortData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_bestiary(&data, &filters.0, &pagination.0).await,
+        bestiary_service::get_bestiary(
+            &data,
+            &filters.0,
+            &BestiaryPaginatedRequest {
+                paginated_request: pagination.0,
+                bestiary_sort_data: sort_data.0,
+            },
+        )
+        .await,
     ))
 }
 

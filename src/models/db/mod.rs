@@ -3,5 +3,4 @@ pub mod raw_language;
 pub mod raw_resistance;
 pub mod raw_sense;
 pub mod raw_speed;
-pub mod raw_trait;
 pub mod raw_weakness;
