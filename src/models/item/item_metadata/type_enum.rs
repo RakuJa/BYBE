@@ -21,6 +21,27 @@ pub enum ItemTypeEnum {
     Shield,
 }
 
+impl ItemTypeEnum {
+    pub fn to_db_main_table_name(&self) -> String {
+        format!("{}_TABLE", self.to_db_table_name())
+    }
+
+    pub fn to_db_association_table_name(&self) -> String {
+        format!("{}_CREATURE_ASSOCIATION_TABLE", self.to_db_table_name())
+    }
+
+    /// Utility method to reduce code redundancy.
+    /// It returns the generic table name of the given item type.
+    fn to_db_table_name(&self) -> String {
+        String::from(match self {
+            ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => "ITEM",
+            ItemTypeEnum::Weapon => "WEAPON",
+            ItemTypeEnum::Armor => "ARMOR",
+            ItemTypeEnum::Shield => "SHIELD",
+        })
+    }
+}
+
 impl Clone for ItemTypeEnum {
     fn clone(&self) -> ItemTypeEnum {
         match self {

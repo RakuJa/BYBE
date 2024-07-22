@@ -1,3 +1,4 @@
+use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::item::item_struct::Item;
@@ -29,4 +30,32 @@ pub struct CreatureExtraData {
     pub language_detail: Option<String>,
     pub perception: i8,
     pub perception_detail: Option<String>,
+}
+
+impl CreatureExtraData {
+    fn add_mod_to_perception_and_skill_mods(self, modifier: i64) -> CreatureExtraData {
+        let mut ex_data = self;
+        // we should never have a pwl much greater than perception (pwl=lvl)
+        ex_data.perception = (ex_data.perception as i64 + modifier) as i8;
+
+        ex_data.skills = ex_data
+            .skills
+            .into_iter()
+            .map(|mut skill| {
+                skill.modifier += modifier;
+                skill
+            })
+            .collect();
+
+        ex_data
+    }
+    /// Lowers skill and perception by the given pwl_mod
+    pub fn convert_from_base_to_pwl(self, pwl_mod: u64) -> CreatureExtraData {
+        self.add_mod_to_perception_and_skill_mods(-(pwl_mod as i64))
+    }
+
+    /// Increase/Decrease Perception, and skill modifiers by 2.
+    pub fn convert_from_base_to_variant(self, variant: &CreatureVariant) -> CreatureExtraData {
+        self.add_mod_to_perception_and_skill_mods(variant.to_adjustment_modifier())
+    }
 }

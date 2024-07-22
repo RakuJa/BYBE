@@ -3,11 +3,12 @@ use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::ShieldData;
+use crate::models::item::weapon_struct::DamageData;
 use crate::models::item::weapon_struct::WeaponData;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::routers_validator_structs::{Dice, PaginatedRequest};
-use crate::models::shop_structs::ShopTypeEnum;
+use crate::models::shop_structs::ShopTemplateEnum;
 use crate::models::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
 use crate::models::shop_structs::{RandomShopData, ShopSortData};
 use crate::services::shop_service;
@@ -22,6 +23,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
         web::scope("/shop")
             .service(get_item)
             .service(get_shop_listing)
+            .service(get_sources_list)
             .service(get_random_shop_listing),
     );
 }
@@ -29,7 +31,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
 pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     #[derive(OpenApi)]
     #[openapi(
-        paths(get_shop_listing, get_item, get_random_shop_listing),
+        paths(get_shop_listing, get_item, get_random_shop_listing, get_sources_list),
         components(schemas(
             ResponseItem,
             ItemTypeEnum,
@@ -37,8 +39,10 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             Item,
             RandomShopData,
             Dice,
-            ShopTypeEnum,
+            ShopTemplateEnum,
+            ItemFieldFilters,
             ItemSortEnum,
+            DamageData,
             WeaponData,
             ArmorData,
             ShieldData,
@@ -51,28 +55,32 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
 }
 
 #[utoipa::path(
-    get,
+    post,
     path = "/shop/list",
     tag = "shop",
+    request_body(
+        content = ItemFieldFilters,
+        content_type = "application/json",
+    ),
     params(
-        ItemFieldFilters, PaginatedRequest, ShopSortData
+        PaginatedRequest, ShopSortData
     ),
     responses(
         (status=200, description = "Successful Response", body = ShopListingResponse),
         (status=400, description = "Bad request.")
     ),
 )]
-#[get("/list")]
+#[post("/list")]
 pub async fn get_shop_listing(
     data: web::Data<AppState>,
-    filters: Query<ItemFieldFilters>,
+    web::Json(body): web::Json<ItemFieldFilters>,
     pagination: Query<PaginatedRequest>,
     sort_data: Query<ShopSortData>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         shop_service::get_shop_listing(
             &data,
-            &filters.0,
+            &body,
             &ShopPaginatedRequest {
                 paginated_request: pagination.0,
                 shop_sort_data: sort_data.0,
@@ -132,7 +140,7 @@ pub async fn get_item(
 
 #[utoipa::path(
     get,
-    path = "/shop/traits",
+    path = "/shop/sources",
     tag = "shop",
     params(
 
@@ -142,9 +150,9 @@ pub async fn get_item(
         (status=400, description = "Bad request.")
     ),
 )]
-#[get("/traits")]
-pub async fn get_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(shop_service::get_traits_list(&data).await))
+#[get("/sources")]
+pub async fn get_sources_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+    Ok(web::Json(shop_service::get_sources_list(&data).await))
 }
 
 fn sanitize_id(creature_id: &str) -> actix_web::Result<i64> {

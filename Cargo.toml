@@ -40,6 +40,7 @@ counter = "0.6.0"
 ordered-float = { version = "4", features = ["serde"]}
 num-traits = "0.2.19"
 maplit = "1.0.2"
+itertools = "0.13.0"
 
 regex = "1.10.5"
 

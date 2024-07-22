@@ -1,9 +1,8 @@
 use crate::db::shop_proxy;
-use crate::models::item::item_fields_enum::ItemField;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::shop_structs::{
-    RandomShopData, ShopFilterQuery, ShopPaginatedRequest, ShopTypeEnum,
+    RandomShopData, ShopFilterQuery, ShopPaginatedRequest, ShopTemplateEnum,
 };
 use crate::services::url_calculator::shop_next_url_calculator;
 use crate::AppState;
@@ -46,11 +45,11 @@ pub async fn generate_random_shop_listing(
     let min_level = shop_data.min_level.unwrap_or(0);
     let max_level = shop_data.max_level.unwrap_or(30);
 
-    let shop_type = shop_data.shop_type.clone().unwrap_or_default();
+    let shop_type = shop_data.shop_template.clone().unwrap_or_default();
     let n_of_consumables: i64 = shop_data.consumable_dices.iter().map(|x| x.roll()).sum();
     let n_of_equipables: i64 = shop_data.equipment_dices.iter().map(|x| x.roll()).sum();
-    let (n_of_equipment, n_of_armors, n_of_weapons, n_of_shields) = match shop_type {
-        ShopTypeEnum::Blacksmith => {
+    let (n_of_equipment, n_of_weapons, n_of_armors, n_of_shields) = match shop_type {
+        ShopTemplateEnum::Blacksmith => {
             // This will never panic if n_of_equipables >= 1 and dice sum should always be at least 1.
             // if 1<=n<2 => n/2 = 0..n
             // TLDR we know that it will never panic.
@@ -63,8 +62,8 @@ pub async fn generate_random_shop_listing(
                 forged_items_tuple.2,
             )
         }
-        ShopTypeEnum::Alchemist => (n_of_equipables, 0, 0, 0),
-        ShopTypeEnum::General => {
+        ShopTemplateEnum::Alchemist => (n_of_equipables, 0, 0, 0),
+        ShopTemplateEnum::General => {
             // This can panic if n_of_equipables is <=1,
             // n=1 => n/2 = 0, 0..0 panic!
             // we manually set it as 1 in that case
@@ -120,8 +119,8 @@ pub async fn generate_random_shop_listing(
     }
 }
 
-pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
-    shop_proxy::get_all_possible_values_of_filter(app_state, ItemField::Traits).await
+pub async fn get_sources_list(app_state: &AppState) -> Vec<String> {
+    shop_proxy::get_all_sources(app_state).await
 }
 
 /// Gets the n of: weapons, armors, shields (in this order).

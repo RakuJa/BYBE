@@ -1,5 +1,5 @@
 use crate::db::data_providers::generic_fetcher::{
-    fetch_armor_runes, fetch_item_traits, fetch_weapon_runes, MyString,
+    fetch_armor_runes, fetch_item_traits, fetch_weapon_damage_data, fetch_weapon_runes,
 };
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_items;
 use crate::models::item::armor_struct::{Armor, ArmorData};
@@ -61,6 +61,7 @@ async fn fetch_weapon_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<We
     .await?;
     weapon.item_core.traits = fetch_item_traits(conn, item_id).await?;
     weapon.weapon_data.property_runes = fetch_weapon_runes(conn, weapon.weapon_data.id).await?;
+    weapon.weapon_data.damage_data = fetch_weapon_damage_data(conn, weapon.weapon_data.id).await?;
     Ok(weapon)
 }
 
@@ -88,7 +89,7 @@ async fn fetch_shield_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<Sh
         "
         SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty,
         it.*
-        FROM SHIELD_TABLE at
+        FROM SHIELD_TABLE st
         LEFT JOIN ITEM_TABLE it ON st.base_item_id = it.id
         WHERE st.base_item_id = ($1)
         ",
@@ -119,6 +120,7 @@ pub async fn fetch_items(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> Re
         LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat
         ON it.id = icat.item_id WHERE icat.item_id IS NULL
         AND UPPER(item_type) == 'EQUIPMENT' OR UPPER(item_type) == 'CONSUMABLE'
+        GROUP BY it.id
         ORDER BY name LIMIT ?,?",
     )
     .bind(cursor)
@@ -135,14 +137,14 @@ pub async fn fetch_weapons(
 ) -> Result<Vec<Weapon>> {
     let x: Vec<Weapon> = sqlx::query_as(
         "
-        SELECT wt.id AS weapon_id, wt.bonus_dmg, wt.to_hit_bonus, wt.dmg_type, wt.number_of_dice, wt.die_size, wt.splash_dmg,
-        wt.n_of_potency_runes, wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
+        SELECT wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
+        wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
         it.*
         FROM WEAPON_TABLE wt
-        LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat
-        ON wt.base_item_id = icat.item_id
+        LEFT OUTER JOIN WEAPON_CREATURE_ASSOCIATION_TABLE wcat
+        ON wt.id = wcat.weapon_id
         LEFT JOIN ITEM_TABLE it ON wt.base_item_id = it.id
-        WHERE icat.item_id IS NULL
+        WHERE wcat.weapon_id IS NULL
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     ",
@@ -155,6 +157,7 @@ pub async fn fetch_weapons(
     for mut el in x {
         el.item_core.traits = fetch_item_traits(conn, el.item_core.id).await?;
         el.weapon_data.property_runes = fetch_weapon_runes(conn, el.weapon_data.id).await?;
+        el.weapon_data.damage_data = fetch_weapon_damage_data(conn, el.weapon_data.id).await?;
         result_vec.push(Weapon {
             item_core: el.item_core,
             weapon_data: el.weapon_data,
@@ -167,13 +170,12 @@ pub async fn fetch_armors(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> R
     let x: Vec<Armor> = sqlx::query_as(
         "
         SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
-        at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id,
-        it.*
+        at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id, it.*
         FROM ARMOR_TABLE at
-        LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat
-        ON at.base_item_id = icat.item_id
+        LEFT OUTER JOIN ARMOR_CREATURE_ASSOCIATION_TABLE acat
+        ON at.id = acat.armor_id
         LEFT JOIN ITEM_TABLE it ON at.base_item_id = it.id
-        WHERE icat.item_id IS NULL
+        WHERE acat.armor_id IS NULL
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     ",
@@ -201,13 +203,12 @@ pub async fn fetch_shields(
 ) -> Result<Vec<Shield>> {
     let x: Vec<Shield> = sqlx::query_as(
         "
-        SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty,
-        it.*
+        SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty, it.*
         FROM SHIELD_TABLE st
-        LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat
-        ON st.base_item_id = icat.item_id
+        LEFT OUTER JOIN SHIELD_CREATURE_ASSOCIATION_TABLE scat
+        ON st.id = scat.shield_id
         LEFT JOIN ITEM_TABLE it ON st.base_item_id = it.id
-        WHERE icat.item_id IS NULL
+        WHERE scat.shield_id IS NULL
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     ",
@@ -225,19 +226,6 @@ pub async fn fetch_shields(
         })
     }
     Ok(result_vec)
-}
-
-pub async fn fetch_traits_associated_with_items(conn: &Pool<Sqlite>) -> Result<Vec<String>> {
-    let x: Vec<MyString> = sqlx::query_as(
-        "
-        SELECT
-            tt.name AS my_str
-        FROM TRAIT_ITEM_ASSOCIATION_TABLE tiat
-            LEFT JOIN TRAIT_TABLE tt ON tiat.trait_id = tt.name GROUP BY tt.name",
-    )
-    .fetch_all(conn)
-    .await?;
-    Ok(x.iter().map(|x| x.my_str.clone()).collect())
 }
 
 async fn update_items_with_traits(conn: &Pool<Sqlite>, mut items: Vec<Item>) -> Vec<Item> {

@@ -11,7 +11,7 @@ use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
-use crate::models::response_data::OptionalData;
+use crate::models::response_data::ResponseDataModifiers;
 use crate::models::routers_validator_structs::{CreatureFieldFilters, OrderEnum};
 use crate::AppState;
 use anyhow::Result;
@@ -21,28 +21,27 @@ use strum::IntoEnumIterator;
 pub async fn get_creature_by_id(
     app_state: &AppState,
     id: i64,
-    variant: &CreatureVariant,
-    optional_data: &OptionalData,
+    variant: CreatureVariant,
+    response_data_mods: &ResponseDataModifiers,
 ) -> Option<Creature> {
-    let creature = creature_fetcher::fetch_creature_by_id(&app_state.conn, optional_data, id)
+    creature_fetcher::fetch_creature_by_id(&app_state.conn, variant, response_data_mods, id)
         .await
-        .ok()?;
-    Some(creature.convert_creature_to_variant(variant))
+        .ok()
 }
 
 pub async fn get_weak_creature_by_id(
     app_state: &AppState,
     id: i64,
-    optional_data: &OptionalData,
+    optional_data: &ResponseDataModifiers,
 ) -> Option<Creature> {
-    get_creature_by_id(app_state, id, &CreatureVariant::Weak, optional_data).await
+    get_creature_by_id(app_state, id, CreatureVariant::Weak, optional_data).await
 }
 pub async fn get_elite_creature_by_id(
     app_state: &AppState,
     id: i64,
-    optional_data: &OptionalData,
+    optional_data: &ResponseDataModifiers,
 ) -> Option<Creature> {
-    get_creature_by_id(app_state, id, &CreatureVariant::Elite, optional_data).await
+    get_creature_by_id(app_state, id, CreatureVariant::Elite, optional_data).await
 }
 
 pub async fn get_paginated_creatures(
@@ -142,13 +141,13 @@ pub async fn get_creatures_passing_all_filters(
         if fetch_weak && level_vec.contains(&(core.essential.level - 1).to_string()) {
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
-                &CreatureVariant::Weak,
+                CreatureVariant::Weak,
             ));
         }
         if fetch_elite && level_vec.contains(&(core.essential.level + 1).to_string()) {
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
-                &CreatureVariant::Elite,
+                CreatureVariant::Elite,
             ));
         }
         creature_vec.push(Creature::from_core(core));
@@ -241,7 +240,7 @@ async fn get_list(app_state: &AppState, variant: CreatureVariant) -> Vec<Creatur
             CreatureVariant::Base => creatures.into_iter().map(Creature::from_core).collect(),
             _ => creatures
                 .into_iter()
-                .map(|cr| Creature::from_core_with_variant(cr, &variant))
+                .map(|cr| Creature::from_core_with_variant(cr, variant.clone()))
                 .collect(),
         };
     }

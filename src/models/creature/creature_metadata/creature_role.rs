@@ -156,9 +156,8 @@ fn is_brute(
     let wp_distance = cr_combat
         .weapons
         .iter()
-        .filter(|wp| wp.get_avg_dmg().is_some())
         .map(|wp| {
-            let avg_dmg = wp.get_avg_dmg().unwrap();
+            let avg_dmg = wp.get_avg_dmg();
             let x = calculate_lb_distance(
                 atk_bonus_scales.high,
                 wp.weapon_data.to_hit_bonus.unwrap_or(0),
@@ -208,11 +207,9 @@ fn is_sniper(
     let wp_distance = cr_combat
         .weapons
         .iter()
-        .filter(|wp| {
-            wp.get_avg_dmg().is_some() && wp.weapon_data.weapon_type == WeaponTypeEnum::Ranged
-        })
+        .filter(|wp| wp.weapon_data.weapon_type == WeaponTypeEnum::Ranged)
         .map(|wp| {
-            let avg_dmg = wp.get_avg_dmg().unwrap();
+            let avg_dmg = wp.get_avg_dmg();
             calculate_lb_distance(
                 atk_bonus_scales.high,
                 wp.weapon_data.to_hit_bonus.unwrap_or(0),
@@ -276,12 +273,11 @@ pub fn is_soldier(
     let wp_distance = cr_combat
         .weapons
         .iter()
-        .filter(|wp| wp.get_avg_dmg().is_some())
         .map(|wp| {
             calculate_lb_distance(
                 atk_bonus_scales.high,
                 wp.weapon_data.to_hit_bonus.unwrap_or(0),
-            ) + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
+            ) + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg())
         })
         .min();
 
@@ -318,12 +314,11 @@ pub fn is_magical_striker(
     let wp_distance = cr_combat
         .weapons
         .iter()
-        .filter(|wp| wp.get_avg_dmg().is_some())
         .map(|wp| {
             calculate_lb_distance(
                 atk_bonus_scales.high,
                 wp.weapon_data.to_hit_bonus.unwrap_or(0),
-            ) + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg().unwrap())
+            ) + calculate_lb_distance(scales_high_avg, wp.get_avg_dmg())
         })
         .min();
     score += wp_distance.unwrap_or(MISSING_FIELD_DISTANCE);

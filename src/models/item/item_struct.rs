@@ -138,15 +138,15 @@ impl Item {
         filters
             .rarity_filter
             .as_ref()
-            .map_or(true, |rarity| self.rarity == *rarity)
+            .map_or(true, |x| x.iter().any(|rarity| self.rarity == *rarity))
             && filters
                 .size_filter
                 .as_ref()
-                .map_or(true, |size| self.size == *size)
+                .map_or(true, |x| x.iter().any(|size| self.size == *size))
             && filters
                 .type_filter
                 .as_ref()
-                .map_or(true, |t_filt| self.item_type == *t_filt)
+                .map_or(true, |x| x.iter().any(|t_filt| self.item_type == *t_filt))
     }
 
     fn check_item_pass_string_filters(&self, filters: &ItemFieldFilters) -> bool {
@@ -154,20 +154,24 @@ impl Item {
             self.name
                 .to_lowercase()
                 .contains(name.to_lowercase().as_str())
-        }) && filters.category_filter.as_ref().map_or(true, |cat| {
-            if self.category.is_none() {
-                true
-            } else {
+        }) && filters.category_filter.as_ref().map_or(true, |x| {
+            x.iter().any(|cat| {
                 self.category
                     .clone()
-                    .unwrap()
+                    .unwrap_or_default()
                     .to_lowercase()
                     .contains(cat.to_lowercase().as_str())
-            }
+            })
         }) && match filters.pathfinder_version.clone().unwrap_or_default() {
             PathfinderVersionEnum::Legacy => !self.remaster,
             PathfinderVersionEnum::Remaster => self.remaster,
             PathfinderVersionEnum::Any => true,
-        }
+        } && filters.source_filter.as_ref().map_or(true, |x| {
+            x.iter().any(|source| {
+                self.source
+                    .to_lowercase()
+                    .contains(source.to_lowercase().as_str())
+            })
+        })
     }
 }

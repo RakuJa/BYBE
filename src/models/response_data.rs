@@ -13,7 +13,8 @@ use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
 #[derive(Serialize, Deserialize, IntoParams, Default, Eq, PartialEq, Hash, Clone, Validate)]
-pub struct OptionalData {
+pub struct ResponseDataModifiers {
+    pub is_pwl_on: Option<bool>,
     pub extra_data: Option<bool>,
     pub combat_data: Option<bool>,
     pub spell_casting_data: Option<bool>,
