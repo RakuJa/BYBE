@@ -492,7 +492,7 @@ pub async fn fetch_creature_by_id(
     id: i64,
 ) -> Result<Creature> {
     let core_data = fetch_creature_core_data(conn, id).await?;
-    let level = core_data.essential.level;
+    let level = core_data.essential.base_level;
     let archive_link = core_data.derived.archive_link.clone();
     let cr = Creature {
         core_data,

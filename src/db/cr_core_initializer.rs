@@ -25,7 +25,7 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
             aon_id: cr.aon_id,
             name: cr.name,
             hp: cr.hp,
-            level: cr.level,
+            base_level: cr.level,
             size: cr.size,
             family: cr.family.unwrap_or(String::from("-")),
             rarity: cr.rarity,

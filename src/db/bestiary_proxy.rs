@@ -70,8 +70,8 @@ pub async fn get_paginated_creatures(
             CreatureSortEnum::Level => a
                 .core_data
                 .essential
-                .level
-                .cmp(&b.core_data.essential.level),
+                .base_level
+                .cmp(&b.core_data.essential.base_level),
             CreatureSortEnum::Trait => a
                 .core_data
                 .traits
@@ -138,13 +138,13 @@ pub async fn get_creatures_passing_all_filters(
         // mean that if we have [0,1,2,3] in the filter and allow_elite => [-1,0,1,2,3] then
         // a creature of level 1 will always be considered the elite variant of level 0. We'll
         // duplicate the data and will have a base 0 for level 0 and elite 0 for level 1
-        if fetch_weak && level_vec.contains(&(core.essential.level - 1).to_string()) {
+        if fetch_weak && level_vec.contains(&(core.essential.base_level - 1).to_string()) {
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
                 CreatureVariant::Weak,
             ));
         }
-        if fetch_elite && level_vec.contains(&(core.essential.level + 1).to_string()) {
+        if fetch_elite && level_vec.contains(&(core.essential.base_level + 1).to_string()) {
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
                 CreatureVariant::Elite,

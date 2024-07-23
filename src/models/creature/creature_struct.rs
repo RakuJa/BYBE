@@ -38,8 +38,8 @@ impl Creature {
     }
 
     pub fn convert_creature_to_pwl(self) -> Creature {
-        let pwl_mod = if self.core_data.essential.level >= 0 {
-            self.core_data.essential.level as u64
+        let pwl_mod = if self.core_data.essential.base_level >= 0 {
+            self.core_data.essential.base_level as u64
         } else {
             0
         };
@@ -57,7 +57,7 @@ impl Creature {
         }
     }
     pub fn from_core(core: CreatureCoreData) -> Creature {
-        let level = core.essential.level;
+        let level = core.essential.base_level;
         let archive_link = core.derived.archive_link.clone();
         Self {
             core_data: core,
@@ -76,10 +76,11 @@ impl Creature {
         mut core: CreatureCoreData,
         creature_variant: CreatureVariant,
     ) -> Creature {
-        let variant_hp = creature_variant.get_variant_hp(core.essential.hp, core.essential.level);
+        let variant_hp =
+            creature_variant.get_variant_hp(core.essential.hp, core.essential.base_level);
         let variant_archive_link =
             creature_variant.get_variant_archive_link(core.derived.archive_link.clone());
-        let variant_level = creature_variant.get_variant_level(core.essential.level);
+        let variant_level = creature_variant.get_variant_level(core.essential.base_level);
         core.essential.hp = variant_hp;
         Self {
             core_data: core,

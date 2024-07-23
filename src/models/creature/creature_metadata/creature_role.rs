@@ -114,7 +114,7 @@ fn is_brute(
     scales: &CreatureScales,
 ) -> Option<f64> {
     let mut score: u16 = 0;
-    let lvl = cr_core.level;
+    let lvl = cr_core.base_level;
     let per_scales = scales.perception_scales.get(&lvl)?;
     // low Perception;
     score += calculate_ub_distance(per_scales.moderate, cr_extra.perception as i64 + 1);
@@ -183,7 +183,7 @@ fn is_sniper(
     scales: &CreatureScales,
 ) -> Option<f64> {
     let mut score: u16 = 0;
-    let lvl = cr_core.level;
+    let lvl = cr_core.base_level;
     let per_scales = scales.perception_scales.get(&lvl)?;
     // high Perception (chosen moderate
     // !!!This is a critical stat, upping it will half creature result!!!
@@ -227,7 +227,7 @@ fn is_skirmisher(
     scales: &CreatureScales,
 ) -> Option<f64> {
     let mut score: u16 = 0;
-    let lvl = cr_core.level;
+    let lvl = cr_core.base_level;
     let ability_scales = scales.ability_scales.get(&lvl)?;
     // high Dex modifier;
     score += calculate_lb_distance(ability_scales.high, cr_extra.ability_scores.dexterity);
@@ -256,7 +256,7 @@ pub fn is_soldier(
     scales: &CreatureScales,
 ) -> Option<f64> {
     let mut score: u16 = 0;
-    let lvl = cr_core.level;
+    let lvl = cr_core.base_level;
     let ability_scales = scales.ability_scales.get(&lvl)?;
     // high Str modifier;
     score += calculate_lb_distance(ability_scales.high, cr_extra.ability_scores.strength);
@@ -306,7 +306,7 @@ pub fn is_magical_striker(
     scales: &CreatureScales,
 ) -> Option<f64> {
     let mut score: u16 = 0;
-    let lvl = cr_core.level;
+    let lvl = cr_core.base_level;
     let atk_bonus_scales = scales.strike_bonus_scales.get(&lvl)?;
     let dmg_scales = scales.strike_dmg_scales.get(&lvl)?;
     let scales_high_avg = get_dmg_from_regex(dmg_scales.high.as_str())?;
@@ -332,9 +332,10 @@ pub fn is_magical_striker(
     } else {
         score += MISSING_FIELD_DISTANCE;
     }
-    if (cr_spell.spells.len() as f64) < (cr_core.level as f64 / 2.).ceil() - 1. {
-        score += (((cr_core.level as f64 / 2.).ceil() as i64) - 1 - (cr_spell.spells.len() as i64))
-            .unsigned_abs() as u16;
+    if (cr_spell.spells.len() as f64) < (cr_core.base_level as f64 / 2.).ceil() - 1. {
+        score +=
+            (((cr_core.base_level as f64 / 2.).ceil() as i64) - 1 - (cr_spell.spells.len() as i64))
+                .unsigned_abs() as u16;
     }
     Some(f64::E().powf(-0.2 * (score as f64)))
 }
@@ -347,7 +348,7 @@ fn is_skill_paragon(
     scales: &CreatureScales,
 ) -> Option<f64> {
     let mut score: u16 = 0;
-    let lvl = cr_core.level;
+    let lvl = cr_core.base_level;
     let ability_scales = scales.ability_scales.get(&lvl)?;
     scales.skill_scales.get(&lvl)?;
     let best_skill = cr_extra.skills.iter().map(|x| x.modifier).max()?;
@@ -404,7 +405,7 @@ fn is_spellcaster(
     scales: &CreatureScales,
 ) -> Option<f64> {
     let mut score: u16 = 0;
-    let lvl = cr_core.level;
+    let lvl = cr_core.base_level;
     let saving_scales = scales.saving_throw_scales.get(&lvl)?;
     // low Fortitude,
     score += calculate_ub_distance(
@@ -425,8 +426,8 @@ fn is_spellcaster(
         cr_spell.spell_caster_entry.spell_casting_dc_mod?,
     );
     // prepared or spontaneous spells up to half the creature’s level (rounded up)
-    if (cr_spell.spells.len() as f64) < (cr_core.level as f64 / 2.).ceil() {
-        score += (((cr_core.level as f64 / 2.).ceil() as i64) - (cr_spell.spells.len() as i64))
+    if (cr_spell.spells.len() as f64) < (cr_core.base_level as f64 / 2.).ceil() {
+        score += (((cr_core.base_level as f64 / 2.).ceil() as i64) - (cr_spell.spells.len() as i64))
             .unsigned_abs() as u16;
     }
     let ability_scales = scales.ability_scales.get(&lvl)?;
