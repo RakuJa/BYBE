@@ -3,7 +3,7 @@ use crate::models::creature::creature_component::filter_struct::FilterStruct;
 use crate::models::creature::creature_filter_enum::CreatureFilter;
 use crate::models::creature::creature_struct::Creature;
 use crate::models::encounter_structs::{
-    EncounterChallengeEnum, EncounterParams, RandomEncounterData,
+    AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, RandomEncounterData,
 };
 use crate::models::response_data::ResponseCreature;
 use crate::services::encounter_handler::encounter_calculator;
@@ -78,18 +78,8 @@ async fn calculate_random_encounter(
     enc_data: RandomEncounterData,
     party_levels: Vec<i64>,
 ) -> Result<RandomEncounterGeneratorResponse> {
-    let enc_diff = enc_data.challenge.unwrap_or(rand::random());
     let is_pwl_on = enc_data.is_pwl_on;
-    let lvl_combinations = encounter_calculator::calculate_lvl_combination_for_encounter(
-        &enc_diff,
-        &party_levels,
-        is_pwl_on,
-    );
-    let filtered_lvl_combinations = encounter_calculator::filter_combinations_outside_range(
-        lvl_combinations,
-        enc_data.min_creatures,
-        enc_data.max_creatures,
-    );
+    let filtered_lvl_combinations = get_lvl_combinations(&enc_data, &party_levels);
     let unique_levels = HashSet::from_iter(
         filtered_lvl_combinations
             .clone()
@@ -277,4 +267,80 @@ async fn get_filtered_creatures(
     allow_elite: bool,
 ) -> Result<Vec<Creature>> {
     get_creatures_passing_all_filters(app_state, filter_map, allow_weak, allow_elite).await
+}
+
+fn get_lvl_combinations(enc_data: &RandomEncounterData, party_levels: &[i64]) -> HashSet<Vec<i64>> {
+    if let Some(adv_group) = enc_data.adventure_group.as_ref() {
+        get_adventure_group_lvl_combinations(adv_group, party_levels)
+    } else {
+        get_standard_lvl_combinations(enc_data, party_levels)
+    }
+}
+
+fn get_standard_lvl_combinations(
+    enc_data: &RandomEncounterData,
+    party_levels: &[i64],
+) -> HashSet<Vec<i64>> {
+    let enc_diff = enc_data.challenge.clone().unwrap_or(rand::random());
+    let lvl_combinations = encounter_calculator::calculate_lvl_combination_for_encounter(
+        &enc_diff,
+        party_levels,
+        enc_data.is_pwl_on,
+    );
+    encounter_calculator::filter_combinations_outside_range(
+        lvl_combinations,
+        enc_data.min_creatures,
+        enc_data.max_creatures,
+    )
+}
+
+fn get_adventure_group_lvl_combinations(
+    adv_group: &AdventureGroupEnum,
+    party_levels: &[i64],
+) -> HashSet<Vec<i64>> {
+    let party_avg = party_levels.iter().sum::<i64>() / party_levels.len() as i64;
+    let mut result = HashSet::new();
+    result.insert(match adv_group {
+        AdventureGroupEnum::BossAndLackeys => {
+            //One creature of party level + 2, four creatures of party level – 4
+            vec![
+                party_avg + 2,
+                party_avg - 4,
+                party_avg - 4,
+                party_avg - 4,
+                party_avg - 4,
+            ]
+        }
+        AdventureGroupEnum::BossAndLieutenant => {
+            //One creature of party level + 2, one creature of party level
+            vec![party_avg + 2, party_avg]
+        }
+        AdventureGroupEnum::EliteEnemies => {
+            //Three creatures of party level
+            vec![party_avg; 3]
+        }
+        AdventureGroupEnum::LieutenantAndLackeys => {
+            //One creature of party level, four creatures of party level – 4
+            vec![
+                party_avg,
+                party_avg - 4,
+                party_avg - 4,
+                party_avg - 4,
+                party_avg - 4,
+            ]
+        }
+        AdventureGroupEnum::MatedPair => {
+            //Two creatures of party level
+            vec![party_avg; 2]
+        }
+        AdventureGroupEnum::Troop => {
+            //One creature of party level, two creatures of party level – 2
+            vec![party_avg, party_avg - 2, party_avg - 2]
+        }
+        AdventureGroupEnum::MookSquad => {
+            //Six creatures of party level – 4
+            vec![party_avg - 4; 6]
+        }
+    });
+    result
 }

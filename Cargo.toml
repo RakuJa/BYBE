@@ -28,8 +28,8 @@ validator = {version="0.18.1", features = ["derive"]}
 utoipa = { version = "5.0.0-alpha.0", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "7.1.1-alpha.0", features = ["actix-web"] }
 
-sqlx = { version = "0.7.4", features = ["runtime-async-std", "sqlite"] }
-cached = { version = "0.52.0", features = ["async"] }
+sqlx = { version = "0.8.0", features = ["runtime-async-std", "sqlite"] }
+cached = { version = "0.53.1", features = ["async"] }
 
 anyhow = "1.0.86"
 serde = { version = "1.0.204", features = ["derive"] }
@@ -46,12 +46,12 @@ regex = "1.10.5"
 
 dotenvy = "0.15.7"
 
-env_logger = "0.11.3"
+env_logger = "0.11.4"
 log = "0.4.22"
 once_cell = "1.19.0"
 
 [build-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "rt"] }
 anyhow = "1.0.86"
-sqlx = {version = "0.7.4", features = ["runtime-async-std", "sqlite"]}
+sqlx = {version = "0.8.0", features = ["runtime-async-std", "sqlite"]}
 dotenvy = "0.15.7"

@@ -30,6 +30,7 @@ pub struct RandomEncounterData {
     pub creature_types: Option<Vec<CreatureTypeEnum>>,
     pub creature_roles: Option<Vec<CreatureRoleEnum>>,
     pub challenge: Option<EncounterChallengeEnum>,
+    pub adventure_group: Option<AdventureGroupEnum>,
     #[validate(range(min = 1, max = 30))]
     pub min_creatures: Option<u8>,
     #[validate(range(min = 1, max = 30))]
@@ -73,6 +74,56 @@ impl Distribution<EncounterChallengeEnum> for Standard {
             3 => EncounterChallengeEnum::Severe,
             4 => EncounterChallengeEnum::Extreme,
             _ => EncounterChallengeEnum::Impossible,
+        }
+    }
+}
+
+#[derive(
+    Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Ord, PartialOrd, Clone,
+)]
+pub enum AdventureGroupEnum {
+    #[serde(alias = "boss_and_lackeys", alias = "BOSS_AND_LACKEYS", alias = "BALA")]
+    //(120 XP): One creature of party level + 2, four creatures of party level – 4
+    BossAndLackeys,
+    #[serde(
+        alias = "boss_and_lieutenant",
+        alias = "BOSS_AND_LIEUTENANT",
+        alias = "BALI"
+    )]
+    //(120 XP): One creature of party level + 2, one creature of party level
+    BossAndLieutenant,
+    #[default]
+    #[serde(alias = "elite_enemies", alias = "ELITE_ENEMIES", alias = "EE")]
+    //(120 XP): Three creatures of party level
+    EliteEnemies,
+    #[serde(
+        alias = "lieutenant_and_lackeys",
+        alias = "LIEUTENANT_AND_LACKEYS",
+        alias = "LAL"
+    )]
+    //(80 XP): One creature of party level, four creatures of party level – 4
+    LieutenantAndLackeys,
+    #[serde(alias = "mated_pair", alias = "MATED_PAIR", alias = "MP")]
+    //(80 XP): Two creatures of party level
+    MatedPair,
+    #[serde(alias = "troop", alias = "TROOP", alias = "T")]
+    //(80 XP): One creature of party level, two creatures of party level – 2
+    Troop,
+    #[serde(alias = "mook_squad", alias = "MOOK_SQUAD", alias = "MS")]
+    //(60 XP): Six creatures of party level – 4
+    MookSquad,
+}
+
+impl Distribution<AdventureGroupEnum> for Standard {
+    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> AdventureGroupEnum {
+        match rng.gen_range(0..7) {
+            0 => AdventureGroupEnum::BossAndLackeys,
+            1 => AdventureGroupEnum::BossAndLieutenant,
+            2 => AdventureGroupEnum::EliteEnemies,
+            3 => AdventureGroupEnum::LieutenantAndLackeys,
+            4 => AdventureGroupEnum::MatedPair,
+            5 => AdventureGroupEnum::Troop,
+            _ => AdventureGroupEnum::MookSquad,
         }
     }
 }
