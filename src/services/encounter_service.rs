@@ -12,8 +12,6 @@ use crate::AppState;
 use anyhow::{ensure, Result};
 use counter::Counter;
 use log::warn;
-use rand::seq::IndexedRandom;
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 use std::collections::{BTreeMap, HashMap, HashSet};
 use utoipa::ToSchema;
@@ -150,7 +148,8 @@ fn choose_random_creatures_combination(
         .for_each(|key| list_of_levels.push(*key));
     let existing_levels = filter_non_existing_levels(list_of_levels, lvl_combinations);
     let tmp = Vec::from_iter(existing_levels.iter());
-    let random_combo = tmp[rand::thread_rng().gen_range(0..tmp.len())];
+
+    let random_combo = tmp[fastrand::usize(..tmp.len())];
     // Now, having chosen the combo, we may have only x filtered creature with level y but
     // x+1 instances of level y. We need to create a vector with duplicates to fill it up to
     // the number of instances of the required level
@@ -165,8 +164,9 @@ fn choose_random_creatures_combination(
             required_number_of_creatures_with_level,
         )?;
         // Now, we choose. This is in case that there are more creatures
-        for curr_chosen_creature in filled_vec_of_creatures.choose_multiple(
-            &mut rand::thread_rng(),
+
+        for curr_chosen_creature in fastrand::choose_multiple(
+            filled_vec_of_creatures.iter(),
             required_number_of_creatures_with_level,
         ) {
             result_vec.push(curr_chosen_creature.clone())
@@ -187,10 +187,15 @@ fn fill_vector_if_it_does_not_contain_enough_elements(
     let creature_with_required_level = lvl_vec.len();
     if creature_with_required_level < required_number_of_creatures_with_level {
         while lvl_vec.len() < required_number_of_creatures_with_level {
-            // I could do choose multiples but it does not allow repetition
-            // this is bad because i increase the probability of the same one getting picked
+            // We could do choose multiples, but it does not allow repetition
+            // this is bad because it increases the probability of the same one getting picked
             // example [A,B] => [A,B,A] => [A,B,A,A] etc
-            lvl_vec.push(lvl_vec.choose(&mut rand::thread_rng()).unwrap().clone());
+            lvl_vec.push(
+                lvl_vec
+                    .get(fastrand::usize(..lvl_vec.len()))
+                    .unwrap()
+                    .clone(),
+            );
         }
     }
     Ok(lvl_vec)
@@ -281,7 +286,10 @@ fn get_standard_lvl_combinations(
     enc_data: &RandomEncounterData,
     party_levels: &[i64],
 ) -> HashSet<Vec<i64>> {
-    let enc_diff = enc_data.challenge.clone().unwrap_or(rand::random());
+    let enc_diff = enc_data
+        .challenge
+        .clone()
+        .unwrap_or(EncounterChallengeEnum::rand());
     let lvl_combinations = encounter_calculator::calculate_lvl_combination_for_encounter(
         &enc_diff,
         party_levels,

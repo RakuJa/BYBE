@@ -4,9 +4,8 @@ use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
-use rand::distributions::{Distribution, Standard};
-use rand::Rng;
 use serde::{Deserialize, Serialize};
+use strum::EnumCount;
 use strum::EnumIter;
 use utoipa::ToSchema;
 use validator::Validate;
@@ -44,7 +43,18 @@ pub struct RandomEncounterData {
 }
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Ord, PartialOrd, Clone,
+    Serialize,
+    Deserialize,
+    ToSchema,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Hash,
+    Ord,
+    PartialOrd,
+    Clone,
+    EnumCount,
 )]
 pub enum EncounterChallengeEnum {
     #[serde(alias = "trivial", alias = "TRIVIAL")]
@@ -65,9 +75,9 @@ pub enum EncounterChallengeEnum {
     // I have to introduce a level for impossible things, Needs balancing Paizo help
 }
 
-impl Distribution<EncounterChallengeEnum> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> EncounterChallengeEnum {
-        match rng.gen_range(0..6) {
+impl EncounterChallengeEnum {
+    pub fn rand() -> EncounterChallengeEnum {
+        match fastrand::usize(0..EncounterChallengeEnum::COUNT) {
             0 => EncounterChallengeEnum::Trivial,
             1 => EncounterChallengeEnum::Low,
             2 => EncounterChallengeEnum::Moderate,
@@ -79,7 +89,18 @@ impl Distribution<EncounterChallengeEnum> for Standard {
 }
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Ord, PartialOrd, Clone,
+    Serialize,
+    Deserialize,
+    ToSchema,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Hash,
+    Ord,
+    PartialOrd,
+    Clone,
+    EnumCount,
 )]
 pub enum AdventureGroupEnum {
     #[serde(alias = "boss_and_lackeys", alias = "BOSS_AND_LACKEYS", alias = "BALA")]
@@ -112,20 +133,6 @@ pub enum AdventureGroupEnum {
     #[serde(alias = "mook_squad", alias = "MOOK_SQUAD", alias = "MS")]
     //(60 XP): Six creatures of party level – 4
     MookSquad,
-}
-
-impl Distribution<AdventureGroupEnum> for Standard {
-    fn sample<R: Rng + ?Sized>(&self, rng: &mut R) -> AdventureGroupEnum {
-        match rng.gen_range(0..7) {
-            0 => AdventureGroupEnum::BossAndLackeys,
-            1 => AdventureGroupEnum::BossAndLieutenant,
-            2 => AdventureGroupEnum::EliteEnemies,
-            3 => AdventureGroupEnum::LieutenantAndLackeys,
-            4 => AdventureGroupEnum::MatedPair,
-            5 => AdventureGroupEnum::Troop,
-            _ => AdventureGroupEnum::MookSquad,
-        }
-    }
 }
 
 pub struct ExpRange {

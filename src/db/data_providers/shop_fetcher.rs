@@ -11,7 +11,6 @@ use crate::models::response_data::ResponseItem;
 use crate::models::shop_structs::ShopFilterQuery;
 use anyhow::Result;
 use log::debug;
-use rand::Rng;
 use sqlx::{query_as, Pool, Sqlite};
 
 pub async fn fetch_item_by_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<ResponseItem> {
@@ -281,7 +280,7 @@ pub async fn fetch_items_with_filters(
 fn fill_item_vec_to_len(item_vec: &[&Item], desired_len: i64) -> Vec<Item> {
     let mut og_vec: Vec<Item> = item_vec.iter().map(|x| (*x).clone()).collect();
     for _ in 0..(item_vec.len() as i64 - desired_len) {
-        if let Some(x) = item_vec.get(rand::thread_rng().gen_range(0..item_vec.len())) {
+        if let Some(x) = item_vec.get(fastrand::usize(0..item_vec.len())) {
             og_vec.push((*x).clone());
         }
     }
