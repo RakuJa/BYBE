@@ -118,7 +118,7 @@ impl Dice {
             // gen_range panics if n<2 (1..1), panic!
             // so we directly return 1 if that's the case
             roll_result += if self.dice_size > 1 {
-                fastrand::i64(1..self.dice_size as i64)
+                fastrand::i64(1..=self.dice_size as i64)
             } else {
                 1
             }

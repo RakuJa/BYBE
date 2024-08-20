@@ -148,12 +148,16 @@ fn choose_random_creatures_combination(
         .for_each(|key| list_of_levels.push(*key));
     let existing_levels = filter_non_existing_levels(list_of_levels, lvl_combinations);
     let tmp = Vec::from_iter(existing_levels.iter());
-
+    ensure!(
+        !tmp.is_empty(),
+        "No valid level combinations to randomly choose from"
+    );
+    // do not remove ensure. the random picker will panic if tmp is empty
     let random_combo = tmp[fastrand::usize(..tmp.len())];
     // Now, having chosen the combo, we may have only x filtered creature with level y but
     // x+1 instances of level y. We need to create a vector with duplicates to fill it up to
     // the number of instances of the required level
-    ensure!(!random_combo.is_empty(), "No valid combo found");
+
     let creature_count = random_combo.iter().collect::<Counter<_>>();
     let mut result_vec: Vec<Creature> = Vec::new();
     for (level, required_number_of_creatures_with_level) in creature_count {
