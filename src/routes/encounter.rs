@@ -1,5 +1,5 @@
 use crate::models::encounter_structs::{
-    EncounterChallengeEnum, EncounterParams, RandomEncounterData,
+    AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, RandomEncounterData,
 };
 use crate::services::encounter_service;
 use crate::services::encounter_service::EncounterInfoResponse;
@@ -25,6 +25,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             RandomEncounterData,
             EncounterParams,
             EncounterChallengeEnum,
+            AdventureGroupEnum,
             RandomEncounterGeneratorResponse,
         ))
     )]

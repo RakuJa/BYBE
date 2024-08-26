@@ -5,7 +5,6 @@ use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
-use rand::Rng;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
@@ -119,7 +118,7 @@ impl Dice {
             // gen_range panics if n<2 (1..1), panic!
             // so we directly return 1 if that's the case
             roll_result += if self.dice_size > 1 {
-                rand::thread_rng().gen_range(1..=self.dice_size) as i64
+                fastrand::i64(1..=self.dice_size as i64)
             } else {
                 1
             }

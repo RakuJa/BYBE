@@ -102,7 +102,19 @@ pub fn prepare_filtered_get_creatures_core(
     if !where_query.is_empty() {
         where_query = format!("WHERE {where_query}");
     }
-    let query = format!("SELECT * FROM CREATURE_CORE cc {where_query} ORDER BY RANDOM() LIMIT 20");
+    let query = format!(
+        "
+    WITH CreatureRankedByLevel AS (
+        SELECT *, ROW_NUMBER() OVER (PARTITION BY level ORDER BY RANDOM()) AS rn
+        FROM CREATURE_CORE cc {where_query}
+    )
+    SELECT * FROM CreatureRankedByLevel WHERE id IN (
+        SELECT id FROM CreatureRankedByLevel WHERE rn>1 ORDER BY RANDOM() LIMIT 20
+    )
+    UNION ALL
+    SELECT * FROM CreatureRankedByLevel WHERE rn=1
+    "
+    );
     debug!("{}", query);
     query
 }

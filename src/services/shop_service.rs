@@ -6,7 +6,6 @@ use crate::models::shop_structs::{
 };
 use crate::services::url_calculator::shop_next_url_calculator;
 use crate::AppState;
-use rand::{thread_rng, Rng};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use utoipa::ToSchema;
@@ -53,7 +52,8 @@ pub async fn generate_random_shop_listing(
             // This will never panic if n_of_equipables >= 1 and dice sum should always be at least 1.
             // if 1<=n<2 => n/2 = 0..n
             // TLDR we know that it will never panic.
-            let n_of_forged_items = thread_rng().gen_range((n_of_equipables / 2)..=n_of_equipables);
+
+            let n_of_forged_items = fastrand::i64((n_of_equipables / 2)..=n_of_equipables);
             let forged_items_tuple = get_forged_items_tuple(n_of_forged_items);
             (
                 n_of_equipables - n_of_forged_items,
@@ -67,7 +67,8 @@ pub async fn generate_random_shop_listing(
             // This can panic if n_of_equipables is <=1,
             // n=1 => n/2 = 0, 0..0 panic!
             // we manually set it as 1 in that case
-            let n_of_forged_items = thread_rng().gen_range(
+
+            let n_of_forged_items = fastrand::i64(
                 0..=if n_of_equipables > 1 {
                     n_of_equipables / 2
                 } else {
@@ -132,7 +133,7 @@ fn get_forged_items_tuple(n_of_forged_items: i64) -> (i64, i64, i64) {
     // n<1 => 0..0, panic!
     // if that's the case we return 0 manually
     let n_of_weapons = if n_of_forged_items > 0 {
-        thread_rng().gen_range(n_of_forged_items / 2..=n_of_forged_items)
+        fastrand::i64(n_of_forged_items / 2..=n_of_forged_items)
     } else {
         0
     };
@@ -145,7 +146,7 @@ fn get_forged_items_tuple(n_of_forged_items: i64) -> (i64, i64, i64) {
     // (shield will never be > armor,
     // with n>3 => (n/3)+1 is always < n
     let n_of_shields = if n_of_armors >= 3 {
-        thread_rng().gen_range(1..(n_of_armors / 3) + 1)
+        fastrand::i64(1..(n_of_armors / 3) + 1)
     } else {
         0
     };
