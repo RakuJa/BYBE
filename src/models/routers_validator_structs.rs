@@ -41,6 +41,8 @@ pub struct ItemFieldFilters {
     pub name_filter: Option<String>,
     pub category_filter: Option<Vec<String>>,
     pub source_filter: Option<Vec<String>>,
+    pub trait_whitelist_filter: Option<Vec<String>>,
+    pub trait_blacklist_filter: Option<Vec<String>>,
 
     #[validate(range(min = 0.))]
     pub min_bulk_filter: Option<f64>,
@@ -58,7 +60,7 @@ pub struct ItemFieldFilters {
     pub min_level_filter: Option<i64>,
     #[validate(range(min = -1))]
     pub max_level_filter: Option<i64>,
-    #[validate(range(min = -1))]
+    #[validate(range(min = 0))]
     pub min_price_filter: Option<i64>,
     #[validate(range(min = 0))]
     pub max_price_filter: Option<i64>,

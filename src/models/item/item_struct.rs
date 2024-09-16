@@ -172,6 +172,22 @@ impl Item {
                     .to_lowercase()
                     .contains(source.to_lowercase().as_str())
             })
+        }) && filters.trait_whitelist_filter.as_ref().map_or(true, |x| {
+            x.iter().any(|filter_trait| {
+                self.traits.iter().any(|item_trait| {
+                    item_trait
+                        .to_lowercase()
+                        .contains(filter_trait.to_lowercase().as_str())
+                })
+            })
+        }) && !filters.trait_blacklist_filter.as_ref().map_or(false, |x| {
+            x.iter().any(|filter_trait| {
+                self.traits.iter().any(|item_trait| {
+                    item_trait
+                        .to_lowercase()
+                        .eq(filter_trait.to_lowercase().as_str())
+                })
+            })
         })
     }
 }

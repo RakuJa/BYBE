@@ -23,6 +23,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
         web::scope("/shop")
             .service(get_item)
             .service(get_shop_listing)
+            .service(get_traits_list)
             .service(get_sources_list)
             .service(get_random_shop_listing),
     );
@@ -31,7 +32,13 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
 pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     #[derive(OpenApi)]
     #[openapi(
-        paths(get_shop_listing, get_item, get_random_shop_listing, get_sources_list),
+        paths(
+            get_shop_listing,
+            get_item,
+            get_random_shop_listing,
+            get_traits_list,
+            get_sources_list
+        ),
         components(schemas(
             ResponseItem,
             ItemTypeEnum,
@@ -153,6 +160,23 @@ pub async fn get_item(
 #[get("/sources")]
 pub async fn get_sources_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_sources_list(&data).await))
+}
+
+#[utoipa::path(
+    get,
+    path = "/shop/traits",
+    tag = "shop",
+    params(
+
+    ),
+    responses(
+        (status=200, description = "Successful Response", body = [String]),
+        (status=400, description = "Bad request.")
+    ),
+)]
+#[get("/traits")]
+pub async fn get_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+    Ok(web::Json(shop_service::get_traits_list(&data).await))
 }
 
 fn sanitize_id(creature_id: &str) -> actix_web::Result<i64> {

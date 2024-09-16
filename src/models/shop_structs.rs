@@ -1,5 +1,8 @@
+use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::routers_validator_structs::{Dice, OrderEnum, PaginatedRequest};
+use crate::models::shared::rarity_enum::RarityEnum;
+use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
 use utoipa::{IntoParams, ToSchema};
@@ -17,6 +20,14 @@ pub enum ShopTemplateEnum {
 
 #[derive(Serialize, Deserialize, ToSchema, Validate, Clone)]
 pub struct RandomShopData {
+    pub category_filter: Option<Vec<String>>,
+    pub source_filter: Option<Vec<String>>,
+    pub trait_whitelist_filter: Option<Vec<String>>,
+    pub trait_blacklist_filter: Option<Vec<String>>,
+    pub type_filter: Option<Vec<ItemTypeEnum>>,
+    pub rarity_filter: Option<Vec<RarityEnum>>,
+    pub size_filter: Option<Vec<SizeEnum>>,
+
     #[validate(range(max = 30))]
     pub min_level: Option<u8>,
     #[validate(range(max = 30))]
@@ -29,16 +40,27 @@ pub struct RandomShopData {
     pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 
-pub struct ShopFilterQuery {
-    //pub shop_type: ShopTypeEnum,
+pub struct ItemTableFieldsFilter {
+    pub category_filter: Vec<String>,
+    pub source_filter: Vec<String>,
+    pub type_filter: Vec<ItemTypeEnum>,
+    pub rarity_filter: Vec<RarityEnum>,
+    pub size_filter: Vec<SizeEnum>,
+    pub supported_version: Vec<String>,
+
     pub min_level: u8,
     pub max_level: u8,
+}
+
+pub struct ShopFilterQuery {
+    pub item_table_fields_filter: ItemTableFieldsFilter,
+    pub trait_whitelist_filter: Vec<String>,
+    pub trait_blacklist_filter: Vec<String>,
     pub n_of_equipment: i64,
     pub n_of_consumables: i64,
     pub n_of_weapons: i64,
     pub n_of_armors: i64,
     pub n_of_shields: i64,
-    pub pathfinder_version: PathfinderVersionEnum,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display)]
