@@ -23,8 +23,8 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
         web::scope("/shop")
             .service(get_item)
             .service(get_shop_listing)
-            .service(get_traits_list)
-            .service(get_sources_list)
+            .service(get_items_traits_list)
+            .service(get_items_sources_list)
             .service(get_random_shop_listing),
     );
 }
@@ -36,8 +36,8 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             get_shop_listing,
             get_item,
             get_random_shop_listing,
-            get_traits_list,
-            get_sources_list
+            get_items_traits_list,
+            get_items_sources_list
         ),
         components(schemas(
             ResponseItem,
@@ -158,7 +158,9 @@ pub async fn get_item(
     ),
 )]
 #[get("/sources")]
-pub async fn get_sources_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn get_items_sources_list(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_sources_list(&data).await))
 }
 
@@ -175,7 +177,7 @@ pub async fn get_sources_list(data: web::Data<AppState>) -> actix_web::Result<im
     ),
 )]
 #[get("/traits")]
-pub async fn get_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn get_items_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_traits_list(&data).await))
 }
 

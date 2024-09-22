@@ -151,14 +151,22 @@ pub async fn get_all_sources(app_state: &AppState) -> Vec<String> {
 /// Gets all the runtime traits. It will cache the result
 #[once(sync_writes = true)]
 pub async fn get_all_traits(app_state: &AppState) -> Vec<String> {
-    match get_all_items_from_db(app_state).await {
-        Ok(v) => v
+    match (
+        get_all_items_from_db(app_state).await,
+        get_all_weapons_from_db(app_state).await,
+        get_all_armors_from_db(app_state).await,
+        get_all_shields_from_db(app_state).await,
+    ) {
+        (Ok(items), Ok(wps), Ok(armors), Ok(shields)) => items
             .into_iter()
+            .chain(wps.into_iter().map(|x| x.item_core))
+            .chain(armors.into_iter().map(|x| x.item_core))
+            .chain(shields.into_iter().map(|x| x.item_core))
             .flat_map(|x| x.traits)
             .unique()
             .filter(|x| !x.is_empty())
             .collect(),
-        Err(_) => {
+        _ => {
             vec![]
         }
     }
