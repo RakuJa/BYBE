@@ -48,6 +48,7 @@ pub async fn get_paginated_items(
             ItemSortEnum::Id => a.core_item.id.cmp(&b.core_item.id),
             ItemSortEnum::Name => a.core_item.name.cmp(&b.core_item.name),
             ItemSortEnum::Level => a.core_item.level.cmp(&b.core_item.level),
+            ItemSortEnum::Trait => a.core_item.traits.cmp(&b.core_item.traits),
             ItemSortEnum::Type => a.core_item.item_type.cmp(&b.core_item.item_type),
             ItemSortEnum::Rarity => a.core_item.rarity.cmp(&b.core_item.rarity),
             ItemSortEnum::Source => a.core_item.source.cmp(&b.core_item.source),
@@ -141,6 +142,7 @@ pub async fn get_all_sources(app_state: &AppState) -> Vec<String> {
             .map(|x| x.source)
             .unique()
             .filter(|x| !x.is_empty())
+            .sorted()
             .collect(),
         Err(_) => {
             vec![]
@@ -165,6 +167,7 @@ pub async fn get_all_traits(app_state: &AppState) -> Vec<String> {
             .flat_map(|x| x.traits)
             .unique()
             .filter(|x| !x.is_empty())
+            .sorted()
             .collect(),
         _ => {
             vec![]

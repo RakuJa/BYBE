@@ -72,6 +72,8 @@ pub enum ItemSortEnum {
     Name,
     #[serde(alias = "level", alias = "LEVEL")]
     Level,
+    #[serde(alias = "trait", alias = "TRAIT")]
+    Trait,
     #[serde(alias = "type", alias = "TYPE")]
     Type,
     #[serde(alias = "rarity", alias = "RARITY")]
