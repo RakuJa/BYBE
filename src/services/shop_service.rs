@@ -7,7 +7,8 @@ use crate::models::shop_structs::{
 };
 use crate::services::url_calculator::shop_next_url_calculator;
 use crate::AppState;
-use anyhow::bail;
+use anyhow::{bail, Context};
+use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
@@ -62,7 +63,7 @@ pub async fn generate_random_shop_listing(
     let shield_percentage = shop_data.shield_percentage;
 
     if let Ok((n_of_equipment, n_of_weapons, n_of_armors, n_of_shields)) =
-        get_n_of_equippable_values(
+        calculate_n_of_equippable_values(
             n_of_equippables,
             if equipment_percentage.is_none()
                 && weapon_percentage.is_none()
@@ -174,20 +175,85 @@ fn convert_result_to_shop_response(
 
 /// Gets the n of: equipment, weapons, armors, shields (in this order).
 /// Changing order is considered a BREAKING CHANGE.
-pub fn get_n_of_equippable_values(
+pub fn calculate_n_of_equippable_values(
     n_of_equippables: i64,
     percentages: (u8, u8, u8, u8),
 ) -> anyhow::Result<(i64, i64, i64, i64)> {
     let (e_p, w_p, a_p, s_p) = percentages;
-
-    if e_p + w_p + a_p + s_p > 100 {
+    let sum_of_percentages = (e_p + w_p + a_p + s_p) as f64;
+    if sum_of_percentages > 100. {
         bail!("Percentages sum value is higher than 100. Incorrect values.")
     }
+    let f_n_of_equippables = n_of_equippables as f64;
+    let (e_v, w_v, a_v, s_v) = (
+        //Simpler form: (f_n_of_equippables * ((w_p as f64 * 100.) / sum_of_percentages)) / 100.,
+        (f_n_of_equippables * e_p as f64) / sum_of_percentages,
+        (f_n_of_equippables * w_p as f64) / sum_of_percentages,
+        (f_n_of_equippables * a_p as f64) / sum_of_percentages,
+        (f_n_of_equippables * s_p as f64) / sum_of_percentages,
+    );
 
     Ok((
-        (n_of_equippables * e_p as i64) / 100,
-        (n_of_equippables * w_p as i64) / 100,
-        (n_of_equippables * a_p as i64) / 100,
-        (n_of_equippables * s_p as i64) / 100,
+        e_v.ceil().to_i64().context("Error converting v to i64")?,
+        w_v.ceil().to_i64().context("Error converting v to i64")?,
+        a_v.ceil().to_i64().context("Error converting v to i64")?,
+        s_v.ceil().to_i64().context("Error converting v to i64")?,
     ))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(10, (10,10,10,10), (3,3,3,3))]
+    #[case(1, (10,10,10,10), (1,1,1,1))]
+    fn calculate_equippable_values_rounded_over_desired_total_case(
+        #[case] input_n_of_equippables: i64,
+        #[case] input_percentages: (u8, u8, u8, u8),
+        #[case] expected: (i64, i64, i64, i64),
+    ) {
+        let result = calculate_n_of_equippable_values(input_n_of_equippables, input_percentages);
+        assert_eq!(true, result.is_ok());
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[rstest]
+    #[case(0, (0,0,0,0), true)]
+    fn calculate_equippable_values_check_is_err(
+        #[case] input_n_of_equippables: i64,
+        #[case] input_percentages: (u8, u8, u8, u8),
+        #[case] expected: bool,
+    ) {
+        let result = calculate_n_of_equippable_values(input_n_of_equippables, input_percentages);
+        assert_eq!(expected, result.is_err());
+    }
+
+    #[rstest]
+    #[case(0, (10,10,10,10), (0,0,0,0))]
+    #[case(0, (10,20,10,0), (0,0,0,0))]
+    fn calculate_equippable_values_zero_as_n_of_equippables(
+        #[case] input_n_of_equippables: i64,
+        #[case] input_percentages: (u8, u8, u8, u8),
+        #[case] expected: (i64, i64, i64, i64),
+    ) {
+        let result = calculate_n_of_equippable_values(input_n_of_equippables, input_percentages);
+        assert_eq!(true, result.is_ok());
+        assert_eq!(expected, result.unwrap());
+    }
+
+    #[rstest]
+    #[case(10, (10,0,0,0), (10,0,0,0))]
+    #[case(10, (10,10,0,0), (5,5,0,0))]
+    #[case(10, (10,10,10,0), (4,4,4,0))]
+    fn calculate_equippable_values_with_missing_percentages(
+        #[case] input_n_of_equippables: i64,
+        #[case] input_percentages: (u8, u8, u8, u8),
+        #[case] expected: (i64, i64, i64, i64),
+    ) {
+        let result = calculate_n_of_equippable_values(input_n_of_equippables, input_percentages);
+        assert_eq!(true, result.is_ok());
+        assert_eq!(expected, result.unwrap());
+    }
 }
