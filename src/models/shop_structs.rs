@@ -9,6 +9,32 @@ use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
 #[derive(
+    Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Ord, PartialOrd, Clone,
+)]
+pub struct ShopTemplateData {
+    pub equipment_percentage: u8,
+    pub weapon_percentage: u8,
+    pub armor_percentage: u8,
+    pub shield_percentage: u8,
+    pub item_types: Vec<ItemTypeEnum>,
+    pub item_rarities: Vec<RarityEnum>,
+}
+
+impl From<ShopTemplateEnum> for ShopTemplateData {
+    fn from(template_enum: ShopTemplateEnum) -> Self {
+        let (e_p, w_p, a_p, s_p) = template_enum.to_equippable_percentages();
+        ShopTemplateData {
+            equipment_percentage: e_p,
+            weapon_percentage: w_p,
+            armor_percentage: a_p,
+            shield_percentage: s_p,
+            item_types: template_enum.to_item_types(),
+            item_rarities: template_enum.to_item_rarities(),
+        }
+    }
+}
+
+#[derive(
     Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Ord, PartialOrd, Clone,
 )]
 pub enum ShopTemplateEnum {
@@ -54,7 +80,7 @@ impl ShopTemplateEnum {
         }
     }
 
-    pub fn to_rarity(&self) -> Vec<RarityEnum> {
+    pub fn to_item_rarities(&self) -> Vec<RarityEnum> {
         match self {
             ShopTemplateEnum::Blacksmith => {
                 vec![

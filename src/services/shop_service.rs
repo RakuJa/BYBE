@@ -2,13 +2,15 @@ use crate::db::shop_proxy;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::shop_structs::{
-    ItemTableFieldsFilter, RandomShopData, ShopFilterQuery, ShopPaginatedRequest,
+    ItemTableFieldsFilter, RandomShopData, ShopFilterQuery, ShopPaginatedRequest, ShopTemplateData,
+    ShopTemplateEnum,
 };
 use crate::services::url_calculator::shop_next_url_calculator;
 use crate::AppState;
 use anyhow::bail;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use strum::IntoEnumIterator;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema, Default)]
@@ -43,7 +45,7 @@ pub async fn generate_random_shop_listing(
     shop_data: &RandomShopData,
 ) -> ShopListingResponse {
     let (type_filter, rarity_filter) = if let Some(x) = shop_data.shop_template.clone() {
-        (x.to_item_types(), x.to_rarity())
+        (x.to_item_types(), x.to_item_rarities())
     } else {
         (
             shop_data.type_filter.clone().unwrap_or_default(),
@@ -134,6 +136,12 @@ pub async fn get_sources_list(app_state: &AppState) -> Vec<String> {
 
 pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
     shop_proxy::get_all_traits(app_state).await
+}
+
+pub async fn get_shop_templates_data() -> HashMap<ShopTemplateEnum, ShopTemplateData> {
+    ShopTemplateEnum::iter()
+        .map(|shop_template| (shop_template.clone(), shop_template.into()))
+        .collect()
 }
 
 fn convert_result_to_shop_response(
