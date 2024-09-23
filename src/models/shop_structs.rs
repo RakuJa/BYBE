@@ -18,6 +18,72 @@ pub enum ShopTemplateEnum {
     General,
 }
 
+impl ShopTemplateEnum {
+    /// Returns percentage of equipment, weapons, armor, shield for the given template
+    pub fn to_equippable_percentages(&self) -> (u8, u8, u8, u8) {
+        match self {
+            ShopTemplateEnum::Blacksmith => (10, 40, 25, 25),
+            ShopTemplateEnum::Alchemist => (70, 10, 10, 10),
+            ShopTemplateEnum::General => (52, 16, 16, 16),
+        }
+    }
+
+    pub fn to_item_types(&self) -> Vec<ItemTypeEnum> {
+        match self {
+            ShopTemplateEnum::Blacksmith => {
+                vec![
+                    ItemTypeEnum::Armor,
+                    ItemTypeEnum::Shield,
+                    ItemTypeEnum::Weapon,
+                    ItemTypeEnum::Consumable,
+                    ItemTypeEnum::Equipment,
+                ]
+            }
+            ShopTemplateEnum::Alchemist => {
+                vec![ItemTypeEnum::Consumable, ItemTypeEnum::Equipment]
+            }
+            ShopTemplateEnum::General => {
+                vec![
+                    ItemTypeEnum::Armor,
+                    ItemTypeEnum::Shield,
+                    ItemTypeEnum::Weapon,
+                    ItemTypeEnum::Consumable,
+                    ItemTypeEnum::Equipment,
+                ]
+            }
+        }
+    }
+
+    pub fn to_rarity(&self) -> Vec<RarityEnum> {
+        match self {
+            ShopTemplateEnum::Blacksmith => {
+                vec![
+                    RarityEnum::Common,
+                    RarityEnum::Uncommon,
+                    RarityEnum::Rare,
+                    RarityEnum::Unique,
+                ]
+            }
+            ShopTemplateEnum::Alchemist => {
+                vec![
+                    RarityEnum::Common,
+                    RarityEnum::Uncommon,
+                    RarityEnum::Rare,
+                    RarityEnum::Unique,
+                ]
+            }
+            ShopTemplateEnum::General => {
+                vec![
+                    RarityEnum::Common,
+                    RarityEnum::Uncommon,
+                    RarityEnum::Rare,
+                    RarityEnum::Unique,
+                ]
+            }
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, ToSchema, Validate, Clone)]
 pub struct RandomShopData {
     pub category_filter: Option<Vec<String>>,
@@ -33,9 +99,19 @@ pub struct RandomShopData {
     #[validate(range(max = 30))]
     pub max_level: Option<u8>,
     #[validate(length(min = 1))]
-    pub equipment_dices: Vec<Dice>,
+    pub equippable_dices: Vec<Dice>,
     #[validate(length(min = 1))]
     pub consumable_dices: Vec<Dice>,
+
+    #[validate(range(min = 0, max = 100))]
+    pub equipment_percentage: Option<u8>,
+    #[validate(range(min = 0, max = 100))]
+    pub weapon_percentage: Option<u8>,
+    #[validate(range(min = 0, max = 100))]
+    pub armor_percentage: Option<u8>,
+    #[validate(range(min = 0, max = 100))]
+    pub shield_percentage: Option<u8>,
+
     pub shop_template: Option<ShopTemplateEnum>,
     pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
