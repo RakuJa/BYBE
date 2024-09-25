@@ -49,8 +49,8 @@ impl ShopTemplateEnum {
     pub fn to_equippable_percentages(&self) -> (u8, u8, u8, u8) {
         match self {
             ShopTemplateEnum::Blacksmith => (10, 40, 25, 25),
-            ShopTemplateEnum::Alchemist => (70, 10, 10, 10),
-            ShopTemplateEnum::General => (52, 16, 16, 16),
+            ShopTemplateEnum::Alchemist => (100, 0, 0, 0),
+            ShopTemplateEnum::General => (70, 10, 10, 10),
         }
     }
 

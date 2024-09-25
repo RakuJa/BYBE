@@ -185,13 +185,17 @@ pub fn calculate_n_of_equippable_values(
         bail!("Percentages sum value is higher than 100. Incorrect values.")
     }
     let f_n_of_equippables = n_of_equippables as f64;
-    let (e_v, w_v, a_v, s_v) = (
-        //Simpler form: (f_n_of_equippables * ((w_p as f64 * 100.) / sum_of_percentages)) / 100.,
-        (f_n_of_equippables * e_p as f64) / sum_of_percentages,
-        (f_n_of_equippables * w_p as f64) / sum_of_percentages,
-        (f_n_of_equippables * a_p as f64) / sum_of_percentages,
-        (f_n_of_equippables * s_p as f64) / sum_of_percentages,
-    );
+    let (e_v, w_v, a_v, s_v) = if sum_of_percentages == 0. {
+        (25., 25., 25., 25.)
+    } else {
+        (
+            //Simpler form: (f_n_of_equippables * ((w_p as f64 * 100.) / sum_of_percentages)) / 100.,
+            (f_n_of_equippables * e_p as f64) / sum_of_percentages,
+            (f_n_of_equippables * w_p as f64) / sum_of_percentages,
+            (f_n_of_equippables * a_p as f64) / sum_of_percentages,
+            (f_n_of_equippables * s_p as f64) / sum_of_percentages,
+        )
+    };
 
     Ok((
         e_v.ceil().to_i64().context("Error converting v to i64")?,
@@ -220,14 +224,15 @@ mod tests {
     }
 
     #[rstest]
-    #[case(0, (0,0,0,0), true)]
-    fn calculate_equippable_values_check_is_err(
+    #[case(0, (0,0,0,0), (25, 25, 25, 25))]
+    fn calculate_equippable_values_with_all_0(
         #[case] input_n_of_equippables: i64,
         #[case] input_percentages: (u8, u8, u8, u8),
-        #[case] expected: bool,
+        #[case] expected: (i64, i64, i64, i64),
     ) {
         let result = calculate_n_of_equippable_values(input_n_of_equippables, input_percentages);
-        assert_eq!(expected, result.is_err());
+        assert_eq!(true, result.is_ok());
+        assert_eq!(expected, result.unwrap());
     }
 
     #[rstest]
