@@ -46,7 +46,7 @@ pub async fn generate_random_shop_listing(
     shop_data: &RandomShopData,
 ) -> ShopListingResponse {
     let (type_filter, rarity_filter) = if let Some(x) = shop_data.shop_template.clone() {
-        (x.to_item_types(), x.to_item_rarities())
+        (x.get_allowed_item_types(), x.get_allowed_item_rarities())
     } else {
         (
             shop_data.type_filter.clone().unwrap_or_default(),
@@ -70,7 +70,7 @@ pub async fn generate_random_shop_listing(
                 && armor_percentage.is_none()
                 && shield_percentage.is_none()
             {
-                shop_type.to_equippable_percentages()
+                shop_type.get_equippable_percentages()
             } else {
                 (
                     equipment_percentage.unwrap_or(0),
@@ -139,10 +139,8 @@ pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
     shop_proxy::get_all_traits(app_state).await
 }
 
-pub async fn get_shop_templates_data() -> HashMap<ShopTemplateEnum, ShopTemplateData> {
-    ShopTemplateEnum::iter()
-        .map(|shop_template| (shop_template.clone(), shop_template.into()))
-        .collect()
+pub async fn get_shop_templates_data() -> Vec<ShopTemplateData> {
+    ShopTemplateEnum::iter().map(|x| x.into()).collect()
 }
 
 fn convert_result_to_shop_response(
