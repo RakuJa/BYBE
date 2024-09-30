@@ -102,28 +102,13 @@ impl ShopTemplateEnum {
     pub fn get_allowed_item_rarities(&self) -> Vec<RarityEnum> {
         match self {
             ShopTemplateEnum::Blacksmith => {
-                vec![
-                    RarityEnum::Common,
-                    RarityEnum::Uncommon,
-                    RarityEnum::Rare,
-                    RarityEnum::Unique,
-                ]
+                vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
             }
             ShopTemplateEnum::Alchemist => {
-                vec![
-                    RarityEnum::Common,
-                    RarityEnum::Uncommon,
-                    RarityEnum::Rare,
-                    RarityEnum::Unique,
-                ]
+                vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
             }
             ShopTemplateEnum::General => {
-                vec![
-                    RarityEnum::Common,
-                    RarityEnum::Uncommon,
-                    RarityEnum::Rare,
-                    RarityEnum::Unique,
-                ]
+                vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
             }
         }
     }
@@ -135,7 +120,13 @@ impl ShopTemplateEnum {
                 vec![]
             }
             ShopTemplateEnum::Alchemist => {
-                vec![]
+                vec![
+                    "Alchemical".to_string(),
+                    "Bomb".to_string(),
+                    "Consumable".to_string(),
+                    "Splash".to_string(),
+                    "Potion".to_string(),
+                ]
             }
             ShopTemplateEnum::General => {
                 vec![]

@@ -56,6 +56,10 @@ pub async fn generate_random_shop_listing(
     let shop_type = shop_data.shop_template.clone().unwrap_or_default();
     let n_of_consumables: i64 = shop_data.consumable_dices.iter().map(|x| x.roll()).sum();
     let n_of_equippables: i64 = shop_data.equippable_dices.iter().map(|x| x.roll()).sum();
+    // The request is correct, but will result in an empty list.
+    if n_of_consumables == 0 && n_of_equippables == 0 {
+        return ShopListingResponse::default();
+    }
 
     let equipment_percentage = shop_data.equipment_percentage;
     let weapon_percentage = shop_data.weapon_percentage;
