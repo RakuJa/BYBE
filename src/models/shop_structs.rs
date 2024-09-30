@@ -123,7 +123,6 @@ impl ShopTemplateEnum {
                 vec![
                     "Alchemical".to_string(),
                     "Bomb".to_string(),
-                    "Consumable".to_string(),
                     "Splash".to_string(),
                     "Potion".to_string(),
                 ]
