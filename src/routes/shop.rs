@@ -8,6 +8,7 @@ use crate::models::item::weapon_struct::WeaponData;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::routers_validator_structs::{Dice, PaginatedRequest};
+use crate::models::shop_structs::ShopTemplateData;
 use crate::models::shop_structs::ShopTemplateEnum;
 use crate::models::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
 use crate::models::shop_structs::{RandomShopData, ShopSortData};
@@ -49,6 +50,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             RandomShopData,
             Dice,
             ShopTemplateEnum,
+            ShopTemplateData,
             ItemFieldFilters,
             ItemSortEnum,
             DamageData,
@@ -191,7 +193,7 @@ pub async fn get_items_traits_list(data: web::Data<AppState>) -> actix_web::Resu
 
     ),
     responses(
-        (status=200, description = "Successful Response", body = [String]),
+        (status=200, description = "Successful Response", body = [ShopTemplateData]),
         (status=400, description = "Bad request.")
     ),
 )]
