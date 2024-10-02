@@ -22,3 +22,7 @@ repos:
     rev: v3.0.1
     hooks:
       - id: docker-compose-check
+  - repo: https://github.com/est31/cargo-udeps
+    rev: v0.1.47
+    hooks:
+      - id: udeps

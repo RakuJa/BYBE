@@ -9,13 +9,155 @@ use utoipa::{IntoParams, ToSchema};
 use validator::Validate;
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Default, EnumIter, Eq, PartialEq, Hash, Ord, PartialOrd, Clone,
+    Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Ord, PartialOrd, Clone,
+)]
+pub struct ShopTemplateData {
+    pub name: String,
+    pub description: String,
+    pub equipment_percentage: u8,
+    pub weapon_percentage: u8,
+    pub armor_percentage: u8,
+    pub shield_percentage: u8,
+    pub item_types: Vec<ItemTypeEnum>,
+    pub item_rarities: Vec<RarityEnum>,
+    pub item_traits_whitelist: Vec<String>,
+    pub item_traits_blacklist: Vec<String>,
+}
+
+impl From<ShopTemplateEnum> for ShopTemplateData {
+    fn from(template_enum: ShopTemplateEnum) -> Self {
+        let (e_p, w_p, a_p, s_p) = template_enum.get_equippable_percentages();
+        ShopTemplateData {
+            name: template_enum.to_string(),
+            description: template_enum.get_description(),
+            equipment_percentage: e_p,
+            weapon_percentage: w_p,
+            armor_percentage: a_p,
+            shield_percentage: s_p,
+            item_types: template_enum.get_allowed_item_types(),
+            item_rarities: template_enum.get_allowed_item_rarities(),
+            item_traits_whitelist: template_enum.get_traits_whitelist(),
+            item_traits_blacklist: template_enum.get_traits_blacklist(),
+        }
+    }
+}
+
+#[derive(
+    Serialize,
+    Deserialize,
+    ToSchema,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Hash,
+    Ord,
+    PartialOrd,
+    Clone,
+    Display,
 )]
 pub enum ShopTemplateEnum {
     Blacksmith,
     Alchemist,
     #[default]
     General,
+}
+
+impl ShopTemplateEnum {
+    /// Returns percentage of equipment, weapons, armor, shield for the given template
+    pub fn get_equippable_percentages(&self) -> (u8, u8, u8, u8) {
+        match self {
+            ShopTemplateEnum::Blacksmith => (10, 40, 25, 25),
+            ShopTemplateEnum::Alchemist => (100, 0, 0, 0),
+            ShopTemplateEnum::General => (70, 10, 10, 10),
+        }
+    }
+
+    pub fn get_allowed_item_types(&self) -> Vec<ItemTypeEnum> {
+        match self {
+            ShopTemplateEnum::Blacksmith => {
+                vec![
+                    ItemTypeEnum::Armor,
+                    ItemTypeEnum::Shield,
+                    ItemTypeEnum::Weapon,
+                    ItemTypeEnum::Consumable,
+                    ItemTypeEnum::Equipment,
+                ]
+            }
+            ShopTemplateEnum::Alchemist => {
+                vec![ItemTypeEnum::Consumable, ItemTypeEnum::Equipment]
+            }
+            ShopTemplateEnum::General => {
+                vec![
+                    ItemTypeEnum::Armor,
+                    ItemTypeEnum::Shield,
+                    ItemTypeEnum::Weapon,
+                    ItemTypeEnum::Consumable,
+                    ItemTypeEnum::Equipment,
+                ]
+            }
+        }
+    }
+
+    pub fn get_allowed_item_rarities(&self) -> Vec<RarityEnum> {
+        match self {
+            ShopTemplateEnum::Blacksmith => {
+                vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
+            }
+            ShopTemplateEnum::Alchemist => {
+                vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
+            }
+            ShopTemplateEnum::General => {
+                vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
+            }
+        }
+    }
+
+    pub fn get_traits_whitelist(&self) -> Vec<String> {
+        // For future-proof, right now contains 0 logic
+        match self {
+            ShopTemplateEnum::Blacksmith => {
+                vec![]
+            }
+            ShopTemplateEnum::Alchemist => {
+                vec![
+                    "Alchemical".to_string(),
+                    "Bomb".to_string(),
+                    "Splash".to_string(),
+                    "Potion".to_string(),
+                ]
+            }
+            ShopTemplateEnum::General => {
+                vec![]
+            }
+        }
+    }
+
+    pub fn get_traits_blacklist(&self) -> Vec<String> {
+        match self {
+            ShopTemplateEnum::Blacksmith => {
+                vec![]
+            }
+            ShopTemplateEnum::Alchemist => {
+                vec![]
+            }
+            ShopTemplateEnum::General => {
+                vec![]
+            }
+        }
+    }
+
+    pub fn get_description(&self) -> String {
+        String::from(match self {
+            ShopTemplateEnum::Blacksmith => {
+                "Mainly weapons, armors and shields, sometimes equipment and consumables"
+            }
+            ShopTemplateEnum::Alchemist => {
+                "Only equipment and consumables, no weapons, armors or shields"
+            }
+            ShopTemplateEnum::General => "All kinds of items",
+        })
+    }
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Validate, Clone)]
@@ -33,9 +175,19 @@ pub struct RandomShopData {
     #[validate(range(max = 30))]
     pub max_level: Option<u8>,
     #[validate(length(min = 1))]
-    pub equipment_dices: Vec<Dice>,
+    pub equippable_dices: Vec<Dice>,
     #[validate(length(min = 1))]
     pub consumable_dices: Vec<Dice>,
+
+    #[validate(range(min = 0, max = 100))]
+    pub equipment_percentage: Option<u8>,
+    #[validate(range(min = 0, max = 100))]
+    pub weapon_percentage: Option<u8>,
+    #[validate(range(min = 0, max = 100))]
+    pub armor_percentage: Option<u8>,
+    #[validate(range(min = 0, max = 100))]
+    pub shield_percentage: Option<u8>,
+
     pub shop_template: Option<ShopTemplateEnum>,
     pub pathfinder_version: Option<PathfinderVersionEnum>,
 }

@@ -103,7 +103,7 @@ impl Default for PaginatedRequest {
 
 #[derive(Serialize, Deserialize, ToSchema, Validate, Eq, PartialEq, Hash, Clone)]
 pub struct Dice {
-    #[validate(range(min = 1, max = 255))]
+    #[validate(range(min = 0, max = 255))]
     pub n_of_dices: u8,
     // 1 needs to be an option, to allow 100d1 => 100
     #[validate(range(min = 1, max = 255))]

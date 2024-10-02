@@ -26,7 +26,7 @@ actix-cors = "0.7.0"
 validator = {version="0.18.1", features = ["derive"]}
 
 utoipa = { version = "5.0.0-beta.0", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "7.1.1-beta.0", features = ["actix-web"] }
+utoipa-swagger-ui = { version = "7.1.1-beta.0", features = ["actix-web", "reqwest"] }
 
 sqlx = { version = "0.8.2", features = ["runtime-async-std", "sqlite"] }
 cached = { version = "0.53.1", features = ["async"] }
@@ -55,3 +55,6 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread", "rt"] }
 anyhow = "1.0.89"
 sqlx = {version = "0.8.2", features = ["runtime-async-std", "sqlite"]}
 dotenvy = "0.15.7"
+
+[dev-dependencies]
+rstest = "0.22.0"

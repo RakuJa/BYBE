@@ -13,8 +13,6 @@ RUN apk add build-base
 
 RUN apk add musl-dev
 
-RUN apk add curl
-
 # Build the project with optimizations
 RUN cargo build --target x86_64-unknown-linux-musl --release
 
