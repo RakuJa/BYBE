@@ -2,7 +2,7 @@ use crate::db::shop_proxy;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::shop_structs::{
-    RandomShopData, ShopFilterQuery, ShopPaginatedRequest, ShopTemplateEnum,
+    ItemTableFieldsFilter, RandomShopData, ShopFilterQuery, ShopPaginatedRequest, ShopTemplateEnum,
 };
 use crate::services::url_calculator::shop_next_url_calculator;
 use crate::AppState;
@@ -41,9 +41,6 @@ pub async fn generate_random_shop_listing(
     app_state: &AppState,
     shop_data: &RandomShopData,
 ) -> ShopListingResponse {
-    let min_level = shop_data.min_level.unwrap_or(0);
-    let max_level = shop_data.max_level.unwrap_or(30);
-
     let shop_type = shop_data.shop_template.clone().unwrap_or_default();
     let n_of_consumables: i64 = shop_data.consumable_dices.iter().map(|x| x.roll()).sum();
     let n_of_equipables: i64 = shop_data.equipment_dices.iter().map(|x| x.roll()).sum();
@@ -85,19 +82,30 @@ pub async fn generate_random_shop_listing(
         }
     };
 
-    let pathfinder_version = shop_data.pathfinder_version.clone().unwrap_or_default();
-
     match shop_proxy::get_filtered_items(
         app_state,
         &ShopFilterQuery {
-            min_level,
-            max_level,
+            item_table_fields_filter: ItemTableFieldsFilter {
+                category_filter: shop_data.category_filter.clone().unwrap_or_default(),
+                source_filter: shop_data.source_filter.clone().unwrap_or_default(),
+                type_filter: shop_data.type_filter.clone().unwrap_or_default(),
+                rarity_filter: shop_data.rarity_filter.clone().unwrap_or_default(),
+                size_filter: shop_data.size_filter.clone().unwrap_or_default(),
+                min_level: shop_data.min_level.unwrap_or(0),
+                max_level: shop_data.max_level.unwrap_or(30),
+                supported_version: shop_data
+                    .pathfinder_version
+                    .clone()
+                    .unwrap_or_default()
+                    .to_db_value(),
+            },
+            trait_whitelist_filter: shop_data.trait_whitelist_filter.clone().unwrap_or_default(),
+            trait_blacklist_filter: shop_data.trait_blacklist_filter.clone().unwrap_or_default(),
             n_of_equipment,
             n_of_consumables,
             n_of_weapons,
             n_of_armors,
             n_of_shields,
-            pathfinder_version,
         },
     )
     .await
@@ -122,6 +130,10 @@ pub async fn generate_random_shop_listing(
 
 pub async fn get_sources_list(app_state: &AppState) -> Vec<String> {
     shop_proxy::get_all_sources(app_state).await
+}
+
+pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
+    shop_proxy::get_all_traits(app_state).await
 }
 
 /// Gets the n of: weapons, armors, shields (in this order).

@@ -1,5 +1,6 @@
 use crate::models::item::weapon_struct::DamageData;
 use anyhow::Result;
+use itertools::Itertools;
 use sqlx::{FromRow, Pool, Sqlite};
 
 #[derive(FromRow)]
@@ -31,6 +32,7 @@ pub async fn fetch_item_traits(conn: &Pool<Sqlite>, item_id: i64) -> Result<Vec<
     .await?
     .into_iter()
     .map(|x| x.my_str)
+    .sorted()
     .collect())
 }
 
@@ -46,6 +48,7 @@ pub async fn fetch_weapon_traits(conn: &Pool<Sqlite>, weapon_id: i64) -> Result<
     .await?
     .into_iter()
     .map(|x| x.my_str)
+    .sorted()
     .collect())
 }
 
@@ -61,6 +64,7 @@ pub async fn fetch_shield_traits(conn: &Pool<Sqlite>, shield_id: i64) -> Result<
     .await?
     .into_iter()
     .map(|x| x.my_str)
+    .sorted()
     .collect())
 }
 
@@ -76,6 +80,7 @@ pub async fn fetch_armor_traits(conn: &Pool<Sqlite>, armor_id: i64) -> Result<Ve
     .await?
     .into_iter()
     .map(|x| x.my_str)
+    .sorted()
     .collect())
 }
 
@@ -91,6 +96,7 @@ pub async fn fetch_weapon_runes(conn: &Pool<Sqlite>, wp_id: i64) -> Result<Vec<S
     .await?
     .into_iter()
     .map(|x| x.my_str)
+    .sorted()
     .collect())
 }
 
@@ -118,5 +124,6 @@ pub async fn fetch_armor_runes(conn: &Pool<Sqlite>, wp_id: i64) -> Result<Vec<St
     .await?
     .into_iter()
     .map(|x| x.my_str)
+    .sorted()
     .collect())
 }

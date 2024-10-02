@@ -48,6 +48,7 @@ pub async fn get_paginated_items(
             ItemSortEnum::Id => a.core_item.id.cmp(&b.core_item.id),
             ItemSortEnum::Name => a.core_item.name.cmp(&b.core_item.name),
             ItemSortEnum::Level => a.core_item.level.cmp(&b.core_item.level),
+            ItemSortEnum::Trait => a.core_item.traits.cmp(&b.core_item.traits),
             ItemSortEnum::Type => a.core_item.item_type.cmp(&b.core_item.item_type),
             ItemSortEnum::Rarity => a.core_item.rarity.cmp(&b.core_item.rarity),
             ItemSortEnum::Source => a.core_item.source.cmp(&b.core_item.source),
@@ -141,8 +142,34 @@ pub async fn get_all_sources(app_state: &AppState) -> Vec<String> {
             .map(|x| x.source)
             .unique()
             .filter(|x| !x.is_empty())
+            .sorted()
             .collect(),
         Err(_) => {
+            vec![]
+        }
+    }
+}
+
+/// Gets all the runtime traits. It will cache the result
+#[once(sync_writes = true)]
+pub async fn get_all_traits(app_state: &AppState) -> Vec<String> {
+    match (
+        get_all_items_from_db(app_state).await,
+        get_all_weapons_from_db(app_state).await,
+        get_all_armors_from_db(app_state).await,
+        get_all_shields_from_db(app_state).await,
+    ) {
+        (Ok(items), Ok(wps), Ok(armors), Ok(shields)) => items
+            .into_iter()
+            .chain(wps.into_iter().map(|x| x.item_core))
+            .chain(armors.into_iter().map(|x| x.item_core))
+            .chain(shields.into_iter().map(|x| x.item_core))
+            .flat_map(|x| x.traits)
+            .unique()
+            .filter(|x| !x.is_empty())
+            .sorted()
+            .collect(),
+        _ => {
             vec![]
         }
     }

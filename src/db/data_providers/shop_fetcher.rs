@@ -262,7 +262,12 @@ pub async fn fetch_items_with_filters(
         .filter(|x| x.item_type == ItemTypeEnum::Consumable)
         .collect();
 
-    if items.len() as i64 >= filters.n_of_consumables + filters.n_of_equipment {
+    let n_of_items_to_return = filters.n_of_equipment
+        + filters.n_of_shields
+        + filters.n_of_weapons
+        + filters.n_of_armors
+        + filters.n_of_consumables;
+    if items.len() as i64 >= n_of_items_to_return {
         debug!("Result vector is the correct size, no more operations needed");
         return Ok(items);
     }

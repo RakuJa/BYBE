@@ -24,3 +24,8 @@ Cargo.lock
 
 # MSVC Windows builds of rustc generate these, which store debugging information
 *.pdb
+
+# Fly configuration files
+fly.toml
+dev-fly.toml
+prod-fly.toml
