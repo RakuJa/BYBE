@@ -5,7 +5,9 @@ use utoipa::ToSchema;
 pub struct Skill {
     pub name: String,
     pub description: Option<String>,
+    #[schema(example = 0)]
     pub modifier: i64,
+    #[schema(example = 0)]
     pub proficiency: i64,
     // pub publication_info: PublicationInfo,
     // pub variant_label: Vec<String>,

@@ -8,9 +8,7 @@ use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
-use validator::Validate;
-
-#[derive(Serialize, Deserialize, IntoParams, Validate)]
+#[derive(Serialize, Deserialize, IntoParams)]
 pub struct CreatureFieldFilters {
     pub name_filter: Option<String>,
     pub source_filter: Option<String>,
@@ -20,15 +18,15 @@ pub struct CreatureFieldFilters {
     pub alignment_filter: Option<AlignmentEnum>,
     pub role_filter: Option<CreatureRoleEnum>,
     pub type_filter: Option<CreatureTypeEnum>,
-    #[validate(range(min = 0, max = 100))]
+    #[param(minimum = 0, maximum = 100, example = 50)]
     pub role_threshold: Option<i64>,
-    #[validate(range(min = 0))]
+    #[param(minimum = 0, example = 0)]
     pub min_hp_filter: Option<i64>,
-    #[validate(range(min = 0))]
+    #[param(minimum = 0, example = 100)]
     pub max_hp_filter: Option<i64>,
-    #[validate(range(min = -1))]
+    #[param(minimum = -1, example = -1)]
     pub min_level_filter: Option<i64>,
-    #[validate(range(min = -1))]
+    #[param(minimum = -1, example = 5)]
     pub max_level_filter: Option<i64>,
     pub is_melee_filter: Option<bool>,
     pub is_ranged_filter: Option<bool>,
@@ -36,7 +34,7 @@ pub struct CreatureFieldFilters {
     pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 
-#[derive(Serialize, Deserialize, IntoParams, ToSchema, Validate)]
+#[derive(Serialize, Deserialize, IntoParams, ToSchema)]
 pub struct ItemFieldFilters {
     pub name_filter: Option<String>,
     pub category_filter: Option<Vec<String>>,
@@ -44,29 +42,29 @@ pub struct ItemFieldFilters {
     pub trait_whitelist_filter: Option<Vec<String>>,
     pub trait_blacklist_filter: Option<Vec<String>>,
 
-    #[validate(range(min = 0.))]
+    #[schema(minimum = 0., example = 0.)]
     pub min_bulk_filter: Option<f64>,
-    #[validate(range(min = 0.))]
+    #[schema(minimum = 0., example = 5.)]
     pub max_bulk_filter: Option<f64>,
-    #[validate(range(min = 0))]
+    #[schema(minimum = 0, example = 0)]
     pub min_hardness_filter: Option<i64>,
-    #[validate(range(min = 0))]
+    #[schema(minimum = 0, example = 2)]
     pub max_hardness_filter: Option<i64>,
-    #[validate(range(min = 0))]
+    #[schema(minimum = 0, example = 0)]
     pub min_hp_filter: Option<i64>,
-    #[validate(range(min = 0))]
+    #[schema(minimum = 0, example = 100)]
     pub max_hp_filter: Option<i64>,
-    #[validate(range(min = -1))]
+    #[schema(minimum = -1, example = -1)]
     pub min_level_filter: Option<i64>,
-    #[validate(range(min = -1))]
+    #[schema(minimum = -1, example = 5)]
     pub max_level_filter: Option<i64>,
-    #[validate(range(min = 0))]
+    #[schema(minimum = 0, example = 0)]
     pub min_price_filter: Option<i64>,
-    #[validate(range(min = 0))]
+    #[schema(minimum = 0, example = 100)]
     pub max_price_filter: Option<i64>,
-    #[validate(range(min = 0))]
+    #[schema(minimum = 0, example = 0)]
     pub min_n_of_uses_filter: Option<i64>,
-    #[validate(range(min = 0))]
+    #[schema(minimum = 0, example = 5)]
     pub max_n_of_uses_filter: Option<i64>,
 
     pub type_filter: Option<Vec<ItemTypeEnum>>,
@@ -84,11 +82,11 @@ pub enum OrderEnum {
     Descending,
 }
 
-#[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash, ToSchema)]
+#[derive(Serialize, Deserialize, IntoParams, Eq, PartialEq, Hash, ToSchema)]
 pub struct PaginatedRequest {
-    #[validate(range(min = 0))]
+    #[schema(minimum = 0, example = 0)]
     pub cursor: u32,
-    #[validate(range(min = -1, max = 100))]
+    #[schema(minimum = -1, maximum = 100, example = 100)]
     pub page_size: i16,
 }
 
@@ -101,12 +99,12 @@ impl Default for PaginatedRequest {
     }
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Validate, Eq, PartialEq, Hash, Clone)]
+#[derive(Serialize, Deserialize, ToSchema, Eq, PartialEq, Hash, Clone)]
 pub struct Dice {
-    #[validate(range(min = 0, max = 255))]
+    #[schema(minimum = 0, maximum = 255, example = 1)]
     pub n_of_dices: u8,
     // 1 needs to be an option, to allow 100d1 => 100
-    #[validate(range(min = 1, max = 255))]
+    #[schema(minimum = 0, maximum = 255, example = 20)]
     pub dice_size: u8,
 }
 

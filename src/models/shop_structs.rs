@@ -6,7 +6,6 @@ use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
 use utoipa::{IntoParams, ToSchema};
-use validator::Validate;
 
 #[derive(
     Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Ord, PartialOrd, Clone,
@@ -14,9 +13,13 @@ use validator::Validate;
 pub struct ShopTemplateData {
     pub name: String,
     pub description: String,
+    #[schema(minimum = 0, maximum = 100, example = 25)]
     pub equipment_percentage: u8,
+    #[schema(minimum = 0, maximum = 100, example = 25)]
     pub weapon_percentage: u8,
+    #[schema(minimum = 0, maximum = 100, example = 25)]
     pub armor_percentage: u8,
+    #[schema(minimum = 0, maximum = 100, example = 25)]
     pub shield_percentage: u8,
     pub item_types: Vec<ItemTypeEnum>,
     pub item_rarities: Vec<RarityEnum>,
@@ -160,7 +163,7 @@ impl ShopTemplateEnum {
     }
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Validate, Clone)]
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 pub struct RandomShopData {
     pub category_filter: Option<Vec<String>>,
     pub source_filter: Option<Vec<String>>,
@@ -170,22 +173,22 @@ pub struct RandomShopData {
     pub rarity_filter: Option<Vec<RarityEnum>>,
     pub size_filter: Option<Vec<SizeEnum>>,
 
-    #[validate(range(max = 30))]
+    #[schema(minimum = 0, maximum = 30, example = 0)]
     pub min_level: Option<u8>,
-    #[validate(range(max = 30))]
+    #[schema(minimum = 0, maximum = 30, example = 5)]
     pub max_level: Option<u8>,
-    #[validate(length(min = 1))]
+    #[schema(min_items = 1)]
     pub equippable_dices: Vec<Dice>,
-    #[validate(length(min = 1))]
+    #[schema(min_items = 1)]
     pub consumable_dices: Vec<Dice>,
 
-    #[validate(range(min = 0, max = 100))]
+    #[schema(minimum = 0, maximum = 100, example = 25)]
     pub equipment_percentage: Option<u8>,
-    #[validate(range(min = 0, max = 100))]
+    #[schema(minimum = 0, maximum = 100, example = 25)]
     pub weapon_percentage: Option<u8>,
-    #[validate(range(min = 0, max = 100))]
+    #[schema(minimum = 0, maximum = 100, example = 25)]
     pub armor_percentage: Option<u8>,
-    #[validate(range(min = 0, max = 100))]
+    #[schema(minimum = 0, maximum = 100, example = 25)]
     pub shield_percentage: Option<u8>,
 
     pub shop_template: Option<ShopTemplateEnum>,
@@ -234,14 +237,14 @@ pub enum ItemSortEnum {
     Source,
 }
 
-#[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash, Default)]
+#[derive(Serialize, Deserialize, IntoParams, ToSchema, Eq, PartialEq, Hash, Default)]
 pub struct ShopSortData {
     // Optional here for swagger, kinda bad but w/e
     pub sort_by: Option<ItemSortEnum>,
     pub order_by: Option<OrderEnum>,
 }
 
-#[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, IntoParams, Eq, PartialEq, Hash)]
 pub struct ShopPaginatedRequest {
     pub paginated_request: PaginatedRequest,
     pub shop_sort_data: ShopSortData,

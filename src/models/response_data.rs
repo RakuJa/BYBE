@@ -10,9 +10,8 @@ use crate::models::item::shield_struct::ShieldData;
 use crate::models::item::weapon_struct::WeaponData;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
-use validator::Validate;
 
-#[derive(Serialize, Deserialize, IntoParams, Default, Eq, PartialEq, Hash, Clone, Validate)]
+#[derive(Serialize, Deserialize, IntoParams, Default, Eq, PartialEq, Hash, Clone)]
 pub struct ResponseDataModifiers {
     pub is_pwl_on: Option<bool>,
     pub extra_data: Option<bool>,

@@ -5,21 +5,22 @@ use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
+#[allow(unused_imports)] // Used in schema
+use serde_json::json;
 use strum::EnumCount;
 use strum::EnumIter;
 use utoipa::ToSchema;
-use validator::Validate;
 
-#[derive(Serialize, Deserialize, ToSchema, Validate)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct EncounterParams {
-    #[validate(length(min = 1))]
+    #[schema(min_items = 1, example = json!([4,4,4,4]))]
     pub party_levels: Vec<i64>,
-    #[validate(length(min = 1))]
+    #[schema(min_items = 1, example = json!([4,4,4,4]))]
     pub enemy_levels: Vec<i64>,
     pub is_pwl_on: bool,
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Validate)]
+#[derive(Serialize, Deserialize, ToSchema)]
 pub struct RandomEncounterData {
     pub families: Option<Vec<String>>,
     pub traits: Option<Vec<String>>,
@@ -30,11 +31,11 @@ pub struct RandomEncounterData {
     pub creature_roles: Option<Vec<CreatureRoleEnum>>,
     pub challenge: Option<EncounterChallengeEnum>,
     pub adventure_group: Option<AdventureGroupEnum>,
-    #[validate(range(min = 1, max = 30))]
+    #[schema(minimum = 1, maximum = 30, example = 1)]
     pub min_creatures: Option<u8>,
-    #[validate(range(min = 1, max = 30))]
+    #[schema(minimum = 1, maximum = 30, example = 5)]
     pub max_creatures: Option<u8>,
-    #[validate(length(min = 1))]
+    #[schema(min_items = 1)]
     pub party_levels: Vec<i64>,
     pub allow_elite_variants: Option<bool>,
     pub allow_weak_variants: Option<bool>,
@@ -73,6 +74,19 @@ pub enum EncounterChallengeEnum {
     // Impossible = 320 with chara adjust 60, invented by me but what else can I do?
     // Pathfinder 2E thinks that a GM will only try out extreme encounter at maximum
     // I have to introduce a level for impossible things, Needs balancing Paizo help
+}
+
+impl From<EncounterChallengeEnum> for String {
+    fn from(value: EncounterChallengeEnum) -> Self {
+        String::from(match value {
+            EncounterChallengeEnum::Trivial => "TRIVIAL",
+            EncounterChallengeEnum::Low => "LOW",
+            EncounterChallengeEnum::Moderate => "MODERATE",
+            EncounterChallengeEnum::Severe => "SEVERE",
+            EncounterChallengeEnum::Extreme => "EXTREME",
+            EncounterChallengeEnum::Impossible => "IMPOSSIBLE",
+        })
+    }
 }
 
 impl EncounterChallengeEnum {

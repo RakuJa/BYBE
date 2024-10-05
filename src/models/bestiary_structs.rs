@@ -2,7 +2,6 @@ use crate::models::routers_validator_structs::{OrderEnum, PaginatedRequest};
 use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
-use validator::Validate;
 
 #[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display)]
 pub enum CreatureSortEnum {
@@ -27,13 +26,13 @@ pub enum CreatureSortEnum {
     Family,
 }
 
-#[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash, Default)]
+#[derive(Serialize, Deserialize, IntoParams, ToSchema, Eq, PartialEq, Hash, Default)]
 pub struct BestiarySortData {
     pub sort_by: Option<CreatureSortEnum>,
     pub order_by: Option<OrderEnum>,
 }
 
-#[derive(Serialize, Deserialize, IntoParams, Validate, Eq, PartialEq, Hash)]
+#[derive(Serialize, Deserialize, IntoParams, Eq, PartialEq, Hash)]
 pub struct BestiaryPaginatedRequest {
     pub paginated_request: PaginatedRequest,
     pub bestiary_sort_data: BestiarySortData,

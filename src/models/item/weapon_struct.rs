@@ -16,14 +16,19 @@ pub struct Weapon {
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct WeaponData {
     pub id: i64,
+    #[schema(example = 0)]
     pub to_hit_bonus: Option<i64>,
     pub damage_data: Vec<DamageData>,
+    #[schema(example = 0)]
     pub n_of_potency_runes: i64,
+    #[schema(example = 0)]
     pub n_of_striking_runes: i64,
     pub property_runes: Vec<String>,
+    #[schema(example = 10)]
     pub range: Option<i64>,
     pub reload: Option<String>,
     pub weapon_type: WeaponTypeEnum,
+    #[schema(example = 0)]
     pub splash_dmg: Option<i64>,
 }
 
@@ -69,6 +74,7 @@ impl Weapon {
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct DamageData {
     pub id: i64,
+    #[schema(example = 10)]
     pub bonus_dmg: i64,
     pub dmg_type: Option<String>,
     pub dice: Option<Dice>,

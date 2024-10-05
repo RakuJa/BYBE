@@ -40,7 +40,7 @@ pub async fn get_health(data: web::Data<AppState>) -> Json<HealthResponse> {
     Json(HealthResponse {
         ready: is_db_up.to_string(),
         dependencies: vec![hashmap! {
-            "name".to_string() => "SQLite database".to_string(),
+            "name".to_string() => "Database".to_string(),
             "ready".to_string() => is_db_up.to_string(),
             "live".to_string() => is_db_up.to_string(),
             "type".to_string() => "REQUIRED".to_string(),

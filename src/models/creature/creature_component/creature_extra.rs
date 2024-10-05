@@ -3,16 +3,24 @@ use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::item::item_struct::Item;
 use serde::{Deserialize, Serialize};
+#[allow(unused_imports)] // it's actually used in the example schema
+use serde_json::json;
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct AbilityScores {
+    #[schema(example = 0)]
     pub charisma: i64,
+    #[schema(example = 0)]
     pub constitution: i64,
+    #[schema(example = 0)]
     pub dexterity: i64,
+    #[schema(example = 0)]
     pub intelligence: i64,
+    #[schema(example = 0)]
     pub strength: i64,
+    #[schema(example = 0)]
     pub wisdom: i64,
 }
 
@@ -23,11 +31,13 @@ pub struct CreatureExtraData {
     pub items: Vec<Item>,
     pub languages: Vec<String>,
     pub senses: Vec<String>,
+    #[schema(example = json!({"fly": 100, "swim": 50, "Base": 25}))]
     pub speeds: BTreeMap<String, i16>,
     pub ability_scores: AbilityScores,
     pub hp_detail: Option<String>,
     pub ac_detail: Option<String>,
     pub language_detail: Option<String>,
+    #[schema(example = 0)]
     pub perception: i8,
     pub perception_detail: Option<String>,
 }

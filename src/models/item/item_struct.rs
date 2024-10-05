@@ -1,9 +1,11 @@
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
+use crate::models::ordered_float_to_schema;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use ordered_float::OrderedFloat;
+use ordered_float_to_schema::ordered_float_to_schema;
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Error, FromRow, Row};
@@ -14,20 +16,27 @@ use utoipa::ToSchema;
 pub struct Item {
     pub id: i64,
     pub name: String,
+    #[schema(schema_with = ordered_float_to_schema)]
     pub bulk: OrderedFloat<f64>,
+    #[schema(example = 0)]
     pub quantity: i64,
     pub base_item: Option<String>,
     pub category: Option<String>,
     pub description: String,
+    #[schema(example = 0)]
     pub hardness: i64,
+    #[schema(example = 0)]
     pub hp: i64,
+    #[schema(example = 0)]
     pub level: i64,
+    #[schema(example = 0)]
     pub price: i64, // in cp,
     pub usage: Option<String>,
     pub group: Option<String>,
     pub item_type: ItemTypeEnum,
     pub material_grade: Option<String>,
     pub material_type: Option<String>,
+    #[schema(example = 0)]
     pub number_of_uses: Option<i64>, // for consumables, for equip set as null.
 
     // source details (title, license, remastered)
