@@ -81,7 +81,7 @@ pub async fn start() -> std::io::Result<()> {
     let service_port = get_service_port();
     let startup_state: StartupState = get_service_startup_state();
 
-    log::info!("Starting DB connection & creation of required tables",);
+    log::info!("Starting DB connection");
 
     // establish connection to database
     let pool = SqlitePoolOptions::new()
@@ -91,6 +91,7 @@ pub async fn start() -> std::io::Result<()> {
         .expect("Error building connection pool");
     match startup_state {
         StartupState::Clean => {
+            log::info!("Starting DB Table cleanup & creation of update CORE tables");
             db::cr_core_initializer::update_creature_core_table(&pool)
                 .await
                 .expect("Could not initialize correctly core creature table.. Startup failed");
