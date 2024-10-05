@@ -17,6 +17,14 @@ publish = false
 
 build = "build/main.rs"
 
+[lib]
+name = "bybe"
+path = "src/lib.rs"
+
+[[bin]]
+name = "bybe"
+path = "src/main.rs"
+
 [lints.rust]
 unsafe_code = "forbid"
 
