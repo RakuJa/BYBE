@@ -3,13 +3,18 @@ use crate::models::item::armor_struct::Armor;
 use crate::models::item::shield_struct::Shield;
 use crate::models::item::weapon_struct::{DamageData, Weapon};
 use serde::{Deserialize, Serialize};
+#[allow(unused_imports)] // it's actually used in the example schema
+use serde_json::json;
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct SavingThrows {
+    #[schema(example = 0)]
     pub fortitude: i64,
+    #[schema(example = 0)]
     pub reflex: i64,
+    #[schema(example = 0)]
     pub will: i64,
     pub fortitude_detail: Option<String>,
     pub reflex_detail: Option<String>,
@@ -21,10 +26,14 @@ pub struct CreatureCombatData {
     pub weapons: Vec<Weapon>,
     pub armors: Vec<Armor>,
     pub shields: Vec<Shield>,
+    #[schema(example = json!({"fire": 5, "cold": 5}))]
     pub resistances: BTreeMap<String, i16>,
+    #[schema(example = "cold")]
     pub immunities: Vec<String>,
+    #[schema(example = json!({"fire": 5, "cold": 5}))]
     pub weaknesses: BTreeMap<String, i16>,
     pub saving_throws: SavingThrows,
+    #[schema(example = 10)]
     pub ac: i8,
 }
 

@@ -13,13 +13,20 @@ pub struct Armor {
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct ArmorData {
     pub id: i64,
+    #[schema(example = 0)]
     pub ac_bonus: i64,
+    #[schema(example = 0)]
     pub check_penalty: i64,
+    #[schema(example = 0)]
     pub dex_cap: i64,
+    #[schema(example = 0)]
     pub n_of_potency_runes: i64,
     pub property_runes: Vec<String>,
+    #[schema(example = 0)]
     pub n_of_resilient_runes: i64,
+    #[schema(example = 0)]
     pub speed_penalty: i64,
+    #[schema(example = 0)]
     pub strength_required: Option<i64>,
 }
 

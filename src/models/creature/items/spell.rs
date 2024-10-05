@@ -6,6 +6,7 @@ pub struct Spell {
     pub id: i64,
     pub name: String,
     pub area_type: Option<String>,
+    #[schema(example = 5)]
     pub area_value: Option<i64>,
     pub counteraction: bool,
 
@@ -14,7 +15,7 @@ pub struct Spell {
     pub sustained: bool,
 
     pub duration: Option<String>,
-
+    #[schema(example = 1)]
     pub level: i64,
     pub range: String,
     pub target: String,

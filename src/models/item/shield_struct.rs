@@ -13,8 +13,11 @@ pub struct Shield {
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
 pub struct ShieldData {
     pub id: i64,
+    #[schema(example = 0)]
     pub bonus_ac: i64,
+    #[schema(example = 0)]
     pub n_of_reinforcing_runes: i64,
+    #[schema(example = 0)]
     pub speed_penalty: i64,
 }
 

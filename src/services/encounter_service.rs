@@ -13,13 +13,17 @@ use anyhow::{ensure, Result};
 use counter::Counter;
 use log::warn;
 use serde::{Deserialize, Serialize};
+#[allow(unused_imports)] // it's used for Schema
+use serde_json::json;
 use std::collections::{BTreeMap, HashMap, HashSet};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct EncounterInfoResponse {
+    #[schema(minimum = 0, example = 40)]
     experience: i64,
     challenge: EncounterChallengeEnum,
+    #[schema(example = json!({EncounterChallengeEnum::Trivial: 40, EncounterChallengeEnum::Low: 60, EncounterChallengeEnum::Moderate: 80, EncounterChallengeEnum::Severe: 120, EncounterChallengeEnum::Extreme: 160, EncounterChallengeEnum::Impossible: 320}))]
     encounter_exp_levels: BTreeMap<EncounterChallengeEnum, i64>,
 }
 

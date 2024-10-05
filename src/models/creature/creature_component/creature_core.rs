@@ -18,7 +18,9 @@ pub struct EssentialData {
     pub id: i64,
     pub aon_id: Option<i64>,
     pub name: String,
+    #[schema(example = 0)]
     pub hp: i64,
+    #[schema(example = 0)]
     pub base_level: i64,
     pub size: SizeEnum,
     pub family: String,
@@ -38,12 +40,19 @@ pub struct DerivedData {
     pub is_ranged: bool,
     pub is_spell_caster: bool,
 
+    #[schema(example = 50)]
     pub brute_percentage: i64,
+    #[schema(example = 50)]
     pub magical_striker_percentage: i64,
+    #[schema(example = 50)]
     pub skill_paragon_percentage: i64,
+    #[schema(example = 50)]
     pub skirmisher_percentage: i64,
+    #[schema(example = 50)]
     pub sniper_percentage: i64,
+    #[schema(example = 50)]
     pub soldier_percentage: i64,
+    #[schema(example = 50)]
     pub spell_caster_percentage: i64,
 }
 
