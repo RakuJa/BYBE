@@ -13,6 +13,7 @@ use actix_web::{get, middleware, web, App, HttpResponse, HttpServer, Responder};
 use dotenvy::{dotenv, from_path};
 use sqlx::{sqlite::SqlitePoolOptions, Pool, Sqlite};
 use std::env;
+use std::num::NonZero;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -70,6 +71,15 @@ fn get_service_port() -> u16 {
     }
 }
 
+fn get_service_workers() -> usize {
+    let available_cpus =
+        usize::from(std::thread::available_parallelism().unwrap_or(NonZero::new(1).unwrap()));
+    match env::var("N_OF_SERVICE_WORKERS").ok() {
+        None => available_cpus,
+        Some(n_of_workers) => n_of_workers.parse::<usize>().unwrap_or(available_cpus),
+    }
+}
+
 fn init_docs(openapi: &mut utoipa::openapi::OpenApi) {
     health::init_docs(openapi);
     bestiary::init_docs(openapi);
@@ -103,6 +113,7 @@ pub async fn start(
     let service_ip = get_service_ip();
     let service_port = get_service_port();
     let startup_state: StartupState = get_service_startup_state();
+    let service_workers = get_service_workers();
 
     log::info!("Starting DB connection");
 
@@ -162,6 +173,7 @@ pub async fn start(
             .service(SwaggerUi::new("/docs/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
             .app_data(web::Data::new(AppState { conn: pool.clone() }))
     })
+    .workers(service_workers)
     .bind((get_service_ip(), get_service_port()))?;
     server.run().await
 }
