@@ -17,6 +17,8 @@
 - Balance encounters based on your party size and level.
 - Generate random encounters based on your requirements.
 - Support for both remaster and legacy content.
+- Browse and filter a list of all items.
+- Generate random shop with custom templates.
 - More to come...
 
 ## Requirements
@@ -84,3 +86,6 @@ If you like this tool, consider supporting me:
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/rakuja)
 
 Also consider supporting [TheAsel](https://github.com/TheAsel), the frontend developer. Thank you!
+
+## BYBE - Client
+If you were looking for the BYBE Local Application, it can be found [Here](https://github.com/rakuJa/BYBE-desktop)
