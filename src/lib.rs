@@ -98,7 +98,6 @@ pub async fn start(
     } else {
         dotenv().ok();
     }
-    // get env vars
     match init_log_resp {
         InitializeLogResponsibility::Personal => {
             env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
