@@ -13,8 +13,11 @@ RUN apk add build-base
 
 RUN apk add musl-dev
 
+RUN apk add python3
+
 # Build the project with optimizations
-RUN cargo build --target x86_64-unknown-linux-musl --release
+RUN cargo install --no-default-features --force cargo-make
+RUN cargo make bybe-docker-release
 
 # Stage 2: Create a minimal runtime image
 FROM alpine:latest

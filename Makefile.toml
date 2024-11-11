@@ -1,0 +1,62 @@
+[tasks.clean]
+command = "cargo"
+args = ["clean"]
+
+[tasks.prebuild]
+command = "python3"
+args = ["setup.py", "--db_version", "2.3.0"]
+
+[tasks.format]
+install_crate = "rustfmt"
+command = "cargo"
+args = ["fmt"]
+
+[tasks.lint]
+command = "cargo"
+args = ["clippy", "--all-targets", "--all-features"]
+dependencies = ["clean", "prebuild"]
+
+[tasks.build]
+command = "cargo"
+args = ["build"]
+dependencies = ["clean", "prebuild"]
+
+[tasks.build-release]
+command = "cargo"
+args = ["build", "--release"]
+dependencies = ["clean", "prebuild"]
+
+[tasks.build-docker-release]
+command = "cargo"
+args = ["build", "--target", "x86_64-unknown-linux-musl", "--release"]
+dependencies = ["clean", "prebuild"]
+
+[tasks.test]
+command = "cargo"
+args = ["test"]
+dependencies = ["clean", "prebuild"]
+
+[tasks.bybe-build]
+dependencies = [
+    "format",
+    "build",
+    "clippy",
+    "test"
+]
+
+[tasks.bybe-release]
+dependencies = [
+    "test",
+    "build-release"
+]
+
+[tasks.bybe-docker-release]
+dependencies = [
+    "build-docker-release"
+]
+
+[tasks.format-and-lint]
+dependencies = [
+    "format",
+    "lint"
+]

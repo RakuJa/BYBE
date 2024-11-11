@@ -8,19 +8,16 @@ permissions:
   contents: read
 
 jobs:
-  clippy_check:
+  format_and_lint:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - name: Run Clippy
-        run: cargo clippy --all-targets --all-features
-  format:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: dtolnay/rust-toolchain@stable
+      - uses: actions-rs/toolchain@v1
         with:
-          components: rustfmt
-      - uses: mbrobbel/rustfmt-check@master
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          toolchain: stable
+          override: true
+      - uses: davidB/rust-cargo-make@v1
+      - uses: actions/checkout@v1
+      - name: Run rustfmt and clippy executing setup if needed
+        run: cargo make format-and-lint
+        env:
+          DATABASE_URL: "sqlite://database.db"
