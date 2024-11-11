@@ -11,11 +11,11 @@ jobs:
   format_and_lint:
     runs-on: ubuntu-latest
     steps:
-      - name: Run rustfmt and clippy executing setup if needed
-        run: cargo make format-and-lint
       - uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           override: true
       - uses: davidB/rust-cargo-make@v1
       - uses: actions/checkout@v1
+      - name: Run rustfmt and clippy executing setup if needed
+        run: cargo make format-and-lint
