@@ -221,7 +221,7 @@ mod tests {
         #[case] expected: (i64, i64, i64, i64),
     ) {
         let result = calculate_n_of_equippable_values(input_n_of_equippables, input_percentages);
-        assert_eq!(true, result.is_ok());
+        assert!(result.is_ok());
         assert_eq!(expected, result.unwrap());
     }
 
@@ -233,7 +233,7 @@ mod tests {
         #[case] expected: (i64, i64, i64, i64),
     ) {
         let result = calculate_n_of_equippable_values(input_n_of_equippables, input_percentages);
-        assert_eq!(true, result.is_ok());
+        assert!(result.is_ok());
         assert_eq!(expected, result.unwrap());
     }
 
@@ -246,7 +246,7 @@ mod tests {
         #[case] expected: (i64, i64, i64, i64),
     ) {
         let result = calculate_n_of_equippable_values(input_n_of_equippables, input_percentages);
-        assert_eq!(true, result.is_ok());
+        assert!(result.is_ok());
         assert_eq!(expected, result.unwrap());
     }
 
@@ -260,7 +260,7 @@ mod tests {
         #[case] expected: (i64, i64, i64, i64),
     ) {
         let result = calculate_n_of_equippable_values(input_n_of_equippables, input_percentages);
-        assert_eq!(true, result.is_ok());
+        assert!(result.is_ok());
         assert_eq!(expected, result.unwrap());
     }
 }
