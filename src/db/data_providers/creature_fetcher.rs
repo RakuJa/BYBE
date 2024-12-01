@@ -23,9 +23,9 @@ use crate::models::creature::items::spell_caster_entry::SpellCasterEntry;
 use crate::models::db::raw_immunity::RawImmunity;
 use crate::models::db::raw_language::RawLanguage;
 use crate::models::db::raw_resistance::RawResistance;
-use crate::models::db::raw_sense::RawSense;
 use crate::models::db::raw_speed::RawSpeed;
 use crate::models::db::raw_weakness::RawWeakness;
+use crate::models::db::sense::Sense;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::Shield;
@@ -83,10 +83,10 @@ async fn fetch_creature_resistances(
     .await?)
 }
 
-async fn fetch_creature_senses(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<RawSense>> {
+async fn fetch_creature_senses(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Sense>> {
     Ok(sqlx::query_as!(
-        RawSense,
-        "SELECT * FROM SENSE_TABLE INTERSECT SELECT sense_id FROM SENSE_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
+        Sense,
+        "SELECT * FROM SENSE_TABLE WHERE id IN (SELECT sense_id FROM SENSE_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1))",
         creature_id
     ).fetch_all(conn).await?)
 }
@@ -182,6 +182,15 @@ async fn fetch_creature_language_detail(
 async fn fetch_creature_perception(conn: &Pool<Sqlite>, creature_id: i64) -> Result<i8> {
     Ok(
         sqlx::query_scalar("SELECT perception FROM CREATURE_TABLE WHERE id = $1 LIMIT 1")
+            .bind(creature_id)
+            .fetch_one(conn)
+            .await?,
+    )
+}
+
+async fn fetch_creature_vision(conn: &Pool<Sqlite>, creature_id: i64) -> Result<bool> {
+    Ok(
+        sqlx::query_scalar("SELECT vision FROM CREATURE_TABLE WHERE id = $1 LIMIT 1")
             .bind(creature_id)
             .fetch_one(conn)
             .await?,
@@ -577,6 +586,7 @@ pub async fn fetch_creature_extra_data(
     let ac_detail = fetch_creature_ac_detail(conn, creature_id).await?;
     let language_detail = fetch_creature_language_detail(conn, creature_id).await?;
     let perception = fetch_creature_perception(conn, creature_id).await?;
+    let has_vision = fetch_creature_vision(conn, creature_id).await?;
     let perception_detail = fetch_creature_perception_detail(conn, creature_id).await?;
 
     Ok(CreatureExtraData {
@@ -584,7 +594,7 @@ pub async fn fetch_creature_extra_data(
         skills,
         items,
         languages: languages.iter().map(|x| x.name.clone()).collect(),
-        senses: senses.iter().map(|x| x.name.clone()).collect(),
+        senses,
         speeds: speeds
             .iter()
             .map(|x| (x.name.clone(), x.value as i16))
@@ -595,6 +605,7 @@ pub async fn fetch_creature_extra_data(
         language_detail,
         perception,
         perception_detail,
+        has_vision,
     })
 }
 

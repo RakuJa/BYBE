@@ -1,6 +1,7 @@
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
+use crate::models::db::sense::Sense;
 use crate::models::item::item_struct::Item;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)] // it's actually used in the example schema
@@ -30,7 +31,7 @@ pub struct CreatureExtraData {
     pub skills: Vec<Skill>,
     pub items: Vec<Item>,
     pub languages: Vec<String>,
-    pub senses: Vec<String>,
+    pub senses: Vec<Sense>,
     #[schema(example = json!({"fly": 100, "swim": 50, "Base": 25}))]
     pub speeds: BTreeMap<String, i16>,
     pub ability_scores: AbilityScores,
@@ -40,6 +41,7 @@ pub struct CreatureExtraData {
     #[schema(example = 0)]
     pub perception: i8,
     pub perception_detail: Option<String>,
+    pub has_vision: bool,
 }
 
 impl CreatureExtraData {
