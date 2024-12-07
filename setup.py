@@ -25,7 +25,7 @@ def handle_command_line_arguments() -> Optional[str]:
             if currentArgument in ("-h", "--help"):
                 print("This script downloads or creates necessary file to build BYBE. \n"
                       "Should be executed the first time the project is built in the machine or when resetting the database \n"
-                      "Pass the --db_version or -v argument to input a specific BYBE-DB version to download (>= 2.3.0)")
+                      "Pass the --db_version or -d argument to input a specific BYBE-DB version to download (>= 2.3.0)")
             elif currentArgument in ("-d", "--db_version"):
                 return currentValue
     except getopt.error:
@@ -33,8 +33,8 @@ def handle_command_line_arguments() -> Optional[str]:
 
 def main():
     # Check if the file already exists or needs downloading
-    db_version: str = handle_command_line_arguments() or "2.3.0"
-    print(db_version)
+    db_version: str = handle_command_line_arguments()
+    print(f"Using DB version: {db_version}") or "2.3.0" # Oldest DB version publicly available
     remote_url: str = f"https://github.com/RakuJa/BYBE-DB/releases/download/v{db_version}/database.db"
     destination_file: str = "database.db"
     if not os.path.exists(destination_file):
