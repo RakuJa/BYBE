@@ -156,6 +156,11 @@ impl Item {
                 .type_filter
                 .as_ref()
                 .map_or(true, |x| x.iter().any(|t_filt| self.item_type == *t_filt))
+            && match filters.pathfinder_version.clone().unwrap_or_default() {
+                PathfinderVersionEnum::Legacy => !self.remaster,
+                PathfinderVersionEnum::Remaster => self.remaster,
+                PathfinderVersionEnum::Any => true,
+            }
     }
 
     fn check_item_pass_string_filters(&self, filters: &ItemFieldFilters) -> bool {
@@ -171,11 +176,7 @@ impl Item {
                     .to_lowercase()
                     .contains(cat.to_lowercase().as_str())
             })
-        }) && match filters.pathfinder_version.clone().unwrap_or_default() {
-            PathfinderVersionEnum::Legacy => !self.remaster,
-            PathfinderVersionEnum::Remaster => self.remaster,
-            PathfinderVersionEnum::Any => true,
-        } && filters.source_filter.as_ref().map_or(true, |x| {
+        }) && filters.source_filter.as_ref().map_or(true, |x| {
             x.iter().any(|source| {
                 self.source
                     .to_lowercase()

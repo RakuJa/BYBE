@@ -54,7 +54,7 @@ pub async fn get_weak_creature(
     }
 }
 
-pub async fn get_bestiary(
+pub async fn get_bestiary_listing(
     app_state: &AppState,
     field_filter: &CreatureFieldFilters,
     pagination: &BestiaryPaginatedRequest,

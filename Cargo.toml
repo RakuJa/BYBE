@@ -27,6 +27,7 @@ path = "src/main.rs"
 
 [lints.rust]
 unsafe_code = "forbid"
+deprecated = "allow"
 
 [dependencies]
 actix-web = "4.9.0"
