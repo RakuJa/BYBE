@@ -43,6 +43,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/bestiary")
             .service(get_bestiary)
+            .service(get_bestiary_listing)
             .service(get_elite_creature)
             .service(get_weak_creature)
             .service(get_creature)
