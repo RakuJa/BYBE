@@ -16,6 +16,8 @@ pub struct CreatureFieldFilters {
     pub rarity_filter: Option<Vec<RarityEnum>>,
     pub size_filter: Option<Vec<SizeEnum>>,
     pub alignment_filter: Option<Vec<AlignmentEnum>>,
+    pub trait_whitelist_filter: Option<Vec<String>>,
+    pub trait_blacklist_filter: Option<Vec<String>>,
     pub role_filter: Option<Vec<CreatureRoleEnum>>,
     pub type_filter: Option<Vec<CreatureTypeEnum>>,
     #[schema(minimum = 0, maximum = 100, example = 50)]

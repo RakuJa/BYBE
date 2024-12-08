@@ -227,12 +227,12 @@ async fn get_all_keys(app_state: &AppState) -> FieldsUniqueValuesStruct {
 
 /// Gets all the creature core data from the DB. It will not fetch data outside of variant and core.
 /// It will cache the result.
-#[once(sync_writes = true, result = true)]
 async fn get_all_creatures_from_db(app_state: &AppState) -> Result<Vec<CreatureCoreData>> {
     creature_fetcher::fetch_creatures_core_data(&app_state.conn, 0, -1).await
 }
 
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec
+#[once(sync_writes = true)]
 async fn get_list(app_state: &AppState, variant: CreatureVariant) -> Vec<Creature> {
     if let Ok(creatures) = get_all_creatures_from_db(app_state).await {
         return match variant {
