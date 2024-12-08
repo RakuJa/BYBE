@@ -246,7 +246,7 @@ async fn fetch_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result
         el.weapon_data.damage_data = fetch_weapon_damage_data(conn, el.weapon_data.id)
             .await
             .unwrap_or(vec![]);
-        result_vec.push(el)
+        result_vec.push(el);
     }
     Ok(result_vec)
 }
@@ -277,7 +277,7 @@ async fn fetch_creature_armors(conn: &Pool<Sqlite>, creature_id: i64) -> Result<
         el.armor_data.property_runes = fetch_armor_runes(conn, el.armor_data.id)
             .await
             .unwrap_or(vec![]);
-        result_vec.push(el)
+        result_vec.push(el);
     }
     Ok(result_vec)
 }
@@ -304,7 +304,7 @@ async fn fetch_creature_shields(conn: &Pool<Sqlite>, creature_id: i64) -> Result
             .await
             .unwrap_or(vec![]);
         el.item_core.quantity = fetch_shield_quantity(conn, creature_id, el.shield_data.id).await;
-        result_vec.push(el)
+        result_vec.push(el);
     }
     Ok(result_vec)
 }
@@ -326,7 +326,7 @@ async fn fetch_creature_items(conn: &Pool<Sqlite>, creature_id: i64) -> Result<V
     for mut el in items {
         el.traits = fetch_item_traits(conn, el.id).await.unwrap_or(vec![]);
         el.quantity = fetch_item_quantity(conn, creature_id, el.id).await;
-        result_vec.push(el)
+        result_vec.push(el);
     }
     Ok(result_vec)
 }
@@ -639,12 +639,12 @@ pub async fn fetch_creature_combat_data(
         shields,
         resistances: resistances
             .iter()
-            .map(|x| (x.name.clone(), x.value as i16))
+            .map(|x| (x.name.clone(), i16::try_from(x.value).unwrap_or(0)))
             .collect(),
         immunities: immunities.iter().map(|x| x.name.clone()).collect(),
         weaknesses: weaknesses
             .iter()
-            .map(|x| (x.name.clone(), x.value as i16))
+            .map(|x| (x.name.clone(), i16::try_from(x.value).unwrap_or(0)))
             .collect(),
         saving_throws,
         ac: creature_ac,

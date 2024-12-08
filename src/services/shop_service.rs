@@ -1,11 +1,11 @@
 use crate::db::shop_proxy;
 use crate::models::response_data::ResponseItem;
-use crate::models::routers_validator_structs::ItemFieldFilters;
+use crate::models::routers_validator_structs::{Dice, ItemFieldFilters};
 use crate::models::shop_structs::{
     ItemTableFieldsFilter, RandomShopData, ShopFilterQuery, ShopPaginatedRequest, ShopTemplateData,
     ShopTemplateEnum,
 };
-use crate::services::url_calculator::shop_next_url_calculator;
+use crate::services::url_calculator::shop_next_url;
 use crate::AppState;
 use anyhow::{bail, Context};
 use num_traits::ToPrimitive;
@@ -54,8 +54,14 @@ pub async fn generate_random_shop_listing(
         )
     };
     let shop_type = shop_data.shop_template.clone().unwrap_or_default();
-    let n_of_consumables: i64 = shop_data.consumable_dices.iter().map(|x| x.roll()).sum();
-    let n_of_equippables: i64 = shop_data.equippable_dices.iter().map(|x| x.roll()).sum();
+    let n_of_consumables = i64::from(
+        shop_data
+            .consumable_dices
+            .iter()
+            .map(Dice::roll)
+            .sum::<u16>(),
+    );
+    let n_of_equippables = shop_data.equippable_dices.iter().map(Dice::roll).sum();
     // The request is correct, but will result in an empty list.
     if n_of_consumables == 0 && n_of_equippables == 0 {
         return ShopListingResponse::default();
@@ -143,8 +149,10 @@ pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
     shop_proxy::get_all_traits(app_state).await
 }
 
-pub async fn get_shop_templates_data() -> Vec<ShopTemplateData> {
-    ShopTemplateEnum::iter().map(|x| x.into()).collect()
+pub fn get_shop_templates_data() -> Vec<ShopTemplateData> {
+    ShopTemplateEnum::iter()
+        .map(std::convert::Into::into)
+        .collect()
 }
 
 fn convert_result_to_shop_response(
@@ -159,12 +167,10 @@ fn convert_result_to_shop_response(
             ShopListingResponse {
                 results: Some(item),
                 count: n_of_items,
-                next: if n_of_items >= pagination.paginated_request.page_size as usize {
-                    Some(shop_next_url_calculator(
-                        field_filters,
-                        pagination,
-                        n_of_items as u32,
-                    ))
+                next: if n_of_items
+                    >= pagination.paginated_request.page_size.unsigned_abs() as usize
+                {
+                    Some(shop_next_url(field_filters, pagination, n_of_items as u32))
                 } else {
                     None
                 },
@@ -178,24 +184,24 @@ fn convert_result_to_shop_response(
 /// Gets the n of: equipment, weapons, armors, shields (in this order).
 /// Changing order is considered a BREAKING CHANGE.
 pub fn calculate_n_of_equippable_values(
-    n_of_equippables: i64,
+    n_of_equippables: u16,
     percentages: (u8, u8, u8, u8),
 ) -> anyhow::Result<(i64, i64, i64, i64)> {
     let (e_p, w_p, a_p, s_p) = percentages;
-    let sum_of_percentages = (e_p + w_p + a_p + s_p) as f64;
+    let sum_of_percentages = f64::from(e_p + w_p + a_p + s_p);
     if sum_of_percentages > 100. {
         bail!("Percentages sum value is higher than 100. Incorrect values.")
     }
-    let f_n_of_equippables = n_of_equippables as f64;
+    let f_n_of_equippables = f64::from(n_of_equippables);
     let (e_v, w_v, a_v, s_v) = if sum_of_percentages == 0. {
         (25., 25., 25., 25.)
     } else {
         (
             //Simpler form: (f_n_of_equippables * ((w_p as f64 * 100.) / sum_of_percentages)) / 100.,
-            (f_n_of_equippables * e_p as f64) / sum_of_percentages,
-            (f_n_of_equippables * w_p as f64) / sum_of_percentages,
-            (f_n_of_equippables * a_p as f64) / sum_of_percentages,
-            (f_n_of_equippables * s_p as f64) / sum_of_percentages,
+            (f_n_of_equippables * f64::from(e_p)) / sum_of_percentages,
+            (f_n_of_equippables * f64::from(w_p)) / sum_of_percentages,
+            (f_n_of_equippables * f64::from(a_p)) / sum_of_percentages,
+            (f_n_of_equippables * f64::from(s_p)) / sum_of_percentages,
         )
     };
 
@@ -216,7 +222,7 @@ mod tests {
     #[case(10, (10,10,10,10), (3,3,3,3))]
     #[case(1, (10,10,10,10), (1,1,1,1))]
     fn calculate_equippable_values_rounded_over_desired_total_case(
-        #[case] input_n_of_equippables: i64,
+        #[case] input_n_of_equippables: u16,
         #[case] input_percentages: (u8, u8, u8, u8),
         #[case] expected: (i64, i64, i64, i64),
     ) {
@@ -228,7 +234,7 @@ mod tests {
     #[rstest]
     #[case(0, (0,0,0,0), (25, 25, 25, 25))]
     fn calculate_equippable_values_with_all_0(
-        #[case] input_n_of_equippables: i64,
+        #[case] input_n_of_equippables: u16,
         #[case] input_percentages: (u8, u8, u8, u8),
         #[case] expected: (i64, i64, i64, i64),
     ) {
@@ -241,7 +247,7 @@ mod tests {
     #[case(0, (10,10,10,10), (0,0,0,0))]
     #[case(0, (10,20,10,0), (0,0,0,0))]
     fn calculate_equippable_values_zero_as_n_of_equippables(
-        #[case] input_n_of_equippables: i64,
+        #[case] input_n_of_equippables: u16,
         #[case] input_percentages: (u8, u8, u8, u8),
         #[case] expected: (i64, i64, i64, i64),
     ) {
@@ -255,7 +261,7 @@ mod tests {
     #[case(10, (10,10,0,0), (5,5,0,0))]
     #[case(10, (10,10,10,0), (4,4,4,0))]
     fn calculate_equippable_values_with_missing_percentages(
-        #[case] input_n_of_equippables: i64,
+        #[case] input_n_of_equippables: u16,
         #[case] input_percentages: (u8, u8, u8, u8),
         #[case] expected: (i64, i64, i64, i64),
     ) {

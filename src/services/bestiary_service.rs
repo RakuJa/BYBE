@@ -6,7 +6,7 @@ use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::creature::creature_struct::Creature;
 use crate::models::response_data::{ResponseCreature, ResponseDataModifiers};
 use crate::models::routers_validator_structs::CreatureFieldFilters;
-use crate::services::url_calculator::bestiary_next_url_calculator;
+use crate::services::url_calculator::bestiary_next_url;
 use crate::AppState;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
@@ -95,7 +95,7 @@ pub async fn get_creature_types_list(app_state: &AppState) -> Vec<String> {
         .await
 }
 
-pub async fn get_creature_roles_list() -> Vec<String> {
+pub fn get_creature_roles_list() -> Vec<String> {
     CreatureRoleEnum::list()
 }
 fn convert_result_to_bestiary_response(
@@ -110,8 +110,9 @@ fn convert_result_to_bestiary_response(
             BestiaryResponse {
                 results: Some(cr.into_iter().map(ResponseCreature::from).collect()),
                 count: cr_length,
-                next: if cr_length >= pagination.paginated_request.page_size as usize {
-                    Some(bestiary_next_url_calculator(
+                next: if cr_length >= pagination.paginated_request.page_size.unsigned_abs() as usize
+                {
+                    Some(bestiary_next_url(
                         field_filters,
                         pagination,
                         cr_length as u32,

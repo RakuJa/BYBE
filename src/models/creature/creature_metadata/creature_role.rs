@@ -59,45 +59,37 @@ impl CreatureRoleEnum {
         let mut roles = BTreeMap::new();
         roles.insert(
             Self::Brute,
-            is_brute(cr_core, cr_extra, cr_combat, scales)
-                .map(|x| (x * 100.).round() as i64)
-                .unwrap_or(0),
+            is_brute(cr_core, cr_extra, cr_combat, scales).map_or(0, |x| (x * 100.).round() as i64),
         );
         roles.insert(
             Self::MagicalStriker,
             is_magical_striker(cr_core, cr_spells, cr_combat, scales)
-                .map(|x| (x * 100.).round() as i64)
-                .unwrap_or(0),
+                .map_or(0, |x| (x * 100.).round() as i64),
         );
         roles.insert(
             Self::SkillParagon,
             is_skill_paragon(cr_core, cr_extra, cr_combat, scales)
-                .map(|x| (x * 100.).round() as i64)
-                .unwrap_or(0),
+                .map_or(0, |x| (x * 100.).round() as i64),
         );
         roles.insert(
             Self::Skirmisher,
             is_skirmisher(cr_core, cr_extra, cr_combat, scales)
-                .map(|x| (x * 100.).round() as i64)
-                .unwrap_or(0),
+                .map_or(0, |x| (x * 100.).round() as i64),
         );
         roles.insert(
             Self::Sniper,
             is_sniper(cr_core, cr_extra, cr_combat, scales)
-                .map(|x| (x * 100.).round() as i64)
-                .unwrap_or(0),
+                .map_or(0, |x| (x * 100.).round() as i64),
         );
         roles.insert(
             Self::Soldier,
             is_soldier(cr_core, cr_extra, cr_combat, scales)
-                .map(|x| (x * 100.).round() as i64)
-                .unwrap_or(0),
+                .map_or(0, |x| (x * 100.).round() as i64),
         );
         roles.insert(
             Self::SpellCaster,
             is_spellcaster(cr_core, cr_spells, cr_combat, cr_extra, scales)
-                .map(|x| (x * 100.).round() as i64)
-                .unwrap_or(0),
+                .map_or(0, |x| (x * 100.).round() as i64),
         );
         roles
     }
@@ -117,7 +109,7 @@ fn is_brute(
     let lvl = cr_core.base_level;
     let per_scales = scales.perception_scales.get(&lvl)?;
     // low Perception;
-    score += calculate_ub_distance(per_scales.moderate, cr_extra.perception as i64 + 1);
+    score += calculate_ub_distance(per_scales.moderate, i64::from(cr_extra.perception) + 1);
     let ability_scales = scales.ability_scales.get(&lvl)?;
     // high or extreme Str modifier,
     score += calculate_lb_distance(ability_scales.high, cr_extra.ability_scores.strength);
@@ -143,7 +135,7 @@ fn is_brute(
     score += calculate_ub_distance(saving_scales.moderate, cr_combat.saving_throws.will + 1);
     let ac_scales = scales.ac_scales.get(&lvl)?;
     // moderate or low AC;
-    score += calculate_ub_distance(ac_scales.high, cr_combat.ac as i64 + 1);
+    score += calculate_ub_distance(ac_scales.high, i64::from(cr_combat.ac) + 1);
     // high HP;
     let hp_scales = scales.hp_scales.get(&lvl)?;
     score += calculate_lb_distance(hp_scales.high_lb, cr_core.hp);
@@ -172,7 +164,7 @@ fn is_brute(
         .min();
     score += wp_distance.unwrap_or(MISSING_FIELD_DISTANCE);
 
-    Some(f64::E().powf(-0.2 * (score as f64)))
+    Some(f64::E().powf(-0.2 * f64::from(score)))
 }
 
 // Sniper
@@ -188,7 +180,7 @@ fn is_sniper(
     // high Perception (chosen moderate
     // !!!This is a critical stat, upping it will half creature result!!!
     // );
-    score += calculate_lb_distance(per_scales.moderate, cr_extra.perception as i64);
+    score += calculate_lb_distance(per_scales.moderate, i64::from(cr_extra.perception));
     let ability_scales = scales.ability_scales.get(&lvl)?;
     // high Dex modifier (chosen moderate);
     score += calculate_lb_distance(ability_scales.moderate, cr_extra.ability_scores.dexterity);
@@ -217,7 +209,7 @@ fn is_sniper(
         })
         .min();
     score += wp_distance.unwrap_or(MISSING_FIELD_DISTANCE);
-    Some(f64::E().powf(-0.2 * (score as f64)))
+    Some(f64::E().powf(-0.2 * f64::from(score)))
 }
 // Skirmisher
 fn is_skirmisher(
@@ -243,10 +235,10 @@ fn is_skirmisher(
     score += cr_extra
         .speeds
         .values()
-        .map(|speed_value| calculate_lb_distance(30, *speed_value as i64))
+        .map(|speed_value| calculate_lb_distance(30, i64::from(*speed_value)))
         .min()
         .unwrap_or(MISSING_FIELD_DISTANCE);
-    Some(f64::E().powf(-0.2 * (score as f64)))
+    Some(f64::E().powf(-0.2 * f64::from(score)))
 }
 // Soldier
 pub fn is_soldier(
@@ -262,7 +254,7 @@ pub fn is_soldier(
     score += calculate_lb_distance(ability_scales.high, cr_extra.ability_scores.strength);
     let ac_scales = scales.ac_scales.get(&lvl)?;
     // high to extreme AC;
-    score += calculate_lb_distance(ac_scales.high, cr_combat.ac as i64);
+    score += calculate_lb_distance(ac_scales.high, i64::from(cr_combat.ac));
     let saving_scales = scales.saving_throw_scales.get(&lvl)?;
     // high Fortitude;
     score += calculate_lb_distance(saving_scales.high, cr_combat.saving_throws.fortitude);
@@ -295,7 +287,7 @@ pub fn is_soldier(
     }) {
         score += 3;
     }
-    Some(f64::E().powf(-0.2 * (score as f64)))
+    Some(f64::E().powf(-0.2 * f64::from(score)))
 }
 
 // Magical Striker
@@ -333,11 +325,12 @@ pub fn is_magical_striker(
         score += MISSING_FIELD_DISTANCE;
     }
     if (cr_spell.spells.len() as f64) < (cr_core.base_level as f64 / 2.).ceil() - 1. {
-        score +=
-            (((cr_core.base_level as f64 / 2.).ceil() as i64) - 1 - (cr_spell.spells.len() as i64))
-                .unsigned_abs() as u16;
+        score += (((cr_core.base_level as f64 / 2.).ceil() as i64)
+            - 1
+            - (i64::try_from(cr_spell.spells.len()).unwrap_or(i64::MAX)))
+        .unsigned_abs() as u16;
     }
-    Some(f64::E().powf(-0.2 * (score as f64)))
+    Some(f64::E().powf(-0.2 * f64::from(score)))
 }
 
 // Skill Paragon
@@ -371,13 +364,16 @@ fn is_skill_paragon(
 
     // many skills at moderate or high and potentially one or two extreme skills;
     // Many is kinda up in the air, I'll set 70%
-    let cr_skill_amount = cr_extra.skills.len() as i64 * 70 / 100;
+    let cr_skill_amount = i64::try_from(cr_extra.skills.len()).unwrap_or(i64::MAX) / 100 * 70;
     // if there aren't at least 70% of skill in the moderate-high range
-    score += (cr_extra
-        .skills
-        .iter()
-        .filter(|x| x.modifier >= saving_scales.moderate)
-        .count() as i64
+    score += (i64::try_from(
+        cr_extra
+            .skills
+            .iter()
+            .filter(|x| x.modifier >= saving_scales.moderate)
+            .count(),
+    )
+    .unwrap_or(i64::MAX)
         - cr_skill_amount)
         .unsigned_abs() as u16;
     // at least two special ability to use the creature's skills in combat
@@ -394,7 +390,7 @@ fn is_skill_paragon(
     {
         score += MISSING_FIELD_DISTANCE;
     }
-    Some(f64::E().powf(-0.2 * (score as f64)))
+    Some(f64::E().powf(-0.2 * f64::from(score)))
 }
 // Spellcaster
 fn is_spellcaster(
@@ -427,8 +423,9 @@ fn is_spellcaster(
     );
     // prepared or spontaneous spells up to half the creature’s level (rounded up)
     if (cr_spell.spells.len() as f64) < (cr_core.base_level as f64 / 2.).ceil() {
-        score += (((cr_core.base_level as f64 / 2.).ceil() as i64) - (cr_spell.spells.len() as i64))
-            .unsigned_abs() as u16;
+        score += (((cr_core.base_level as f64 / 2.).ceil() as i64)
+            - i64::try_from(cr_spell.spells.len()).unwrap_or(i64::MAX))
+        .unsigned_abs() as u16;
     }
     let ability_scales = scales.ability_scales.get(&lvl)?;
     // high or extreme modifier for the corresponding mental ability;
@@ -438,7 +435,7 @@ fn is_spellcaster(
         .max(cr_extra.ability_scores.intelligence)
         .max(cr_extra.ability_scores.charisma);
     score += calculate_lb_distance(ability_scales.high, best_mental_ability);
-    Some(f64::E().powf(-0.2 * (score as f64)))
+    Some(f64::E().powf(-0.2 * f64::from(score)))
 }
 
 impl FromStr for CreatureRoleEnum {

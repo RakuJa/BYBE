@@ -29,6 +29,19 @@ path = "src/main.rs"
 unsafe_code = "forbid"
 deprecated = "allow"
 
+[lints.clippy]
+struct_field_names = {level = "allow", priority = 2}
+module_name_repetitions = {level = "allow", priority = 2}
+# We are ok with losing some data without wrapping. We are not ok with wrapping
+# Ex: 128.12 => 128 is ok, 128 => 0 is not.
+cast_possible_truncation = {level = "allow", priority = 2}
+cast_precision_loss = {level = "allow", priority = 2}
+
+pedantic = {level = "warn", priority = 1}
+#restriction = "warn"
+# nursery = "warn"
+
+
 [dependencies]
 actix-web = "4.9.0"
 actix-cors = "0.7.0"

@@ -200,5 +200,5 @@ pub async fn get_items_traits_list(data: web::Data<AppState>) -> actix_web::Resu
 )]
 #[get("/templates_data")]
 pub async fn get_templates_data() -> actix_web::Result<impl Responder> {
-    Ok(web::Json(shop_service::get_shop_templates_data().await))
+    Ok(web::Json(shop_service::get_shop_templates_data()))
 }

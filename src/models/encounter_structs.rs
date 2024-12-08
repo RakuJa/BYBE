@@ -149,6 +149,7 @@ pub enum AdventureGroupEnum {
     MookSquad,
 }
 
+#[derive(Copy, Clone)]
 pub struct ExpRange {
     pub lower_bound: i64,
     pub upper_bound: i64,

@@ -29,16 +29,13 @@ impl CreatureSpellCasterData {
 
     /// Lowers spell caster atk and dc
     pub fn convert_from_base_to_pwl(self, pwl_mod: u64) -> CreatureSpellCasterData {
-        self.add_mod_to_spellcaster_atk_and_dc(-(pwl_mod as i64))
+        self.add_mod_to_spellcaster_atk_and_dc(-i64::try_from(pwl_mod).unwrap_or(i64::MAX))
     }
 
     /// Increase/Decrease the damage of its Strikes and other offensive abilities by 2.
     /// If the creature has limits on how many times or how often it can use an ability
     /// (such as a spellcaster’s spells or a dragon’s breath), decrease the damage by 4 instead.
-    pub fn convert_from_base_to_variant(
-        self,
-        variant: &CreatureVariant,
-    ) -> CreatureSpellCasterData {
+    pub fn convert_from_base_to_variant(self, variant: CreatureVariant) -> CreatureSpellCasterData {
         self.add_mod_to_spellcaster_atk_and_dc(variant.to_adjustment_modifier())
     }
 }

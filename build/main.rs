@@ -27,5 +27,5 @@ async fn main() {
         .expect("Could not populate the db, something went wrong..");
     creature_core_db_init::cleanup_db(&conn)
         .await
-        .expect("Could not clean up the db. Dirty state detected, closing..")
+        .expect("Could not clean up the db. Dirty state detected, closing..");
 }

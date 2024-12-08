@@ -24,22 +24,22 @@ impl Creature {
     /// Decrease the creature’s AC, attack modifiers, DCs, saving throws, Perception, and skill modifiers by 2.
     /// Decrease the damage of its Strikes and other offensive abilities by 2. If the creature has limits on how many times or how often it can use an ability (such as a spellcaster’s spells or a dragon’s breath), decrease the damage by 4 instead.
     pub fn convert_creature_to_variant(self, variant: CreatureVariant) -> Creature {
-        let mut cr = Self::from_core_with_variant(self.core_data, variant.clone());
+        let mut cr = Self::from_core_with_variant(self.core_data, variant);
         cr.extra_data = self
             .extra_data
-            .map(|x| x.convert_from_base_to_variant(&variant));
+            .map(|x| x.convert_from_base_to_variant(variant));
         cr.combat_data = self
             .combat_data
-            .map(|x| x.convert_from_base_to_variant(&variant));
+            .map(|x| x.convert_from_base_to_variant(variant));
         cr.spell_caster_data = self
             .spell_caster_data
-            .map(|x| x.convert_from_base_to_variant(&variant));
+            .map(|x| x.convert_from_base_to_variant(variant));
         cr
     }
 
     pub fn convert_creature_to_pwl(self) -> Creature {
         let pwl_mod = if self.core_data.essential.base_level >= 0 {
-            self.core_data.essential.base_level as u64
+            self.core_data.essential.base_level.unsigned_abs()
         } else {
             0
         };

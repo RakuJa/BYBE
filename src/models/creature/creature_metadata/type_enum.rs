@@ -50,7 +50,6 @@ impl FromStr for CreatureTypeEnum {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
-            "MONSTER" => Ok(CreatureTypeEnum::Monster),
             "NPC" => Ok(CreatureTypeEnum::Npc),
             _ => Ok(CreatureTypeEnum::Monster),
         }

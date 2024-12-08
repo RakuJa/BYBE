@@ -17,6 +17,10 @@ use std::num::NonZero;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+#[derive(OpenApi)]
+#[openapi(paths(index))]
+struct ApiDoc;
+
 #[derive(Clone)]
 pub struct AppState {
     conn: Pool<Sqlite>,
@@ -139,10 +143,6 @@ pub async fn start(
     );
 
     // Swagger initialization
-    #[derive(OpenApi)]
-    #[openapi(paths(index))]
-    struct ApiDoc;
-
     let mut openapi = ApiDoc::openapi();
     init_docs(&mut openapi);
 

@@ -160,7 +160,7 @@ pub async fn fetch_weapons(
         result_vec.push(Weapon {
             item_core: el.item_core,
             weapon_data: el.weapon_data,
-        })
+        });
     }
     Ok(result_vec)
 }
@@ -190,7 +190,7 @@ pub async fn fetch_armors(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> R
         result_vec.push(Armor {
             item_core: el.item_core,
             armor_data: el.armor_data,
-        })
+        });
     }
     Ok(result_vec)
 }
@@ -222,7 +222,7 @@ pub async fn fetch_shields(
         result_vec.push(Shield {
             item_core: el.item_core,
             shield_data: el.shield_data,
-        })
+        });
     }
     Ok(result_vec)
 }
@@ -267,7 +267,7 @@ pub async fn fetch_items_with_filters(
         + filters.n_of_weapons
         + filters.n_of_armors
         + filters.n_of_consumables;
-    if items.len() as i64 >= n_of_items_to_return {
+    if i64::try_from(items.len()).unwrap_or(i64::MAX) >= n_of_items_to_return {
         debug!("Result vector is the correct size, no more operations needed");
         return Ok(items);
     }
@@ -284,7 +284,7 @@ pub async fn fetch_items_with_filters(
 
 fn fill_item_vec_to_len(item_vec: &[&Item], desired_len: i64) -> Vec<Item> {
     let mut og_vec: Vec<Item> = item_vec.iter().map(|x| (*x).clone()).collect();
-    for _ in 0..(item_vec.len() as i64 - desired_len) {
+    for _ in 0..(i64::try_from(item_vec.len()).unwrap_or(i64::MAX) - desired_len) {
         if let Some(x) = item_vec.get(fastrand::usize(0..item_vec.len())) {
             og_vec.push((*x).clone());
         }

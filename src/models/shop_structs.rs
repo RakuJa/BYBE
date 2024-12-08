@@ -78,7 +78,7 @@ impl ShopTemplateEnum {
 
     pub fn get_allowed_item_types(&self) -> Vec<ItemTypeEnum> {
         match self {
-            ShopTemplateEnum::Blacksmith => {
+            ShopTemplateEnum::Blacksmith | ShopTemplateEnum::General => {
                 vec![
                     ItemTypeEnum::Armor,
                     ItemTypeEnum::Shield,
@@ -90,27 +90,14 @@ impl ShopTemplateEnum {
             ShopTemplateEnum::Alchemist => {
                 vec![ItemTypeEnum::Consumable, ItemTypeEnum::Equipment]
             }
-            ShopTemplateEnum::General => {
-                vec![
-                    ItemTypeEnum::Armor,
-                    ItemTypeEnum::Shield,
-                    ItemTypeEnum::Weapon,
-                    ItemTypeEnum::Consumable,
-                    ItemTypeEnum::Equipment,
-                ]
-            }
         }
     }
 
     pub fn get_allowed_item_rarities(&self) -> Vec<RarityEnum> {
         match self {
-            ShopTemplateEnum::Blacksmith => {
-                vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
-            }
-            ShopTemplateEnum::Alchemist => {
-                vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
-            }
-            ShopTemplateEnum::General => {
+            ShopTemplateEnum::Blacksmith
+            | ShopTemplateEnum::Alchemist
+            | ShopTemplateEnum::General => {
                 vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
             }
         }
@@ -119,7 +106,7 @@ impl ShopTemplateEnum {
     pub fn get_traits_whitelist(&self) -> Vec<String> {
         // For future-proof, right now contains 0 logic
         match self {
-            ShopTemplateEnum::Blacksmith => {
+            ShopTemplateEnum::Blacksmith | ShopTemplateEnum::General => {
                 vec![]
             }
             ShopTemplateEnum::Alchemist => {
@@ -130,21 +117,14 @@ impl ShopTemplateEnum {
                     "Potion".to_string(),
                 ]
             }
-            ShopTemplateEnum::General => {
-                vec![]
-            }
         }
     }
 
     pub fn get_traits_blacklist(&self) -> Vec<String> {
         match self {
-            ShopTemplateEnum::Blacksmith => {
-                vec![]
-            }
-            ShopTemplateEnum::Alchemist => {
-                vec![]
-            }
-            ShopTemplateEnum::General => {
+            ShopTemplateEnum::Blacksmith
+            | ShopTemplateEnum::Alchemist
+            | ShopTemplateEnum::General => {
                 vec![]
             }
         }

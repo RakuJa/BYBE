@@ -67,7 +67,7 @@ pub async fn get_paginated_items(
     let curr_slice: Vec<ResponseItem> = filtered_list
         .iter()
         .skip(pagination.paginated_request.cursor as usize)
-        .take(pagination.paginated_request.page_size as usize)
+        .take(pagination.paginated_request.page_size.unsigned_abs() as usize)
         .cloned()
         .collect();
 
@@ -104,7 +104,7 @@ async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
             weapon_data: None,
             armor_data: None,
             shield_data: None,
-        })
+        });
     }
     for el in get_all_weapons_from_db(app_state).await.unwrap_or(vec![]) {
         response_vec.push(ResponseItem {
@@ -112,7 +112,7 @@ async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
             weapon_data: Some(el.weapon_data),
             armor_data: None,
             shield_data: None,
-        })
+        });
     }
     for el in get_all_armors_from_db(app_state).await.unwrap_or(vec![]) {
         response_vec.push(ResponseItem {
@@ -120,7 +120,7 @@ async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
             weapon_data: None,
             armor_data: Some(el.armor_data),
             shield_data: None,
-        })
+        });
     }
     for el in get_all_shields_from_db(app_state).await.unwrap() {
         response_vec.push(ResponseItem {
@@ -128,7 +128,7 @@ async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
             weapon_data: None,
             armor_data: None,
             shield_data: Some(el.shield_data),
-        })
+        });
     }
     response_vec
 }

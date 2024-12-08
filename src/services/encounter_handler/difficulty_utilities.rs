@@ -45,7 +45,8 @@ fn get_next_difficulty(diff: &EncounterChallengeEnum) -> EncounterChallengeEnum 
         EncounterChallengeEnum::Low => EncounterChallengeEnum::Moderate,
         EncounterChallengeEnum::Moderate => EncounterChallengeEnum::Severe,
         EncounterChallengeEnum::Severe => EncounterChallengeEnum::Extreme,
-        EncounterChallengeEnum::Extreme => EncounterChallengeEnum::Impossible,
-        EncounterChallengeEnum::Impossible => EncounterChallengeEnum::Impossible,
+        EncounterChallengeEnum::Extreme | EncounterChallengeEnum::Impossible => {
+            EncounterChallengeEnum::Impossible
+        }
     }
 }

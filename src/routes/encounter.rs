@@ -53,7 +53,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
 pub async fn get_encounter_info(
     web::Json(body): web::Json<EncounterParams>,
 ) -> Result<impl Responder> {
-    Ok(web::Json(encounter_service::get_encounter_info(body)))
+    Ok(web::Json(encounter_service::get_encounter_info(&body)))
 }
 
 #[utoipa::path(

@@ -62,12 +62,12 @@ pub fn prepare_filtered_get_creatures_core(
             | CreatureFilter::Ranged
             | CreatureFilter::SpellCaster => {
                 if !simple_core_query.is_empty() {
-                    simple_core_query.push_str(" AND ")
+                    simple_core_query.push_str(" AND ");
                 }
                 simple_core_query.push_str(
                     prepare_in_statement_for_generic_type(key.to_string().as_str(), value.iter())
                         .as_str(),
-                )
+                );
             }
             CreatureFilter::Family
             | CreatureFilter::Alignment
@@ -75,7 +75,7 @@ pub fn prepare_filtered_get_creatures_core(
             | CreatureFilter::Rarity
             | CreatureFilter::CreatureTypes => {
                 if !simple_core_query.is_empty() {
-                    simple_core_query.push_str(" AND ")
+                    simple_core_query.push_str(" AND ");
                 }
                 simple_core_query.push_str(
                     prepare_case_insensitive_in_statement(
@@ -83,24 +83,24 @@ pub fn prepare_filtered_get_creatures_core(
                         value.iter().cloned(),
                     )
                     .as_str(),
-                )
+                );
             }
             CreatureFilter::Traits => {
-                trait_query.push_str(prepare_creature_trait_filter(value.iter().cloned()).as_str())
+                trait_query.push_str(prepare_creature_trait_filter(value.iter().cloned()).as_str());
             }
             CreatureFilter::CreatureRoles => {
                 if !simple_core_query.is_empty() {
-                    simple_core_query.push_str(" AND ")
+                    simple_core_query.push_str(" AND ");
                 }
                 simple_core_query
-                    .push_str(prepare_bounded_or_check(value, ACCURACY_THRESHOLD, 100).as_str())
+                    .push_str(prepare_bounded_or_check(value, ACCURACY_THRESHOLD, 100).as_str());
             }
-            _ => (),
+            CreatureFilter::Sources => (), // Never given as value to filter
         }
     }
     let mut where_query = simple_core_query.to_string();
     if !trait_query.is_empty() {
-        where_query.push_str(format!(" AND id IN ({trait_query}) GROUP BY cc.id").as_str())
+        where_query.push_str(format!(" AND id IN ({trait_query}) GROUP BY cc.id").as_str());
     }
     if !where_query.is_empty() {
         where_query = format!("WHERE {where_query}");
@@ -198,7 +198,7 @@ where
         if result_string.ends_with(',') {
             result_string.remove(result_string.len() - 1);
         }
-        result_string.push(')')
+        result_string.push(')');
     }
     result_string
 }
@@ -224,7 +224,7 @@ where
         if result_string.ends_with(',') {
             result_string.remove(result_string.len() - 1);
         }
-        result_string.push(')')
+        result_string.push(')');
     }
     result_string
 }
@@ -272,8 +272,8 @@ fn prepare_item_filter_statement(shop_filter_vectors: &ItemTableFieldsFilter) ->
         prepare_case_insensitive_in_statement("source", shop_filter_vectors.source_filter.iter()),
         prepare_bounded_check(
             &String::from("level"),
-            shop_filter_vectors.min_level as i64,
-            shop_filter_vectors.max_level as i64,
+            i64::from(shop_filter_vectors.min_level),
+            i64::from(shop_filter_vectors.max_level),
         ),
     ]
     .into_iter()
@@ -283,7 +283,7 @@ fn prepare_item_filter_statement(shop_filter_vectors: &ItemTableFieldsFilter) ->
     if filters_query.is_empty() {
         remaster_query
     } else {
-        format!("{} AND {}", remaster_query, filters_query)
+        format!("{remaster_query} AND {filters_query}")
     }
 }
 
@@ -301,14 +301,11 @@ where
     if whitelist_query.is_empty() && blacklist_query.is_empty() {
         String::new()
     } else if whitelist_query.is_empty() {
-        format!("id NOT IN ({})", blacklist_query)
+        format!("id NOT IN ({blacklist_query})")
     } else if blacklist_query.is_empty() {
-        format!("id IN ({})", whitelist_query)
+        format!("id IN ({whitelist_query})")
     } else {
-        format!(
-            "id IN ({}) AND id NOT IN ({})",
-            whitelist_query, blacklist_query
-        )
+        format!("id IN ({whitelist_query}) AND id NOT IN ({blacklist_query})")
     }
 }
 
@@ -320,7 +317,7 @@ fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum) -> String {
         // There is no need for an and statement here, we already fetch from the "private" table.
         // Item instead contains a lot of item_type (it's the base for weapon/shield/etc)
         ItemTypeEnum::Weapon | ItemTypeEnum::Armor | ItemTypeEnum::Shield => {
-            ("base_item_id", "".to_string())
+            ("base_item_id", String::new())
         }
     };
     let tass_item_id_field = match item_type {
