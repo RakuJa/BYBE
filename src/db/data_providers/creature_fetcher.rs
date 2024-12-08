@@ -334,7 +334,7 @@ async fn fetch_creature_items(conn: &Pool<Sqlite>, creature_id: i64) -> Result<V
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_item_quantity(conn: &Pool<Sqlite>, creature_id: i64, item_id: i64) -> i64 {
-    match sqlx::query!(
+    sqlx::query!(
         "SELECT quantity FROM ITEM_CREATURE_ASSOCIATION_TABLE WHERE
          creature_id == ($1) AND item_id == ($2)",
         creature_id,
@@ -342,17 +342,14 @@ async fn fetch_item_quantity(conn: &Pool<Sqlite>, creature_id: i64, item_id: i64
     )
     .fetch_one(conn)
     .await
-    {
-        Ok(r) => r.quantity,
-        Err(_) => 1,
-    }
+    .map_or(1, |q| q.quantity)
 }
 
 /// Quantities are present ONLY for creature's weapons.
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_weapon_quantity(conn: &Pool<Sqlite>, creature_id: i64, weapon_id: i64) -> i64 {
-    match sqlx::query!(
+    sqlx::query!(
         "SELECT quantity FROM WEAPON_CREATURE_ASSOCIATION_TABLE WHERE
          creature_id == ($1) AND weapon_id == ($2)",
         creature_id,
@@ -360,17 +357,14 @@ async fn fetch_weapon_quantity(conn: &Pool<Sqlite>, creature_id: i64, weapon_id:
     )
     .fetch_one(conn)
     .await
-    {
-        Ok(r) => r.quantity,
-        Err(_) => 1,
-    }
+    .map_or(1, |r| r.quantity)
 }
 
 /// Quantities are present ONLY for creature's shields.
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_shield_quantity(conn: &Pool<Sqlite>, creature_id: i64, shield_id: i64) -> i64 {
-    match sqlx::query!(
+    sqlx::query!(
         "SELECT quantity FROM SHIELD_CREATURE_ASSOCIATION_TABLE WHERE
          creature_id == ($1) AND shield_id == ($2)",
         creature_id,
@@ -378,17 +372,14 @@ async fn fetch_shield_quantity(conn: &Pool<Sqlite>, creature_id: i64, shield_id:
     )
     .fetch_one(conn)
     .await
-    {
-        Ok(r) => r.quantity,
-        Err(_) => 1,
-    }
+    .map_or(1, |r| r.quantity)
 }
 
 /// Quantities are present ONLY for creature's armors.
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_armor_quantity(conn: &Pool<Sqlite>, creature_id: i64, armor_id: i64) -> i64 {
-    match sqlx::query!(
+    sqlx::query!(
         "SELECT quantity FROM ARMOR_CREATURE_ASSOCIATION_TABLE WHERE
          creature_id == ($1) AND armor_id == ($2)",
         creature_id,
@@ -396,10 +387,7 @@ async fn fetch_armor_quantity(conn: &Pool<Sqlite>, creature_id: i64, armor_id: i
     )
     .fetch_one(conn)
     .await
-    {
-        Ok(r) => r.quantity,
-        Err(_) => 1,
-    }
+    .map_or(1, |r| r.quantity)
 }
 
 async fn fetch_creature_actions(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Action>> {

@@ -26,19 +26,19 @@ pub enum CreatureVariant {
 }
 
 impl CreatureVariant {
-    pub fn to_adjustment_modifier(self) -> i64 {
+    pub const fn to_adjustment_modifier(self) -> i64 {
         match self {
-            CreatureVariant::Weak => -2,
-            CreatureVariant::Elite => 2,
-            CreatureVariant::Base => 0,
+            Self::Weak => -2,
+            Self::Elite => 2,
+            Self::Base => 0,
         }
     }
 
-    pub fn get_variant_level(self, base_lvl: i64) -> i64 {
+    pub const fn get_variant_level(self, base_lvl: i64) -> i64 {
         match self {
             //Decrease the creature’s level by 1; if the creature is level 1,
             // instead decrease its level by 2.
-            CreatureVariant::Weak => {
+            Self::Weak => {
                 if base_lvl == 1 {
                     base_lvl - 2
                 } else {
@@ -47,22 +47,22 @@ impl CreatureVariant {
             }
             //Increase the creature’s level by 1; if the creature is level –1 or 0,
             // instead increase its level by 2.
-            CreatureVariant::Elite => {
+            Self::Elite => {
                 if base_lvl == -1 || base_lvl == 0 {
                     base_lvl + 2
                 } else {
                     base_lvl + 1
                 }
             }
-            CreatureVariant::Base => base_lvl,
+            Self::Base => base_lvl,
         }
     }
 
     pub fn get_variant_hp(self, base_hp: i64, starting_lvl: i64) -> i64 {
         let hp_mod_map = match self {
-            CreatureVariant::Weak => hp_decrease_by_level(),
-            CreatureVariant::Elite => hp_increase_by_level(),
-            CreatureVariant::Base => {
+            Self::Weak => hp_decrease_by_level(),
+            Self::Elite => hp_increase_by_level(),
+            Self::Base => {
                 hashmap! {}
             }
         };
@@ -73,14 +73,14 @@ impl CreatureVariant {
             .keys()
             .filter(|lvl| starting_lvl >= **lvl)
             .max()
-            .unwrap_or(hp_mod_map.keys().next().unwrap_or(&0));
+            .unwrap_or_else(|| hp_mod_map.keys().next().unwrap_or(&0));
         let hp_mod = *hp_mod_map.get(desired_key).unwrap_or(&0);
         (base_hp + hp_mod).max(1)
     }
 
     pub fn get_variant_archive_link(self, archive_link: Option<String>) -> Option<String> {
         match self {
-            CreatureVariant::Base => archive_link,
+            Self::Base => archive_link,
             _ => add_boolean_query(Option::from(&archive_link), &self.to_string(), true),
         }
     }

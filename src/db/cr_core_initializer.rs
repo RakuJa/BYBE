@@ -29,7 +29,7 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
             hp: cr.hp,
             base_level: cr.level,
             size: cr.size,
-            family: cr.family.unwrap_or(String::from("-")),
+            family: cr.family.unwrap_or_else(|| String::from("-")),
             rarity: cr.rarity,
             license: cr.license,
             remaster: cr.remaster,

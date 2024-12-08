@@ -24,21 +24,21 @@ pub enum SizeEnum {
 }
 
 impl Clone for SizeEnum {
-    fn clone(&self) -> SizeEnum {
+    fn clone(&self) -> Self {
         match self {
-            SizeEnum::Tiny => SizeEnum::Tiny,
-            SizeEnum::Small => SizeEnum::Small,
-            SizeEnum::Medium => SizeEnum::Medium,
-            SizeEnum::Large => SizeEnum::Large,
-            SizeEnum::Huge => SizeEnum::Huge,
-            SizeEnum::Gargantuan => SizeEnum::Gargantuan,
+            Self::Tiny => Self::Tiny,
+            Self::Small => Self::Small,
+            Self::Medium => Self::Medium,
+            Self::Large => Self::Large,
+            Self::Huge => Self::Huge,
+            Self::Gargantuan => Self::Gargantuan,
         }
     }
 }
 
 impl From<String> for SizeEnum {
     fn from(value: String) -> Self {
-        SizeEnum::from_str(value.as_str()).unwrap_or_default()
+        Self::from_str(value.as_str()).unwrap_or_default()
     }
 }
 
@@ -46,12 +46,12 @@ impl FromStr for SizeEnum {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
-            "TINY" => Ok(SizeEnum::Tiny),
-            "SMALL" => Ok(SizeEnum::Small),
-            "MEDIUM" => Ok(SizeEnum::Medium),
-            "LARGE" => Ok(SizeEnum::Large),
-            "HUGE" => Ok(SizeEnum::Huge),
-            "GARGANTUAN" => Ok(SizeEnum::Gargantuan),
+            "TINY" => Ok(Self::Tiny),
+            "SMALL" => Ok(Self::Small),
+            "MEDIUM" => Ok(Self::Medium),
+            "LARGE" => Ok(Self::Large),
+            "HUGE" => Ok(Self::Huge),
+            "GARGANTUAN" => Ok(Self::Gargantuan),
             _ => Err(()),
         }
     }

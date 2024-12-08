@@ -23,7 +23,7 @@ impl Creature {
     /// Decrease the creature’s HP based on its starting level.
     /// Decrease the creature’s AC, attack modifiers, DCs, saving throws, Perception, and skill modifiers by 2.
     /// Decrease the damage of its Strikes and other offensive abilities by 2. If the creature has limits on how many times or how often it can use an ability (such as a spellcaster’s spells or a dragon’s breath), decrease the damage by 4 instead.
-    pub fn convert_creature_to_variant(self, variant: CreatureVariant) -> Creature {
+    pub fn convert_creature_to_variant(self, variant: CreatureVariant) -> Self {
         let mut cr = Self::from_core_with_variant(self.core_data, variant);
         cr.extra_data = self
             .extra_data
@@ -37,14 +37,14 @@ impl Creature {
         cr
     }
 
-    pub fn convert_creature_to_pwl(self) -> Creature {
+    pub fn convert_creature_to_pwl(self) -> Self {
         let pwl_mod = if self.core_data.essential.base_level >= 0 {
             self.core_data.essential.base_level.unsigned_abs()
         } else {
             0
         };
 
-        Creature {
+        Self {
             core_data: self.core_data,
             variant_data: self.variant_data,
             extra_data: self.extra_data.map(|x| x.convert_from_base_to_pwl(pwl_mod)),
@@ -56,7 +56,7 @@ impl Creature {
                 .map(|x| x.convert_from_base_to_pwl(pwl_mod)),
         }
     }
-    pub fn from_core(core: CreatureCoreData) -> Creature {
+    pub fn from_core(core: CreatureCoreData) -> Self {
         let level = core.essential.base_level;
         let archive_link = core.derived.archive_link.clone();
         Self {
@@ -75,7 +75,7 @@ impl Creature {
     pub fn from_core_with_variant(
         mut core: CreatureCoreData,
         creature_variant: CreatureVariant,
-    ) -> Creature {
+    ) -> Self {
         let variant_hp =
             creature_variant.get_variant_hp(core.essential.hp, core.essential.base_level);
         let variant_archive_link =

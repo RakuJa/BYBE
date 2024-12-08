@@ -19,7 +19,7 @@ pub struct ResponseDataModifiers {
     pub spell_casting_data: Option<bool>,
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Hash, PartialEq, Eq)]
 pub struct ResponseCreature {
     pub core_data: CreatureCoreData,
     pub variant_data: CreatureVariantData,

@@ -34,22 +34,22 @@ impl ItemTypeEnum {
     /// It returns the generic table name of the given item type.
     fn to_db_table_name(&self) -> String {
         String::from(match self {
-            ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => "ITEM",
-            ItemTypeEnum::Weapon => "WEAPON",
-            ItemTypeEnum::Armor => "ARMOR",
-            ItemTypeEnum::Shield => "SHIELD",
+            Self::Consumable | Self::Equipment => "ITEM",
+            Self::Weapon => "WEAPON",
+            Self::Armor => "ARMOR",
+            Self::Shield => "SHIELD",
         })
     }
 }
 
 impl Clone for ItemTypeEnum {
-    fn clone(&self) -> ItemTypeEnum {
+    fn clone(&self) -> Self {
         match self {
-            ItemTypeEnum::Consumable => ItemTypeEnum::Consumable,
-            ItemTypeEnum::Equipment => ItemTypeEnum::Equipment,
-            ItemTypeEnum::Armor => ItemTypeEnum::Armor,
-            ItemTypeEnum::Weapon => ItemTypeEnum::Weapon,
-            ItemTypeEnum::Shield => ItemTypeEnum::Shield,
+            Self::Consumable => Self::Consumable,
+            Self::Equipment => Self::Equipment,
+            Self::Armor => Self::Armor,
+            Self::Weapon => Self::Weapon,
+            Self::Shield => Self::Shield,
         }
     }
 }
@@ -58,11 +58,11 @@ impl FromStr for ItemTypeEnum {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
-            "CONSUMABLE" => Ok(ItemTypeEnum::Consumable),
-            "EQUIPMENT" => Ok(ItemTypeEnum::Equipment),
-            "WEAPON" => Ok(ItemTypeEnum::Weapon),
-            "ARMOR" => Ok(ItemTypeEnum::Armor),
-            "SHIELD" => Ok(ItemTypeEnum::Shield),
+            "CONSUMABLE" => Ok(Self::Consumable),
+            "EQUIPMENT" => Ok(Self::Equipment),
+            "WEAPON" => Ok(Self::Weapon),
+            "ARMOR" => Ok(Self::Armor),
+            "SHIELD" => Ok(Self::Shield),
             _ => Err(()),
         }
     }
@@ -71,19 +71,19 @@ impl FromStr for ItemTypeEnum {
 impl Display for ItemTypeEnum {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            ItemTypeEnum::Consumable => {
+            Self::Consumable => {
                 write!(f, "consumable")
             }
-            ItemTypeEnum::Equipment => {
+            Self::Equipment => {
                 write!(f, "equipment")
             }
-            ItemTypeEnum::Weapon => {
+            Self::Weapon => {
                 write!(f, "weapon")
             }
-            ItemTypeEnum::Armor => {
+            Self::Armor => {
                 write!(f, "armor")
             }
-            ItemTypeEnum::Shield => {
+            Self::Shield => {
                 write!(f, "shield")
             }
         }
@@ -103,11 +103,11 @@ pub enum WeaponTypeEnum {
 }
 
 impl Clone for WeaponTypeEnum {
-    fn clone(&self) -> WeaponTypeEnum {
+    fn clone(&self) -> Self {
         match self {
-            WeaponTypeEnum::Ranged => WeaponTypeEnum::Ranged,
-            WeaponTypeEnum::Melee => WeaponTypeEnum::Melee,
-            WeaponTypeEnum::Generic => WeaponTypeEnum::Generic,
+            Self::Ranged => Self::Ranged,
+            Self::Melee => Self::Melee,
+            Self::Generic => Self::Generic,
         }
     }
 }
@@ -116,9 +116,9 @@ impl FromStr for WeaponTypeEnum {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
-            "RANGED" => Ok(WeaponTypeEnum::Ranged),
-            "MELEE" => Ok(WeaponTypeEnum::Melee),
-            "GENERIC" => Ok(WeaponTypeEnum::Generic),
+            "RANGED" => Ok(Self::Ranged),
+            "MELEE" => Ok(Self::Melee),
+            "GENERIC" => Ok(Self::Generic),
             _ => Err(()),
         }
     }
@@ -127,13 +127,13 @@ impl FromStr for WeaponTypeEnum {
 impl Display for WeaponTypeEnum {
     fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
         match self {
-            WeaponTypeEnum::Melee => {
+            Self::Melee => {
                 write!(f, "melee")
             }
-            WeaponTypeEnum::Ranged => {
+            Self::Ranged => {
                 write!(f, "ranged")
             }
-            WeaponTypeEnum::Generic => {
+            Self::Generic => {
                 write!(f, "generic")
             }
         }

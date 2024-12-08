@@ -33,43 +33,43 @@ pub enum CreatureFilter {
 impl fmt::Display for CreatureFilter {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            CreatureFilter::Level => {
+            Self::Level => {
                 write!(f, "level")
             }
-            CreatureFilter::Family => {
+            Self::Family => {
                 write!(f, "family")
             }
-            CreatureFilter::Size => {
+            Self::Size => {
                 write!(f, "size")
             }
-            CreatureFilter::Rarity => {
+            Self::Rarity => {
                 write!(f, "rarity")
             }
-            CreatureFilter::Melee => {
+            Self::Melee => {
                 write!(f, "is_melee")
             }
-            CreatureFilter::Ranged => {
+            Self::Ranged => {
                 write!(f, "is_ranged")
             }
-            CreatureFilter::SpellCaster => {
+            Self::SpellCaster => {
                 write!(f, "is_spell_caster")
             }
-            CreatureFilter::Traits => {
+            Self::Traits => {
                 write!(f, "traits")
             }
-            CreatureFilter::CreatureTypes => {
+            Self::CreatureTypes => {
                 write!(f, "cr_type")
             }
-            CreatureFilter::CreatureRoles => {
+            Self::CreatureRoles => {
                 write!(f, "creature_roles")
             }
-            CreatureFilter::Alignment => {
+            Self::Alignment => {
                 write!(f, "alignment")
             }
-            CreatureFilter::PathfinderVersion => {
+            Self::PathfinderVersion => {
                 write!(f, "remaster")
             }
-            CreatureFilter::Sources => {
+            Self::Sources => {
                 write!(f, "sources")
             }
         }

@@ -6,10 +6,10 @@ use std::ops::Neg;
 use strum::IntoEnumIterator;
 
 fn calculate_max_lvl_diff(lvl_and_exp_map: &HashMap<i64, i64>) -> i64 {
-    match lvl_and_exp_map.keys().min() {
-        None => panic!("No valid lvl and exp map was passed. Abort"),
-        Some(max_lvl_diff) => *max_lvl_diff,
-    }
+    lvl_and_exp_map.keys().min().map_or_else(
+        || panic!("No valid lvl and exp map was passed. Abort"),
+        |max_lvl_diff| *max_lvl_diff,
+    )
 }
 
 fn calculate_lvl_and_exp_map(is_pwl_on: bool) -> HashMap<i64, i64> {
@@ -167,16 +167,18 @@ fn convert_lvl_diff_into_exp(
     lvl_and_exp_map: &HashMap<i64, i64>,
 ) -> i64 {
     let lvl_diff_rounded_down = lvl_diff.floor() as i64;
-    lvl_and_exp_map.get(&lvl_diff_rounded_down).map_or(
-        if lvl_diff_rounded_down < calculate_max_lvl_diff(lvl_and_exp_map) {
-            0
-        } else {
-            // To avoid the party of 50 level 1 pg destroying a lvl 20
-            scale_difficulty_exp(
-                &EncounterChallengeEnum::Impossible,
-                i64::try_from(party_size).unwrap_or(i64::MAX),
-            )
-            .lower_bound
+    lvl_and_exp_map.get(&lvl_diff_rounded_down).map_or_else(
+        || {
+            if lvl_diff_rounded_down < calculate_max_lvl_diff(lvl_and_exp_map) {
+                0
+            } else {
+                // To avoid the party of 50 level 1 pg destroying a lvl 20
+                scale_difficulty_exp(
+                    &EncounterChallengeEnum::Impossible,
+                    i64::try_from(party_size).unwrap_or(i64::MAX),
+                )
+                .lower_bound
+            }
         },
         |value| value.abs(),
     )

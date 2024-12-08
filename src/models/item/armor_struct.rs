@@ -33,7 +33,7 @@ pub struct ArmorData {
 impl<'r> FromRow<'r, SqliteRow> for Armor {
     fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
         let item_core = Item::from_row(row)?;
-        Ok(Armor {
+        Ok(Self {
             item_core,
             armor_data: ArmorData {
                 id: row.try_get("armor_id")?,

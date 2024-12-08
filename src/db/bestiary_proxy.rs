@@ -125,8 +125,7 @@ pub async fn get_creatures_passing_all_filters(
     let mut creature_vec = Vec::new();
     let level_vec = key_value_filters
         .get(&CreatureFilter::Level)
-        .unwrap_or(&HashSet::new())
-        .clone();
+        .map_or_else(HashSet::new, std::clone::Clone::clone);
     let modified_filters =
         prepare_filters_for_db_communication(key_value_filters, fetch_weak, fetch_elite);
     for core in

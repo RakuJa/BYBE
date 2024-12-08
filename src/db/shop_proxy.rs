@@ -136,18 +136,17 @@ async fn get_list(app_state: &AppState) -> Vec<ResponseItem> {
 /// Gets all the runtime sources. It will cache the result
 #[once(sync_writes = true)]
 pub async fn get_all_sources(app_state: &AppState) -> Vec<String> {
-    match get_all_items_from_db(app_state).await {
-        Ok(v) => v
-            .into_iter()
-            .map(|x| x.source)
-            .unique()
-            .filter(|x| !x.is_empty())
-            .sorted()
-            .collect(),
-        Err(_) => {
-            vec![]
-        }
-    }
+    get_all_items_from_db(app_state).await.map_or_else(
+        |_| vec![],
+        |v| {
+            v.into_iter()
+                .map(|x| x.source)
+                .unique()
+                .filter(|x| !x.is_empty())
+                .sorted()
+                .collect()
+        },
+    )
 }
 
 /// Gets all the runtime traits. It will cache the result

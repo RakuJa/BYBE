@@ -36,7 +36,7 @@ impl<'r> FromRow<'r, SqliteRow> for Weapon {
     fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
         let item_core = Item::from_row(row)?;
         let wp_type = WeaponTypeEnum::from_str(row.try_get("weapon_type")?);
-        Ok(Weapon {
+        Ok(Self {
             item_core,
             weapon_data: WeaponData {
                 id: row.try_get("weapon_id")?,
@@ -61,11 +61,7 @@ impl Weapon {
             .iter()
             .map(|x| {
                 let b = x.bonus_dmg as f64;
-                if let Some(dice) = x.clone().dice {
-                    dice.get_avg_dmg(b)
-                } else {
-                    0
-                }
+                x.clone().dice.map_or(0, |dice| dice.get_avg_dmg(b))
             })
             .sum()
     }
@@ -82,7 +78,7 @@ pub struct DamageData {
 
 impl<'r> FromRow<'r, SqliteRow> for DamageData {
     fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
-        Ok(DamageData {
+        Ok(Self {
             id: row.try_get("id")?,
             bonus_dmg: row.try_get("bonus_dmg")?,
             dmg_type: row.try_get("dmg_type").ok(),

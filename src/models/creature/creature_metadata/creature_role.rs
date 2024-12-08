@@ -40,13 +40,13 @@ fn get_dmg_from_regex(raw_str: &str) -> Option<i64> {
 impl CreatureRoleEnum {
     pub fn to_db_column(&self) -> String {
         match self {
-            CreatureRoleEnum::Brute => String::from("brute_percentage"),
-            CreatureRoleEnum::MagicalStriker => String::from("magical_striker_percentage"),
-            CreatureRoleEnum::SkillParagon => String::from("skill_paragon_percentage"),
-            CreatureRoleEnum::Skirmisher => String::from("skirmisher_percentage"),
-            CreatureRoleEnum::Sniper => String::from("sniper_percentage"),
-            CreatureRoleEnum::Soldier => String::from("soldier_percentage"),
-            CreatureRoleEnum::SpellCaster => String::from("spell_caster_percentage"),
+            Self::Brute => String::from("brute_percentage"),
+            Self::MagicalStriker => String::from("magical_striker_percentage"),
+            Self::SkillParagon => String::from("skill_paragon_percentage"),
+            Self::Skirmisher => String::from("skirmisher_percentage"),
+            Self::Sniper => String::from("sniper_percentage"),
+            Self::Soldier => String::from("soldier_percentage"),
+            Self::SpellCaster => String::from("spell_caster_percentage"),
         }
     }
     pub fn from_creature_with_given_scales(
@@ -55,7 +55,7 @@ impl CreatureRoleEnum {
         cr_combat: &CreatureCombatData,
         cr_spells: &CreatureSpellCasterData,
         scales: &CreatureScales,
-    ) -> BTreeMap<CreatureRoleEnum, i64> {
+    ) -> BTreeMap<Self, i64> {
         let mut roles = BTreeMap::new();
         roles.insert(
             Self::Brute,
@@ -95,7 +95,7 @@ impl CreatureRoleEnum {
     }
 
     pub fn list() -> Vec<String> {
-        CreatureRoleEnum::iter().map(|x| x.to_string()).collect()
+        Self::iter().map(|x| x.to_string()).collect()
     }
 }
 // Brute
@@ -442,13 +442,13 @@ impl FromStr for CreatureRoleEnum {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
-            "BRUTE" => Ok(CreatureRoleEnum::Brute),
-            "MAGICAL STRIKER" | "MAGICALSTRIKER" => Ok(CreatureRoleEnum::MagicalStriker),
-            "SKILL PARAGON" | "SKILLPARAGON" => Ok(CreatureRoleEnum::SkillParagon),
-            "SKIRMISHER" => Ok(CreatureRoleEnum::Skirmisher),
-            "SNIPER" => Ok(CreatureRoleEnum::Sniper),
-            "SOLDIER" => Ok(CreatureRoleEnum::Soldier),
-            "SPELLCASTER" | "SPELL CASTER" => Ok(CreatureRoleEnum::SpellCaster),
+            "BRUTE" => Ok(Self::Brute),
+            "MAGICAL STRIKER" | "MAGICALSTRIKER" => Ok(Self::MagicalStriker),
+            "SKILL PARAGON" | "SKILLPARAGON" => Ok(Self::SkillParagon),
+            "SKIRMISHER" => Ok(Self::Skirmisher),
+            "SNIPER" => Ok(Self::Sniper),
+            "SOLDIER" => Ok(Self::Soldier),
+            "SPELLCASTER" | "SPELL CASTER" => Ok(Self::SpellCaster),
             _ => Err(()),
         }
     }
@@ -457,25 +457,25 @@ impl FromStr for CreatureRoleEnum {
 impl fmt::Display for CreatureRoleEnum {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         match self {
-            CreatureRoleEnum::Brute => {
+            Self::Brute => {
                 write!(f, "Brute")
             }
-            CreatureRoleEnum::MagicalStriker => {
+            Self::MagicalStriker => {
                 write!(f, "Magical Striker")
             }
-            CreatureRoleEnum::SkillParagon => {
+            Self::SkillParagon => {
                 write!(f, "Skill Paragon")
             }
-            CreatureRoleEnum::Skirmisher => {
+            Self::Skirmisher => {
                 write!(f, "Skirmisher")
             }
-            CreatureRoleEnum::Sniper => {
+            Self::Sniper => {
                 write!(f, "Sniper")
             }
-            CreatureRoleEnum::Soldier => {
+            Self::Soldier => {
                 write!(f, "Soldier")
             }
-            CreatureRoleEnum::SpellCaster => {
+            Self::SpellCaster => {
                 write!(f, "SpellCaster")
             }
         }
@@ -484,7 +484,7 @@ impl fmt::Display for CreatureRoleEnum {
 
 /// Calculate value distance from upper bound, lower than ub value will
 /// yield 0
-fn calculate_ub_distance(ub: i64, value: i64) -> u16 {
+const fn calculate_ub_distance(ub: i64, value: i64) -> u16 {
     if value > ub {
         (value - ub).unsigned_abs() as u16
     } else {
@@ -492,9 +492,9 @@ fn calculate_ub_distance(ub: i64, value: i64) -> u16 {
     }
 }
 
-/// Calculate value distance from lower bound, higher than lb value will
+/// Calculate value distance from lower bound, `value` higher than `lb` will
 /// yield 0
-fn calculate_lb_distance(lb: i64, value: i64) -> u16 {
+const fn calculate_lb_distance(lb: i64, value: i64) -> u16 {
     if value < lb {
         (lb - value).unsigned_abs() as u16
     } else {
@@ -503,7 +503,7 @@ fn calculate_lb_distance(lb: i64, value: i64) -> u16 {
 }
 
 /// Calculates value distance from bounds, it will exclude upper bound
-fn calculate_dist(lb: i64, ub: i64, value: i64) -> u16 {
+const fn calculate_dist(lb: i64, ub: i64, value: i64) -> u16 {
     if value < lb {
         (lb - value).unsigned_abs() as u16
     } else if value >= ub {

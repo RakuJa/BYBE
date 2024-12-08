@@ -157,10 +157,7 @@ pub async fn fetch_weapons(
         el.item_core.traits = fetch_item_traits(conn, el.item_core.id).await?;
         el.weapon_data.property_runes = fetch_weapon_runes(conn, el.weapon_data.id).await?;
         el.weapon_data.damage_data = fetch_weapon_damage_data(conn, el.weapon_data.id).await?;
-        result_vec.push(Weapon {
-            item_core: el.item_core,
-            weapon_data: el.weapon_data,
-        });
+        result_vec.push(el);
     }
     Ok(result_vec)
 }
@@ -187,10 +184,7 @@ pub async fn fetch_armors(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> R
     for mut el in x {
         el.item_core.traits = fetch_item_traits(conn, el.item_core.id).await?;
         el.armor_data.property_runes = fetch_armor_runes(conn, el.armor_data.id).await?;
-        result_vec.push(Armor {
-            item_core: el.item_core,
-            armor_data: el.armor_data,
-        });
+        result_vec.push(el);
     }
     Ok(result_vec)
 }
@@ -219,10 +213,7 @@ pub async fn fetch_shields(
     let mut result_vec = Vec::new();
     for mut el in x {
         el.item_core.traits = fetch_item_traits(conn, el.item_core.id).await?;
-        result_vec.push(Shield {
-            item_core: el.item_core,
-            shield_data: el.shield_data,
-        });
+        result_vec.push(el);
     }
     Ok(result_vec)
 }

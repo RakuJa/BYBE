@@ -92,7 +92,7 @@ pub struct PaginatedRequest {
 
 impl Default for PaginatedRequest {
     fn default() -> Self {
-        PaginatedRequest {
+        Self {
             cursor: 0,
             page_size: 100,
         }
@@ -137,24 +137,24 @@ impl Dice {
         let m = f64::from(self.dice_size);
         let n = f64::from(self.n_of_dices);
         let b = bonus_dmg;
-        let avg: f64 = (((m + 1.) / 2.) * n) + b;
+        let avg: f64 = ((m + 1.) / 2.).mul_add(n, b);
         avg.floor() as i64
     }
 
-    pub fn from_optional_dice_number_and_size(
+    pub const fn from_optional_dice_number_and_size(
         n_of_dices: Option<u8>,
         dice_size: Option<u8>,
-    ) -> Option<Dice> {
+    ) -> Option<Self> {
         match (n_of_dices, dice_size) {
-            (Some(n), Some(s)) => Some(Dice {
+            (Some(n), Some(s)) => Some(Self {
                 n_of_dices: n,
                 dice_size: s,
             }),
-            (None, Some(s)) => Some(Dice {
+            (None, Some(s)) => Some(Self {
                 n_of_dices: 1,
                 dice_size: s,
             }),
-            (Some(n), None) => Some(Dice {
+            (Some(n), None) => Some(Self {
                 n_of_dices: n,
                 dice_size: 1,
             }),

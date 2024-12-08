@@ -293,11 +293,10 @@ async fn get_filtered_creatures(
 }
 
 fn get_lvl_combinations(enc_data: &RandomEncounterData, party_levels: &[i64]) -> HashSet<Vec<i64>> {
-    if let Some(adv_group) = enc_data.adventure_group.as_ref() {
-        get_adventure_group_lvl_combinations(adv_group, party_levels)
-    } else {
-        get_standard_lvl_combinations(enc_data, party_levels)
-    }
+    enc_data.adventure_group.as_ref().map_or_else(
+        || get_standard_lvl_combinations(enc_data, party_levels),
+        |adv_group| get_adventure_group_lvl_combinations(adv_group, party_levels),
+    )
 }
 
 fn get_standard_lvl_combinations(
@@ -307,7 +306,7 @@ fn get_standard_lvl_combinations(
     let enc_diff = enc_data
         .challenge
         .clone()
-        .unwrap_or(EncounterChallengeEnum::rand());
+        .unwrap_or_else(EncounterChallengeEnum::rand);
     let lvl_combinations = encounter_calculator::calculate_lvl_combination_for_encounter(
         &enc_diff,
         party_levels,

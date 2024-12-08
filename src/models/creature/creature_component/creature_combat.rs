@@ -38,7 +38,7 @@ pub struct CreatureCombatData {
 }
 
 impl CreatureCombatData {
-    fn add_mod_to_saving_throws_and_ac_and_wp_to_hit(self, modifier: i64) -> CreatureCombatData {
+    fn add_mod_to_saving_throws_and_ac_and_wp_to_hit(self, modifier: i64) -> Self {
         let mut com_data = self;
         let weapons: Vec<Weapon> = com_data
             .weapons
@@ -57,7 +57,7 @@ impl CreatureCombatData {
         com_data
     }
 
-    fn add_mod_to_dmg(self, modifier: i64) -> CreatureCombatData {
+    fn add_mod_to_dmg(self, modifier: i64) -> Self {
         let mut com_data = self;
         let weapons: Vec<Weapon> = com_data
             .weapons
@@ -83,7 +83,7 @@ impl CreatureCombatData {
     }
 
     /// Lowers saving throws, weapon to hit bonus, and ac by the given `pwl_mod`
-    pub fn convert_from_base_to_pwl(self, pwl_mod: u64) -> CreatureCombatData {
+    pub fn convert_from_base_to_pwl(self, pwl_mod: u64) -> Self {
         self.add_mod_to_saving_throws_and_ac_and_wp_to_hit(
             -i64::try_from(pwl_mod).unwrap_or(i64::MAX),
         )
@@ -93,7 +93,7 @@ impl CreatureCombatData {
     /// If the creature has limits on how many times or how often it can use an ability
     /// (such as a spellcaster’s spells or a dragon’s breath), decrease the damage by 4 instead.
     /// Increase/Decrease the creature’s AC, attack modifiers, DCs, saving throws by 2.
-    pub fn convert_from_base_to_variant(self, variant: CreatureVariant) -> CreatureCombatData {
+    pub fn convert_from_base_to_variant(self, variant: CreatureVariant) -> Self {
         let modifier = variant.to_adjustment_modifier();
         self.add_mod_to_saving_throws_and_ac_and_wp_to_hit(modifier)
             .add_mod_to_dmg(modifier)

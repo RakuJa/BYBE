@@ -30,7 +30,7 @@ pub struct ShopTemplateData {
 impl From<ShopTemplateEnum> for ShopTemplateData {
     fn from(template_enum: ShopTemplateEnum) -> Self {
         let (e_p, w_p, a_p, s_p) = template_enum.get_equippable_percentages();
-        ShopTemplateData {
+        Self {
             name: template_enum.to_string(),
             description: template_enum.get_description(),
             equipment_percentage: e_p,
@@ -68,17 +68,17 @@ pub enum ShopTemplateEnum {
 
 impl ShopTemplateEnum {
     /// Returns percentage of equipment, weapons, armor, shield for the given template
-    pub fn get_equippable_percentages(&self) -> (u8, u8, u8, u8) {
+    pub const fn get_equippable_percentages(&self) -> (u8, u8, u8, u8) {
         match self {
-            ShopTemplateEnum::Blacksmith => (10, 40, 25, 25),
-            ShopTemplateEnum::Alchemist => (100, 0, 0, 0),
-            ShopTemplateEnum::General => (70, 10, 10, 10),
+            Self::Blacksmith => (10, 40, 25, 25),
+            Self::Alchemist => (100, 0, 0, 0),
+            Self::General => (70, 10, 10, 10),
         }
     }
 
     pub fn get_allowed_item_types(&self) -> Vec<ItemTypeEnum> {
         match self {
-            ShopTemplateEnum::Blacksmith | ShopTemplateEnum::General => {
+            Self::Blacksmith | Self::General => {
                 vec![
                     ItemTypeEnum::Armor,
                     ItemTypeEnum::Shield,
@@ -87,7 +87,7 @@ impl ShopTemplateEnum {
                     ItemTypeEnum::Equipment,
                 ]
             }
-            ShopTemplateEnum::Alchemist => {
+            Self::Alchemist => {
                 vec![ItemTypeEnum::Consumable, ItemTypeEnum::Equipment]
             }
         }
@@ -95,9 +95,7 @@ impl ShopTemplateEnum {
 
     pub fn get_allowed_item_rarities(&self) -> Vec<RarityEnum> {
         match self {
-            ShopTemplateEnum::Blacksmith
-            | ShopTemplateEnum::Alchemist
-            | ShopTemplateEnum::General => {
+            Self::Blacksmith | Self::Alchemist | Self::General => {
                 vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
             }
         }
@@ -106,10 +104,10 @@ impl ShopTemplateEnum {
     pub fn get_traits_whitelist(&self) -> Vec<String> {
         // For future-proof, right now contains 0 logic
         match self {
-            ShopTemplateEnum::Blacksmith | ShopTemplateEnum::General => {
+            Self::Blacksmith | Self::General => {
                 vec![]
             }
-            ShopTemplateEnum::Alchemist => {
+            Self::Alchemist => {
                 vec![
                     "Alchemical".to_string(),
                     "Bomb".to_string(),
@@ -120,11 +118,9 @@ impl ShopTemplateEnum {
         }
     }
 
-    pub fn get_traits_blacklist(&self) -> Vec<String> {
+    pub const fn get_traits_blacklist(&self) -> Vec<String> {
         match self {
-            ShopTemplateEnum::Blacksmith
-            | ShopTemplateEnum::Alchemist
-            | ShopTemplateEnum::General => {
+            Self::Blacksmith | Self::Alchemist | Self::General => {
                 vec![]
             }
         }
@@ -132,13 +128,11 @@ impl ShopTemplateEnum {
 
     pub fn get_description(&self) -> String {
         String::from(match self {
-            ShopTemplateEnum::Blacksmith => {
+            Self::Blacksmith => {
                 "Mainly weapons, armors and shields, sometimes equipment and consumables"
             }
-            ShopTemplateEnum::Alchemist => {
-                "Only equipment and consumables, no weapons, armors or shields"
-            }
-            ShopTemplateEnum::General => "All kinds of items",
+            Self::Alchemist => "Only equipment and consumables, no weapons, armors or shields",
+            Self::General => "All kinds of items",
         })
     }
 }

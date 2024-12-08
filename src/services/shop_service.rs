@@ -45,14 +45,15 @@ pub async fn generate_random_shop_listing(
     app_state: &AppState,
     shop_data: &RandomShopData,
 ) -> ShopListingResponse {
-    let (type_filter, rarity_filter) = if let Some(x) = shop_data.shop_template.clone() {
-        (x.get_allowed_item_types(), x.get_allowed_item_rarities())
-    } else {
-        (
-            shop_data.type_filter.clone().unwrap_or_default(),
-            shop_data.rarity_filter.clone().unwrap_or_default(),
-        )
-    };
+    let (type_filter, rarity_filter) = shop_data.shop_template.clone().map_or_else(
+        || {
+            (
+                shop_data.type_filter.clone().unwrap_or_default(),
+                shop_data.rarity_filter.clone().unwrap_or_default(),
+            )
+        },
+        |x| (x.get_allowed_item_types(), x.get_allowed_item_rarities()),
+    );
     let shop_type = shop_data.shop_template.clone().unwrap_or_default();
     let n_of_consumables = i64::from(
         shop_data
@@ -91,7 +92,7 @@ pub async fn generate_random_shop_listing(
             },
         )
     {
-        match shop_proxy::get_filtered_items(
+        (shop_proxy::get_filtered_items(
             app_state,
             &ShopFilterQuery {
                 item_table_fields_filter: ItemTableFieldsFilter {
@@ -123,19 +124,19 @@ pub async fn generate_random_shop_listing(
                 n_of_shields,
             },
         )
-        .await
-        {
-            Ok(result) => {
-                let n_of_items = result.len();
-                ShopListingResponse {
-                    results: Some(result.into_iter().map(ResponseItem::from).collect()),
-                    count: n_of_items,
-                    next: None,
-                    total: n_of_items,
-                }
-            }
-            Err(_) => ShopListingResponse::default(),
-        }
+        .await)
+            .map_or_else(
+                |_| ShopListingResponse::default(),
+                |result| {
+                    let n_of_items = result.len();
+                    ShopListingResponse {
+                        results: Some(result.into_iter().map(ResponseItem::from).collect()),
+                        count: n_of_items,
+                        next: None,
+                        total: n_of_items,
+                    }
+                },
+            )
     } else {
         ShopListingResponse::default()
     }
