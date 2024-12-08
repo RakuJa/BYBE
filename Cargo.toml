@@ -40,8 +40,8 @@ cast_precision_loss = {level = "allow", priority = 2}
 future_not_send = {level = "allow", priority = 2}
 
 pedantic = {level = "warn", priority = 1}
-#restriction = "warn"
 nursery = {level= "warn", priority = 1}
+# unwrap_used = {level = "warn", priority = 1}
 
 
 [dependencies]
