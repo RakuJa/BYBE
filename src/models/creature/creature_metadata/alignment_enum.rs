@@ -48,9 +48,6 @@ pub enum AlignmentEnum {
     #[serde(rename = "No Alignment")]
     #[default]
     No, // no alignment
-    #[strum(to_string = "Any")]
-    #[serde(rename = "Any")]
-    Any, // can be every alignment
 }
 
 pub const ALIGNMENT_TRAITS: [&str; 4] = ["GOOD", "EVIL", "CHAOTIC", "LAWFUL"];
@@ -119,7 +116,6 @@ impl FromStr for AlignmentEnum {
             "LE" => Ok(Self::Le),
             "LN" => Ok(Self::Ln),
             "LG" => Ok(Self::Lg),
-            "ANY" => Ok(Self::Any),
             _ => Ok(Self::No),
         }
     }
@@ -138,7 +134,6 @@ impl Clone for AlignmentEnum {
             Self::Ln => Self::Ln,
             Self::Lg => Self::Lg,
             Self::No => Self::No,
-            Self::Any => Self::Any,
         }
     }
 }
