@@ -8,25 +8,25 @@ use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
-#[derive(Serialize, Deserialize, IntoParams)]
+#[derive(Serialize, Deserialize, IntoParams, ToSchema)]
 pub struct CreatureFieldFilters {
     pub name_filter: Option<String>,
-    pub source_filter: Option<String>,
-    pub family_filter: Option<String>,
-    pub rarity_filter: Option<RarityEnum>,
-    pub size_filter: Option<SizeEnum>,
-    pub alignment_filter: Option<AlignmentEnum>,
-    pub role_filter: Option<CreatureRoleEnum>,
-    pub type_filter: Option<CreatureTypeEnum>,
-    #[param(minimum = 0, maximum = 100, example = 50)]
+    pub source_filter: Option<Vec<String>>,
+    pub family_filter: Option<Vec<String>>,
+    pub rarity_filter: Option<Vec<RarityEnum>>,
+    pub size_filter: Option<Vec<SizeEnum>>,
+    pub alignment_filter: Option<Vec<AlignmentEnum>>,
+    pub role_filter: Option<Vec<CreatureRoleEnum>>,
+    pub type_filter: Option<Vec<CreatureTypeEnum>>,
+    #[schema(minimum = 0, maximum = 100, example = 50)]
     pub role_threshold: Option<i64>,
-    #[param(minimum = 0, example = 0)]
+    #[schema(minimum = 0, example = 0)]
     pub min_hp_filter: Option<i64>,
-    #[param(minimum = 0, example = 100)]
+    #[schema(minimum = 0, example = 100)]
     pub max_hp_filter: Option<i64>,
-    #[param(minimum = -1, example = -1)]
+    #[schema(minimum = -1, example = -1)]
     pub min_level_filter: Option<i64>,
-    #[param(minimum = -1, example = 5)]
+    #[schema(minimum = -1, example = 5)]
     pub max_level_filter: Option<i64>,
     pub is_melee_filter: Option<bool>,
     pub is_ranged_filter: Option<bool>,

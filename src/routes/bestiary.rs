@@ -33,9 +33,10 @@ use crate::models::db::sense::Sense;
 use crate::models::routers_validator_structs::{CreatureFieldFilters, PaginatedRequest};
 use crate::services::bestiary_service;
 use crate::services::bestiary_service::BestiaryResponse;
+use crate::services::sanitizer::sanitize_id;
 use crate::AppState;
 use actix_web::web::Query;
-use actix_web::{error, get, web, Responder, Result};
+use actix_web::{get, post, web, Responder};
 use utoipa::OpenApi;
 
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
@@ -61,6 +62,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     #[openapi(
         paths(
             get_bestiary,
+            get_bestiary_listing,
             get_families_list,
             get_traits_list,
             get_sources_list,
@@ -122,16 +124,53 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     ),
 )]
 #[get("/list")]
+#[deprecated(since = "2.4.0", note = "please use `get_bestiary_listing` instead")]
 pub async fn get_bestiary(
     data: web::Data<AppState>,
     filters: Query<CreatureFieldFilters>,
     pagination: Query<PaginatedRequest>,
     sort_data: Query<BestiarySortData>,
-) -> Result<impl Responder> {
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_bestiary(
+        bestiary_service::get_bestiary_listing(
             &data,
             &filters.0,
+            &BestiaryPaginatedRequest {
+                paginated_request: pagination.0,
+                bestiary_sort_data: sort_data.0,
+            },
+        )
+        .await,
+    ))
+}
+
+#[utoipa::path(
+    post,
+    path = "/bestiary/list",
+    tag = "bestiary",
+    request_body(
+        content = CreatureFieldFilters,
+        content_type = "application/json"
+    ),
+    params(
+        PaginatedRequest, BestiarySortData
+    ),
+    responses(
+        (status=200, description = "Successful Response", body = BestiaryResponse),
+        (status=400, description = "Bad request.")
+    ),
+)]
+#[post("/list")]
+pub async fn get_bestiary_listing(
+    data: web::Data<AppState>,
+    web::Json(body): web::Json<CreatureFieldFilters>,
+    pagination: Query<PaginatedRequest>,
+    sort_data: Query<BestiarySortData>,
+) -> actix_web::Result<impl Responder> {
+    Ok(web::Json(
+        bestiary_service::get_bestiary_listing(
+            &data,
+            &body,
             &BestiaryPaginatedRequest {
                 paginated_request: pagination.0,
                 bestiary_sort_data: sort_data.0,
@@ -154,7 +193,7 @@ pub async fn get_bestiary(
     ),
 )]
 #[get("/families")]
-pub async fn get_families_list(data: web::Data<AppState>) -> Result<impl Responder> {
+pub async fn get_families_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_families_list(&data).await))
 }
 
@@ -171,7 +210,7 @@ pub async fn get_families_list(data: web::Data<AppState>) -> Result<impl Respond
     ),
 )]
 #[get("/traits")]
-pub async fn get_traits_list(data: web::Data<AppState>) -> Result<impl Responder> {
+pub async fn get_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_traits_list(&data).await))
 }
 
@@ -188,7 +227,7 @@ pub async fn get_traits_list(data: web::Data<AppState>) -> Result<impl Responder
     ),
 )]
 #[get("/sources")]
-pub async fn get_sources_list(data: web::Data<AppState>) -> Result<impl Responder> {
+pub async fn get_sources_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_sources_list(&data).await))
 }
 
@@ -205,7 +244,7 @@ pub async fn get_sources_list(data: web::Data<AppState>) -> Result<impl Responde
     ),
 )]
 #[get("/rarities")]
-pub async fn get_rarities_list(data: web::Data<AppState>) -> Result<impl Responder> {
+pub async fn get_rarities_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_rarities_list(&data).await))
 }
 
@@ -222,7 +261,7 @@ pub async fn get_rarities_list(data: web::Data<AppState>) -> Result<impl Respond
     ),
 )]
 #[get("/sizes")]
-pub async fn get_sizes_list(data: web::Data<AppState>) -> Result<impl Responder> {
+pub async fn get_sizes_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_sizes_list(&data).await))
 }
 
@@ -239,7 +278,7 @@ pub async fn get_sizes_list(data: web::Data<AppState>) -> Result<impl Responder>
     ),
 )]
 #[get("/alignments")]
-pub async fn get_alignments_list(data: web::Data<AppState>) -> Result<impl Responder> {
+pub async fn get_alignments_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_alignments_list(&data).await,
     ))
@@ -258,7 +297,9 @@ pub async fn get_alignments_list(data: web::Data<AppState>) -> Result<impl Respo
     ),
 )]
 #[get("/creature_types")]
-pub async fn get_creature_types_list(data: web::Data<AppState>) -> Result<impl Responder> {
+pub async fn get_creature_types_list(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_creature_types_list(&data).await,
     ))
@@ -277,7 +318,7 @@ pub async fn get_creature_types_list(data: web::Data<AppState>) -> Result<impl R
     ),
 )]
 #[get("/creature_roles")]
-pub async fn get_creature_roles_list() -> Result<impl Responder> {
+pub async fn get_creature_roles_list() -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_creature_roles_list().await))
 }
 
@@ -299,7 +340,7 @@ pub async fn get_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
     response_data_mods: Query<ResponseDataModifiers>,
-) -> Result<impl Responder> {
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_creature(&data, sanitize_id(&creature_id)?, &response_data_mods.0)
             .await,
@@ -324,7 +365,7 @@ pub async fn get_elite_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
     response_data_mods: Query<ResponseDataModifiers>,
-) -> Result<impl Responder> {
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_elite_creature(
             &data,
@@ -353,7 +394,7 @@ pub async fn get_weak_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
     response_data_mods: Query<ResponseDataModifiers>,
-) -> Result<impl Responder> {
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_weak_creature(
             &data,
@@ -362,12 +403,4 @@ pub async fn get_weak_creature(
         )
         .await,
     ))
-}
-
-fn sanitize_id(creature_id: &str) -> Result<i64> {
-    let id = creature_id.parse::<i64>();
-    match id {
-        Ok(s) => Ok(s),
-        Err(e) => Err(error::ErrorNotFound(e)),
-    }
 }

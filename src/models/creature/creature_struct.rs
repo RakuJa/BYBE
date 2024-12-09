@@ -120,20 +120,17 @@ impl Creature {
     }
 
     fn check_creature_pass_equality_filters(&self, filters: &CreatureFieldFilters) -> bool {
-        filters
-            .rarity_filter
-            .as_ref()
-            .map_or(true, |rarity| self.core_data.essential.rarity == *rarity)
-            && filters
-                .size_filter
-                .as_ref()
-                .map_or(true, |size| self.core_data.essential.size == *size)
-            && filters.alignment_filter.as_ref().map_or(true, |alignment| {
-                self.core_data.essential.alignment == *alignment
-            })
-            && filters
-                .is_melee_filter
-                .map_or(true, |is_melee| self.core_data.derived.is_melee == is_melee)
+        filters.rarity_filter.as_ref().map_or(true, |x| {
+            x.iter()
+                .any(|rarity| self.core_data.essential.rarity == *rarity)
+        }) && filters.size_filter.as_ref().map_or(true, |x| {
+            x.iter().any(|size| self.core_data.essential.size == *size)
+        }) && filters.alignment_filter.as_ref().map_or(true, |x| {
+            x.iter()
+                .any(|align| self.core_data.essential.alignment == *align)
+        }) && filters
+            .is_melee_filter
+            .map_or(true, |is_melee| self.core_data.derived.is_melee == is_melee)
             && filters.is_ranged_filter.map_or(true, |is_ranged| {
                 self.core_data.derived.is_ranged == is_ranged
             })
@@ -142,14 +139,14 @@ impl Creature {
                 .map_or(true, |is_spell_caster| {
                     self.core_data.derived.is_spell_caster == is_spell_caster
                 })
-            && filters
-                .type_filter
-                .as_ref()
-                .map_or(true, |cr_type| self.core_data.essential.cr_type == *cr_type)
+            && filters.type_filter.as_ref().map_or(true, |x| {
+                x.iter()
+                    .any(|cr_type| self.core_data.essential.cr_type == *cr_type)
+            })
             && (filters.role_threshold.is_none()
                 || filters.role_filter.as_ref().map_or(true, |cr_role| {
                     let t = filters.role_threshold.unwrap_or(0);
-                    match cr_role {
+                    cr_role.iter().any(|role| match role {
                         CreatureRoleEnum::Brute => self.core_data.derived.brute_percentage >= t,
                         CreatureRoleEnum::MagicalStriker => {
                             self.core_data.derived.magical_striker_percentage >= t
@@ -165,7 +162,7 @@ impl Creature {
                         CreatureRoleEnum::SpellCaster => {
                             self.core_data.derived.spell_caster_percentage >= t
                         }
-                    }
+                    })
                 }))
             && match filters.pathfinder_version.clone().unwrap_or_default() {
                 PathfinderVersionEnum::Legacy => !self.core_data.essential.remaster,
@@ -176,13 +173,19 @@ impl Creature {
 
     fn check_creature_pass_string_filters(&self, filters: &CreatureFieldFilters) -> bool {
         filters.name_filter.as_ref().map_or(true, |name| {
-            self.core_data.essential.name.to_lowercase().contains(name)
-        }) && filters.family_filter.as_ref().map_or(true, |name| {
             self.core_data
                 .essential
-                .family
+                .name
                 .to_lowercase()
-                .contains(name)
+                .contains(name.to_lowercase().as_str())
+        }) && filters.family_filter.as_ref().map_or(true, |x| {
+            x.iter().any(|fam| {
+                self.core_data
+                    .essential
+                    .family
+                    .to_lowercase()
+                    .contains(fam.to_lowercase().as_str())
+            })
         })
     }
 }

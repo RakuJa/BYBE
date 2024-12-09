@@ -12,11 +12,12 @@ use crate::models::shop_structs::ShopTemplateData;
 use crate::models::shop_structs::ShopTemplateEnum;
 use crate::models::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
 use crate::models::shop_structs::{RandomShopData, ShopSortData};
+use crate::services::sanitizer::sanitize_id;
 use crate::services::shop_service;
 use crate::services::shop_service::ShopListingResponse;
 use crate::AppState;
 use actix_web::web::Query;
-use actix_web::{error, get, post, web, Responder};
+use actix_web::{get, post, web, Responder};
 use utoipa::OpenApi;
 
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
@@ -200,12 +201,4 @@ pub async fn get_items_traits_list(data: web::Data<AppState>) -> actix_web::Resu
 #[get("/templates_data")]
 pub async fn get_templates_data() -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_shop_templates_data().await))
-}
-
-fn sanitize_id(creature_id: &str) -> actix_web::Result<i64> {
-    let id = creature_id.parse::<i64>();
-    match id {
-        Ok(s) => Ok(s),
-        Err(e) => Err(error::ErrorNotFound(e)),
-    }
 }

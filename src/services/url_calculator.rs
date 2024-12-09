@@ -66,30 +66,6 @@ fn creature_filter_query_calculator(field_filters: &CreatureFieldFilters) -> Str
             .clone()
             .map(|name| format!("name_filter={}", name)),
         field_filters
-            .family_filter
-            .clone()
-            .map(|fam| format!("family_filter={}", fam)),
-        field_filters
-            .rarity_filter
-            .clone()
-            .map(|rar| format!("rarity_filter={}", rar)),
-        field_filters
-            .size_filter
-            .clone()
-            .map(|size| format!("size_filter={}", size)),
-        field_filters
-            .alignment_filter
-            .clone()
-            .map(|align| format!("alignment_filter={}", align)),
-        field_filters
-            .role_filter
-            .clone()
-            .map(|role| format!("role_filter={}", role)),
-        field_filters
-            .type_filter
-            .clone()
-            .map(|cr_type| format!("type_filter={}", cr_type)),
-        field_filters
             .role_threshold
             .map(|threshold| format!("role_threshold={}", threshold)),
         field_filters
