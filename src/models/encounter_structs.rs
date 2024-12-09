@@ -22,13 +22,20 @@ pub struct EncounterParams {
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct RandomEncounterData {
-    pub families: Option<Vec<String>>,
-    pub traits: Option<Vec<String>>,
-    pub rarities: Option<Vec<RarityEnum>>,
-    pub sizes: Option<Vec<SizeEnum>>,
-    pub alignments: Option<Vec<AlignmentEnum>>,
-    pub creature_types: Option<Vec<CreatureTypeEnum>>,
-    pub creature_roles: Option<Vec<CreatureRoleEnum>>,
+    pub source_filter: Option<Vec<String>>,
+    pub trait_whitelist_filter: Option<Vec<String>>,
+    pub trait_blacklist_filter: Option<Vec<String>>,
+    pub family_filter: Option<Vec<String>>,
+    pub rarity_filter: Option<Vec<RarityEnum>>,
+    pub size_filter: Option<Vec<SizeEnum>>,
+    pub alignment_filter: Option<Vec<AlignmentEnum>>,
+    pub type_filter: Option<Vec<CreatureTypeEnum>>,
+    pub role_filter: Option<Vec<CreatureRoleEnum>>,
+    pub is_melee_filter: Option<bool>,
+    pub is_ranged_filter: Option<bool>,
+    pub is_spellcaster_filter: Option<bool>,
+    pub role_lower_threshold: Option<u8>,
+    pub role_upper_threshold: Option<u8>,
     pub challenge: Option<EncounterChallengeEnum>,
     pub adventure_group: Option<AdventureGroupEnum>,
     #[schema(minimum = 1, maximum = 30, example = 1)]

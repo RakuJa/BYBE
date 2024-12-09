@@ -1,9 +1,11 @@
 use crate::models::creature::creature_struct::Creature;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 
 use crate::db::data_providers::creature_fetcher::fetch_traits_associated_with_creatures;
 use crate::db::data_providers::{creature_fetcher, generic_fetcher};
-use crate::models::bestiary_structs::{BestiaryPaginatedRequest, CreatureSortEnum};
+use crate::models::bestiary_structs::{
+    BestiaryFilterQuery, BestiaryPaginatedRequest, CreatureSortEnum,
+};
 use crate::models::creature::creature_component::creature_core::CreatureCoreData;
 use crate::models::creature::creature_filter_enum::{CreatureFilter, FieldsUniqueValuesStruct};
 use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
@@ -16,6 +18,7 @@ use crate::models::routers_validator_structs::{CreatureFieldFilters, OrderEnum};
 use crate::AppState;
 use anyhow::Result;
 use cached::proc_macro::once;
+use itertools::Itertools;
 use strum::IntoEnumIterator;
 
 pub async fn get_creature_by_id(
@@ -105,11 +108,14 @@ pub async fn get_paginated_creatures(
             OrderEnum::Descending => cmp.reverse(),
         }
     });
-
     let curr_slice: Vec<Creature> = filtered_list
         .iter()
         .skip(pagination.paginated_request.cursor as usize)
-        .take(pagination.paginated_request.page_size.unsigned_abs() as usize)
+        .take(if pagination.paginated_request.page_size >= 0 {
+            pagination.paginated_request.page_size.unsigned_abs() as usize
+        } else {
+            usize::MAX
+        })
         .cloned()
         .collect();
 
@@ -118,16 +124,24 @@ pub async fn get_paginated_creatures(
 
 pub async fn get_creatures_passing_all_filters(
     app_state: &AppState,
-    key_value_filters: HashMap<CreatureFilter, HashSet<String>>,
+    filters: &BestiaryFilterQuery,
     fetch_weak: bool,
     fetch_elite: bool,
 ) -> Result<Vec<Creature>> {
     let mut creature_vec = Vec::new();
-    let level_vec = key_value_filters
-        .get(&CreatureFilter::Level)
-        .map_or_else(HashSet::new, std::clone::Clone::clone);
-    let modified_filters =
-        prepare_filters_for_db_communication(key_value_filters, fetch_weak, fetch_elite);
+    let level_vec = filters.creature_table_fields_filter.level_filter.clone();
+    let mut modified_filters = filters.clone();
+    modified_filters.creature_table_fields_filter.level_filter =
+        prepare_level_filter_for_db_communication(
+            filters
+                .creature_table_fields_filter
+                .level_filter
+                .clone()
+                .into_iter(),
+            fetch_weak,
+            fetch_elite,
+        );
+
     for core in
         creature_fetcher::fetch_creatures_core_data_with_filters(&app_state.conn, &modified_filters)
             .await?
@@ -137,13 +151,13 @@ pub async fn get_creatures_passing_all_filters(
         // mean that if we have [0,1,2,3] in the filter and allow_elite => [-1,0,1,2,3] then
         // a creature of level 1 will always be considered the elite variant of level 0. We'll
         // duplicate the data and will have a base 0 for level 0 and elite 0 for level 1
-        if fetch_weak && level_vec.contains(&(core.essential.base_level - 1).to_string()) {
+        if fetch_weak && level_vec.contains(&(core.essential.base_level - 1)) {
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
                 CreatureVariant::Weak,
             ));
         }
-        if fetch_elite && level_vec.contains(&(core.essential.base_level + 1).to_string()) {
+        if fetch_elite && level_vec.contains(&(core.essential.base_level + 1)) {
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
                 CreatureVariant::Elite,
@@ -261,30 +275,27 @@ pub fn order_list_by_level(creature_list: &[Creature]) -> HashMap<i64, Vec<Creat
 /// Used to prepare the filters for db communication.
 /// The level must be adjusted if elite/weak must be fetched.
 ///Example if we allow weak then we can fetch creature with level +1 => weak = level
-fn prepare_filters_for_db_communication(
-    key_value_filters: HashMap<CreatureFilter, HashSet<String>>,
+fn prepare_level_filter_for_db_communication<I>(
+    level_filter: I,
     fetch_weak: bool,
     fetch_elite: bool,
-) -> HashMap<CreatureFilter, HashSet<String>> {
-    key_value_filters
-        .into_iter()
-        .map(|(key, values)| match key {
-            CreatureFilter::Level => {
-                let mut new_values = HashSet::new();
-                for str_level in values {
-                    if let Ok(level) = str_level.parse::<i64>() {
-                        if fetch_weak {
-                            new_values.insert((level + 1).to_string());
-                        }
-                        if fetch_elite {
-                            new_values.insert((level - 1).to_string());
-                        }
-                        new_values.insert(level.to_string());
-                    }
-                }
-                (key, new_values)
-            }
-            _ => (key, values),
-        })
-        .collect()
+) -> Vec<i64>
+where
+    I: Iterator<Item = i64>,
+{
+    // do not remove sorted, it would break contract with merge and dedup
+    let levels = level_filter.sorted().collect::<Vec<_>>();
+    let levels_for_elite: Vec<i64> = if fetch_elite {
+        levels.iter().map(|x| x - 1).collect()
+    } else {
+        vec![]
+    };
+    let levels_for_weak: Vec<i64> = if fetch_weak {
+        levels.iter().map(|x| x + 1).collect()
+    } else {
+        vec![]
+    };
+
+    let x = itertools::merge(levels_for_elite, levels_for_weak).collect::<Vec<_>>();
+    itertools::merge(x, levels).dedup().collect::<Vec<_>>()
 }

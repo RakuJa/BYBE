@@ -1,4 +1,9 @@
+use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
+use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
+use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::routers_validator_structs::{OrderEnum, PaginatedRequest};
+use crate::models::shared::rarity_enum::RarityEnum;
+use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
@@ -36,4 +41,40 @@ pub struct BestiarySortData {
 pub struct BestiaryPaginatedRequest {
     pub paginated_request: PaginatedRequest,
     pub bestiary_sort_data: BestiarySortData,
+}
+
+#[derive(Clone)]
+pub struct CreatureTableFieldsFilter {
+    pub source_filter: Vec<String>,
+    pub family_filter: Vec<String>,
+    pub alignment_filter: Vec<AlignmentEnum>,
+    pub size_filter: Vec<SizeEnum>,
+    pub rarity_filter: Vec<RarityEnum>,
+    pub type_filter: Vec<CreatureTypeEnum>,
+    pub role_filter: Vec<CreatureRoleEnum>,
+    pub role_lower_threshold: u8,
+    pub role_upper_threshold: u8,
+    pub is_melee_filter: Vec<bool>,
+    pub is_ranged_filter: Vec<bool>,
+    pub is_spellcaster_filter: Vec<bool>,
+    pub supported_version: Vec<String>,
+
+    pub level_filter: Vec<i64>,
+}
+
+impl CreatureTableFieldsFilter {
+    pub const fn default_lower_threshold() -> u8 {
+        50
+    }
+
+    pub const fn default_upper_threshold() -> u8 {
+        100
+    }
+}
+
+#[derive(Clone)]
+pub struct BestiaryFilterQuery {
+    pub creature_table_fields_filter: CreatureTableFieldsFilter,
+    pub trait_whitelist_filter: Vec<String>,
+    pub trait_blacklist_filter: Vec<String>,
 }

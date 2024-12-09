@@ -1,7 +1,6 @@
 use crate::db::bestiary_proxy::{get_creatures_passing_all_filters, order_list_by_level};
-use crate::models::creature::creature_component::filter_struct::FilterStruct;
-use crate::models::creature::creature_filter_enum::CreatureFilter;
-use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
+use crate::models::bestiary_structs::BestiaryFilterQuery;
+use crate::models::bestiary_structs::CreatureTableFieldsFilter;
 use crate::models::creature::creature_struct::Creature;
 use crate::models::encounter_structs::{
     AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, RandomEncounterData,
@@ -12,11 +11,12 @@ use crate::services::encounter_handler::encounter_calculator::calculate_encounte
 use crate::AppState;
 use anyhow::{ensure, Result};
 use counter::Counter;
+use itertools::Itertools;
 use log::warn;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)] // it's used for Schema
 use serde_json::json;
-use std::collections::{BTreeMap, HashMap, HashSet};
+use std::collections::{BTreeMap, HashSet};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
@@ -87,27 +87,48 @@ async fn calculate_random_encounter(
         .clone()
         .into_iter()
         .flatten()
-        .map(|lvl| lvl.to_string())
-        .collect::<HashSet<_>>();
+        .sorted()
+        .dedup()
+        .collect::<Vec<_>>();
     ensure!(
         !unique_levels.is_empty(),
         "There are no valid levels to chose from. Encounter could not be built"
     );
-    let filter_map = build_filter_map(FilterStruct {
-        families: enc_data.families,
-        traits: enc_data.traits,
-        rarities: enc_data.rarities,
-        sizes: enc_data.sizes,
-        alignments: enc_data.alignments,
-        creature_types: enc_data.creature_types,
-        creature_roles: enc_data.creature_roles,
-        lvl_combinations: unique_levels,
-        pathfinder_version: enc_data.pathfinder_version.unwrap_or_default(),
-    });
-
     let filtered_creatures = get_filtered_creatures(
         app_state,
-        filter_map,
+        &BestiaryFilterQuery {
+            creature_table_fields_filter: CreatureTableFieldsFilter {
+                source_filter: enc_data.source_filter.unwrap_or_default(),
+                family_filter: enc_data.family_filter.unwrap_or_default(),
+                alignment_filter: enc_data.alignment_filter.unwrap_or_default(),
+                size_filter: enc_data.size_filter.unwrap_or_default(),
+                rarity_filter: enc_data.rarity_filter.unwrap_or_default(),
+                type_filter: enc_data.type_filter.unwrap_or_default(),
+                role_filter: enc_data.role_filter.unwrap_or_default(),
+                role_lower_threshold: enc_data
+                    .role_lower_threshold
+                    .unwrap_or(CreatureTableFieldsFilter::default_lower_threshold()),
+                role_upper_threshold: enc_data
+                    .role_upper_threshold
+                    .unwrap_or(CreatureTableFieldsFilter::default_upper_threshold()),
+                is_melee_filter: enc_data
+                    .is_melee_filter
+                    .map_or_else(|| vec![true, false], |x| vec![x]),
+                is_ranged_filter: enc_data
+                    .is_ranged_filter
+                    .map_or_else(|| vec![true, false], |x| vec![x]),
+                is_spellcaster_filter: enc_data
+                    .is_spellcaster_filter
+                    .map_or_else(|| vec![true, false], |x| vec![x]),
+                supported_version: enc_data
+                    .pathfinder_version
+                    .unwrap_or_default()
+                    .to_db_value(),
+                level_filter: unique_levels,
+            },
+            trait_whitelist_filter: enc_data.trait_whitelist_filter.unwrap_or_default(),
+            trait_blacklist_filter: enc_data.trait_blacklist_filter.unwrap_or_default(),
+        },
         enc_data.allow_weak_variants.is_some_and(|x| x),
         enc_data.allow_elite_variants.is_some_and(|x| x),
     )
@@ -224,72 +245,13 @@ fn filter_non_existing_levels(
     result_vec
 }
 
-fn build_filter_map(filter_enum: FilterStruct) -> HashMap<CreatureFilter, HashSet<String>> {
-    let mut filter_map = HashMap::new();
-
-    filter_enum
-        .families
-        .map(|el| filter_map.insert(CreatureFilter::Family, HashSet::from_iter(el)));
-    filter_enum
-        .traits
-        .map(|el| filter_map.insert(CreatureFilter::Traits, HashSet::from_iter(el)));
-    // What no generic enum does to a mf (mother function)
-    // it could also prob be bad programming by me
-    if let Some(vec) = filter_enum.rarities {
-        filter_map.insert(
-            CreatureFilter::Rarity,
-            vec.iter()
-                .map(std::string::ToString::to_string)
-                .collect::<HashSet<String>>(),
-        );
-    };
-    if let Some(vec) = filter_enum.sizes {
-        filter_map.insert(
-            CreatureFilter::Size,
-            vec.iter()
-                .map(std::string::ToString::to_string)
-                .collect::<HashSet<String>>(),
-        );
-    };
-    if let Some(vec) = filter_enum.alignments {
-        filter_map.insert(
-            CreatureFilter::Alignment,
-            vec.iter()
-                .map(std::string::ToString::to_string)
-                .collect::<HashSet<String>>(),
-        );
-    };
-    if let Some(vec) = filter_enum.creature_types {
-        filter_map.insert(
-            CreatureFilter::CreatureTypes,
-            vec.iter()
-                .map(std::string::ToString::to_string)
-                .collect::<HashSet<String>>(),
-        );
-    };
-    if let Some(vec) = filter_enum.creature_roles {
-        filter_map.insert(
-            CreatureFilter::CreatureRoles,
-            vec.iter()
-                .map(CreatureRoleEnum::to_db_column)
-                .collect::<HashSet<String>>(),
-        );
-    };
-    filter_map.insert(CreatureFilter::Level, filter_enum.lvl_combinations);
-    filter_map.insert(
-        CreatureFilter::PathfinderVersion,
-        HashSet::from_iter(filter_enum.pathfinder_version.to_db_value()),
-    );
-    filter_map
-}
-
 async fn get_filtered_creatures(
     app_state: &AppState,
-    filter_map: HashMap<CreatureFilter, HashSet<String>>,
+    filters: &BestiaryFilterQuery,
     allow_weak: bool,
     allow_elite: bool,
 ) -> Result<Vec<Creature>> {
-    get_creatures_passing_all_filters(app_state, filter_map, allow_weak, allow_elite).await
+    get_creatures_passing_all_filters(app_state, filters, allow_weak, allow_elite).await
 }
 
 fn get_lvl_combinations(enc_data: &RandomEncounterData, party_levels: &[i64]) -> HashSet<Vec<i64>> {
