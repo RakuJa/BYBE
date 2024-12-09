@@ -1,5 +1,4 @@
 use crate::models::bestiary_structs::{BestiaryFilterQuery, CreatureTableFieldsFilter};
-use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::shop_structs::{ItemTableFieldsFilter, ShopFilterQuery};
@@ -261,10 +260,7 @@ fn prepare_creature_filter_statement(
         ),
         prepare_case_insensitive_in_statement(
             "alignment",
-            bestiary_filter_vectors
-                .alignment_filter
-                .iter()
-                .flat_map(AlignmentEnum::to_db_traits),
+            bestiary_filter_vectors.alignment_filter.iter(),
         ),
         prepare_case_insensitive_in_statement("size", bestiary_filter_vectors.size_filter.iter()),
         prepare_case_insensitive_in_statement(
@@ -276,7 +272,7 @@ fn prepare_creature_filter_statement(
             bestiary_filter_vectors.type_filter.iter(),
         ),
         prepare_in_statement_for_generic_type(
-            "is_spellcaster",
+            "is_spell_caster",
             bestiary_filter_vectors.is_spellcaster_filter.iter(),
         ),
         prepare_in_statement_for_generic_type(

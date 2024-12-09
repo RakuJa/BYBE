@@ -94,45 +94,6 @@ impl From<(&Vec<String>, bool)> for AlignmentEnum {
     }
 }
 
-impl AlignmentEnum {
-    pub fn to_db_traits(&self) -> Vec<String> {
-        match self {
-            Self::Ce => {
-                vec![String::from("CHAOTIC"), String::from("EVIL")]
-            }
-            Self::Cn => {
-                vec![String::from("CHAOTIC")]
-            }
-            Self::Cg => {
-                vec![String::from("CHAOTIC"), String::from("GOOD")]
-            }
-            Self::Ne => {
-                vec![String::from("EVIL")]
-            }
-            Self::N | Self::No => {
-                vec![]
-            }
-            Self::Ng => {
-                vec![String::from("GOOD")]
-            }
-            Self::Le => {
-                vec![String::from("LAWFUL"), String::from("EVIL")]
-            }
-            Self::Ln => {
-                vec![String::from("LAWFUL")]
-            }
-            Self::Lg => {
-                vec![String::from("LAWFUL"), String::from("GOOD")]
-            }
-            Self::Any => ALIGNMENT_TRAITS
-                .to_vec()
-                .iter()
-                .map(ToString::to_string)
-                .collect(),
-        }
-    }
-}
-
 impl From<String> for AlignmentEnum {
     fn from(value: String) -> Self {
         Self::from_str(value.as_str()).unwrap_or_default()
