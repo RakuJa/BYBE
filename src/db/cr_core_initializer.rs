@@ -9,12 +9,14 @@ use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use anyhow::{bail, Result};
+use once::assert_has_not_been_called;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Sqlite};
 
-/// Handler for startup, first creature_core initialization. Then it shouldn't be used
-
 pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
+    assert_has_not_been_called!(
+        "Handler for startup, first creature_core initialization. Then it shouldn't be used"
+    );
     let scales = fetch_creature_scales(conn).await?;
     for cr in get_creatures_raw_essential_data(conn, 0, -1).await? {
         let traits = fetch_creature_traits(conn, cr.id).await?;
