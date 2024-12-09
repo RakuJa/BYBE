@@ -17,6 +17,10 @@ use std::num::NonZero;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
+#[derive(OpenApi)]
+#[openapi(paths(index))]
+struct ApiDoc;
+
 #[derive(Clone)]
 pub struct AppState {
     conn: Pool<Sqlite>,
@@ -65,19 +69,19 @@ fn get_service_startup_state() -> StartupState {
 }
 
 fn get_service_port() -> u16 {
-    match env::var("SERVICE_PORT").ok() {
-        None => 25566,
-        Some(port) => port.parse::<u16>().unwrap_or(25566),
-    }
+    env::var("SERVICE_PORT")
+        .ok()
+        .map_or(25566, |port| port.parse().unwrap_or(25566))
 }
 
 fn get_service_workers() -> usize {
     let available_cpus =
         usize::from(std::thread::available_parallelism().unwrap_or(NonZero::new(1).unwrap()));
-    match env::var("N_OF_SERVICE_WORKERS").ok() {
-        None => available_cpus,
-        Some(n_of_workers) => n_of_workers.parse::<usize>().unwrap_or(available_cpus),
-    }
+    env::var("N_OF_SERVICE_WORKERS")
+        .ok()
+        .map_or(available_cpus, |n_of_workers| {
+            n_of_workers.parse().unwrap_or(available_cpus)
+        })
 }
 
 fn init_docs(openapi: &mut utoipa::openapi::OpenApi) {
@@ -104,11 +108,7 @@ pub async fn start(
         }
         InitializeLogResponsibility::Delegated => {} // do nothing, someone else has already initialized them
     }
-    let db_url = if let Some(x) = db_location {
-        x
-    } else {
-        get_service_db_url()
-    };
+    let db_url = db_location.map_or_else(get_service_db_url, |x| x);
     let service_ip = get_service_ip();
     let service_port = get_service_port();
     let startup_state: StartupState = get_service_startup_state();
@@ -139,10 +139,6 @@ pub async fn start(
     );
 
     // Swagger initialization
-    #[derive(OpenApi)]
-    #[openapi(paths(index))]
-    struct ApiDoc;
-
     let mut openapi = ApiDoc::openapi();
     init_docs(&mut openapi);
 

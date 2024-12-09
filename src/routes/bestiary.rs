@@ -319,7 +319,7 @@ pub async fn get_creature_types_list(
 )]
 #[get("/creature_roles")]
 pub async fn get_creature_roles_list() -> actix_web::Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_creature_roles_list().await))
+    Ok(web::Json(bestiary_service::get_creature_roles_list()))
 }
 
 #[utoipa::path(

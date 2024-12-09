@@ -29,6 +29,21 @@ path = "src/main.rs"
 unsafe_code = "forbid"
 deprecated = "allow"
 
+[lints.clippy]
+struct_field_names = {level = "allow", priority = 2}
+module_name_repetitions = {level = "allow", priority = 2}
+# We are ok with losing some data without wrapping. We are not ok with wrapping
+# Ex: 128.12 => 128 is ok, 128 => 0 is not.
+cast_possible_truncation = {level = "allow", priority = 2}
+cast_precision_loss = {level = "allow", priority = 2}
+
+future_not_send = {level = "allow", priority = 2}
+
+pedantic = {level = "warn", priority = 1}
+nursery = {level= "warn", priority = 1}
+# unwrap_used = {level = "warn", priority = 1}
+
+
 [dependencies]
 actix-web = "4.9.0"
 actix-cors = "0.7.0"
@@ -40,8 +55,8 @@ sqlx = { version = "0.8.2", features = ["runtime-async-std", "sqlite"] }
 cached = { version = "0.54.0", features = ["async"] }
 
 anyhow = "1.0.93"
-serde = { version = "1.0.215", features = ["derive"] }
-serde_json = "1.0.133"
+serde = { version = "1.0.214", features = ["derive"] }
+serde_json = "1.0.132"
 strum = {version="0.26.3", features = ["derive"]}
 fastrand = "2.2.0"
 counter = "0.6.0"

@@ -92,7 +92,7 @@ pub struct PaginatedRequest {
 
 impl Default for PaginatedRequest {
     fn default() -> Self {
-        PaginatedRequest {
+        Self {
             cursor: 0,
             page_size: 100,
         }
@@ -109,16 +109,17 @@ pub struct Dice {
 }
 
 impl Dice {
-    /// Dice roll will roll n dices with each roll in the range of 1<=result<=dice_size.
-    /// It returns the sum of n_of_dices rolls.
+    /// Dice roll will roll n dices with each roll in the range of 1<=result<=`dice_size`.
+    /// It returns the sum of `n_of_dices` rolls.
     /// IT SHOULD NEVER BE <1, OTHERWISE WE BREAK THE CONTRACT OF THE METHOD.
-    pub fn roll(&self) -> i64 {
-        let mut roll_result = 0;
-        for _ in 0..self.n_of_dices {
+    pub fn roll(&self) -> u16 {
+        let mut roll_result = 0_u16;
+        let n_of_dices = u16::from(self.n_of_dices);
+        for _ in 0..n_of_dices {
             // gen_range panics if n<2 (1..1), panic!
             // so we directly return 1 if that's the case
-            roll_result += if self.dice_size > 1 {
-                fastrand::i64(1..=self.dice_size as i64)
+            roll_result += if n_of_dices > 1 {
+                fastrand::u16(1..=n_of_dices)
             } else {
                 1
             }
@@ -133,27 +134,27 @@ impl Dice {
         // M = max value of the dice
         // N = number of dices
         // B = bonus dmg
-        let m = self.dice_size as f64;
-        let n = self.n_of_dices as f64;
+        let m = f64::from(self.dice_size);
+        let n = f64::from(self.n_of_dices);
         let b = bonus_dmg;
-        let avg: f64 = (((m + 1.) / 2.) * n) + b;
+        let avg: f64 = ((m + 1.) / 2.).mul_add(n, b);
         avg.floor() as i64
     }
 
-    pub fn from_optional_dice_number_and_size(
+    pub const fn from_optional_dice_number_and_size(
         n_of_dices: Option<u8>,
         dice_size: Option<u8>,
-    ) -> Option<Dice> {
+    ) -> Option<Self> {
         match (n_of_dices, dice_size) {
-            (Some(n), Some(s)) => Some(Dice {
+            (Some(n), Some(s)) => Some(Self {
                 n_of_dices: n,
                 dice_size: s,
             }),
-            (None, Some(s)) => Some(Dice {
+            (None, Some(s)) => Some(Self {
                 n_of_dices: 1,
                 dice_size: s,
             }),
-            (Some(n), None) => Some(Dice {
+            (Some(n), None) => Some(Self {
                 n_of_dices: n,
                 dice_size: 1,
             }),

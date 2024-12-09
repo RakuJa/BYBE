@@ -20,9 +20,9 @@ impl PathfinderVersionEnum {
         match self {
             // The db column is a boolean called "remaster" so we translate the enum to
             // FALSE if legacy, TRUE if remaster and TRUE, FALSE if both
-            PathfinderVersionEnum::Legacy => vec![String::from("FALSE")],
-            PathfinderVersionEnum::Remaster => vec![String::from("TRUE")],
-            PathfinderVersionEnum::Any => {
+            Self::Legacy => vec![String::from("FALSE")],
+            Self::Remaster => vec![String::from("TRUE")],
+            Self::Any => {
                 vec![String::from("TRUE"), String::from("FALSE")]
             }
         }

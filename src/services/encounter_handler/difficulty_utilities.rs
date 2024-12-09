@@ -1,6 +1,9 @@
 use crate::models::encounter_structs::{EncounterChallengeEnum, ExpRange};
 
-pub fn scale_difficulty_exp(base_difficulty: &EncounterChallengeEnum, party_size: i64) -> ExpRange {
+pub const fn scale_difficulty_exp(
+    base_difficulty: &EncounterChallengeEnum,
+    party_size: i64,
+) -> ExpRange {
     // Given the base difficulty and the party size, it scales the base difficulty.
     // Useful when a party is not the canon 4 party member.
     let party_deviation = party_size - 4;
@@ -17,7 +20,7 @@ pub fn scale_difficulty_exp(base_difficulty: &EncounterChallengeEnum, party_size
     }
 }
 
-fn convert_difficulty_enum_to_base_xp_budget(diff: &EncounterChallengeEnum) -> i64 {
+const fn convert_difficulty_enum_to_base_xp_budget(diff: &EncounterChallengeEnum) -> i64 {
     match diff {
         EncounterChallengeEnum::Trivial => 40,
         EncounterChallengeEnum::Low => 60,
@@ -28,7 +31,7 @@ fn convert_difficulty_enum_to_base_xp_budget(diff: &EncounterChallengeEnum) -> i
     }
 }
 
-fn convert_difficulty_enum_to_xp_adjustment(diff: &EncounterChallengeEnum) -> i64 {
+const fn convert_difficulty_enum_to_xp_adjustment(diff: &EncounterChallengeEnum) -> i64 {
     match diff {
         EncounterChallengeEnum::Trivial => 10,
         EncounterChallengeEnum::Low => 15,
@@ -39,13 +42,14 @@ fn convert_difficulty_enum_to_xp_adjustment(diff: &EncounterChallengeEnum) -> i6
     }
 }
 
-fn get_next_difficulty(diff: &EncounterChallengeEnum) -> EncounterChallengeEnum {
+const fn get_next_difficulty(diff: &EncounterChallengeEnum) -> EncounterChallengeEnum {
     match diff {
         EncounterChallengeEnum::Trivial => EncounterChallengeEnum::Low,
         EncounterChallengeEnum::Low => EncounterChallengeEnum::Moderate,
         EncounterChallengeEnum::Moderate => EncounterChallengeEnum::Severe,
         EncounterChallengeEnum::Severe => EncounterChallengeEnum::Extreme,
-        EncounterChallengeEnum::Extreme => EncounterChallengeEnum::Impossible,
-        EncounterChallengeEnum::Impossible => EncounterChallengeEnum::Impossible,
+        EncounterChallengeEnum::Extreme | EncounterChallengeEnum::Impossible => {
+            EncounterChallengeEnum::Impossible
+        }
     }
 }

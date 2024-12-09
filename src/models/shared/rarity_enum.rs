@@ -21,7 +21,7 @@ pub enum RarityEnum {
 
 impl From<String> for RarityEnum {
     fn from(value: String) -> Self {
-        RarityEnum::from_str(value.as_str()).unwrap_or_default()
+        Self::from_str(value.as_str()).unwrap_or_default()
     }
 }
 
@@ -29,22 +29,22 @@ impl FromStr for RarityEnum {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
-            "COMMON" => Ok(RarityEnum::Common),
-            "UNCOMMON" => Ok(RarityEnum::Uncommon),
-            "RARE" => Ok(RarityEnum::Rare),
-            "UNIQUE" => Ok(RarityEnum::Unique),
+            "COMMON" => Ok(Self::Common),
+            "UNCOMMON" => Ok(Self::Uncommon),
+            "RARE" => Ok(Self::Rare),
+            "UNIQUE" => Ok(Self::Unique),
             _ => Err(()),
         }
     }
 }
 
 impl Clone for RarityEnum {
-    fn clone(&self) -> RarityEnum {
+    fn clone(&self) -> Self {
         match self {
-            RarityEnum::Common => RarityEnum::Common,
-            RarityEnum::Uncommon => RarityEnum::Uncommon,
-            RarityEnum::Rare => RarityEnum::Rare,
-            RarityEnum::Unique => RarityEnum::Unique,
+            Self::Common => Self::Common,
+            Self::Uncommon => Self::Uncommon,
+            Self::Rare => Self::Rare,
+            Self::Unique => Self::Unique,
         }
     }
 }

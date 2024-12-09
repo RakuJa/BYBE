@@ -78,7 +78,7 @@ pub enum EncounterChallengeEnum {
 
 impl From<EncounterChallengeEnum> for String {
     fn from(value: EncounterChallengeEnum) -> Self {
-        String::from(match value {
+        Self::from(match value {
             EncounterChallengeEnum::Trivial => "TRIVIAL",
             EncounterChallengeEnum::Low => "LOW",
             EncounterChallengeEnum::Moderate => "MODERATE",
@@ -90,14 +90,14 @@ impl From<EncounterChallengeEnum> for String {
 }
 
 impl EncounterChallengeEnum {
-    pub fn rand() -> EncounterChallengeEnum {
-        match fastrand::usize(0..EncounterChallengeEnum::COUNT) {
-            0 => EncounterChallengeEnum::Trivial,
-            1 => EncounterChallengeEnum::Low,
-            2 => EncounterChallengeEnum::Moderate,
-            3 => EncounterChallengeEnum::Severe,
-            4 => EncounterChallengeEnum::Extreme,
-            _ => EncounterChallengeEnum::Impossible,
+    pub fn rand() -> Self {
+        match fastrand::usize(0..Self::COUNT) {
+            0 => Self::Trivial,
+            1 => Self::Low,
+            2 => Self::Moderate,
+            3 => Self::Severe,
+            4 => Self::Extreme,
+            _ => Self::Impossible,
         }
     }
 }
@@ -149,6 +149,7 @@ pub enum AdventureGroupEnum {
     MookSquad,
 }
 
+#[derive(Copy, Clone)]
 pub struct ExpRange {
     pub lower_bound: i64,
     pub upper_bound: i64,

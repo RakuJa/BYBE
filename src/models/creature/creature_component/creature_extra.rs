@@ -45,10 +45,10 @@ pub struct CreatureExtraData {
 }
 
 impl CreatureExtraData {
-    fn add_mod_to_perception_and_skill_mods(self, modifier: i64) -> CreatureExtraData {
+    fn add_mod_to_perception_and_skill_mods(self, modifier: i64) -> Self {
         let mut ex_data = self;
         // we should never have a pwl much greater than perception (pwl=lvl)
-        ex_data.perception = (ex_data.perception as i64 + modifier) as i8;
+        ex_data.perception = (i64::from(ex_data.perception) + modifier) as i8;
 
         ex_data.skills = ex_data
             .skills
@@ -61,13 +61,13 @@ impl CreatureExtraData {
 
         ex_data
     }
-    /// Lowers skill and perception by the given pwl_mod
-    pub fn convert_from_base_to_pwl(self, pwl_mod: u64) -> CreatureExtraData {
-        self.add_mod_to_perception_and_skill_mods(-(pwl_mod as i64))
+    /// Lowers skill and perception by the given `pwl_mod`
+    pub fn convert_from_base_to_pwl(self, pwl_mod: u64) -> Self {
+        self.add_mod_to_perception_and_skill_mods(-i64::try_from(pwl_mod).unwrap_or(i64::MAX))
     }
 
     /// Increase/Decrease Perception, and skill modifiers by 2.
-    pub fn convert_from_base_to_variant(self, variant: &CreatureVariant) -> CreatureExtraData {
+    pub fn convert_from_base_to_variant(self, variant: CreatureVariant) -> Self {
         self.add_mod_to_perception_and_skill_mods(variant.to_adjustment_modifier())
     }
 }

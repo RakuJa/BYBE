@@ -109,7 +109,7 @@ pub async fn get_paginated_creatures(
     let curr_slice: Vec<Creature> = filtered_list
         .iter()
         .skip(pagination.paginated_request.cursor as usize)
-        .take(pagination.paginated_request.page_size as usize)
+        .take(pagination.paginated_request.page_size.unsigned_abs() as usize)
         .cloned()
         .collect();
 
@@ -125,8 +125,7 @@ pub async fn get_creatures_passing_all_filters(
     let mut creature_vec = Vec::new();
     let level_vec = key_value_filters
         .get(&CreatureFilter::Level)
-        .unwrap_or(&HashSet::new())
-        .clone();
+        .map_or_else(HashSet::new, std::clone::Clone::clone);
     let modified_filters =
         prepare_filters_for_db_communication(key_value_filters, fetch_weak, fetch_elite);
     for core in
@@ -163,9 +162,9 @@ pub async fn get_all_possible_values_of_filter(
     let mut x = match field {
         CreatureFilter::Size => runtime_fields_values.list_of_sizes,
         CreatureFilter::Rarity => runtime_fields_values.list_of_rarities,
-        CreatureFilter::Ranged => vec![true.to_string(), false.to_string()],
-        CreatureFilter::Melee => vec![true.to_string(), false.to_string()],
-        CreatureFilter::SpellCaster => vec![true.to_string(), false.to_string()],
+        CreatureFilter::Ranged | CreatureFilter::Melee | CreatureFilter::SpellCaster => {
+            vec![true.to_string(), false.to_string()]
+        }
         CreatureFilter::Family => runtime_fields_values.list_of_families,
         CreatureFilter::Traits => runtime_fields_values.list_of_traits,
         CreatureFilter::Sources => runtime_fields_values.list_of_sources,
@@ -240,21 +239,22 @@ async fn get_list(app_state: &AppState, variant: CreatureVariant) -> Vec<Creatur
             CreatureVariant::Base => creatures.into_iter().map(Creature::from_core).collect(),
             _ => creatures
                 .into_iter()
-                .map(|cr| Creature::from_core_with_variant(cr, variant.clone()))
+                .map(|cr| Creature::from_core_with_variant(cr, variant))
                 .collect(),
         };
     }
     vec![]
 }
 
-pub fn order_list_by_level(creature_list: Vec<Creature>) -> HashMap<i64, Vec<Creature>> {
+pub fn order_list_by_level(creature_list: &[Creature]) -> HashMap<i64, Vec<Creature>> {
     let mut ordered_by_level = HashMap::new();
-    creature_list.iter().for_each(|creature| {
+
+    for creature in creature_list {
         ordered_by_level
             .entry(creature.variant_data.level)
             .or_insert_with(Vec::new)
             .push(creature.clone());
-    });
+    }
     ordered_by_level
 }
 

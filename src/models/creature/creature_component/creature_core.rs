@@ -61,14 +61,14 @@ impl<'r> FromRow<'r, SqliteRow> for EssentialData {
         let rarity: String = row.try_get("rarity")?;
         let size: String = row.try_get("size")?;
         let alignment: String = row.try_get("alignment")?;
-        Ok(EssentialData {
+        Ok(Self {
             id: row.try_get("id")?,
             aon_id: row.try_get("aon_id").ok(),
             name: row.try_get("name")?,
             hp: row.try_get("hp")?,
             base_level: row.try_get("level")?,
             size: SizeEnum::from(size),
-            family: row.try_get("family").unwrap_or(String::from("-")),
+            family: row.try_get("family").unwrap_or_else(|_| String::from("-")),
             rarity: RarityEnum::from(rarity),
             license: row.try_get("license")?,
             remaster: row.try_get("remaster")?,
@@ -81,7 +81,7 @@ impl<'r> FromRow<'r, SqliteRow> for EssentialData {
 
 impl<'r> FromRow<'r, SqliteRow> for DerivedData {
     fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
-        Ok(DerivedData {
+        Ok(Self {
             archive_link: row.try_get("archive_link").ok(),
             is_melee: row.try_get("is_melee")?,
             is_ranged: row.try_get("is_ranged")?,
@@ -99,7 +99,7 @@ impl<'r> FromRow<'r, SqliteRow> for DerivedData {
 
 impl<'r> FromRow<'r, SqliteRow> for CreatureCoreData {
     fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
-        Ok(CreatureCoreData {
+        Ok(Self {
             essential: EssentialData::from_row(row)?,
             derived: DerivedData::from_row(row)?,
             traits: vec![],

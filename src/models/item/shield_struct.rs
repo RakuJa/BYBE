@@ -24,7 +24,7 @@ pub struct ShieldData {
 impl<'r> FromRow<'r, SqliteRow> for Shield {
     fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
         let item_core = Item::from_row(row)?;
-        Ok(Shield {
+        Ok(Self {
             item_core,
             shield_data: ShieldData {
                 id: row.try_get("shield_id")?,

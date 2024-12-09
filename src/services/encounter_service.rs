@@ -1,6 +1,7 @@
 use crate::db::bestiary_proxy::{get_creatures_passing_all_filters, order_list_by_level};
 use crate::models::creature::creature_component::filter_struct::FilterStruct;
 use crate::models::creature::creature_filter_enum::CreatureFilter;
+use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_struct::Creature;
 use crate::models::encounter_structs::{
     AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, RandomEncounterData,
@@ -34,7 +35,7 @@ pub struct RandomEncounterGeneratorResponse {
     encounter_info: EncounterInfoResponse,
 }
 
-pub fn get_encounter_info(enc_params: EncounterParams) -> EncounterInfoResponse {
+pub fn get_encounter_info(enc_params: &EncounterParams) -> EncounterInfoResponse {
     let enc_exp = encounter_calculator::calculate_encounter_exp(
         &enc_params.party_levels,
         &enc_params.enemy_levels,
@@ -67,8 +68,8 @@ pub async fn generate_random_encounter(
             count: 0,
             encounter_info: EncounterInfoResponse {
                 experience: 0,
-                challenge: Default::default(),
-                encounter_exp_levels: Default::default(),
+                challenge: EncounterChallengeEnum::default(),
+                encounter_exp_levels: BTreeMap::default(),
             },
         }
     })
@@ -82,13 +83,12 @@ async fn calculate_random_encounter(
 ) -> Result<RandomEncounterGeneratorResponse> {
     let is_pwl_on = enc_data.is_pwl_on;
     let filtered_lvl_combinations = get_lvl_combinations(&enc_data, &party_levels);
-    let unique_levels = HashSet::from_iter(
-        filtered_lvl_combinations
-            .clone()
-            .into_iter()
-            .flatten()
-            .map(|lvl| lvl.to_string()),
-    );
+    let unique_levels = filtered_lvl_combinations
+        .clone()
+        .into_iter()
+        .flatten()
+        .map(|lvl| lvl.to_string())
+        .collect::<HashSet<_>>();
     ensure!(
         !unique_levels.is_empty(),
         "There are no valid levels to chose from. Encounter could not be built"
@@ -118,7 +118,7 @@ async fn calculate_random_encounter(
         "No creatures have been fetched"
     );
     let chosen_encounter =
-        choose_random_creatures_combination(filtered_creatures, filtered_lvl_combinations)?;
+        choose_random_creatures_combination(&filtered_creatures, filtered_lvl_combinations)?;
 
     Ok(RandomEncounterGeneratorResponse {
         count: chosen_encounter.len(),
@@ -129,7 +129,7 @@ async fn calculate_random_encounter(
                 .map(ResponseCreature::from)
                 .collect(),
         ),
-        encounter_info: get_encounter_info(EncounterParams {
+        encounter_info: get_encounter_info(&EncounterParams {
             party_levels,
             enemy_levels: chosen_encounter
                 .iter()
@@ -141,7 +141,7 @@ async fn calculate_random_encounter(
 }
 
 fn choose_random_creatures_combination(
-    filtered_creatures: Vec<Creature>,
+    filtered_creatures: &[Creature],
     lvl_combinations: HashSet<Vec<i64>>,
 ) -> Result<Vec<Creature>> {
     // Chooses an id combination, could be (1, 1, 2). Admits duplicates
@@ -150,8 +150,8 @@ fn choose_random_creatures_combination(
     creatures_ordered_by_level
         .keys()
         .for_each(|key| list_of_levels.push(*key));
-    let existing_levels = filter_non_existing_levels(list_of_levels, lvl_combinations);
-    let tmp = Vec::from_iter(existing_levels.iter());
+    let existing_levels = filter_non_existing_levels(&list_of_levels, lvl_combinations);
+    let tmp = existing_levels.iter().collect::<Vec<_>>();
     ensure!(
         !tmp.is_empty(),
         "No valid level combinations to randomly choose from"
@@ -177,7 +177,7 @@ fn choose_random_creatures_combination(
             filled_vec_of_creatures.iter(),
             required_number_of_creatures_with_level,
         ) {
-            result_vec.push(curr_chosen_creature.clone())
+            result_vec.push(curr_chosen_creature.clone());
         }
     }
     Ok(result_vec)
@@ -210,7 +210,7 @@ fn fill_vector_if_it_does_not_contain_enough_elements(
 }
 
 fn filter_non_existing_levels(
-    creatures_levels: Vec<i64>,
+    creatures_levels: &[i64],
     level_combinations: HashSet<Vec<i64>>,
 ) -> HashSet<Vec<i64>> {
     // Removes the vec with levels that are not found in any creature
@@ -238,31 +238,41 @@ fn build_filter_map(filter_enum: FilterStruct) -> HashMap<CreatureFilter, HashSe
     if let Some(vec) = filter_enum.rarities {
         filter_map.insert(
             CreatureFilter::Rarity,
-            HashSet::from_iter(vec.iter().map(|el| el.to_string())),
+            vec.iter()
+                .map(std::string::ToString::to_string)
+                .collect::<HashSet<String>>(),
         );
     };
     if let Some(vec) = filter_enum.sizes {
         filter_map.insert(
             CreatureFilter::Size,
-            HashSet::from_iter(vec.iter().map(|el| el.to_string())),
+            vec.iter()
+                .map(std::string::ToString::to_string)
+                .collect::<HashSet<String>>(),
         );
     };
     if let Some(vec) = filter_enum.alignments {
         filter_map.insert(
             CreatureFilter::Alignment,
-            HashSet::from_iter(vec.iter().map(|x| x.to_string())),
+            vec.iter()
+                .map(std::string::ToString::to_string)
+                .collect::<HashSet<String>>(),
         );
     };
     if let Some(vec) = filter_enum.creature_types {
         filter_map.insert(
             CreatureFilter::CreatureTypes,
-            HashSet::from_iter(vec.iter().map(|el| el.to_string())),
+            vec.iter()
+                .map(std::string::ToString::to_string)
+                .collect::<HashSet<String>>(),
         );
     };
     if let Some(vec) = filter_enum.creature_roles {
         filter_map.insert(
             CreatureFilter::CreatureRoles,
-            HashSet::from_iter(vec.iter().map(|el| el.to_db_column())),
+            vec.iter()
+                .map(CreatureRoleEnum::to_db_column)
+                .collect::<HashSet<String>>(),
         );
     };
     filter_map.insert(CreatureFilter::Level, filter_enum.lvl_combinations);
@@ -283,11 +293,10 @@ async fn get_filtered_creatures(
 }
 
 fn get_lvl_combinations(enc_data: &RandomEncounterData, party_levels: &[i64]) -> HashSet<Vec<i64>> {
-    if let Some(adv_group) = enc_data.adventure_group.as_ref() {
-        get_adventure_group_lvl_combinations(adv_group, party_levels)
-    } else {
-        get_standard_lvl_combinations(enc_data, party_levels)
-    }
+    enc_data.adventure_group.as_ref().map_or_else(
+        || get_standard_lvl_combinations(enc_data, party_levels),
+        |adv_group| get_adventure_group_lvl_combinations(adv_group, party_levels),
+    )
 }
 
 fn get_standard_lvl_combinations(
@@ -297,7 +306,7 @@ fn get_standard_lvl_combinations(
     let enc_diff = enc_data
         .challenge
         .clone()
-        .unwrap_or(EncounterChallengeEnum::rand());
+        .unwrap_or_else(EncounterChallengeEnum::rand);
     let lvl_combinations = encounter_calculator::calculate_lvl_combination_for_encounter(
         &enc_diff,
         party_levels,
@@ -314,7 +323,8 @@ fn get_adventure_group_lvl_combinations(
     adv_group: &AdventureGroupEnum,
     party_levels: &[i64],
 ) -> HashSet<Vec<i64>> {
-    let party_avg = party_levels.iter().sum::<i64>() / party_levels.len() as i64;
+    let party_avg =
+        party_levels.iter().sum::<i64>() / i64::try_from(party_levels.len()).unwrap_or(i64::MAX);
     let mut result = HashSet::new();
     result.insert(match adv_group {
         AdventureGroupEnum::BossAndLackeys => {

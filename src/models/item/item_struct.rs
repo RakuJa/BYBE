@@ -55,7 +55,7 @@ impl<'r> FromRow<'r, SqliteRow> for Item {
         let size: String = row.try_get("size")?;
         let type_str: String = row.try_get("item_type")?;
         let bulk: f64 = row.try_get("bulk")?;
-        Ok(Item {
+        Ok(Self {
             id: row.try_get("id")?,
             name: row.try_get("name")?,
             bulk: OrderedFloat::from(bulk),

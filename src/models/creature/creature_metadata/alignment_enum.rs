@@ -56,10 +56,10 @@ pub enum AlignmentEnum {
 pub const ALIGNMENT_TRAITS: [&str; 4] = ["GOOD", "EVIL", "CHAOTIC", "LAWFUL"];
 
 impl From<(&Vec<String>, bool)> for AlignmentEnum {
-    fn from(tuple: (&Vec<String>, bool)) -> AlignmentEnum {
+    fn from(tuple: (&Vec<String>, bool)) -> Self {
         // If remaster then it's always no alignment
         if tuple.1 {
-            return AlignmentEnum::No;
+            return Self::No;
         }
         let string_traits: Vec<String> = tuple.0.iter().map(|x| x.to_uppercase()).collect();
         let is_good = string_traits.contains(&"GOOD".to_string());
@@ -68,41 +68,41 @@ impl From<(&Vec<String>, bool)> for AlignmentEnum {
         let is_lawful = string_traits.contains(&"LAWFUL".to_string());
         if is_good {
             if is_chaos {
-                return AlignmentEnum::Cg;
+                return Self::Cg;
             }
             if is_lawful {
-                return AlignmentEnum::Lg;
+                return Self::Lg;
             }
-            return AlignmentEnum::Ng;
+            return Self::Ng;
         }
         if is_evil {
             if is_chaos {
-                return AlignmentEnum::Ce;
+                return Self::Ce;
             }
             if is_lawful {
-                return AlignmentEnum::Le;
+                return Self::Le;
             }
-            return AlignmentEnum::Ne;
+            return Self::Ne;
         }
         if is_chaos {
-            return AlignmentEnum::Cn;
+            return Self::Cn;
         }
         if is_lawful {
-            return AlignmentEnum::Ln;
+            return Self::Ln;
         }
-        AlignmentEnum::N
+        Self::N
     }
 }
 
 impl From<String> for AlignmentEnum {
     fn from(value: String) -> Self {
-        AlignmentEnum::from_str(value.as_str()).unwrap_or_default()
+        Self::from_str(value.as_str()).unwrap_or_default()
     }
 }
 
 impl From<&String> for AlignmentEnum {
     fn from(value: &String) -> Self {
-        AlignmentEnum::from_str(value.as_str()).unwrap_or_default()
+        Self::from_str(value.as_str()).unwrap_or_default()
     }
 }
 
@@ -110,35 +110,35 @@ impl FromStr for AlignmentEnum {
     type Err = ();
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
-            "CE" => Ok(AlignmentEnum::Ce),
-            "CN" => Ok(AlignmentEnum::Cn),
-            "CG" => Ok(AlignmentEnum::Cg),
-            "NE" => Ok(AlignmentEnum::Ne),
-            "N" => Ok(AlignmentEnum::N),
-            "NG" => Ok(AlignmentEnum::Ng),
-            "LE" => Ok(AlignmentEnum::Le),
-            "LN" => Ok(AlignmentEnum::Ln),
-            "LG" => Ok(AlignmentEnum::Lg),
-            "ANY" => Ok(AlignmentEnum::Any),
-            _ => Ok(AlignmentEnum::No),
+            "CE" => Ok(Self::Ce),
+            "CN" => Ok(Self::Cn),
+            "CG" => Ok(Self::Cg),
+            "NE" => Ok(Self::Ne),
+            "N" => Ok(Self::N),
+            "NG" => Ok(Self::Ng),
+            "LE" => Ok(Self::Le),
+            "LN" => Ok(Self::Ln),
+            "LG" => Ok(Self::Lg),
+            "ANY" => Ok(Self::Any),
+            _ => Ok(Self::No),
         }
     }
 }
 
 impl Clone for AlignmentEnum {
-    fn clone(&self) -> AlignmentEnum {
+    fn clone(&self) -> Self {
         match self {
-            AlignmentEnum::Ce => AlignmentEnum::Ce,
-            AlignmentEnum::Cn => AlignmentEnum::Cn,
-            AlignmentEnum::Cg => AlignmentEnum::Cg,
-            AlignmentEnum::Ne => AlignmentEnum::Ne,
-            AlignmentEnum::N => AlignmentEnum::N,
-            AlignmentEnum::Ng => AlignmentEnum::Ng,
-            AlignmentEnum::Le => AlignmentEnum::Le,
-            AlignmentEnum::Ln => AlignmentEnum::Ln,
-            AlignmentEnum::Lg => AlignmentEnum::Lg,
-            AlignmentEnum::No => AlignmentEnum::No,
-            AlignmentEnum::Any => AlignmentEnum::Any,
+            Self::Ce => Self::Ce,
+            Self::Cn => Self::Cn,
+            Self::Cg => Self::Cg,
+            Self::Ne => Self::Ne,
+            Self::N => Self::N,
+            Self::Ng => Self::Ng,
+            Self::Le => Self::Le,
+            Self::Ln => Self::Ln,
+            Self::Lg => Self::Lg,
+            Self::No => Self::No,
+            Self::Any => Self::Any,
         }
     }
 }

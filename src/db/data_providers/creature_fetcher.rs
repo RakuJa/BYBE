@@ -246,7 +246,7 @@ async fn fetch_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result
         el.weapon_data.damage_data = fetch_weapon_damage_data(conn, el.weapon_data.id)
             .await
             .unwrap_or(vec![]);
-        result_vec.push(el)
+        result_vec.push(el);
     }
     Ok(result_vec)
 }
@@ -277,7 +277,7 @@ async fn fetch_creature_armors(conn: &Pool<Sqlite>, creature_id: i64) -> Result<
         el.armor_data.property_runes = fetch_armor_runes(conn, el.armor_data.id)
             .await
             .unwrap_or(vec![]);
-        result_vec.push(el)
+        result_vec.push(el);
     }
     Ok(result_vec)
 }
@@ -304,7 +304,7 @@ async fn fetch_creature_shields(conn: &Pool<Sqlite>, creature_id: i64) -> Result
             .await
             .unwrap_or(vec![]);
         el.item_core.quantity = fetch_shield_quantity(conn, creature_id, el.shield_data.id).await;
-        result_vec.push(el)
+        result_vec.push(el);
     }
     Ok(result_vec)
 }
@@ -326,7 +326,7 @@ async fn fetch_creature_items(conn: &Pool<Sqlite>, creature_id: i64) -> Result<V
     for mut el in items {
         el.traits = fetch_item_traits(conn, el.id).await.unwrap_or(vec![]);
         el.quantity = fetch_item_quantity(conn, creature_id, el.id).await;
-        result_vec.push(el)
+        result_vec.push(el);
     }
     Ok(result_vec)
 }
@@ -334,7 +334,7 @@ async fn fetch_creature_items(conn: &Pool<Sqlite>, creature_id: i64) -> Result<V
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_item_quantity(conn: &Pool<Sqlite>, creature_id: i64, item_id: i64) -> i64 {
-    match sqlx::query!(
+    sqlx::query!(
         "SELECT quantity FROM ITEM_CREATURE_ASSOCIATION_TABLE WHERE
          creature_id == ($1) AND item_id == ($2)",
         creature_id,
@@ -342,17 +342,14 @@ async fn fetch_item_quantity(conn: &Pool<Sqlite>, creature_id: i64, item_id: i64
     )
     .fetch_one(conn)
     .await
-    {
-        Ok(r) => r.quantity,
-        Err(_) => 1,
-    }
+    .map_or(1, |q| q.quantity)
 }
 
 /// Quantities are present ONLY for creature's weapons.
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_weapon_quantity(conn: &Pool<Sqlite>, creature_id: i64, weapon_id: i64) -> i64 {
-    match sqlx::query!(
+    sqlx::query!(
         "SELECT quantity FROM WEAPON_CREATURE_ASSOCIATION_TABLE WHERE
          creature_id == ($1) AND weapon_id == ($2)",
         creature_id,
@@ -360,17 +357,14 @@ async fn fetch_weapon_quantity(conn: &Pool<Sqlite>, creature_id: i64, weapon_id:
     )
     .fetch_one(conn)
     .await
-    {
-        Ok(r) => r.quantity,
-        Err(_) => 1,
-    }
+    .map_or(1, |r| r.quantity)
 }
 
 /// Quantities are present ONLY for creature's shields.
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_shield_quantity(conn: &Pool<Sqlite>, creature_id: i64, shield_id: i64) -> i64 {
-    match sqlx::query!(
+    sqlx::query!(
         "SELECT quantity FROM SHIELD_CREATURE_ASSOCIATION_TABLE WHERE
          creature_id == ($1) AND shield_id == ($2)",
         creature_id,
@@ -378,17 +372,14 @@ async fn fetch_shield_quantity(conn: &Pool<Sqlite>, creature_id: i64, shield_id:
     )
     .fetch_one(conn)
     .await
-    {
-        Ok(r) => r.quantity,
-        Err(_) => 1,
-    }
+    .map_or(1, |r| r.quantity)
 }
 
 /// Quantities are present ONLY for creature's armors.
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_armor_quantity(conn: &Pool<Sqlite>, creature_id: i64, armor_id: i64) -> i64 {
-    match sqlx::query!(
+    sqlx::query!(
         "SELECT quantity FROM ARMOR_CREATURE_ASSOCIATION_TABLE WHERE
          creature_id == ($1) AND armor_id == ($2)",
         creature_id,
@@ -396,10 +387,7 @@ async fn fetch_armor_quantity(conn: &Pool<Sqlite>, creature_id: i64, armor_id: i
     )
     .fetch_one(conn)
     .await
-    {
-        Ok(r) => r.quantity,
-        Err(_) => 1,
-    }
+    .map_or(1, |r| r.quantity)
 }
 
 async fn fetch_creature_actions(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Action>> {
@@ -639,12 +627,12 @@ pub async fn fetch_creature_combat_data(
         shields,
         resistances: resistances
             .iter()
-            .map(|x| (x.name.clone(), x.value as i16))
+            .map(|x| (x.name.clone(), i16::try_from(x.value).unwrap_or(0)))
             .collect(),
         immunities: immunities.iter().map(|x| x.name.clone()).collect(),
         weaknesses: weaknesses
             .iter()
-            .map(|x| (x.name.clone(), x.value as i16))
+            .map(|x| (x.name.clone(), i16::try_from(x.value).unwrap_or(0)))
             .collect(),
         saving_throws,
         ac: creature_ac,

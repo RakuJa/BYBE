@@ -38,7 +38,7 @@ pub struct CreatureCombatData {
 }
 
 impl CreatureCombatData {
-    fn add_mod_to_saving_throws_and_ac_and_wp_to_hit(self, modifier: i64) -> CreatureCombatData {
+    fn add_mod_to_saving_throws_and_ac_and_wp_to_hit(self, modifier: i64) -> Self {
         let mut com_data = self;
         let weapons: Vec<Weapon> = com_data
             .weapons
@@ -49,7 +49,7 @@ impl CreatureCombatData {
                 wp
             })
             .collect();
-        com_data.ac = (com_data.ac as i64 + modifier) as i8;
+        com_data.ac = (i64::from(com_data.ac) + modifier) as i8;
         com_data.saving_throws.fortitude += modifier;
         com_data.saving_throws.reflex += modifier;
         com_data.saving_throws.will += modifier;
@@ -57,7 +57,7 @@ impl CreatureCombatData {
         com_data
     }
 
-    fn add_mod_to_dmg(self, modifier: i64) -> CreatureCombatData {
+    fn add_mod_to_dmg(self, modifier: i64) -> Self {
         let mut com_data = self;
         let weapons: Vec<Weapon> = com_data
             .weapons
@@ -82,16 +82,18 @@ impl CreatureCombatData {
         com_data
     }
 
-    /// Lowers saving throws, weapon to hit bonus, and ac by the given pwl_mod
-    pub fn convert_from_base_to_pwl(self, pwl_mod: u64) -> CreatureCombatData {
-        self.add_mod_to_saving_throws_and_ac_and_wp_to_hit(-(pwl_mod as i64))
+    /// Lowers saving throws, weapon to hit bonus, and ac by the given `pwl_mod`
+    pub fn convert_from_base_to_pwl(self, pwl_mod: u64) -> Self {
+        self.add_mod_to_saving_throws_and_ac_and_wp_to_hit(
+            -i64::try_from(pwl_mod).unwrap_or(i64::MAX),
+        )
     }
 
     /// Increase/Decrease the damage of its Strikes and other offensive abilities by 2.
     /// If the creature has limits on how many times or how often it can use an ability
     /// (such as a spellcaster’s spells or a dragon’s breath), decrease the damage by 4 instead.
     /// Increase/Decrease the creature’s AC, attack modifiers, DCs, saving throws by 2.
-    pub fn convert_from_base_to_variant(self, variant: &CreatureVariant) -> CreatureCombatData {
+    pub fn convert_from_base_to_variant(self, variant: CreatureVariant) -> Self {
         let modifier = variant.to_adjustment_modifier();
         self.add_mod_to_saving_throws_and_ac_and_wp_to_hit(modifier)
             .add_mod_to_dmg(modifier)
