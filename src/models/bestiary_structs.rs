@@ -29,6 +29,14 @@ pub enum CreatureSortEnum {
     Rarity,
     #[serde(alias = "family", alias = "FAMILY")]
     Family,
+    #[serde(alias = "alignment", alias = "ALIGNMENT")]
+    Alignment,
+    #[serde(alias = "melee", alias = "MELEE")]
+    Melee,
+    #[serde(alias = "ranged", alias = "RANGED")]
+    Ranged,
+    #[serde(alias = "SPELLCASTER", alias = "SPELLCASTER")]
+    SpellCaster,
 }
 
 #[derive(Serialize, Deserialize, IntoParams, ToSchema, Eq, PartialEq, Hash, Default)]

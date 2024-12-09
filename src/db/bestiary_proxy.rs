@@ -97,6 +97,26 @@ pub async fn get_paginated_creatures(
                 .essential
                 .family
                 .cmp(&b.core_data.essential.family),
+            CreatureSortEnum::Alignment => a
+                .core_data
+                .essential
+                .alignment
+                .cmp(&b.core_data.essential.alignment),
+            CreatureSortEnum::Melee => a
+                .core_data
+                .derived
+                .is_melee
+                .cmp(&b.core_data.derived.is_melee),
+            CreatureSortEnum::Ranged => a
+                .core_data
+                .derived
+                .is_ranged
+                .cmp(&b.core_data.derived.is_ranged),
+            CreatureSortEnum::SpellCaster => a
+                .core_data
+                .derived
+                .is_spell_caster
+                .cmp(&b.core_data.derived.is_spell_caster),
         };
         match pagination
             .bestiary_sort_data
