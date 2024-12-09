@@ -29,6 +29,7 @@ use crate::models::item::weapon_struct::Weapon;
 
 use crate::models::bestiary_structs::CreatureSortEnum;
 use crate::models::bestiary_structs::{BestiaryPaginatedRequest, BestiarySortData};
+use crate::models::db::sense::Sense;
 use crate::models::routers_validator_structs::{CreatureFieldFilters, PaginatedRequest};
 use crate::services::bestiary_service;
 use crate::services::bestiary_service::BestiaryResponse;
@@ -87,6 +88,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             CreatureExtraData,
             CreatureCombatData,
             CreatureSpellCasterData,
+            Sense,
             Spell,
             Shield,
             Weapon,

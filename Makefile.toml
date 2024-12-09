@@ -4,7 +4,7 @@ args = ["clean"]
 
 [tasks.prebuild]
 command = "python3"
-args = ["setup.py", "--db_version", "2.3.0"]
+args = ["setup.py", "--db_version", "2.4.0"]
 
 [tasks.format]
 install_crate = "rustfmt"
