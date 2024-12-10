@@ -3,6 +3,7 @@ use crate::db::data_providers::generic_fetcher::{
     fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits, MyString,
 };
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_creatures_core;
+use crate::models::bestiary_structs::BestiaryFilterQuery;
 use crate::models::creature::creature_component::creature_combat::{
     CreatureCombatData, SavingThrows,
 };
@@ -12,7 +13,6 @@ use crate::models::creature::creature_component::creature_extra::{
 };
 use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
-use crate::models::creature::creature_filter_enum::CreatureFilter;
 use crate::models::creature::creature_metadata::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::creature::creature_struct::Creature;
@@ -46,7 +46,6 @@ use crate::models::scales_struct::strike_bonus_scales::StrikeBonusScales;
 use crate::models::scales_struct::strike_dmg_scales::StrikeDmgScales;
 use anyhow::Result;
 use sqlx::{Pool, Sqlite};
-use std::collections::{HashMap, HashSet};
 
 async fn fetch_creature_immunities(
     conn: &Pool<Sqlite>,
@@ -524,9 +523,9 @@ pub async fn fetch_creature_by_id(
 
 pub async fn fetch_creatures_core_data_with_filters(
     conn: &Pool<Sqlite>,
-    key_value_filters: &HashMap<CreatureFilter, HashSet<String>>,
+    bestiary_filter_query: &BestiaryFilterQuery,
 ) -> Result<Vec<CreatureCoreData>> {
-    let query = prepare_filtered_get_creatures_core(key_value_filters);
+    let query = prepare_filtered_get_creatures_core(bestiary_filter_query);
     let core_data: Vec<CreatureCoreData> = sqlx::query_as(query.as_str()).fetch_all(conn).await?;
     Ok(update_creatures_core_with_traits(conn, core_data).await)
 }
