@@ -7,6 +7,7 @@ use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)] // Used in schema
 use serde_json::json;
+use std::collections::HashMap;
 use strum::EnumCount;
 use strum::EnumIter;
 use utoipa::ToSchema;
@@ -31,9 +32,7 @@ pub struct RandomEncounterData {
     pub alignment_filter: Option<Vec<AlignmentEnum>>,
     pub type_filter: Option<Vec<CreatureTypeEnum>>,
     pub role_filter: Option<Vec<CreatureRoleEnum>>,
-    pub is_melee_filter: Option<bool>,
-    pub is_ranged_filter: Option<bool>,
-    pub is_spellcaster_filter: Option<bool>,
+    pub attack_list: Option<HashMap<String, bool>>,
     pub role_lower_threshold: Option<u8>,
     pub role_upper_threshold: Option<u8>,
     pub challenge: Option<EncounterChallengeEnum>,

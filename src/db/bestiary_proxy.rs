@@ -1,5 +1,5 @@
 use crate::models::creature::creature_struct::Creature;
-use std::collections::HashMap;
+use std::collections::{BTreeMap, HashMap};
 
 use crate::db::data_providers::creature_fetcher::fetch_traits_associated_with_creatures;
 use crate::db::data_providers::{creature_fetcher, generic_fetcher};
@@ -102,21 +102,28 @@ pub async fn get_paginated_creatures(
                 .essential
                 .alignment
                 .cmp(&b.core_data.essential.alignment),
-            CreatureSortEnum::Melee => a
+            CreatureSortEnum::Attacks => a
                 .core_data
                 .derived
-                .is_melee
-                .cmp(&b.core_data.derived.is_melee),
-            CreatureSortEnum::Ranged => a
-                .core_data
-                .derived
-                .is_ranged
-                .cmp(&b.core_data.derived.is_ranged),
-            CreatureSortEnum::SpellCaster => a
-                .core_data
-                .derived
-                .is_spell_caster
-                .cmp(&b.core_data.derived.is_spell_caster),
+                .attack_data
+                .cmp(&b.core_data.derived.attack_data),
+            CreatureSortEnum::Roles => {
+                let threshold = filters.role_threshold.unwrap_or(0);
+                a.core_data
+                    .derived
+                    .role_data
+                    .iter()
+                    .filter(|(_, y)| **y > threshold)
+                    .collect::<BTreeMap<_, _>>()
+                    .cmp(
+                        &b.core_data
+                            .derived
+                            .role_data
+                            .iter()
+                            .filter(|(_, y)| **y > threshold)
+                            .collect::<BTreeMap<_, _>>(),
+                    )
+            }
         };
         match pagination
             .bestiary_sort_data

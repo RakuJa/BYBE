@@ -6,6 +6,9 @@ use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
+#[allow(unused_imports)]
+use serde_json::json;
+use std::collections::BTreeMap;
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
 #[derive(Serialize, Deserialize, IntoParams, ToSchema)]
@@ -30,9 +33,9 @@ pub struct CreatureFieldFilters {
     pub min_level_filter: Option<i64>,
     #[schema(minimum = -1, example = 5)]
     pub max_level_filter: Option<i64>,
-    pub is_melee_filter: Option<bool>,
-    pub is_ranged_filter: Option<bool>,
-    pub is_spell_caster_filter: Option<bool>,
+
+    #[schema(example = json!({"melee": true, "ranged": false, "spellcaster": true}))]
+    pub attack_data_filter: Option<BTreeMap<String, bool>>,
     pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 

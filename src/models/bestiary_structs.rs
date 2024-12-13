@@ -31,12 +31,10 @@ pub enum CreatureSortEnum {
     Family,
     #[serde(alias = "alignment", alias = "ALIGNMENT")]
     Alignment,
-    #[serde(alias = "melee", alias = "MELEE")]
-    Melee,
-    #[serde(alias = "ranged", alias = "RANGED")]
-    Ranged,
-    #[serde(alias = "SPELLCASTER", alias = "SPELLCASTER")]
-    SpellCaster,
+    #[serde(alias = "attacks", alias = "ATTACKS")]
+    Attacks,
+    #[serde(alias = "roles", alias = "ROLES")]
+    Roles,
 }
 
 #[derive(Serialize, Deserialize, IntoParams, ToSchema, Eq, PartialEq, Hash, Default)]

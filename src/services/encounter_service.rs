@@ -111,15 +111,18 @@ async fn calculate_random_encounter(
                 role_upper_threshold: enc_data
                     .role_upper_threshold
                     .unwrap_or(CreatureTableFieldsFilter::default_upper_threshold()),
-                is_melee_filter: enc_data
-                    .is_melee_filter
-                    .map_or_else(|| vec![true, false], |x| vec![x]),
-                is_ranged_filter: enc_data
-                    .is_ranged_filter
-                    .map_or_else(|| vec![true, false], |x| vec![x]),
-                is_spellcaster_filter: enc_data
-                    .is_spellcaster_filter
-                    .map_or_else(|| vec![true, false], |x| vec![x]),
+                is_melee_filter: enc_data.attack_list.as_ref().map_or_else(
+                    || vec![true, false],
+                    |x| vec![*x.get("melee").unwrap_or(&false)],
+                ),
+                is_ranged_filter: enc_data.attack_list.as_ref().map_or_else(
+                    || vec![true, false],
+                    |x| vec![*x.get("ranged").unwrap_or(&false)],
+                ),
+                is_spellcaster_filter: enc_data.attack_list.map_or_else(
+                    || vec![true, false],
+                    |x| vec![*x.get("spellcaster").unwrap_or(&false)],
+                ),
                 supported_version: enc_data
                     .pathfinder_version
                     .unwrap_or_default()
