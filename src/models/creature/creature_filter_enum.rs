@@ -18,7 +18,7 @@ pub enum CreatureFilter {
     #[serde(alias = "is_ranged", alias = "IS_RANGED")]
     Ranged,
     #[serde(alias = "is_spell_caster", alias = "IS_SPELL_CASTER")]
-    SpellCaster,
+    Spellcaster,
     #[serde(alias = "sources", alias = "SOURCES")]
     Sources,
     #[serde(alias = "traits", alias = "TRAITS")]
@@ -51,7 +51,7 @@ impl fmt::Display for CreatureFilter {
             Self::Ranged => {
                 write!(f, "is_ranged")
             }
-            Self::SpellCaster => {
+            Self::Spellcaster => {
                 write!(f, "is_spell_caster")
             }
             Self::Traits => {

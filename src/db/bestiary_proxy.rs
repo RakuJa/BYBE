@@ -1,5 +1,5 @@
 use crate::models::creature::creature_struct::Creature;
-use std::collections::{BTreeMap, HashMap};
+use std::collections::HashMap;
 
 use crate::db::data_providers::creature_fetcher::fetch_traits_associated_with_creatures;
 use crate::db::data_providers::{creature_fetcher, generic_fetcher};
@@ -102,26 +102,28 @@ pub async fn get_paginated_creatures(
                 .essential
                 .alignment
                 .cmp(&b.core_data.essential.alignment),
-            CreatureSortEnum::Attacks => a
+            CreatureSortEnum::Attack => a
                 .core_data
                 .derived
                 .attack_data
                 .cmp(&b.core_data.derived.attack_data),
-            CreatureSortEnum::Roles => {
+            CreatureSortEnum::Role => {
                 let threshold = filters.role_threshold.unwrap_or(0);
                 a.core_data
                     .derived
                     .role_data
                     .iter()
-                    .filter(|(_, y)| **y > threshold)
-                    .collect::<BTreeMap<_, _>>()
+                    .filter(|(_, role_value)| **role_value > threshold)
+                    .map(|(role, _)| role)
+                    .collect::<Vec<_>>()
                     .cmp(
                         &b.core_data
                             .derived
                             .role_data
                             .iter()
-                            .filter(|(_, y)| **y > threshold)
-                            .collect::<BTreeMap<_, _>>(),
+                            .filter(|(_, role_affinity)| **role_affinity > threshold)
+                            .map(|(x, _)| x)
+                            .collect::<Vec<_>>(),
                     )
             }
         };
@@ -203,7 +205,7 @@ pub async fn get_all_possible_values_of_filter(
     let mut x = match field {
         CreatureFilter::Size => runtime_fields_values.list_of_sizes,
         CreatureFilter::Rarity => runtime_fields_values.list_of_rarities,
-        CreatureFilter::Ranged | CreatureFilter::Melee | CreatureFilter::SpellCaster => {
+        CreatureFilter::Ranged | CreatureFilter::Melee | CreatureFilter::Spellcaster => {
             vec![true.to_string(), false.to_string()]
         }
         CreatureFilter::Family => runtime_fields_values.list_of_families,

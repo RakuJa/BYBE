@@ -16,14 +16,14 @@ use crate::models::creature::creature_component::creature_core::DerivedData;
 use crate::models::creature::creature_component::creature_core::EssentialData;
 use crate::models::creature::creature_component::creature_extra::AbilityScores;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
-use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
 
 use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::creature::items::spell::Spell;
-use crate::models::creature::items::spell_caster_entry::SpellCasterEntry;
+use crate::models::creature::items::spell_caster_entry::SpellcasterEntry;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::weapon_struct::Weapon;
 
@@ -90,7 +90,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             CreatureVariantData,
             CreatureExtraData,
             CreatureCombatData,
-            CreatureSpellCasterData,
+            CreatureSpellcasterData,
             Sense,
             Spell,
             Shield,
@@ -101,7 +101,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             Action,
             Skill,
             CreatureRoleEnum,
-            SpellCasterEntry,
+            SpellcasterEntry,
             PathfinderVersionEnum,
             OrderEnum,
             CreatureSortEnum

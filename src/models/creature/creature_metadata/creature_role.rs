@@ -1,7 +1,7 @@
 use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_core::EssentialData;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
-use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellcasterData;
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::scales_struct::creature_scales::CreatureScales;
 use num_traits::float::FloatConst;
@@ -53,7 +53,7 @@ impl CreatureRoleEnum {
         cr_core: &EssentialData,
         cr_extra: &CreatureExtraData,
         cr_combat: &CreatureCombatData,
-        cr_spells: &CreatureSpellCasterData,
+        cr_spells: &CreatureSpellcasterData,
         scales: &CreatureScales,
     ) -> BTreeMap<Self, i64> {
         let mut roles = BTreeMap::new();
@@ -293,7 +293,7 @@ pub fn is_soldier(
 // Magical Striker
 pub fn is_magical_striker(
     cr_core: &EssentialData,
-    cr_spell: &CreatureSpellCasterData,
+    cr_spell: &CreatureSpellcasterData,
     cr_combat: &CreatureCombatData,
     scales: &CreatureScales,
 ) -> Option<f64> {
@@ -395,7 +395,7 @@ fn is_skill_paragon(
 // Spellcaster
 fn is_spellcaster(
     cr_core: &EssentialData,
-    cr_spell: &CreatureSpellCasterData,
+    cr_spell: &CreatureSpellcasterData,
     cr_combat: &CreatureCombatData,
     cr_extra: &CreatureExtraData,
     scales: &CreatureScales,
@@ -476,7 +476,7 @@ impl fmt::Display for CreatureRoleEnum {
                 write!(f, "Soldier")
             }
             Self::Spellcaster => {
-                write!(f, "SpellCaster")
+                write!(f, "Spellcaster")
             }
         }
     }

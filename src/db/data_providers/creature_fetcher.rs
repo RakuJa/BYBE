@@ -11,7 +11,7 @@ use crate::models::creature::creature_component::creature_core::CreatureCoreData
 use crate::models::creature::creature_component::creature_extra::{
     AbilityScores, CreatureExtraData,
 };
-use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature::creature_metadata::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
@@ -19,7 +19,7 @@ use crate::models::creature::creature_struct::Creature;
 use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::creature::items::spell::Spell;
-use crate::models::creature::items::spell_caster_entry::SpellCasterEntry;
+use crate::models::creature::items::spell_caster_entry::SpellcasterEntry;
 use crate::models::db::raw_immunity::RawImmunity;
 use crate::models::db::raw_language::RawLanguage;
 use crate::models::db::raw_resistance::RawResistance;
@@ -422,9 +422,9 @@ async fn fetch_creature_spells(conn: &Pool<Sqlite>, creature_id: i64) -> Result<
 async fn fetch_creature_spell_caster_entry(
     conn: &Pool<Sqlite>,
     creature_id: i64,
-) -> Result<SpellCasterEntry> {
+) -> Result<SpellcasterEntry> {
     Ok(sqlx::query_as!(
-        SpellCasterEntry,
+        SpellcasterEntry,
         "SELECT spell_casting_name, is_spell_casting_flexible, type_of_spell_caster, spell_casting_dc_mod, spell_casting_atk_mod, spell_casting_tradition FROM CREATURE_TABLE WHERE id == ($1) LIMIT 1",
         creature_id
     ).fetch_one(conn).await?)
@@ -641,10 +641,10 @@ pub async fn fetch_creature_combat_data(
 pub async fn fetch_creature_spell_caster_data(
     conn: &Pool<Sqlite>,
     creature_id: i64,
-) -> Result<CreatureSpellCasterData> {
+) -> Result<CreatureSpellcasterData> {
     let spells = fetch_creature_spells(conn, creature_id).await?;
     let spell_caster_entry = fetch_creature_spell_caster_entry(conn, creature_id).await?;
-    Ok(CreatureSpellCasterData {
+    Ok(CreatureSpellcasterData {
         spells,
         spell_caster_entry,
     })

@@ -1,16 +1,16 @@
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::creature::items::spell::Spell;
-use crate::models::creature::items::spell_caster_entry::SpellCasterEntry;
+use crate::models::creature::items::spell_caster_entry::SpellcasterEntry;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
-pub struct CreatureSpellCasterData {
+pub struct CreatureSpellcasterData {
     pub spells: Vec<Spell>,
-    pub spell_caster_entry: SpellCasterEntry,
+    pub spell_caster_entry: SpellcasterEntry,
 }
 
-impl CreatureSpellCasterData {
+impl CreatureSpellcasterData {
     pub fn add_mod_to_spellcaster_atk_and_dc(self, modifier: i64) -> Self {
         let mut spell_data = self;
 
