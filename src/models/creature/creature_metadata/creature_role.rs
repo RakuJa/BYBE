@@ -28,7 +28,7 @@ pub enum CreatureRoleEnum {
     Skirmisher,
     Sniper,
     Soldier,
-    SpellCaster,
+    Spellcaster,
 }
 
 fn get_dmg_from_regex(raw_str: &str) -> Option<i64> {
@@ -46,7 +46,7 @@ impl CreatureRoleEnum {
             Self::Skirmisher => String::from("skirmisher_percentage"),
             Self::Sniper => String::from("sniper_percentage"),
             Self::Soldier => String::from("soldier_percentage"),
-            Self::SpellCaster => String::from("spell_caster_percentage"),
+            Self::Spellcaster => String::from("spell_caster_percentage"),
         }
     }
     pub fn from_creature_with_given_scales(
@@ -87,7 +87,7 @@ impl CreatureRoleEnum {
                 .map_or(0, |x| (x * 100.).round() as i64),
         );
         roles.insert(
-            Self::SpellCaster,
+            Self::Spellcaster,
             is_spellcaster(cr_core, cr_spells, cr_combat, cr_extra, scales)
                 .map_or(0, |x| (x * 100.).round() as i64),
         );
@@ -448,7 +448,7 @@ impl FromStr for CreatureRoleEnum {
             "SKIRMISHER" => Ok(Self::Skirmisher),
             "SNIPER" => Ok(Self::Sniper),
             "SOLDIER" => Ok(Self::Soldier),
-            "SPELLCASTER" | "SPELL CASTER" => Ok(Self::SpellCaster),
+            "SPELLCASTER" | "SPELL CASTER" => Ok(Self::Spellcaster),
             _ => Err(()),
         }
     }
@@ -475,7 +475,7 @@ impl fmt::Display for CreatureRoleEnum {
             Self::Soldier => {
                 write!(f, "Soldier")
             }
-            Self::SpellCaster => {
+            Self::Spellcaster => {
                 write!(f, "SpellCaster")
             }
         }

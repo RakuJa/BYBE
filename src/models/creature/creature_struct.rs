@@ -175,7 +175,7 @@ impl Creature {
                             .unwrap_or(&0)
                             >= &t
                     }
-                    CreatureRoleEnum::SpellCaster => {
+                    CreatureRoleEnum::Spellcaster => {
                         self.core_data
                             .derived
                             .role_data
