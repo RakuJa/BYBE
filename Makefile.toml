@@ -4,7 +4,7 @@ args = ["clean"]
 
 [tasks.prebuild]
 command = "python3"
-args = ["setup.py", "--copy_db", "--db_version", "2.4.0"]
+args = ["setup.py", "--copy_db", "--overwrite", "--db_version", "2.4.0"]
 
 [tasks.post_build]
 command = "python3"
