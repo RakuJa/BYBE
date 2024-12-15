@@ -104,7 +104,7 @@ async fn update_role_column_value(
                 creature_id
             )
         }
-        CreatureRoleEnum::SpellCaster => {
+        CreatureRoleEnum::Spellcaster => {
             sqlx::query!(
                 "UPDATE CREATURE_CORE SET spell_caster_percentage = ? WHERE id = ?",
                 value,

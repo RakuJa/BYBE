@@ -1,6 +1,6 @@
 [package]
 name = "bybe"
-version = "2.3.0"
+version = "2.4.0"
 authors = ["RakuJa"]
 
 # Compiler info
@@ -54,11 +54,11 @@ utoipa-swagger-ui = { version = "8.0.3", features = ["actix-web", "reqwest"] }
 sqlx = { version = "0.8.2", features = ["runtime-async-std", "sqlite"] }
 cached = { version = "0.54.0", features = ["async"] }
 
-anyhow = "1.0.93"
-serde = { version = "1.0.214", features = ["derive"] }
-serde_json = "1.0.132"
+anyhow = "1.0.94"
+serde = { version = "1.0.216", features = ["derive"] }
+serde_json = "1.0.133"
 strum = {version="0.26.3", features = ["derive"]}
-fastrand = "2.2.0"
+fastrand = "2.3.0"
 counter = "0.6.0"
 ordered-float = { version = "4", features = ["serde"]}
 num-traits = "0.2.19"
@@ -76,7 +76,7 @@ once = "0.3.4"
 
 [build-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "rt"] }
-anyhow = "1.0.93"
+anyhow = "1.0.94"
 sqlx = {version = "0.8.2", features = ["runtime-async-std", "sqlite"]}
 dotenvy = "0.15.7"
 

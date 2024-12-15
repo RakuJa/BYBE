@@ -1,10 +1,8 @@
-use crate::models::creature::creature_filter_enum::CreatureFilter;
+use crate::models::bestiary_structs::{BestiaryFilterQuery, CreatureTableFieldsFilter};
+use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::shop_structs::{ItemTableFieldsFilter, ShopFilterQuery};
 use log::debug;
-use std::collections::{HashMap, HashSet};
-
-const ACCURACY_THRESHOLD: i64 = 50;
 
 pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String {
     let equipment_query = prepare_item_subquery(
@@ -49,67 +47,26 @@ pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String
     debug!("{}", query);
     query
 }
-pub fn prepare_filtered_get_creatures_core(
-    key_value_filters: &HashMap<CreatureFilter, HashSet<String>>,
-) -> String {
-    let mut simple_core_query = String::new();
-    let mut trait_query = String::new();
-    for (key, value) in key_value_filters {
-        match key {
-            CreatureFilter::Level
-            | CreatureFilter::PathfinderVersion
-            | CreatureFilter::Melee
-            | CreatureFilter::Ranged
-            | CreatureFilter::SpellCaster => {
-                if !simple_core_query.is_empty() {
-                    simple_core_query.push_str(" AND ");
-                }
-                simple_core_query.push_str(
-                    prepare_in_statement_for_generic_type(key.to_string().as_str(), value.iter())
-                        .as_str(),
-                );
-            }
-            CreatureFilter::Family
-            | CreatureFilter::Alignment
-            | CreatureFilter::Size
-            | CreatureFilter::Rarity
-            | CreatureFilter::CreatureTypes => {
-                if !simple_core_query.is_empty() {
-                    simple_core_query.push_str(" AND ");
-                }
-                simple_core_query.push_str(
-                    prepare_case_insensitive_in_statement(
-                        key.to_string().as_str(),
-                        value.iter().cloned(),
-                    )
-                    .as_str(),
-                );
-            }
-            CreatureFilter::Traits => {
-                trait_query.push_str(prepare_creature_trait_filter(value.iter().cloned()).as_str());
-            }
-            CreatureFilter::CreatureRoles => {
-                if !simple_core_query.is_empty() {
-                    simple_core_query.push_str(" AND ");
-                }
-                simple_core_query
-                    .push_str(prepare_bounded_or_check(value, ACCURACY_THRESHOLD, 100).as_str());
-            }
-            CreatureFilter::Sources => (), // Never given as value to filter
-        }
-    }
-    let mut where_query = simple_core_query.to_string();
-    if !trait_query.is_empty() {
-        where_query.push_str(format!(" AND id IN ({trait_query}) GROUP BY cc.id").as_str());
-    }
-    if !where_query.is_empty() {
-        where_query = format!("WHERE {where_query}");
-    }
+pub fn prepare_filtered_get_creatures_core(bestiary_filter_query: &BestiaryFilterQuery) -> String {
+    let initial_statement = "SELECT id FROM CREATURE_CORE";
+    let trait_query_tmp = prepare_trait_filter_statement(
+        &prepare_creature_trait_filter(bestiary_filter_query.trait_whitelist_filter.iter()),
+        &prepare_creature_trait_filter(bestiary_filter_query.trait_blacklist_filter.iter()),
+    );
+    let trait_query = if trait_query_tmp.is_empty() {
+        String::new()
+    } else {
+        format!("AND {trait_query_tmp}")
+    };
+    let creature_fields_filter_query =
+        prepare_creature_filter_statement(&bestiary_filter_query.creature_table_fields_filter);
+    let where_query =
+        format!("{initial_statement} WHERE {creature_fields_filter_query} {trait_query}");
     let query = format!(
         "
     WITH CreatureRankedByLevel AS (
         SELECT *, ROW_NUMBER() OVER (PARTITION BY level ORDER BY RANDOM()) AS rn
-        FROM CREATURE_CORE cc {where_query}
+        FROM CREATURE_CORE cc WHERE cc.id IN ({where_query})
     )
     SELECT * FROM CreatureRankedByLevel WHERE id IN (
         SELECT id FROM CreatureRankedByLevel WHERE rn>1 ORDER BY RANDOM() LIMIT 20
@@ -122,24 +79,21 @@ pub fn prepare_filtered_get_creatures_core(
     query
 }
 
-/// Prepares a 'bounded OR statement' aka checks if all the columns are in the bound given, ex
+/// Prepares a 'bounded OR statement' aka checks if all columns values are in the bound given, ex
 /// ```SQL
-/// (brute_percentage >= 0 AND brute_percentage <= 0) OR (sniper_percentage >= 0 ...) ...
+/// (brute_percentage >= 0 AND brute_percentage <= 0) AND (sniper_percentage >= 0 ...) ...
 /// ```
-fn prepare_bounded_or_check(
-    column_names: &HashSet<String>,
-    lower_bound: i64,
-    upper_bound: i64,
-) -> String {
-    let mut bounded_query = String::new();
-    for column in column_names {
-        if !bounded_query.is_empty() {
-            bounded_query.push_str(" OR ");
-        }
-        bounded_query
-            .push_str(prepare_bounded_check(column.as_str(), lower_bound, upper_bound).as_str());
-    }
-    bounded_query
+fn prepare_bounded_and_check<I, S>(column_names: I, lower_bound: i64, upper_bound: i64) -> String
+where
+    I: Iterator<Item = S>,
+    S: ToString,
+{
+    column_names
+        .map(|x| x.to_string())
+        .filter(|column| !column.is_empty())
+        .map(|column| prepare_bounded_check(column.as_str(), lower_bound, upper_bound))
+        .collect::<Vec<_>>()
+        .join(" AND ")
 }
 
 /// Prepares a 'bounded statement' aka (x>=lb AND x<=ub)
@@ -228,6 +182,7 @@ where
     }
     result_string
 }
+
 fn prepare_item_subquery<I, S>(
     item_type: &ItemTypeEnum,
     n_of_item: i64,
@@ -241,9 +196,9 @@ where
 {
     let item_type_query = prepare_get_id_matching_item_type_query(item_type);
     let initial_statement = "SELECT id FROM ITEM_TABLE";
-
-    let trait_query_tmp =
-        prepare_trait_filter_statement(trait_whitelist_filter, trait_blacklist_filter);
+    let whitelist_query = prepare_item_trait_filter(trait_whitelist_filter);
+    let blacklist_query = prepare_item_trait_filter(trait_blacklist_filter);
+    let trait_query_tmp = prepare_trait_filter_statement(&whitelist_query, &blacklist_query);
     let trait_query = if trait_query_tmp.is_empty() {
         String::new()
     } else {
@@ -287,17 +242,77 @@ fn prepare_item_filter_statement(shop_filter_vectors: &ItemTableFieldsFilter) ->
     }
 }
 
+fn prepare_creature_filter_statement(
+    bestiary_filter_vectors: &CreatureTableFieldsFilter,
+) -> String {
+    let remaster_query = prepare_in_statement_for_generic_type(
+        "remaster",
+        bestiary_filter_vectors.supported_version.iter(),
+    );
+    let filters_query = vec![
+        prepare_case_insensitive_in_statement(
+            "source",
+            bestiary_filter_vectors.source_filter.iter(),
+        ),
+        prepare_case_insensitive_in_statement(
+            "family",
+            bestiary_filter_vectors.family_filter.iter(),
+        ),
+        prepare_case_insensitive_in_statement(
+            "alignment",
+            bestiary_filter_vectors.alignment_filter.iter(),
+        ),
+        prepare_case_insensitive_in_statement("size", bestiary_filter_vectors.size_filter.iter()),
+        prepare_case_insensitive_in_statement(
+            "rarity",
+            bestiary_filter_vectors.rarity_filter.iter(),
+        ),
+        prepare_case_insensitive_in_statement(
+            "cr_type",
+            bestiary_filter_vectors.type_filter.iter(),
+        ),
+        prepare_in_statement_for_generic_type(
+            "is_spell_caster",
+            bestiary_filter_vectors.is_spellcaster_filter.iter(),
+        ),
+        prepare_in_statement_for_generic_type(
+            "is_ranged",
+            bestiary_filter_vectors.is_ranged_filter.iter(),
+        ),
+        prepare_in_statement_for_generic_type(
+            "is_melee",
+            bestiary_filter_vectors.is_melee_filter.iter(),
+        ),
+        prepare_bounded_and_check(
+            bestiary_filter_vectors
+                .role_filter
+                .iter()
+                .map(CreatureRoleEnum::to_db_column),
+            i64::from(bestiary_filter_vectors.role_lower_threshold),
+            i64::from(bestiary_filter_vectors.role_upper_threshold),
+        ),
+    ]
+    .into_iter()
+    .filter(|query| !query.is_empty())
+    .collect::<Vec<String>>()
+    .join(" AND ");
+    if filters_query.is_empty() {
+        remaster_query
+    } else {
+        format!("{remaster_query} AND {filters_query}")
+    }
+}
+
 /// Prepares an 'in' statement, with the following logic
 /// ```SQL
 /// id NOT IN (bl_id1, bl_id2, bl_idn) AND id IN (wl_id1, wl_id2, wl_idn)
 /// ```
-fn prepare_trait_filter_statement<I, S>(whitelist: I, blacklist: I) -> String
+fn prepare_trait_filter_statement<S>(whitelist: &S, blacklist: &S) -> String
 where
-    I: Iterator<Item = S>,
     S: ToString,
 {
-    let whitelist_query = prepare_item_trait_filter(whitelist);
-    let blacklist_query = prepare_item_trait_filter(blacklist);
+    let whitelist_query = whitelist.to_string();
+    let blacklist_query = blacklist.to_string();
     if whitelist_query.is_empty() && blacklist_query.is_empty() {
         String::new()
     } else if whitelist_query.is_empty() {
@@ -338,6 +353,22 @@ fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum) -> String {
 
 /// Prepares a query that gets all the ids linked with a given list of traits, example
 /// ```SQL
+/// SELECT tcat.item_id
+/// FROM TRAIT_ITEM_ASSOCIATION_TABLE tcat
+/// RIGHT JOIN
+/// (SELECT * FROM TRAIT_TABLE WHERE name IN ('good')) tt
+/// ON tcat.trait_id = tt.name GROUP BY tcat.item_id
+///```
+fn prepare_item_trait_filter<I, S>(column_values: I) -> String
+where
+    I: Iterator<Item = S>,
+    S: ToString,
+{
+    prepare_trait_filter("item_id", "TRAIT_ITEM_ASSOCIATION_TABLE", column_values)
+}
+
+/// Prepares a query that gets all the ids linked with a given list of traits, example
+/// ```SQL
 /// SELECT tcat.creature_id
 /// FROM TRAIT_CREATURE_ASSOCIATION_TABLE tcat
 /// RIGHT JOIN
@@ -354,20 +385,4 @@ where
         "TRAIT_CREATURE_ASSOCIATION_TABLE",
         column_values,
     )
-}
-
-/// Prepares a query that gets all the ids linked with a given list of traits, example
-/// ```SQL
-/// SELECT tcat.item_id
-/// FROM TRAIT_ITEM_ASSOCIATION_TABLE tcat
-/// RIGHT JOIN
-/// (SELECT * FROM TRAIT_TABLE WHERE name IN ('good')) tt
-/// ON tcat.trait_id = tt.name GROUP BY tcat.item_id
-///```
-fn prepare_item_trait_filter<I, S>(column_values: I) -> String
-where
-    I: Iterator<Item = S>,
-    S: ToString,
-{
-    prepare_trait_filter("item_id", "TRAIT_ITEM_ASSOCIATION_TABLE", column_values)
 }

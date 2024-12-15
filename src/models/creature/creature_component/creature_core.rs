@@ -3,8 +3,11 @@ use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
+#[allow(unused_imports)]
+use serde_json::json;
 use sqlx::sqlite::SqliteRow;
 use sqlx::{Error, FromRow, Row};
+use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
@@ -36,24 +39,10 @@ pub struct EssentialData {
 pub struct DerivedData {
     pub archive_link: Option<String>,
 
-    pub is_melee: bool,
-    pub is_ranged: bool,
-    pub is_spell_caster: bool,
-
-    #[schema(example = 50)]
-    pub brute_percentage: i64,
-    #[schema(example = 50)]
-    pub magical_striker_percentage: i64,
-    #[schema(example = 50)]
-    pub skill_paragon_percentage: i64,
-    #[schema(example = 50)]
-    pub skirmisher_percentage: i64,
-    #[schema(example = 50)]
-    pub sniper_percentage: i64,
-    #[schema(example = 50)]
-    pub soldier_percentage: i64,
-    #[schema(example = 50)]
-    pub spell_caster_percentage: i64,
+    #[schema(example = json!({"melee": true, "ranged": false, "spellcaster": true}))]
+    pub attack_data: BTreeMap<String, bool>,
+    #[schema(example = json!({"brute": 50, "magical_striker": 30, "skill_paragon": 2, "skirmisher": 3, "sniper": 0, "soldier": 30, "spellcaster": 90}))]
+    pub role_data: BTreeMap<String, i64>,
 }
 
 impl<'r> FromRow<'r, SqliteRow> for EssentialData {
@@ -81,18 +70,35 @@ impl<'r> FromRow<'r, SqliteRow> for EssentialData {
 
 impl<'r> FromRow<'r, SqliteRow> for DerivedData {
     fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+        let mut attack_list = BTreeMap::new();
+        attack_list.insert(String::from("melee"), row.try_get("is_melee")?);
+        attack_list.insert(String::from("ranged"), row.try_get("is_ranged")?);
+        attack_list.insert(String::from("spellcaster"), row.try_get("is_spell_caster")?);
+
+        let mut role_list = BTreeMap::new();
+        role_list.insert(String::from("brute"), row.try_get("brute_percentage")?);
+        role_list.insert(
+            String::from("magical_striker"),
+            row.try_get("magical_striker_percentage")?,
+        );
+        role_list.insert(
+            String::from("skill_paragon"),
+            row.try_get("skill_paragon_percentage")?,
+        );
+        role_list.insert(
+            String::from("skirmisher"),
+            row.try_get("skirmisher_percentage")?,
+        );
+        role_list.insert(String::from("sniper"), row.try_get("sniper_percentage")?);
+        role_list.insert(String::from("soldier"), row.try_get("soldier_percentage")?);
+        role_list.insert(
+            String::from("spellcaster"),
+            row.try_get("spell_caster_percentage")?,
+        );
         Ok(Self {
             archive_link: row.try_get("archive_link").ok(),
-            is_melee: row.try_get("is_melee")?,
-            is_ranged: row.try_get("is_ranged")?,
-            is_spell_caster: row.try_get("is_spell_caster")?,
-            brute_percentage: row.try_get("brute_percentage")?,
-            magical_striker_percentage: row.try_get("magical_striker_percentage")?,
-            skill_paragon_percentage: row.try_get("skill_paragon_percentage")?,
-            skirmisher_percentage: row.try_get("skirmisher_percentage")?,
-            sniper_percentage: row.try_get("sniper_percentage")?,
-            soldier_percentage: row.try_get("soldier_percentage")?,
-            spell_caster_percentage: row.try_get("spell_caster_percentage")?,
+            attack_data: attack_list,
+            role_data: role_list,
         })
     }
 }

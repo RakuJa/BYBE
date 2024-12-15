@@ -80,15 +80,6 @@ fn creature_filter_query_calculator(field_filters: &CreatureFieldFilters) -> Str
         field_filters
             .max_level_filter
             .map(|lvl| format!("max_level_filter={lvl}")),
-        field_filters
-            .is_melee_filter
-            .map(|is| format!("is_melee_filter={is}")),
-        field_filters
-            .is_ranged_filter
-            .map(|is| format!("is_ranged_filter={is}")),
-        field_filters
-            .is_spell_caster_filter
-            .map(|is| format!("is_spell_caster_filter={is}")),
     ]
     .iter()
     .filter_map(std::clone::Clone::clone)

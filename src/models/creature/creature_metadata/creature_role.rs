@@ -1,7 +1,7 @@
 use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_core::EssentialData;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
-use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellCasterData;
+use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellcasterData;
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::scales_struct::creature_scales::CreatureScales;
 use num_traits::float::FloatConst;
@@ -28,7 +28,7 @@ pub enum CreatureRoleEnum {
     Skirmisher,
     Sniper,
     Soldier,
-    SpellCaster,
+    Spellcaster,
 }
 
 fn get_dmg_from_regex(raw_str: &str) -> Option<i64> {
@@ -46,14 +46,14 @@ impl CreatureRoleEnum {
             Self::Skirmisher => String::from("skirmisher_percentage"),
             Self::Sniper => String::from("sniper_percentage"),
             Self::Soldier => String::from("soldier_percentage"),
-            Self::SpellCaster => String::from("spell_caster_percentage"),
+            Self::Spellcaster => String::from("spell_caster_percentage"),
         }
     }
     pub fn from_creature_with_given_scales(
         cr_core: &EssentialData,
         cr_extra: &CreatureExtraData,
         cr_combat: &CreatureCombatData,
-        cr_spells: &CreatureSpellCasterData,
+        cr_spells: &CreatureSpellcasterData,
         scales: &CreatureScales,
     ) -> BTreeMap<Self, i64> {
         let mut roles = BTreeMap::new();
@@ -87,7 +87,7 @@ impl CreatureRoleEnum {
                 .map_or(0, |x| (x * 100.).round() as i64),
         );
         roles.insert(
-            Self::SpellCaster,
+            Self::Spellcaster,
             is_spellcaster(cr_core, cr_spells, cr_combat, cr_extra, scales)
                 .map_or(0, |x| (x * 100.).round() as i64),
         );
@@ -293,7 +293,7 @@ pub fn is_soldier(
 // Magical Striker
 pub fn is_magical_striker(
     cr_core: &EssentialData,
-    cr_spell: &CreatureSpellCasterData,
+    cr_spell: &CreatureSpellcasterData,
     cr_combat: &CreatureCombatData,
     scales: &CreatureScales,
 ) -> Option<f64> {
@@ -395,7 +395,7 @@ fn is_skill_paragon(
 // Spellcaster
 fn is_spellcaster(
     cr_core: &EssentialData,
-    cr_spell: &CreatureSpellCasterData,
+    cr_spell: &CreatureSpellcasterData,
     cr_combat: &CreatureCombatData,
     cr_extra: &CreatureExtraData,
     scales: &CreatureScales,
@@ -448,7 +448,7 @@ impl FromStr for CreatureRoleEnum {
             "SKIRMISHER" => Ok(Self::Skirmisher),
             "SNIPER" => Ok(Self::Sniper),
             "SOLDIER" => Ok(Self::Soldier),
-            "SPELLCASTER" | "SPELL CASTER" => Ok(Self::SpellCaster),
+            "SPELLCASTER" | "SPELL CASTER" => Ok(Self::Spellcaster),
             _ => Err(()),
         }
     }
@@ -475,8 +475,8 @@ impl fmt::Display for CreatureRoleEnum {
             Self::Soldier => {
                 write!(f, "Soldier")
             }
-            Self::SpellCaster => {
-                write!(f, "SpellCaster")
+            Self::Spellcaster => {
+                write!(f, "Spellcaster")
             }
         }
     }

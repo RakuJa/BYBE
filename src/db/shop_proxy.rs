@@ -67,7 +67,11 @@ pub async fn get_paginated_items(
     let curr_slice: Vec<ResponseItem> = filtered_list
         .iter()
         .skip(pagination.paginated_request.cursor as usize)
-        .take(pagination.paginated_request.page_size.unsigned_abs() as usize)
+        .take(if pagination.paginated_request.page_size >= 0 {
+            pagination.paginated_request.page_size.unsigned_abs() as usize
+        } else {
+            usize::MAX
+        })
         .cloned()
         .collect();
 
