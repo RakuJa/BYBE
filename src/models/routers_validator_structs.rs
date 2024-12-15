@@ -35,7 +35,7 @@ pub struct CreatureFieldFilters {
     pub max_level_filter: Option<i64>,
 
     #[schema(example = json!({"melee": true, "ranged": false, "spellcaster": true}))]
-    pub attack_data_filter: Option<BTreeMap<String, bool>>,
+    pub attack_data_filter: Option<BTreeMap<String, Option<bool>>>,
     pub pathfinder_version: Option<PathfinderVersionEnum>,
 }
 

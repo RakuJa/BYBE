@@ -129,7 +129,14 @@ impl Creature {
             x.iter()
                 .any(|align| self.core_data.essential.alignment == *align)
         }) && filters.attack_data_filter.clone().map_or(true, |attacks| {
-            self.core_data.derived.attack_data == attacks
+            attacks
+                .iter()
+                .map(|(attack, has_attack)| {
+                    has_attack.is_none()
+                        || self.core_data.derived.attack_data.get(attack)
+                            == Option::from(has_attack)
+                })
+                .all(|x| x)
         }) && filters.type_filter.as_ref().map_or(true, |x| {
             x.iter()
                 .any(|cr_type| self.core_data.essential.cr_type == *cr_type)
