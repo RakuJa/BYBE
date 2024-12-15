@@ -4,7 +4,12 @@ args = ["clean"]
 
 [tasks.prebuild]
 command = "python3"
-args = ["setup.py", "--db_version", "2.4.0"]
+# Removing --copy_db is considered a breaking change for the app
+args = ["setup.py", "--copy_db", "--overwrite", "--db_version", "2.4.0"]
+
+[tasks.post_build]
+command = "python3"
+args = ["post_build.py"]
 
 [tasks.format]
 install_crate = "rustfmt"
@@ -47,12 +52,14 @@ dependencies = [
 [tasks.bybe-release]
 dependencies = [
     "test",
-    "build-release"
+    "build-release",
+    "post_build"
 ]
 
 [tasks.bybe-docker-release]
 dependencies = [
-    "build-docker-release"
+    "build-docker-release",
+    "post_build"
 ]
 
 [tasks.format-and-lint]
