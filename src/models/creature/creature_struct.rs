@@ -129,14 +129,10 @@ impl Creature {
             x.iter()
                 .any(|align| self.core_data.essential.alignment == *align)
         }) && filters.attack_data_filter.clone().map_or(true, |attacks| {
-            attacks
-                .iter()
-                .map(|(attack, has_attack)| {
-                    has_attack.is_none()
-                        || self.core_data.derived.attack_data.get(attack)
-                            == Option::from(has_attack)
-                })
-                .all(|x| x)
+            attacks.iter().all(|(attack, has_attack)| {
+                has_attack.is_none()
+                    || self.core_data.derived.attack_data.get(attack) == Option::from(has_attack)
+            })
         }) && filters.type_filter.as_ref().map_or(true, |x| {
             x.iter()
                 .any(|cr_type| self.core_data.essential.cr_type == *cr_type)
@@ -222,7 +218,7 @@ impl Creature {
                         .contains(filter_trait.to_lowercase().as_str())
                 })
             })
-        }) && !filters.trait_blacklist_filter.as_ref().map_or(false, |x| {
+        }) && !filters.trait_blacklist_filter.as_ref().is_some_and(|x| {
             x.iter().any(|filter_trait| {
                 self.core_data.traits.iter().any(|cr_trait| {
                     cr_trait
