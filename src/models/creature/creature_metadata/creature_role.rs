@@ -1,7 +1,7 @@
 use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_core::EssentialData;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
-use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellcasterData;
+use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::scales_struct::creature_scales::CreatureScales;
 use num_traits::float::FloatConst;
@@ -46,7 +46,7 @@ impl CreatureRoleEnum {
             Self::Skirmisher => String::from("skirmisher_percentage"),
             Self::Sniper => String::from("sniper_percentage"),
             Self::Soldier => String::from("soldier_percentage"),
-            Self::Spellcaster => String::from("spell_caster_percentage"),
+            Self::Spellcaster => String::from("spellcaster_percentage"),
         }
     }
     pub fn from_creature_with_given_scales(

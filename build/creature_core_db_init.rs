@@ -16,7 +16,7 @@ pub async fn create_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
         rarity TEXT NOT NULL DEFAULT 'COMMON',
         is_melee BOOL NOT NULL DEFAULT 0,
         is_ranged BOOL NOT NULL DEFAULT 0,
-        is_spell_caster BOOL NOT NULL DEFAULT 0,
+        is_spellcaster BOOL NOT NULL DEFAULT 0,
         archive_link TEXT,
         cr_type TEXT NOT NULL DEFAULT 'MONSTER',
         family TEXT NOT NULL DEFAULT '-',
@@ -59,7 +59,7 @@ async fn create_temporary_table(conn: &Pool<Sqlite>) -> Result<()> {
             ) wt ON base_item_id = wcat.weapon_id
         )
   		THEN TRUE ELSE FALSE END AS is_ranged,
-        CASE WHEN st.creature_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_spell_caster,
+        CASE WHEN st.creature_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_spellcaster,
         CASE WHEN ct.aon_id IS NOT NULL THEN CONCAT('https://2e.aonprd.com/', CAST(UPPER(COALESCE(UPPER(ct.cr_type) , 'MONSTER')) AS TEXT), 's' , '.aspx?ID=', CAST(ct.aon_id AS TEXT)) ELSE NULL END AS archive_link,
         COALESCE(ct.cr_type , 'Monster') AS cr_type,
         COALESCE(ct.family , '-') AS family
@@ -78,11 +78,11 @@ pub async fn initialize_data(conn: &Pool<Sqlite>) -> Result<()> {
         INSERT INTO CREATURE_CORE (
             id, aon_id, name, hp, level, size, rarity,
             license, source, remaster, is_melee, is_ranged,
-            is_spell_caster, archive_link, cr_type, family
+            is_spellcaster, archive_link, cr_type, family
         ) SELECT
             id, aon_id, name, hp, level, size, rarity,
             license, source, remaster, is_melee, is_ranged,
-            is_spell_caster, archive_link, cr_type, family
+            is_spellcaster, archive_link, cr_type, family
         FROM TMP_CREATURE_CORE;
         ",
     )
@@ -100,7 +100,7 @@ async fn insert_role_columns_in_core_table(conn: &Pool<Sqlite>) -> Result<()> {
         ALTER TABLE CREATURE_CORE ADD skirmisher_percentage INTEGER NOT NULL DEFAULT 0;
         ALTER TABLE CREATURE_CORE ADD sniper_percentage INTEGER NOT NULL DEFAULT 0;
         ALTER TABLE CREATURE_CORE ADD soldier_percentage INTEGER NOT NULL DEFAULT 0;
-        ALTER TABLE CREATURE_CORE ADD spell_caster_percentage INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE CREATURE_CORE ADD spellcaster_percentage INTEGER NOT NULL DEFAULT 0;
     ",
     )
     .execute(conn)

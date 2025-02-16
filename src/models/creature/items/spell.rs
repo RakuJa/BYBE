@@ -28,5 +28,5 @@ pub struct Spell {
 
     pub slot: i64,
     pub creature_id: i64,
-    pub spell_casting_entry_id: i64,
+    pub spellcasting_entry_id: i64,
 }

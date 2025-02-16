@@ -73,7 +73,7 @@ impl<'r> FromRow<'r, SqliteRow> for DerivedData {
         let mut attack_list = BTreeMap::new();
         attack_list.insert(String::from("melee"), row.try_get("is_melee")?);
         attack_list.insert(String::from("ranged"), row.try_get("is_ranged")?);
-        attack_list.insert(String::from("spellcaster"), row.try_get("is_spell_caster")?);
+        attack_list.insert(String::from("spellcaster"), row.try_get("is_spellcaster")?);
 
         let mut role_list = BTreeMap::new();
         role_list.insert(String::from("brute"), row.try_get("brute_percentage")?);
@@ -93,7 +93,7 @@ impl<'r> FromRow<'r, SqliteRow> for DerivedData {
         role_list.insert(String::from("soldier"), row.try_get("soldier_percentage")?);
         role_list.insert(
             String::from("spellcaster"),
-            row.try_get("spell_caster_percentage")?,
+            row.try_get("spellcaster_percentage")?,
         );
         Ok(Self {
             archive_link: row.try_get("archive_link").ok(),
