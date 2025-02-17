@@ -36,6 +36,7 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
             source: cr.source,
             cr_type: CreatureTypeEnum::from(cr.cr_type),
             alignment,
+            focus_points: cr.n_of_focus_points,
         };
         let extra_data = fetch_creature_extra_data(conn, essential_data.id).await?;
         let combat_data = fetch_creature_combat_data(conn, essential_data.id).await?;
@@ -147,7 +148,7 @@ async fn get_creatures_raw_essential_data(
         RawEssentialData,
         "SELECT
             id, aon_id, name, hp, level, size, family, rarity,
-            license, remaster, source, cr_type
+            license, remaster, source, cr_type, n_of_focus_points
         FROM CREATURE_TABLE ORDER BY name LIMIT ?,?",
         cursor,
         page_size
@@ -170,4 +171,5 @@ pub struct RawEssentialData {
     pub remaster: bool,
     pub source: String,
     pub cr_type: Option<String>,
+    pub n_of_focus_points: i64,
 }
