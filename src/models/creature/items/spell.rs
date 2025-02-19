@@ -25,5 +25,8 @@ pub struct Spell {
     pub remaster: bool,
     pub source: String,
     pub rarity: String, // use rarityenum
+
+    pub slot: i64,
     pub creature_id: i64,
+    pub spellcasting_entry_id: i64,
 }

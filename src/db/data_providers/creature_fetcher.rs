@@ -11,7 +11,7 @@ use crate::models::creature::creature_component::creature_core::CreatureCoreData
 use crate::models::creature::creature_component::creature_extra::{
     AbilityScores, CreatureExtraData,
 };
-use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellcasterData;
+use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature::creature_metadata::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
@@ -19,7 +19,7 @@ use crate::models::creature::creature_struct::Creature;
 use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::creature::items::spell::Spell;
-use crate::models::creature::items::spell_caster_entry::SpellcasterEntry;
+use crate::models::creature::items::spellcaster_entry::{SpellcasterData, SpellcasterEntry};
 use crate::models::db::raw_immunity::RawImmunity;
 use crate::models::db::raw_language::RawLanguage;
 use crate::models::db::raw_resistance::RawResistance;
@@ -409,25 +409,46 @@ async fn fetch_creature_skills(conn: &Pool<Sqlite>, creature_id: i64) -> Result<
     .await?)
 }
 
-async fn fetch_creature_spells(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Spell>> {
+pub async fn fetch_creature_spells(
+    conn: &Pool<Sqlite>,
+    creature_id: i64,
+    spellcaster_entry_id: i64,
+) -> Result<Vec<Spell>> {
     Ok(sqlx::query_as!(
         Spell,
-        "SELECT * FROM SPELL_TABLE WHERE creature_id == ($1)",
-        creature_id
+        "SELECT * FROM SPELL_TABLE WHERE creature_id == ($1) AND spellcasting_entry_id == ($2)",
+        creature_id,
+        spellcaster_entry_id
     )
     .fetch_all(conn)
     .await?)
 }
 
-async fn fetch_creature_spell_caster_entry(
+async fn fetch_creature_spellcaster_entries(
     conn: &Pool<Sqlite>,
     creature_id: i64,
-) -> Result<SpellcasterEntry> {
-    Ok(sqlx::query_as!(
-        SpellcasterEntry,
-        "SELECT spell_casting_name, is_spell_casting_flexible, type_of_spell_caster, spell_casting_dc_mod, spell_casting_atk_mod, spell_casting_tradition FROM CREATURE_TABLE WHERE id == ($1) LIMIT 1",
+) -> Result<Vec<SpellcasterEntry>> {
+    let mut result = Vec::new();
+    for sce in sqlx::query_as!(
+        SpellcasterData,
+        "SELECT
+            id, spellcasting_name, is_spellcasting_flexible, type_of_spellcaster,
+            spellcasting_dc_mod, spellcasting_atk_mod, spellcasting_tradition
+        FROM SPELLCASTING_ENTRY_TABLE WHERE creature_id == ($1)",
         creature_id
-    ).fetch_one(conn).await?)
+    )
+    .fetch_all(conn)
+    .await?
+    {
+        let sce_id = sce.id;
+        result.push(SpellcasterEntry {
+            spellcaster_data: sce,
+            spells: fetch_creature_spells(conn, creature_id, sce_id)
+                .await
+                .unwrap_or_default(),
+        });
+    }
+    Ok(result)
 }
 
 async fn fetch_creature_core_data(
@@ -507,8 +528,8 @@ pub async fn fetch_creature_by_id(
         } else {
             None
         },
-        spell_caster_data: if response_data_mods.spell_casting_data.is_some_and(|x| x) {
-            Some(fetch_creature_spell_caster_data(conn, id).await?)
+        spellcaster_data: if response_data_mods.spellcasting_data.is_some_and(|x| x) {
+            Some(fetch_creature_spellcaster_data(conn, id).await?)
         } else {
             None
         },
@@ -638,15 +659,12 @@ pub async fn fetch_creature_combat_data(
     })
 }
 
-pub async fn fetch_creature_spell_caster_data(
+pub async fn fetch_creature_spellcaster_data(
     conn: &Pool<Sqlite>,
     creature_id: i64,
 ) -> Result<CreatureSpellcasterData> {
-    let spells = fetch_creature_spells(conn, creature_id).await?;
-    let spell_caster_entry = fetch_creature_spell_caster_entry(conn, creature_id).await?;
     Ok(CreatureSpellcasterData {
-        spells,
-        spell_caster_entry,
+        spellcaster_entries: fetch_creature_spellcaster_entries(conn, creature_id).await?,
     })
 }
 

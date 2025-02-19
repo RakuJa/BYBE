@@ -1,6 +1,6 @@
 use crate::db::data_providers::creature_fetcher::{
     fetch_creature_combat_data, fetch_creature_extra_data, fetch_creature_scales,
-    fetch_creature_spell_caster_data, fetch_creature_traits,
+    fetch_creature_spellcaster_data, fetch_creature_traits,
 };
 use crate::models::creature::creature_component::creature_core::EssentialData;
 use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
@@ -39,12 +39,12 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
         };
         let extra_data = fetch_creature_extra_data(conn, essential_data.id).await?;
         let combat_data = fetch_creature_combat_data(conn, essential_data.id).await?;
-        let spell_caster_data = fetch_creature_spell_caster_data(conn, essential_data.id).await?;
+        let spellcaster_data = fetch_creature_spellcaster_data(conn, essential_data.id).await?;
         let roles = CreatureRoleEnum::from_creature_with_given_scales(
             &essential_data,
             &extra_data,
             &combat_data,
-            &spell_caster_data,
+            &spellcaster_data,
             &scales,
         );
 
@@ -106,7 +106,7 @@ async fn update_role_column_value(
         }
         CreatureRoleEnum::Spellcaster => {
             sqlx::query!(
-                "UPDATE CREATURE_CORE SET spell_caster_percentage = ? WHERE id = ?",
+                "UPDATE CREATURE_CORE SET spellcaster_percentage = ? WHERE id = ?",
                 value,
                 creature_id
             )

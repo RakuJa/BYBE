@@ -190,7 +190,7 @@ impl Item {
                         .contains(filter_trait.to_lowercase().as_str())
                 })
             })
-        }) && !filters.trait_blacklist_filter.as_ref().map_or(false, |x| {
+        }) && !filters.trait_blacklist_filter.as_ref().is_some_and(|x| {
             x.iter().any(|filter_trait| {
                 self.traits.iter().any(|item_trait| {
                     item_trait

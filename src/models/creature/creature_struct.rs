@@ -1,7 +1,7 @@
 use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_core::CreatureCoreData;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
-use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellcasterData;
+use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
@@ -15,7 +15,7 @@ pub struct Creature {
     pub variant_data: CreatureVariantData,
     pub extra_data: Option<CreatureExtraData>,
     pub combat_data: Option<CreatureCombatData>,
-    pub spell_caster_data: Option<CreatureSpellcasterData>,
+    pub spellcaster_data: Option<CreatureSpellcasterData>,
 }
 
 impl Creature {
@@ -31,8 +31,8 @@ impl Creature {
         cr.combat_data = self
             .combat_data
             .map(|x| x.convert_from_base_to_variant(variant));
-        cr.spell_caster_data = self
-            .spell_caster_data
+        cr.spellcaster_data = self
+            .spellcaster_data
             .map(|x| x.convert_from_base_to_variant(variant));
         cr
     }
@@ -51,8 +51,8 @@ impl Creature {
             combat_data: self
                 .combat_data
                 .map(|x| x.convert_from_base_to_pwl(pwl_mod)),
-            spell_caster_data: self
-                .spell_caster_data
+            spellcaster_data: self
+                .spellcaster_data
                 .map(|x| x.convert_from_base_to_pwl(pwl_mod)),
         }
     }
@@ -68,7 +68,7 @@ impl Creature {
             },
             extra_data: None,
             combat_data: None,
-            spell_caster_data: None,
+            spellcaster_data: None,
         }
     }
 
@@ -91,7 +91,7 @@ impl Creature {
             },
             extra_data: None,
             combat_data: None,
-            spell_caster_data: None,
+            spellcaster_data: None,
         }
     }
     pub fn is_passing_filters(&self, filters: &CreatureFieldFilters) -> bool {
@@ -129,14 +129,10 @@ impl Creature {
             x.iter()
                 .any(|align| self.core_data.essential.alignment == *align)
         }) && filters.attack_data_filter.clone().map_or(true, |attacks| {
-            attacks
-                .iter()
-                .map(|(attack, has_attack)| {
-                    has_attack.is_none()
-                        || self.core_data.derived.attack_data.get(attack)
-                            == Option::from(has_attack)
-                })
-                .all(|x| x)
+            attacks.iter().all(|(attack, has_attack)| {
+                has_attack.is_none()
+                    || self.core_data.derived.attack_data.get(attack) == Option::from(has_attack)
+            })
         }) && filters.type_filter.as_ref().map_or(true, |x| {
             x.iter()
                 .any(|cr_type| self.core_data.essential.cr_type == *cr_type)
@@ -222,7 +218,7 @@ impl Creature {
                         .contains(filter_trait.to_lowercase().as_str())
                 })
             })
-        }) && !filters.trait_blacklist_filter.as_ref().map_or(false, |x| {
+        }) && !filters.trait_blacklist_filter.as_ref().is_some_and(|x| {
             x.iter().any(|filter_trait| {
                 self.core_data.traits.iter().any(|cr_trait| {
                     cr_trait

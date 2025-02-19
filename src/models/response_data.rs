@@ -1,7 +1,7 @@
 use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_core::CreatureCoreData;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
-use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellcasterData;
+use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature::creature_struct::Creature;
 use crate::models::item::armor_struct::ArmorData;
@@ -16,7 +16,7 @@ pub struct ResponseDataModifiers {
     pub is_pwl_on: Option<bool>,
     pub extra_data: Option<bool>,
     pub combat_data: Option<bool>,
-    pub spell_casting_data: Option<bool>,
+    pub spellcasting_data: Option<bool>,
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Hash, PartialEq, Eq)]
@@ -25,7 +25,7 @@ pub struct ResponseCreature {
     pub variant_data: CreatureVariantData,
     pub extra_data: Option<CreatureExtraData>,
     pub combat_data: Option<CreatureCombatData>,
-    pub spell_caster_data: Option<CreatureSpellcasterData>,
+    pub spellcaster_data: Option<CreatureSpellcasterData>,
 }
 
 impl From<Creature> for ResponseCreature {
@@ -35,7 +35,7 @@ impl From<Creature> for ResponseCreature {
             core_data: cr.core_data,
             variant_data: cr.variant_data,
             extra_data: cr.extra_data,
-            spell_caster_data: cr.spell_caster_data,
+            spellcaster_data: cr.spellcaster_data,
             combat_data: cr.combat_data,
         }
     }

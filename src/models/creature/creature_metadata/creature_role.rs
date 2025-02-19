@@ -1,7 +1,7 @@
 use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_core::EssentialData;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
-use crate::models::creature::creature_component::creature_spell_caster::CreatureSpellcasterData;
+use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::scales_struct::creature_scales::CreatureScales;
 use num_traits::float::FloatConst;
@@ -46,7 +46,7 @@ impl CreatureRoleEnum {
             Self::Skirmisher => String::from("skirmisher_percentage"),
             Self::Sniper => String::from("sniper_percentage"),
             Self::Soldier => String::from("soldier_percentage"),
-            Self::Spellcaster => String::from("spell_caster_percentage"),
+            Self::Spellcaster => String::from("spellcaster_percentage"),
         }
     }
     pub fn from_creature_with_given_scales(
@@ -316,18 +316,11 @@ pub fn is_magical_striker(
     score += wp_distance.unwrap_or(MISSING_FIELD_DISTANCE);
     let spell_dc = scales.spell_dc_and_atk_scales.get(&lvl)?;
     // moderate to high spell DCs;
-    if cr_spell.spell_caster_entry.spell_casting_dc_mod.is_some() {
-        score += calculate_lb_distance(
-            spell_dc.moderate_dc,
-            cr_spell.spell_caster_entry.spell_casting_dc_mod.unwrap(),
-        );
-    } else {
-        score += MISSING_FIELD_DISTANCE;
-    }
-    if (cr_spell.spells.len() as f64) < (cr_core.base_level as f64 / 2.).ceil() - 1. {
+    score += calculate_lb_distance(spell_dc.moderate_dc, cr_spell.get_highest_spell_dc_mod()?);
+    if (cr_spell.get_total_n_of_spells() as f64) < (cr_core.base_level as f64 / 2.).ceil() - 1. {
         score += (((cr_core.base_level as f64 / 2.).ceil() as i64)
             - 1
-            - (i64::try_from(cr_spell.spells.len()).unwrap_or(i64::MAX)))
+            - (i64::try_from(cr_spell.get_total_n_of_spells()).unwrap_or(i64::MAX)))
         .unsigned_abs() as u16;
     }
     Some(f64::E().powf(-0.2 * f64::from(score)))
@@ -419,12 +412,12 @@ fn is_spellcaster(
     let spells_dc_and_atk_scales = scales.spell_dc_and_atk_scales.get(&lvl)?;
     score += calculate_lb_distance(
         spells_dc_and_atk_scales.high_dc,
-        cr_spell.spell_caster_entry.spell_casting_dc_mod?,
+        cr_spell.get_highest_spell_dc_mod()?,
     );
     // prepared or spontaneous spells up to half the creature’s level (rounded up)
-    if (cr_spell.spells.len() as f64) < (cr_core.base_level as f64 / 2.).ceil() {
+    if (cr_spell.get_total_n_of_spells() as f64) < (cr_core.base_level as f64 / 2.).ceil() {
         score += (((cr_core.base_level as f64 / 2.).ceil() as i64)
-            - i64::try_from(cr_spell.spells.len()).unwrap_or(i64::MAX))
+            - i64::try_from(cr_spell.get_total_n_of_spells()).unwrap_or(i64::MAX))
         .unsigned_abs() as u16;
     }
     let ability_scales = scales.ability_scales.get(&lvl)?;

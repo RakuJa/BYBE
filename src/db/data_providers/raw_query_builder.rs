@@ -272,7 +272,7 @@ fn prepare_creature_filter_statement(
             bestiary_filter_vectors.type_filter.iter(),
         ),
         prepare_in_statement_for_generic_type(
-            "is_spell_caster",
+            "is_spellcaster",
             bestiary_filter_vectors.is_spellcaster_filter.iter(),
         ),
         prepare_in_statement_for_generic_type(

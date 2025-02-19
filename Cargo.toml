@@ -1,6 +1,6 @@
 [package]
 name = "bybe"
-version = "2.4.0"
+version = "2.5.0"
 authors = ["RakuJa"]
 
 # Compiler info
@@ -48,37 +48,37 @@ nursery = {level= "warn", priority = 1}
 actix-web = "4.9.0"
 actix-cors = "0.7.0"
 
-utoipa = { version = "5.2.0", features = ["actix_extras"] }
-utoipa-swagger-ui = { version = "8.0.3", features = ["actix-web", "reqwest"] }
+utoipa = { version = "5.3.1", features = ["actix_extras"] }
+utoipa-swagger-ui = { version = "9.0.0", features = ["actix-web", "reqwest"] }
 
-sqlx = { version = "0.8.2", features = ["runtime-async-std", "sqlite"] }
+sqlx = { version = "0.8.3", features = ["runtime-async-std", "sqlite"] }
 cached = { version = "0.54.0", features = ["async"] }
 
-anyhow = "1.0.94"
-serde = { version = "1.0.216", features = ["derive"] }
-serde_json = "1.0.133"
-strum = {version="0.26.3", features = ["derive"]}
+anyhow = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+strum = { version="0.27.0", features = ["derive"]}
 fastrand = "2.3.0"
 counter = "0.6.0"
 ordered-float = { version = "4", features = ["serde"]}
 num-traits = "0.2.19"
 maplit = "1.0.2"
-itertools = "0.13.0"
+itertools = "0.14.0"
 
 regex = "1.11.1"
 
 dotenvy = "0.15.7"
 
-env_logger = "0.11.5"
-log = "0.4.22"
-once_cell = "1.20.2"
+env_logger = "0.11.6"
+log = "0.4.25"
+once_cell = "1.20.3"
 once = "0.3.4"
 
 [build-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "rt"] }
-anyhow = "1.0.94"
-sqlx = {version = "0.8.2", features = ["runtime-async-std", "sqlite"]}
+anyhow = "1.0"
+sqlx = {version = "0.8.3", features = ["runtime-async-std", "sqlite"]}
 dotenvy = "0.15.7"
 
 [dev-dependencies]
-rstest = "0.23.0"
+rstest = "0.24.0"
