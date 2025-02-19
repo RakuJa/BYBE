@@ -17,6 +17,7 @@ pub async fn create_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
         is_melee BOOL NOT NULL DEFAULT 0,
         is_ranged BOOL NOT NULL DEFAULT 0,
         is_spellcaster BOOL NOT NULL DEFAULT 0,
+        focus_points INTEGER NOT NULL DEFAULT -99,
         archive_link TEXT,
         cr_type TEXT NOT NULL DEFAULT 'MONSTER',
         family TEXT NOT NULL DEFAULT '-',
@@ -45,6 +46,7 @@ async fn create_temporary_table(conn: &Pool<Sqlite>) -> Result<()> {
         ct.rarity,
         ct.license,
         ct.source,
+        ct.n_of_focus_points as focus_points,
         ct.remaster,
       	CASE WHEN ct.id IN (
       		SELECT wcat.creature_id
@@ -78,11 +80,11 @@ pub async fn initialize_data(conn: &Pool<Sqlite>) -> Result<()> {
         INSERT INTO CREATURE_CORE (
             id, aon_id, name, hp, level, size, rarity,
             license, source, remaster, is_melee, is_ranged,
-            is_spellcaster, archive_link, cr_type, family
+            is_spellcaster, archive_link, cr_type, family, focus_points
         ) SELECT
             id, aon_id, name, hp, level, size, rarity,
             license, source, remaster, is_melee, is_ranged,
-            is_spellcaster, archive_link, cr_type, family
+            is_spellcaster, archive_link, cr_type, family, focus_points
         FROM TMP_CREATURE_CORE;
         ",
     )
