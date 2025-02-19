@@ -39,6 +39,7 @@ impl CreatureSpellcasterData {
                             spellcasting_dc_mod: sce.spellcasting_dc_mod + modifier,
                             spellcasting_atk_mod: sce.spellcasting_atk_mod + modifier,
                             spellcasting_tradition: sce.spellcasting_tradition,
+                            heighten_level: sce.heighten_level,
                         },
                         spells: entry.spells,
                     }
