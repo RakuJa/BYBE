@@ -433,7 +433,7 @@ async fn fetch_creature_spellcaster_entries(
         SpellcasterData,
         "SELECT
             id, spellcasting_name, is_spellcasting_flexible, type_of_spellcaster,
-            spellcasting_dc_mod, spellcasting_atk_mod, spellcasting_tradition
+            spellcasting_dc_mod, spellcasting_atk_mod, spellcasting_tradition, heighten_level
         FROM SPELLCASTING_ENTRY_TABLE WHERE creature_id == ($1)",
         creature_id
     )

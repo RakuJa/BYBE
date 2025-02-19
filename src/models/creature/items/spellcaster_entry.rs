@@ -13,6 +13,7 @@ pub struct SpellcasterData {
     #[schema(example = 10)]
     pub spellcasting_atk_mod: i64,
     pub spellcasting_tradition: String,
+    pub heighten_level: i64,
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
