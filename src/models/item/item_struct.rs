@@ -96,50 +96,40 @@ impl Item {
     fn check_item_pass_ub_filters(&self, filters: &ItemFieldFilters) -> bool {
         filters
             .max_bulk_filter
-            .map_or(true, |max_bulk| self.bulk <= OrderedFloat(max_bulk))
+            .is_none_or(|max_bulk| self.bulk <= OrderedFloat(max_bulk))
             && filters
                 .max_hardness_filter
-                .map_or(true, |max_hard| self.hardness <= max_hard)
-            && filters
-                .max_hp_filter
-                .map_or(true, |max_hp| self.hp <= max_hp)
+                .is_none_or(|max_hard| self.hardness <= max_hard)
+            && filters.max_hp_filter.is_none_or(|max_hp| self.hp <= max_hp)
             && filters
                 .max_level_filter
-                .map_or(true, |max_lvl| self.level <= max_lvl)
+                .is_none_or(|max_lvl| self.level <= max_lvl)
             && filters
                 .max_price_filter
-                .map_or(true, |max_price| self.price <= max_price)
-            && filters.max_n_of_uses_filter.map_or(true, |max_uses| {
-                if self.number_of_uses.is_none() {
-                    true
-                } else {
-                    self.number_of_uses.unwrap_or(0) <= max_uses
-                }
+                .is_none_or(|max_price| self.price <= max_price)
+            && filters.max_n_of_uses_filter.is_none_or(|max_uses| {
+                self.number_of_uses
+                    .is_none_or(|n_of_uses| n_of_uses <= max_uses)
             })
     }
 
     fn check_item_pass_lb_filters(&self, filters: &ItemFieldFilters) -> bool {
         filters
             .min_bulk_filter
-            .map_or(true, |min_bulk| self.bulk >= OrderedFloat(min_bulk))
+            .is_none_or(|min_bulk| self.bulk >= OrderedFloat(min_bulk))
             && filters
                 .min_hardness_filter
-                .map_or(true, |min_hard| self.hardness >= min_hard)
-            && filters
-                .min_hp_filter
-                .map_or(true, |min_hp| self.hp >= min_hp)
+                .is_none_or(|min_hard| self.hardness >= min_hard)
+            && filters.min_hp_filter.is_none_or(|min_hp| self.hp >= min_hp)
             && filters
                 .min_level_filter
-                .map_or(true, |min_lvl| self.level >= min_lvl)
+                .is_none_or(|min_lvl| self.level >= min_lvl)
             && filters
                 .min_price_filter
-                .map_or(true, |min_price| self.price >= min_price)
-            && filters.min_n_of_uses_filter.map_or(true, |min_uses| {
-                if self.number_of_uses.is_none() {
-                    false
-                } else {
-                    self.number_of_uses.unwrap_or(0) >= min_uses
-                }
+                .is_none_or(|min_price| self.price >= min_price)
+            && filters.min_n_of_uses_filter.is_none_or(|min_uses| {
+                self.number_of_uses
+                    .is_some_and(|n_of_uses| n_of_uses >= min_uses)
             })
     }
 
@@ -147,15 +137,15 @@ impl Item {
         filters
             .rarity_filter
             .as_ref()
-            .map_or(true, |x| x.iter().any(|rarity| self.rarity == *rarity))
+            .is_none_or(|x| x.iter().any(|rarity| self.rarity == *rarity))
             && filters
                 .size_filter
                 .as_ref()
-                .map_or(true, |x| x.iter().any(|size| self.size == *size))
+                .is_none_or(|x| x.iter().any(|size| self.size == *size))
             && filters
                 .type_filter
                 .as_ref()
-                .map_or(true, |x| x.iter().any(|t_filt| self.item_type == *t_filt))
+                .is_none_or(|x| x.iter().any(|t_filt| self.item_type == *t_filt))
             && match filters.pathfinder_version.clone().unwrap_or_default() {
                 PathfinderVersionEnum::Legacy => !self.remaster,
                 PathfinderVersionEnum::Remaster => self.remaster,
@@ -164,11 +154,11 @@ impl Item {
     }
 
     fn check_item_pass_string_filters(&self, filters: &ItemFieldFilters) -> bool {
-        filters.name_filter.as_ref().map_or(true, |name| {
+        filters.name_filter.as_ref().is_none_or(|name| {
             self.name
                 .to_lowercase()
                 .contains(name.to_lowercase().as_str())
-        }) && filters.category_filter.as_ref().map_or(true, |x| {
+        }) && filters.category_filter.as_ref().is_none_or(|x| {
             x.iter().any(|cat| {
                 self.category
                     .clone()
@@ -176,13 +166,13 @@ impl Item {
                     .to_lowercase()
                     .contains(cat.to_lowercase().as_str())
             })
-        }) && filters.source_filter.as_ref().map_or(true, |x| {
+        }) && filters.source_filter.as_ref().is_none_or(|x| {
             x.iter().any(|source| {
                 self.source
                     .to_lowercase()
                     .contains(source.to_lowercase().as_str())
             })
-        }) && filters.trait_whitelist_filter.as_ref().map_or(true, |x| {
+        }) && filters.trait_whitelist_filter.as_ref().is_none_or(|x| {
             x.iter().any(|filter_trait| {
                 self.traits.iter().any(|item_trait| {
                     item_trait

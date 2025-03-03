@@ -255,7 +255,7 @@ fn find_combinations(candidates: &[i64], target_range: ExpRange) -> Vec<Vec<i64>
 
     let mut result = Vec::new(); // List to store all combinations
     let mut path = Vec::new(); // Sort the candidates list for optimization
-                               // Start the backtracking from the first index
+    // Start the backtracking from the first index
     backtrack(
         candidates,
         target_range.lower_bound,

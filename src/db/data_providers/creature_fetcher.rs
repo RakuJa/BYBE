@@ -1,6 +1,6 @@
 use crate::db::data_providers::generic_fetcher::{
-    fetch_armor_runes, fetch_armor_traits, fetch_item_traits, fetch_shield_traits,
-    fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits, MyString,
+    MyString, fetch_armor_runes, fetch_armor_traits, fetch_item_traits, fetch_shield_traits,
+    fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
 };
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_creatures_core;
 use crate::models::bestiary_structs::BestiaryFilterQuery;

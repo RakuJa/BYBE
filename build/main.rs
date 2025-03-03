@@ -1,8 +1,8 @@
 mod creature_core_db_init;
 
 use dotenvy::dotenv;
-use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::SqlitePool;
+use sqlx::sqlite::SqliteConnectOptions;
 use std::env;
 use std::str::FromStr;
 

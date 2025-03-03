@@ -4,8 +4,8 @@ version = "2.5.0"
 authors = ["RakuJa"]
 
 # Compiler info
-edition = "2021"
-rust-version = "1.79.0"
+edition = "2024"
+rust-version = "1.85.0"
 
 description = "Beyond Your Bestiary Explorer (BYBE) is a web service that provides tools to help Pathfinder 2e Game Masters."
 readme = "README.md"
@@ -52,7 +52,7 @@ utoipa = { version = "5.3.1", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "9.0.0", features = ["actix-web", "reqwest"] }
 
 sqlx = { version = "0.8.3", features = ["runtime-async-std", "sqlite"] }
-cached = { version = "0.54.0", features = ["async"] }
+cached = { version = "0.55.1", features = ["async"] }
 
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
@@ -60,7 +60,7 @@ serde_json = "1.0"
 strum = { version="0.27.1", features = ["derive"]}
 fastrand = "2.3.0"
 counter = "0.6.0"
-ordered-float = { version = "4", features = ["serde"]}
+ordered-float = { version = "5", features = ["serde"]}
 num-traits = "0.2.19"
 maplit = "1.0.2"
 itertools = "0.14.0"
@@ -81,4 +81,4 @@ sqlx = {version = "0.8.3", features = ["runtime-async-std", "sqlite"]}
 dotenvy = "0.15.7"
 
 [dev-dependencies]
-rstest = "0.24.0"
+rstest = "0.25.0"

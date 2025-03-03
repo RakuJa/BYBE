@@ -11,7 +11,7 @@ use crate::models::response_data::ResponseItem;
 use crate::models::shop_structs::ShopFilterQuery;
 use anyhow::Result;
 use log::debug;
-use sqlx::{query_as, Pool, Sqlite};
+use sqlx::{Pool, Sqlite, query_as};
 
 pub async fn fetch_item_by_id(conn: &Pool<Sqlite>, item_id: i64) -> Result<ResponseItem> {
     let mut item: Item =

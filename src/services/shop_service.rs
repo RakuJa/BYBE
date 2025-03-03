@@ -1,3 +1,4 @@
+use crate::AppState;
 use crate::db::shop_proxy;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::{Dice, ItemFieldFilters};
@@ -6,8 +7,7 @@ use crate::models::shop_structs::{
     ShopTemplateEnum,
 };
 use crate::services::url_calculator::shop_next_url;
-use crate::AppState;
-use anyhow::{bail, Context};
+use anyhow::{Context, bail};
 use num_traits::ToPrimitive;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
