@@ -70,12 +70,12 @@ regex = "1.11.1"
 dotenvy = "0.15.7"
 
 env_logger = "0.11.7"
-log = "0.4.26"
-once_cell = "1.21.1"
+log = "0.4.27"
+once_cell = "1.21.3"
 once = "0.3.4"
 
 [build-dependencies]
-tokio = { version = "1", features = ["macros", "rt-multi-thread", "rt"] }
+tokio = {version = "1", features = ["macros", "rt-multi-thread", "rt"]}
 anyhow = "1.0"
 sqlx = {version = "0.8.3", features = ["runtime-async-std", "sqlite"]}
 dotenvy = "0.15.7"
