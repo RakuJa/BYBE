@@ -8,20 +8,21 @@ use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 use once::assert_has_not_been_called;
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Pool, Sqlite};
+use sqlx::{FromRow, Pool, Sqlite, Transaction};
 
 pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
     assert_has_not_been_called!(
         "Handler for startup, first creature_core initialization. Then it shouldn't be used"
     );
     let scales = fetch_creature_scales(conn).await?;
-    for cr in get_creatures_raw_essential_data(conn, 0, -1).await? {
+    let mut tx: Transaction<Sqlite> = conn.begin().await?;
+    for cr in get_creatures_raw_essential_data(&mut tx, 0, -1).await? {
         let traits = fetch_creature_traits(conn, cr.id).await?;
         let alignment = AlignmentEnum::from((&traits, cr.remaster));
-        update_alignment_column_value(conn, alignment.to_string(), cr.id).await?;
+        update_alignment_column_value(&mut tx, alignment.to_string(), cr.id).await?;
         let essential_data = EssentialData {
             id: cr.id,
             aon_id: cr.aon_id,
@@ -50,14 +51,16 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>) -> Result<()> {
         );
 
         for (curr_role, curr_percentage) in roles {
-            update_role_column_value(conn, curr_role, curr_percentage, essential_data.id).await?;
+            update_role_column_value(&mut tx, curr_role, curr_percentage, essential_data.id)
+                .await?;
         }
     }
+    tx.commit().await?;
     Ok(())
 }
 
 async fn update_role_column_value(
-    conn: &Pool<Sqlite>,
+    conn: &mut Transaction<'_, Sqlite>,
     role: CreatureRoleEnum,
     value: i64,
     creature_id: i64,
@@ -113,7 +116,7 @@ async fn update_role_column_value(
             )
         }
     }
-    .execute(conn)
+    .execute(&mut **conn)
     .await?;
     if x.rows_affected() < 1 {
         bail!("Error encountered with creature id: {creature_id}. Could not update role: {role}")
@@ -122,7 +125,7 @@ async fn update_role_column_value(
 }
 
 async fn update_alignment_column_value(
-    conn: &Pool<Sqlite>,
+    conn: &mut Transaction<'_, Sqlite>,
     alignment: String,
     creature_id: i64,
 ) -> Result<()> {
@@ -131,16 +134,18 @@ async fn update_alignment_column_value(
         alignment,
         creature_id
     )
-    .execute(conn)
+    .execute(&mut **conn)
     .await?;
     if x.rows_affected() < 1 {
-        bail!("Error encountered with creature id: {creature_id}. Could not update alignment: {alignment}")
+        bail!(
+            "Error encountered with creature id: {creature_id}. Could not update alignment: {alignment}"
+        )
     }
     Ok(())
 }
 
 async fn get_creatures_raw_essential_data(
-    conn: &Pool<Sqlite>,
+    conn: &mut Transaction<'_, Sqlite>,
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<RawEssentialData>> {
@@ -153,7 +158,7 @@ async fn get_creatures_raw_essential_data(
         cursor,
         page_size
     )
-    .fetch_all(conn)
+    .fetch_all(&mut **conn)
     .await?)
 }
 

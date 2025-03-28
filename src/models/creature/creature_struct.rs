@@ -104,90 +104,96 @@ impl Creature {
     fn check_creature_pass_ub_filters(&self, filters: &CreatureFieldFilters) -> bool {
         filters
             .max_hp_filter
-            .map_or(true, |max_hp| self.core_data.essential.hp <= max_hp)
+            .is_none_or(|max_hp| self.core_data.essential.hp <= max_hp)
             && filters
                 .max_level_filter
-                .map_or(true, |max_lvl| self.variant_data.level <= max_lvl)
+                .is_none_or(|max_lvl| self.variant_data.level <= max_lvl)
     }
 
     fn check_creature_pass_lb_filters(&self, filters: &CreatureFieldFilters) -> bool {
         filters
             .min_hp_filter
-            .map_or(true, |min_hp| self.core_data.essential.hp >= min_hp)
+            .is_none_or(|min_hp| self.core_data.essential.hp >= min_hp)
             && filters
                 .min_level_filter
-                .map_or(true, |min_lvl| self.variant_data.level >= min_lvl)
+                .is_none_or(|min_lvl| self.variant_data.level >= min_lvl)
     }
 
     fn check_creature_pass_equality_filters(&self, filters: &CreatureFieldFilters) -> bool {
-        filters.rarity_filter.as_ref().map_or(true, |x| {
+        filters.rarity_filter.as_ref().is_none_or(|x| {
             x.iter()
                 .any(|rarity| self.core_data.essential.rarity == *rarity)
-        }) && filters.size_filter.as_ref().map_or(true, |x| {
-            x.iter().any(|size| self.core_data.essential.size == *size)
-        }) && filters.alignment_filter.as_ref().map_or(true, |x| {
-            x.iter()
-                .any(|align| self.core_data.essential.alignment == *align)
-        }) && filters.attack_data_filter.clone().map_or(true, |attacks| {
-            attacks.iter().all(|(attack, has_attack)| {
-                has_attack.is_none()
-                    || self.core_data.derived.attack_data.get(attack) == Option::from(has_attack)
+        }) && filters
+            .size_filter
+            .as_ref()
+            .is_none_or(|x| x.iter().any(|size| self.core_data.essential.size == *size))
+            && filters.alignment_filter.as_ref().is_none_or(|x| {
+                x.iter()
+                    .any(|align| self.core_data.essential.alignment == *align)
             })
-        }) && filters.type_filter.as_ref().map_or(true, |x| {
-            x.iter()
-                .any(|cr_type| self.core_data.essential.cr_type == *cr_type)
-        }) && (filters.role_threshold.is_none()
-            || filters.role_filter.as_ref().map_or(true, |cr_role| {
-                let t = filters.role_threshold.unwrap_or(0);
-                cr_role.iter().any(|role| match role {
-                    CreatureRoleEnum::Brute => {
-                        self.core_data.derived.role_data.get("brute").unwrap_or(&0) >= &t
-                    }
-                    CreatureRoleEnum::MagicalStriker => {
-                        self.core_data
-                            .derived
-                            .role_data
-                            .get("magical_striker")
-                            .unwrap_or(&0)
-                            >= &t
-                    }
-                    CreatureRoleEnum::SkillParagon => {
-                        self.core_data
-                            .derived
-                            .role_data
-                            .get("skill_paragon")
-                            .unwrap_or(&0)
-                            >= &t
-                    }
-                    CreatureRoleEnum::Skirmisher => {
-                        self.core_data
-                            .derived
-                            .role_data
-                            .get("skirmisher")
-                            .unwrap_or(&0)
-                            >= &t
-                    }
-                    CreatureRoleEnum::Sniper => {
-                        self.core_data.derived.role_data.get("sniper").unwrap_or(&0) >= &t
-                    }
-                    CreatureRoleEnum::Soldier => {
-                        self.core_data
-                            .derived
-                            .role_data
-                            .get("soldier")
-                            .unwrap_or(&0)
-                            >= &t
-                    }
-                    CreatureRoleEnum::Spellcaster => {
-                        self.core_data
-                            .derived
-                            .role_data
-                            .get("spellcaster")
-                            .unwrap_or(&0)
-                            >= &t
-                    }
+            && filters.attack_data_filter.clone().is_none_or(|attacks| {
+                attacks.iter().all(|(attack, has_attack)| {
+                    has_attack.is_none()
+                        || self.core_data.derived.attack_data.get(attack)
+                            == Option::from(has_attack)
                 })
-            }))
+            })
+            && filters.type_filter.as_ref().is_none_or(|x| {
+                x.iter()
+                    .any(|cr_type| self.core_data.essential.cr_type == *cr_type)
+            })
+            && (filters.role_threshold.is_none()
+                || filters.role_filter.as_ref().is_none_or(|cr_role| {
+                    let t = filters.role_threshold.unwrap_or(0);
+                    cr_role.iter().any(|role| match role {
+                        CreatureRoleEnum::Brute => {
+                            self.core_data.derived.role_data.get("brute").unwrap_or(&0) >= &t
+                        }
+                        CreatureRoleEnum::MagicalStriker => {
+                            self.core_data
+                                .derived
+                                .role_data
+                                .get("magical_striker")
+                                .unwrap_or(&0)
+                                >= &t
+                        }
+                        CreatureRoleEnum::SkillParagon => {
+                            self.core_data
+                                .derived
+                                .role_data
+                                .get("skill_paragon")
+                                .unwrap_or(&0)
+                                >= &t
+                        }
+                        CreatureRoleEnum::Skirmisher => {
+                            self.core_data
+                                .derived
+                                .role_data
+                                .get("skirmisher")
+                                .unwrap_or(&0)
+                                >= &t
+                        }
+                        CreatureRoleEnum::Sniper => {
+                            self.core_data.derived.role_data.get("sniper").unwrap_or(&0) >= &t
+                        }
+                        CreatureRoleEnum::Soldier => {
+                            self.core_data
+                                .derived
+                                .role_data
+                                .get("soldier")
+                                .unwrap_or(&0)
+                                >= &t
+                        }
+                        CreatureRoleEnum::Spellcaster => {
+                            self.core_data
+                                .derived
+                                .role_data
+                                .get("spellcaster")
+                                .unwrap_or(&0)
+                                >= &t
+                        }
+                    })
+                }))
             && match filters.pathfinder_version.clone().unwrap_or_default() {
                 PathfinderVersionEnum::Legacy => !self.core_data.essential.remaster,
                 PathfinderVersionEnum::Remaster => self.core_data.essential.remaster,
@@ -196,13 +202,13 @@ impl Creature {
     }
 
     fn check_creature_pass_string_filters(&self, filters: &CreatureFieldFilters) -> bool {
-        filters.name_filter.as_ref().map_or(true, |name| {
+        filters.name_filter.as_ref().is_none_or(|name| {
             self.core_data
                 .essential
                 .name
                 .to_lowercase()
                 .contains(name.to_lowercase().as_str())
-        }) && filters.family_filter.as_ref().map_or(true, |x| {
+        }) && filters.family_filter.as_ref().is_none_or(|x| {
             x.iter().any(|fam| {
                 self.core_data
                     .essential
@@ -210,7 +216,7 @@ impl Creature {
                     .to_lowercase()
                     .contains(fam.to_lowercase().as_str())
             })
-        }) && filters.trait_whitelist_filter.as_ref().map_or(true, |x| {
+        }) && filters.trait_whitelist_filter.as_ref().is_none_or(|x| {
             x.iter().any(|filter_trait| {
                 self.core_data.traits.iter().any(|cr_trait| {
                     cr_trait

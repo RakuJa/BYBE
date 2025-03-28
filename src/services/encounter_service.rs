@@ -1,3 +1,4 @@
+use crate::AppState;
 use crate::db::bestiary_proxy::{get_creatures_passing_all_filters, order_list_by_level};
 use crate::models::bestiary_structs::BestiaryFilterQuery;
 use crate::models::bestiary_structs::CreatureTableFieldsFilter;
@@ -8,8 +9,7 @@ use crate::models::encounter_structs::{
 use crate::models::response_data::ResponseCreature;
 use crate::services::encounter_handler::encounter_calculator;
 use crate::services::encounter_handler::encounter_calculator::calculate_encounter_scaling_difficulty;
-use crate::AppState;
-use anyhow::{ensure, Result};
+use anyhow::{Result, ensure};
 use counter::Counter;
 use itertools::Itertools;
 use log::warn;

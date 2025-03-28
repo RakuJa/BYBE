@@ -1,3 +1,4 @@
+use crate::AppState;
 use crate::db::bestiary_proxy;
 use crate::models::bestiary_structs::BestiaryPaginatedRequest;
 use crate::models::creature::creature_filter_enum::CreatureFilter;
@@ -7,7 +8,6 @@ use crate::models::creature::creature_struct::Creature;
 use crate::models::response_data::{ResponseCreature, ResponseDataModifiers};
 use crate::models::routers_validator_structs::CreatureFieldFilters;
 use crate::services::url_calculator::bestiary_next_url;
-use crate::AppState;
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

@@ -1,11 +1,11 @@
+use crate::AppState;
 use crate::models::encounter_structs::{
     AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, RandomEncounterData,
 };
 use crate::services::encounter_service;
 use crate::services::encounter_service::EncounterInfoResponse;
 use crate::services::encounter_service::RandomEncounterGeneratorResponse;
-use crate::AppState;
-use actix_web::{post, web, Responder, Result};
+use actix_web::{Responder, Result, post, web};
 use utoipa::OpenApi;
 
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {

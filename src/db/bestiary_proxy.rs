@@ -1,6 +1,7 @@
 use crate::models::creature::creature_struct::Creature;
 use std::collections::HashMap;
 
+use crate::AppState;
 use crate::db::data_providers::creature_fetcher::fetch_traits_associated_with_creatures;
 use crate::db::data_providers::{creature_fetcher, generic_fetcher};
 use crate::models::bestiary_structs::{
@@ -15,7 +16,6 @@ use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::response_data::ResponseDataModifiers;
 use crate::models::routers_validator_structs::{CreatureFieldFilters, OrderEnum};
-use crate::AppState;
 use anyhow::Result;
 use cached::proc_macro::once;
 use itertools::Itertools;

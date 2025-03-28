@@ -27,6 +27,7 @@ use crate::models::creature::items::spellcaster_entry::SpellcasterEntry;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::weapon_struct::Weapon;
 
+use crate::AppState;
 use crate::models::bestiary_structs::CreatureSortEnum;
 use crate::models::bestiary_structs::{BestiaryPaginatedRequest, BestiarySortData};
 use crate::models::db::sense::Sense;
@@ -34,9 +35,8 @@ use crate::models::routers_validator_structs::{CreatureFieldFilters, PaginatedRe
 use crate::services::bestiary_service;
 use crate::services::bestiary_service::BestiaryResponse;
 use crate::services::sanitizer::sanitize_id;
-use crate::AppState;
 use actix_web::web::Query;
-use actix_web::{get, post, web, Responder};
+use actix_web::{Responder, get, post, web};
 use utoipa::OpenApi;
 
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {

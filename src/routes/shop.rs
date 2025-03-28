@@ -1,3 +1,4 @@
+use crate::AppState;
 use crate::models::item::armor_struct::ArmorData;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
@@ -15,9 +16,8 @@ use crate::models::shop_structs::{RandomShopData, ShopSortData};
 use crate::services::sanitizer::sanitize_id;
 use crate::services::shop_service;
 use crate::services::shop_service::ShopListingResponse;
-use crate::AppState;
 use actix_web::web::Query;
-use actix_web::{get, post, web, Responder};
+use actix_web::{Responder, get, post, web};
 use utoipa::OpenApi;
 
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {

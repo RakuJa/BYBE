@@ -1,28 +1,32 @@
----
 repos:
-  - repo: https://github.com/crate-ci/typos
-    rev: v1.16.2
+-   repo: https://github.com/crate-ci/typos
+    rev: varcon-core-v5.0.2
     hooks:
-      - id: typos
-  - repo: https://github.com/doublify/pre-commit-rust
+    -   id: typos
+-   repo: https://github.com/doublify/pre-commit-rust
     rev: v1.0
     hooks:
-      - id: fmt
-      - id: cargo-check
-      - id: clippy
-  - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    -   id: fmt
+    -   id: cargo-check
+    -   id: clippy
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
     hooks:
-      - id: trailing-whitespace
-      - id: check-yaml
-      - id: check-toml
-      - id: end-of-file-fixer
-      - id: mixed-line-ending
-  - repo: https://github.com/iamthefij/docker-pre-commit
+    -   id: trailing-whitespace
+    -   id: check-yaml
+    -   id: check-toml
+    -   id: end-of-file-fixer
+    -   id: mixed-line-ending
+-   repo: https://github.com/iamthefij/docker-pre-commit
     rev: v3.0.1
     hooks:
-      - id: docker-compose-check
-  - repo: https://github.com/est31/cargo-udeps
-    rev: v0.1.47
+    -   id: docker-compose-check
+#-   repo: https://github.com/est31/cargo-udeps
+#    rev: v0.1.55
+#    hooks:
+#    -   id: udeps
+-   repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
+    rev: v0.6.1
     hooks:
-      - id: udeps
+    -   id: pre-commit-update
+        args: [--all-versions]
