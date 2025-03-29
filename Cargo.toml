@@ -1,11 +1,11 @@
 [package]
 name = "bybe"
-version = "2.5.0"
+version = "2.6.0"
 authors = ["RakuJa"]
 
 # Compiler info
 edition = "2024"
-rust-version = "1.85.0"
+rust-version = "1.85.1"
 
 description = "Beyond Your Bestiary Explorer (BYBE) is a web service that provides tools to help Pathfinder 2e Game Masters."
 readme = "README.md"
