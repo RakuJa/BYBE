@@ -120,17 +120,18 @@ impl Creature {
     }
 
     fn check_creature_pass_equality_filters(&self, filters: &CreatureFieldFilters) -> bool {
-        filters.rarity_filter.as_ref().is_none_or(|x| {
-            x.iter()
-                .any(|rarity| self.core_data.essential.rarity == *rarity)
-        }) && filters
-            .size_filter
+        filters
+            .rarity_filter
             .as_ref()
-            .is_none_or(|x| x.iter().any(|size| self.core_data.essential.size == *size))
-            && filters.alignment_filter.as_ref().is_none_or(|x| {
-                x.iter()
-                    .any(|align| self.core_data.essential.alignment == *align)
-            })
+            .is_none_or(|x| x.contains(&self.core_data.essential.rarity))
+            && filters
+                .size_filter
+                .as_ref()
+                .is_none_or(|x| x.contains(&self.core_data.essential.size))
+            && filters
+                .alignment_filter
+                .as_ref()
+                .is_none_or(|x| x.contains(&self.core_data.essential.alignment))
             && filters.attack_data_filter.clone().is_none_or(|attacks| {
                 attacks.iter().all(|(attack, has_attack)| {
                     has_attack.is_none()
@@ -138,10 +139,10 @@ impl Creature {
                             == Option::from(has_attack)
                 })
             })
-            && filters.type_filter.as_ref().is_none_or(|x| {
-                x.iter()
-                    .any(|cr_type| self.core_data.essential.cr_type == *cr_type)
-            })
+            && filters
+                .type_filter
+                .as_ref()
+                .is_none_or(|x| x.contains(&self.core_data.essential.cr_type))
             && (filters.role_threshold.is_none()
                 || filters.role_filter.as_ref().is_none_or(|cr_role| {
                     let t = filters.role_threshold.unwrap_or(0);

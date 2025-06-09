@@ -26,7 +26,7 @@ repos:
 #    hooks:
 #    -   id: udeps
 -   repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
-    rev: v0.6.1
+    rev: v0.7.0
     hooks:
     -   id: pre-commit-update
         args: [--all-versions]

@@ -44,7 +44,7 @@ pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String
         "SELECT * FROM ITEM_TABLE WHERE id IN ( {equipment_query} ) OR id IN ({consumable_query} )
         OR id IN ({weapon_query} ) OR id IN ({armor_query} ) OR id IN ({shield_query} )"
     );
-    debug!("{}", query);
+    debug!("{query}");
     query
 }
 pub fn prepare_filtered_get_creatures_core(bestiary_filter_query: &BestiaryFilterQuery) -> String {
@@ -75,7 +75,7 @@ pub fn prepare_filtered_get_creatures_core(bestiary_filter_query: &BestiaryFilte
     SELECT * FROM CreatureRankedByLevel WHERE rn=1
     "
     );
-    debug!("{}", query);
+    debug!("{query}");
     query
 }
 

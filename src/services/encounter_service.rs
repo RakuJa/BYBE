@@ -59,10 +59,7 @@ pub async fn generate_random_encounter(
     let party_levels = enc_data.party_levels.clone();
     let encounter_data = calculate_random_encounter(app_state, enc_data, party_levels).await;
     encounter_data.unwrap_or_else(|error| {
-        warn!(
-            "Could not generate a random encounter, reason: {}",
-            error.to_string()
-        );
+        warn!("Could not generate a random encounter, reason: {error}");
         RandomEncounterGeneratorResponse {
             results: None,
             count: 0,

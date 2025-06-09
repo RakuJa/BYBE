@@ -5,12 +5,12 @@ use crate::models::creature::creature_component::creature_spellcaster::CreatureS
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::scales_struct::creature_scales::CreatureScales;
 use num_traits::float::FloatConst;
-use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::collections::BTreeMap;
 use std::fmt;
 use std::str::FromStr;
+use std::sync::LazyLock;
 use strum::{EnumIter, IntoEnumIterator};
 use utoipa::ToSchema;
 
@@ -33,7 +33,7 @@ pub enum CreatureRoleEnum {
 
 fn get_dmg_from_regex(raw_str: &str) -> Option<i64> {
     // It will only initialize it once.
-    static RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\((\d+)\)").unwrap());
+    static RE: LazyLock<Regex> = LazyLock::new(|| Regex::new(r"\((\d+)\)").unwrap());
     RE.captures(raw_str)?.get(1)?.as_str().parse::<i64>().ok()
 }
 

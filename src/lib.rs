@@ -135,7 +135,7 @@ pub async fn start(
     log::info!(
         "starting HTTP server at http://{}:{}",
         service_ip.as_str(),
-        service_port.to_string()
+        service_port
     );
 
     // Swagger initialization

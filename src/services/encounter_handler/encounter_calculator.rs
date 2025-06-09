@@ -51,7 +51,7 @@ pub fn calculate_encounter_exp(party_levels: &[i64], enemy_levels: &[i64], is_pw
     // Given a party and enemy party, it calculates the exp that the
     // party will get from defeating the enemy
     let party_avg = party_levels.iter().sum::<i64>() as f64 / party_levels.len() as f64;
-    let exp_sum = enemy_levels
+    enemy_levels
         .iter()
         .map(|&curr_enemy_lvl| {
             let enemy_lvl = curr_enemy_lvl as f64;
@@ -66,8 +66,7 @@ pub fn calculate_encounter_exp(party_levels: &[i64], enemy_levels: &[i64], is_pw
                 &calculate_lvl_and_exp_map(is_pwl_on),
             )
         })
-        .sum();
-    exp_sum
+        .sum()
 }
 
 pub fn calculate_encounter_scaling_difficulty(
