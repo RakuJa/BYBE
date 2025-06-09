@@ -142,7 +142,7 @@ impl Dice {
         let m = f64::from(self.dice_size);
         let n = f64::from(self.n_of_dices);
         let b = bonus_dmg;
-        let avg: f64 = ((m + 1.) / 2.).mul_add(n, b);
+        let avg: f64 = f64::midpoint(m, 1.).mul_add(n, b);
         avg.floor() as i64
     }
 

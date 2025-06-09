@@ -137,15 +137,15 @@ impl Item {
         filters
             .rarity_filter
             .as_ref()
-            .is_none_or(|x| x.iter().any(|rarity| self.rarity == *rarity))
+            .is_none_or(|x| x.contains(&self.rarity))
             && filters
                 .size_filter
                 .as_ref()
-                .is_none_or(|x| x.iter().any(|size| self.size == *size))
+                .is_none_or(|x| x.contains(&self.size))
             && filters
                 .type_filter
                 .as_ref()
-                .is_none_or(|x| x.iter().any(|t_filt| self.item_type == *t_filt))
+                .is_none_or(|x| x.contains(&self.item_type))
             && match filters.pathfinder_version.clone().unwrap_or_default() {
                 PathfinderVersionEnum::Legacy => !self.remaster,
                 PathfinderVersionEnum::Remaster => self.remaster,

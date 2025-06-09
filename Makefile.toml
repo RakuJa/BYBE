@@ -5,7 +5,7 @@ args = ["clean"]
 [tasks.prebuild]
 command = "python3"
 # Removing --copy_db is considered a breaking change for the app
-args = ["setup.py", "--copy_db", "--overwrite", "--db_version", "2.6.0"]
+args = ["setup.py", "--copy_db", "--overwrite", "--db_version", "2.6.1"]
 
 [tasks.post_build]
 command = "python3"
