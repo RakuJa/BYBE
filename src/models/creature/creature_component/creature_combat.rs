@@ -1,4 +1,5 @@
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::db::resistance::Resistance;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::shield_struct::Shield;
 use crate::models::item::weapon_struct::{DamageData, Weapon};
@@ -26,8 +27,7 @@ pub struct CreatureCombatData {
     pub weapons: Vec<Weapon>,
     pub armors: Vec<Armor>,
     pub shields: Vec<Shield>,
-    #[schema(example = json!({"fire": 5, "cold": 5}))]
-    pub resistances: BTreeMap<String, i16>,
+    pub resistances: Vec<Resistance>,
     #[schema(example = "cold")]
     pub immunities: Vec<String>,
     #[schema(example = json!({"fire": 5, "cold": 5}))]
