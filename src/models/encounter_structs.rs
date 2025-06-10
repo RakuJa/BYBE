@@ -4,6 +4,8 @@ use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
+use nanorand::Rng;
+use nanorand::WyRand;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)] // Used in schema
 use serde_json::json;
@@ -97,7 +99,7 @@ impl From<EncounterChallengeEnum> for String {
 
 impl EncounterChallengeEnum {
     pub fn rand() -> Self {
-        match fastrand::usize(0..Self::COUNT) {
+        match WyRand::new().generate_range(0..Self::COUNT) {
             0 => Self::Trivial,
             1 => Self::Low,
             2 => Self::Moderate,
