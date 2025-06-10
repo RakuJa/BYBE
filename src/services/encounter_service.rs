@@ -13,6 +13,7 @@ use anyhow::{Result, ensure};
 use counter::Counter;
 use itertools::Itertools;
 use log::warn;
+use nanorand::{Rng, WyRand};
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)] // it's used for Schema
 use serde_json::json;
@@ -178,7 +179,7 @@ fn choose_random_creatures_combination(
         "No valid level combinations to randomly choose from"
     );
     // do not remove ensure. the random picker will panic if tmp is empty
-    let random_combo = tmp[fastrand::usize(..tmp.len())];
+    let random_combo = tmp[WyRand::new().generate_range(..tmp.len())];
     // Now, having chosen the combo, we may have only x filtered creature with level y but
     // x+1 instances of level y. We need to create a vector with duplicates to fill it up to
     // the number of instances of the required level
@@ -188,16 +189,16 @@ fn choose_random_creatures_combination(
     for (level, required_number_of_creatures_with_level) in creature_count {
         // Fill if there are not enough creatures
         let curr_lvl_values = creatures_ordered_by_level.get(level).unwrap();
-        let filled_vec_of_creatures = fill_vector_if_it_does_not_contain_enough_elements(
+        let mut filled_vec_of_creatures = fill_vector_if_it_does_not_contain_enough_elements(
             curr_lvl_values,
             required_number_of_creatures_with_level,
         )?;
         // Now, we choose. This is in case that there are more creatures
-
-        for curr_chosen_creature in fastrand::choose_multiple(
-            filled_vec_of_creatures.iter(),
-            required_number_of_creatures_with_level,
-        ) {
+        WyRand::new().shuffle(&mut filled_vec_of_creatures);
+        for curr_chosen_creature in filled_vec_of_creatures
+            .iter()
+            .take(required_number_of_creatures_with_level)
+        {
             result_vec.push(curr_chosen_creature.clone());
         }
     }
@@ -221,7 +222,7 @@ fn fill_vector_if_it_does_not_contain_enough_elements(
             // example [A,B] => [A,B,A] => [A,B,A,A] etc
             lvl_vec.push(
                 lvl_vec
-                    .get(fastrand::usize(..lvl_vec.len()))
+                    .get(WyRand::new().generate_range(..lvl_vec.len()))
                     .unwrap()
                     .clone(),
             );

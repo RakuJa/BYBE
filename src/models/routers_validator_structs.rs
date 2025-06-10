@@ -5,6 +5,7 @@ use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::pf_version_enum::PathfinderVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
+use nanorand::{Rng, WyRand};
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)]
 use serde_json::json;
@@ -124,7 +125,7 @@ impl Dice {
             // gen_range panics if n<2 (1..1), panic!
             // so we directly return 1 if that's the case
             roll_result += if n_of_dices > 1 {
-                fastrand::u16(1..=n_of_dices)
+                WyRand::new().generate_range(1..=n_of_dices)
             } else {
                 1
             }
