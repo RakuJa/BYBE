@@ -524,7 +524,7 @@ async fn update_creatures_core_with_traits(
 }
 
 pub async fn fetch_traits_associated_with_creatures(conn: &Pool<Sqlite>) -> Result<Vec<String>> {
-    let x: Vec<String> = sqlx::query_scalar(
+    Ok(sqlx::query_scalar(
         "
         SELECT
             tt.name
@@ -532,11 +532,11 @@ pub async fn fetch_traits_associated_with_creatures(conn: &Pool<Sqlite>) -> Resu
             LEFT JOIN TRAIT_TABLE tt ON tcat.trait_id = tt.name GROUP BY tt.name",
     )
     .fetch_all(conn)
-    .await?;
-    Ok(x.iter()
-        .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.to_uppercase()))
-        .cloned()
-        .collect())
+    .await?
+    .iter()
+    .filter(|x: &&String| !ALIGNMENT_TRAITS.contains(&&*x.to_uppercase()))
+    .cloned()
+    .collect())
 }
 
 pub async fn fetch_creature_by_id(
