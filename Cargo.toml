@@ -1,6 +1,6 @@
 [package]
 name = "bybe"
-version = "2.6.1"
+version = "2.7.0"
 authors = ["RakuJa"]
 
 # Compiler info
@@ -72,6 +72,7 @@ dotenvy = "0.15.7"
 env_logger = "0.11.8"
 log = "0.4.27"
 once = "0.3.4"
+futures = "0.3.31"
 
 [build-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "rt"] }
