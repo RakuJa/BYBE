@@ -1,5 +1,5 @@
 use crate::db::data_providers::generic_fetcher::{
-    MyString, fetch_armor_runes, fetch_armor_traits, fetch_item_traits, fetch_shield_traits,
+    fetch_armor_runes, fetch_armor_traits, fetch_item_traits, fetch_shield_traits,
     fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
 };
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_creatures_core;
@@ -20,11 +20,11 @@ use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::creature::items::spell::Spell;
 use crate::models::creature::items::spellcaster_entry::{SpellcasterData, SpellcasterEntry};
-use crate::models::db::raw_immunity::RawImmunity;
 use crate::models::db::raw_language::RawLanguage;
-use crate::models::db::raw_resistance::RawResistance;
 use crate::models::db::raw_speed::RawSpeed;
 use crate::models::db::raw_weakness::RawWeakness;
+use crate::models::db::resistance::CoreResistanceData;
+use crate::models::db::resistance::Resistance;
 use crate::models::db::sense::Sense;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::item_struct::Item;
@@ -45,15 +45,12 @@ use crate::models::scales_struct::spell_dc_and_atk_scales::SpellDcAndAtkScales;
 use crate::models::scales_struct::strike_bonus_scales::StrikeBonusScales;
 use crate::models::scales_struct::strike_dmg_scales::StrikeDmgScales;
 use anyhow::Result;
+use futures::future::join_all;
 use sqlx::{Pool, Sqlite};
 
-async fn fetch_creature_immunities(
-    conn: &Pool<Sqlite>,
-    creature_id: i64,
-) -> Result<Vec<RawImmunity>> {
-    Ok(sqlx::query_as!(
-        RawImmunity,
-        "SELECT * FROM IMMUNITY_TABLE INTERSECT SELECT immunity_id FROM IMMUNITY_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
+async fn fetch_creature_immunities(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<String>> {
+    Ok(sqlx::query_scalar!(
+        "SELECT name FROM IMMUNITY_TABLE INTERSECT SELECT immunity_id FROM IMMUNITY_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
         creature_id
     ).fetch_all(conn).await?)
 }
@@ -72,14 +69,56 @@ async fn fetch_creature_languages(
 async fn fetch_creature_resistances(
     conn: &Pool<Sqlite>,
     creature_id: i64,
-) -> Result<Vec<RawResistance>> {
+) -> Result<Vec<Resistance>> {
+    Ok(join_all(
+        fetch_creature_resistances_core(conn, creature_id)
+            .await?
+            .iter()
+            .map(async |x| {
+                let (double_vs, exception_vs) = fetch_creature_resistances_vs(conn, x.id)
+                    .await
+                    .unwrap_or_default();
+                Resistance {
+                    core: x.clone(),
+                    double_vs,
+                    exception_vs,
+                }
+            }),
+    )
+    .await)
+}
+
+async fn fetch_creature_resistances_core(
+    conn: &Pool<Sqlite>,
+    creature_id: i64,
+) -> Result<Vec<CoreResistanceData>> {
     Ok(sqlx::query_as!(
-        RawResistance,
-        "SELECT name, value FROM RESISTANCE_TABLE WHERE creature_id == ($1)",
+        CoreResistanceData,
+        "SELECT id, name, value FROM RESISTANCE_TABLE WHERE creature_id == ($1)",
         creature_id
     )
     .fetch_all(conn)
     .await?)
+}
+
+async fn fetch_creature_resistances_vs(
+    conn: &Pool<Sqlite>,
+    res_id: i64,
+) -> Result<(Vec<String>, Vec<String>)> {
+    Ok((
+        sqlx::query_scalar!(
+            "SELECT vs_name FROM RESISTANCE_DOUBLE_VS_TABLE WHERE resistance_id = ($1)",
+            res_id
+        )
+        .fetch_all(conn)
+        .await?,
+        sqlx::query_scalar!(
+            "SELECT vs_name FROM RESISTANCE_EXCEPTION_VS_TABLE WHERE resistance_id = ($1)",
+            res_id
+        )
+        .fetch_all(conn)
+        .await?,
+    ))
 }
 
 async fn fetch_creature_senses(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Sense>> {
@@ -209,11 +248,9 @@ async fn fetch_creature_perception_detail(
 }
 
 pub async fn fetch_creature_traits(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<String>> {
-    Ok(sqlx::query_as!(
-        MyString,
-        "SELECT name AS my_str FROM TRAIT_TABLE INTERSECT SELECT trait_id FROM TRAIT_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)",
-        creature_id
-    ).fetch_all(conn).await?.into_iter().map(|x| x.my_str).collect())
+    Ok(sqlx::query_scalar(
+        "SELECT name FROM TRAIT_TABLE INTERSECT SELECT trait_id FROM TRAIT_CREATURE_ASSOCIATION_TABLE WHERE creature_id == ($1)"
+    ).bind(creature_id).fetch_all(conn).await?)
 }
 
 async fn fetch_creature_weapons(conn: &Pool<Sqlite>, creature_id: i64) -> Result<Vec<Weapon>> {
@@ -487,19 +524,19 @@ async fn update_creatures_core_with_traits(
 }
 
 pub async fn fetch_traits_associated_with_creatures(conn: &Pool<Sqlite>) -> Result<Vec<String>> {
-    let x: Vec<MyString> = sqlx::query_as(
+    Ok(sqlx::query_scalar(
         "
         SELECT
-            tt.name AS my_str
+            tt.name
         FROM TRAIT_CREATURE_ASSOCIATION_TABLE tcat
             LEFT JOIN TRAIT_TABLE tt ON tcat.trait_id = tt.name GROUP BY tt.name",
     )
     .fetch_all(conn)
-    .await?;
-    Ok(x.iter()
-        .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.my_str.as_str().to_uppercase()))
-        .map(|x| x.my_str.clone())
-        .collect())
+    .await?
+    .iter()
+    .filter(|x: &&String| !ALIGNMENT_TRAITS.contains(&&*x.to_uppercase()))
+    .cloned()
+    .collect())
 }
 
 pub async fn fetch_creature_by_id(
@@ -645,11 +682,8 @@ pub async fn fetch_creature_combat_data(
         weapons,
         armors,
         shields,
-        resistances: resistances
-            .iter()
-            .map(|x| (x.name.clone(), i16::try_from(x.value).unwrap_or(0)))
-            .collect(),
-        immunities: immunities.iter().map(|x| x.name.clone()).collect(),
+        resistances,
+        immunities,
         weaknesses: weaknesses
             .iter()
             .map(|x| (x.name.clone(), i16::try_from(x.value).unwrap_or(0)))
