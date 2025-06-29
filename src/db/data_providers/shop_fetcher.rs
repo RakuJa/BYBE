@@ -116,11 +116,10 @@ async fn fetch_shield_data_by_item_id(conn: &Pool<Sqlite>, item_id: i64) -> Resu
 pub async fn fetch_items(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> Result<Vec<Item>> {
     let items: Vec<Item> = sqlx::query_as(
         "
-        SELECT * FROM ITEM_TABLE it
-        LEFT OUTER JOIN ITEM_CREATURE_ASSOCIATION_TABLE icat
-        ON it.id = icat.item_id WHERE icat.item_id IS NULL
-        AND UPPER(item_type) == 'EQUIPMENT' OR UPPER(item_type) == 'CONSUMABLE'
-        GROUP BY it.id
+        SELECT * FROM ITEM_TABLE
+        WHERE is_derived = False
+            AND UPPER(item_type) == 'EQUIPMENT' OR UPPER(item_type) == 'CONSUMABLE'
+        GROUP BY id
         ORDER BY name LIMIT ?,?",
     )
     .bind(cursor)
@@ -138,13 +137,11 @@ pub async fn fetch_weapons(
     let x: Vec<Weapon> = sqlx::query_as(
         "
         SELECT wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
-        wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
-        it.*
+            wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
+            it.*
         FROM WEAPON_TABLE wt
-        LEFT OUTER JOIN WEAPON_CREATURE_ASSOCIATION_TABLE wcat
-        ON wt.id = wcat.weapon_id
         LEFT JOIN ITEM_TABLE it ON wt.base_item_id = it.id
-        WHERE wcat.weapon_id IS NULL
+        WHERE it.is_derived = False
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     ",
@@ -167,12 +164,10 @@ pub async fn fetch_armors(conn: &Pool<Sqlite>, cursor: u32, page_size: i16) -> R
     let x: Vec<Armor> = sqlx::query_as(
         "
         SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
-        at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id, it.*
+            at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id, it.*
         FROM ARMOR_TABLE at
-        LEFT OUTER JOIN ARMOR_CREATURE_ASSOCIATION_TABLE acat
-        ON at.id = acat.armor_id
         LEFT JOIN ITEM_TABLE it ON at.base_item_id = it.id
-        WHERE acat.armor_id IS NULL
+        WHERE it.is_derived = False
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     ",
@@ -199,10 +194,8 @@ pub async fn fetch_shields(
         "
         SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty, it.*
         FROM SHIELD_TABLE st
-        LEFT OUTER JOIN SHIELD_CREATURE_ASSOCIATION_TABLE scat
-        ON st.id = scat.shield_id
         LEFT JOIN ITEM_TABLE it ON st.base_item_id = it.id
-        WHERE scat.shield_id IS NULL
+        WHERE it.is_derived = False
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     ",
