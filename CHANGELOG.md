@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.7.0] - 2025-06-30
+
+### Feature
+
+- Handle complex resistances (#98)
+- Change rand library (#99)
+
+### Fixed
+
+- Shop items shadowed by creature items 
+
 ## [2.6.0] - 2025-03-29
 
 ### Fixed
@@ -160,6 +171,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set filtering was doing union operation instead of intersection
 - Filter correctly vectors containing integer with value < -1
 
+[2.7.0]: https://github.com/RakuJa/BYBE/compare/v2.6.1..v2.7.0
 [2.6.0]: https://github.com/RakuJa/BYBE/compare/v2.5.0..v2.6.0
 [2.5.0]: https://github.com/RakuJa/BYBE/compare/v2.4.0..v2.5.0
 [2.4.0]: https://github.com/RakuJa/BYBE/compare/v2.3.0..v2.4.0
