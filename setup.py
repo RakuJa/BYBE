@@ -50,7 +50,7 @@ def main():
     overwrite: bool = x[2]
     print(f"Using DB version: {db_version}")
     remote_url: str = f"https://github.com/RakuJa/BYBE-DB/releases/download/v{db_version}/database.db"
-    database_file: str = "database.db"
+    database_file: str = "data/database.db"
     db_path = pathlib.Path(database_file)
     if overwrite:
         db_path.unlink(missing_ok=True)

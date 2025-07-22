@@ -3,6 +3,7 @@ pub mod creature;
 pub mod db;
 pub mod encounter_structs;
 pub mod item;
+pub mod npc;
 pub mod ordered_float_to_schema;
 pub mod pf_version_enum;
 pub mod response_data;

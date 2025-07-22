@@ -1,4 +1,3 @@
-use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_core::CreatureCoreData;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
 use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
@@ -8,6 +7,13 @@ use crate::models::item::armor_struct::ArmorData;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::ShieldData;
 use crate::models::item::weapon_struct::WeaponData;
+use crate::models::npc::ancestry_enum::Ancestry;
+use crate::models::npc::class_enum::Class;
+use crate::models::npc::culture_enum::Culture;
+use crate::models::npc::job_enum::Job;
+use crate::models::{
+    creature::creature_component::creature_combat::CreatureCombatData, npc::gender_enum::Gender,
+};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
@@ -58,4 +64,15 @@ impl From<Item> for ResponseItem {
             shield_data: None,
         }
     }
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct ResponseNpc {
+    pub name: String,
+    pub nickname: Option<String>,
+    pub gender: Gender,
+    pub ancestry: Ancestry,
+    pub job: Job,
+    pub culture: Culture,
+    pub class: Class,
 }
