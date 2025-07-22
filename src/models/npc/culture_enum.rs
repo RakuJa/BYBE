@@ -43,7 +43,7 @@ impl RandomEnum for Culture {
 impl Culture {
     pub const fn get_default_order_size(&self) -> usize {
         match self {
-            Self::Ulfen | Self::Taldan => 3,
+            Self::Ulfen | Self::Taldan | Self::Tian => 3,
             _ => 2,
         }
     }
@@ -54,7 +54,7 @@ impl Culture {
             Self::Garund | Self::Kelesh | Self::Ulfen => 9,
             Self::Taldan => 12,
             Self::Tian => 20,
-            Self::Mwangi => 10,
+            Self::Mwangi => 15,
         }
     }
 }
