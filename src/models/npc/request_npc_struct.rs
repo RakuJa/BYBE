@@ -32,6 +32,10 @@ pub enum NameOrigin {
 }
 
 impl RandomEnum for NameOrigin {
+    fn from_repr(value: usize) -> Option<Self> {
+        Self::from_repr(value)
+    }
+
     fn random() -> Self {
         match Self::from_repr(WyRand::new().generate_range(0..Self::COUNT)).unwrap_or_default() {
             Self::FromAncestry(_) => Self::FromAncestry(Some(Ancestry::random())),

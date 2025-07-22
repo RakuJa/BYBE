@@ -1,5 +1,5 @@
-use nanorand::Rng;
-use nanorand::WyRand;
+use crate::models::npc::gender_enum::Gender;
+use crate::traits::random_enum::RandomEnum;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 use strum::EnumCount;
@@ -7,9 +7,6 @@ use strum::EnumIter;
 use strum::FromRepr;
 use strum::IntoEnumIterator;
 use utoipa::ToSchema;
-
-use crate::models::npc::gender_enum::Gender;
-use crate::traits::random_enum::RandomEnum;
 
 #[derive(
     Serialize,
@@ -84,23 +81,11 @@ pub enum Ancestry {
 }
 
 impl RandomEnum for Ancestry {
-    fn random() -> Self {
-        Self::from_repr(WyRand::new().generate_range(0..Self::COUNT)).unwrap_or_default()
+    fn from_repr(value: usize) -> Option<Self> {
+        Self::from_repr(value)
     }
 }
-
 impl Ancestry {
-    pub fn filtered_random(filter: &[Self]) -> Self {
-        if filter.is_empty() {
-            Self::random()
-        } else {
-            filter
-                .get(WyRand::new().generate_range(0..filter.len()))
-                .cloned()
-                .unwrap_or_default()
-        }
-    }
-
     pub fn get_valid_genders(&self) -> Vec<Gender> {
         match self {
             Self::Leshy => vec![Gender::NonBinary],

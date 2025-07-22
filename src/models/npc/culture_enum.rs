@@ -1,5 +1,4 @@
-use nanorand::Rng;
-use nanorand::WyRand;
+use crate::traits::random_enum::RandomEnum;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 use strum::EnumCount;
@@ -35,22 +34,13 @@ pub enum Culture {
     Varisian,
 }
 
+impl RandomEnum for Culture {
+    fn from_repr(value: usize) -> Option<Self> {
+        Self::from_repr(value)
+    }
+}
+
 impl Culture {
-    pub fn random() -> Self {
-        Self::from_repr(WyRand::new().generate_range(0..Self::COUNT)).unwrap_or_default()
-    }
-
-    pub fn filtered_random(filter: &[Self]) -> Self {
-        if filter.is_empty() {
-            Self::random()
-        } else {
-            filter
-                .get(WyRand::new().generate_range(0..filter.len()))
-                .cloned()
-                .unwrap_or_default()
-        }
-    }
-
     pub const fn get_default_order_size(&self) -> usize {
         match self {
             Self::Ulfen | Self::Taldan => 3,
