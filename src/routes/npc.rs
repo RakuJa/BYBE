@@ -22,6 +22,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
             .service(get_random_job)
             .service(get_random_names)
             .service(get_random_nickname)
+            .service(get_random_level)
             .service(get_npc_classes_list)
             .service(get_npc_genders_list)
             .service(get_npc_jobs_list)
@@ -42,6 +43,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
             get_random_job,
             get_random_names,
             get_random_nickname,
+            get_random_level,
             get_npc_classes_list,
             get_npc_genders_list,
             get_npc_jobs_list,

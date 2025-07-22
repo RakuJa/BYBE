@@ -3,6 +3,7 @@ use crate::models::npc::class_enum::Class;
 use crate::models::npc::culture_enum::Culture;
 use crate::models::npc::gender_enum::Gender;
 use crate::models::npc::job_enum::Job;
+use crate::models::routers_validator_structs::LevelData;
 use crate::traits::random_enum::RandomEnum;
 use nanorand::{Rng, WyRand};
 use serde::Deserialize;
@@ -75,6 +76,7 @@ pub struct RandomNpcData {
     pub name_origin_filter: NameOriginFilter,
     pub gender_filter: Option<Vec<Gender>>,
     pub class_filter: Option<Vec<Class>>,
+    pub level_filter: Option<LevelData>,
     pub job_filter: Option<Vec<Job>>,
     pub name_max_length: Option<usize>,
     pub generate_nickname: Option<bool>,
@@ -111,23 +113,26 @@ impl Default for RandomNameData {
 
 impl RandomNpcData {
     pub fn is_valid(&self) -> bool {
-        match &self.name_origin_filter {
-            NameOriginFilter::FromAncestry(ancestry_filter) => {
-                if let Some(g_filter) = self.gender_filter.clone()
-                    && let Some(a_list) = ancestry_filter.clone()
-                {
-                    // we check for ancestries/genders conflicts
-                    let a_genders: HashSet<_> = a_list
-                        .iter()
-                        .flat_map(Ancestry::get_valid_genders)
-                        .collect();
-                    a_genders.iter().any(|a| g_filter.contains(a))
-                } else {
-                    true
+        self.level_filter
+            .as_ref()
+            .is_none_or(LevelData::is_data_valid)
+            && match &self.name_origin_filter {
+                NameOriginFilter::FromAncestry(ancestry_filter) => {
+                    if let Some(g_filter) = self.gender_filter.clone()
+                        && let Some(a_list) = ancestry_filter.clone()
+                    {
+                        // we check for ancestries/genders conflicts
+                        let a_genders: HashSet<_> = a_list
+                            .iter()
+                            .flat_map(Ancestry::get_valid_genders)
+                            .collect();
+                        a_genders.iter().any(|a| g_filter.contains(a))
+                    } else {
+                        true
+                    }
                 }
+                NameOriginFilter::FromCulture(_) => true,
             }
-            NameOriginFilter::FromCulture(_) => true,
-        }
     }
 }
 

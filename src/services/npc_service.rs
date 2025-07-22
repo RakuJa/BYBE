@@ -68,7 +68,7 @@ pub fn generate_random_npc(npc_req_data: RandomNpcData) -> anyhow::Result<Respon
         .unwrap()
         .clone(),
         gender,
-        level: get_random_level(None),
+        level: get_random_level(npc_req_data.level_filter),
         ancestry,
         culture,
         nickname: if npc_req_data.generate_nickname.unwrap_or(false) {

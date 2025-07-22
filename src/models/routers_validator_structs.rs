@@ -169,7 +169,7 @@ impl Dice {
     }
 }
 
-#[derive(Serialize, Deserialize, IntoParams, ToSchema, Default)]
+#[derive(Serialize, Deserialize, IntoParams, ToSchema, Default, Clone, Debug)]
 pub struct LevelData {
     pub min_level: Option<i64>,
     pub max_level: Option<i64>,
