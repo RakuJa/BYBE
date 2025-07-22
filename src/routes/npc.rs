@@ -9,7 +9,6 @@ use crate::models::routers_validator_structs::LevelData;
 use crate::services::npc_service;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{Responder, get, post, web};
-use nanorand::{Rng, WyRand};
 use utoipa::OpenApi;
 
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
@@ -138,19 +137,14 @@ pub async fn get_random_class(
 pub async fn get_random_level(
     body: Option<web::Json<LevelData>>,
 ) -> actix_web::Result<impl Responder> {
-    let (min, max) = if let Some(json) = body {
-        let body = json.0;
-        if body.is_data_valid() {
-            (body.min_level.unwrap_or(-1), body.max_level.unwrap_or(26))
-        } else {
+    if let Some(json) = &body {
+        if !json.0.is_data_valid() {
             return Err(ErrorBadRequest(
                 "Given parameters are not valid. Check for conflicts e.g. min lvl > max lvl",
             ));
         }
-    } else {
-        (-1, 26)
-    };
-    Ok(web::Json(WyRand::new().generate_range(min..max)))
+    }
+    Ok(web::Json(npc_service::get_random_level(body.map(|x| x.0))))
 }
 
 #[utoipa::path(

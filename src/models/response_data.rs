@@ -73,6 +73,7 @@ pub struct ResponseNpc {
     pub gender: Gender,
     pub ancestry: Ancestry,
     pub job: Job,
+    pub level: i64,
     pub culture: Culture,
     pub class: Class,
 }

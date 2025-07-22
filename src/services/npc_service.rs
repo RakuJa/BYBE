@@ -19,6 +19,7 @@ use crate::models::npc::gender_enum::Gender;
 use crate::models::npc::job_enum::Job;
 use crate::models::npc::request_npc_struct::NameOrigin;
 use crate::models::response_data::ResponseNpc;
+use crate::models::routers_validator_structs::LevelData;
 use crate::traits::random_enum::RandomEnum;
 use cached::proc_macro::cached;
 use cached::proc_macro::once;
@@ -67,6 +68,7 @@ pub fn generate_random_npc(npc_req_data: RandomNpcData) -> anyhow::Result<Respon
         .unwrap()
         .clone(),
         gender,
+        level: get_random_level(None),
         ancestry,
         culture,
         nickname: if npc_req_data.generate_nickname.unwrap_or(false) {
@@ -106,6 +108,17 @@ pub fn get_classes_list() -> Vec<Class> {
 
 pub fn get_random_job(filter: Option<Vec<Job>>) -> Job {
     Job::filtered_random(&filter.unwrap_or_default())
+}
+
+pub fn get_random_level(lvl_data: Option<LevelData>) -> i64 {
+    let (min, max) = lvl_data.map_or((None, None), |lvls| {
+        if lvls.is_data_valid() {
+            (lvls.min_level, lvls.max_level)
+        } else {
+            (None, None)
+        }
+    });
+    WyRand::new().generate_range(min.unwrap_or(-1)..max.unwrap_or(26))
 }
 
 pub fn get_random_ancestry(filter: Option<Vec<Ancestry>>) -> Ancestry {
