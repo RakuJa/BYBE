@@ -25,7 +25,9 @@ use cached::proc_macro::cached;
 use cached::proc_macro::once;
 
 pub fn generate_random_npc(npc_req_data: RandomNpcData) -> anyhow::Result<ResponseNpc> {
-    let origin = npc_req_data.name_origin_filter;
+    let origin = npc_req_data
+        .name_origin_filter
+        .unwrap_or_else(NameOriginFilter::random);
     let (gender, name_origin) = match origin {
         NameOriginFilter::FromAncestry(ancestries) => {
             let ancestry = get_random_ancestry(ancestries);
@@ -118,7 +120,7 @@ pub fn get_random_level(lvl_data: Option<LevelData>) -> i64 {
             (None, None)
         }
     });
-    WyRand::new().generate_range(min.unwrap_or(-1)..max.unwrap_or(26))
+    WyRand::new().generate_range(min.unwrap_or(-1)..=max.unwrap_or(25))
 }
 
 pub fn get_random_ancestry(filter: Option<Vec<Ancestry>>) -> Ancestry {

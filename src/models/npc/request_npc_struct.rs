@@ -69,6 +69,12 @@ pub enum NameOriginFilter {
     FromCulture(Option<Vec<Culture>>),
 }
 
+impl RandomEnum for NameOriginFilter {
+    fn from_repr(value: usize) -> Option<Self> {
+        Self::from_repr(value)
+    }
+}
+
 impl Default for NameOriginFilter {
     fn default() -> Self {
         Self::FromAncestry(None)
@@ -77,7 +83,7 @@ impl Default for NameOriginFilter {
 
 #[derive(Serialize, Deserialize, ToSchema, Clone, Debug, Default)]
 pub struct RandomNpcData {
-    pub name_origin_filter: NameOriginFilter,
+    pub name_origin_filter: Option<NameOriginFilter>,
     pub gender_filter: Option<Vec<Gender>>,
     pub class_filter: Option<Vec<Class>>,
     pub level_filter: Option<LevelData>,
@@ -120,7 +126,7 @@ impl RandomNpcData {
         self.level_filter
             .as_ref()
             .is_none_or(LevelData::is_data_valid)
-            && match &self.name_origin_filter {
+            && self.name_origin_filter.clone().is_none_or(|x| match &x {
                 NameOriginFilter::FromAncestry(ancestry_filter) => {
                     if let Some(g_filter) = self.gender_filter.clone()
                         && let Some(a_list) = ancestry_filter.clone()
@@ -136,7 +142,7 @@ impl RandomNpcData {
                     }
                 }
                 NameOriginFilter::FromCulture(_) => true,
-            }
+            })
     }
 }
 

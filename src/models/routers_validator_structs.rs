@@ -177,6 +177,6 @@ pub struct LevelData {
 
 impl LevelData {
     pub fn is_data_valid(&self) -> bool {
-        self.min_level.unwrap_or(-1) < self.max_level.unwrap_or(25)
+        self.min_level.unwrap_or(-1) <= self.max_level.unwrap_or(25)
     }
 }

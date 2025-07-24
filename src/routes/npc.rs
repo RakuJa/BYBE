@@ -121,10 +121,10 @@ pub async fn get_random_class(
 
 #[utoipa::path(
     post,
-    path = "/npc/generator/class",
+    path = "/npc/generator/level",
     tag = "npc",
     request_body(
-        content = Option<LevelData>,
+        content = LevelData,
         content_type = "application/json",
     ),
     params(
