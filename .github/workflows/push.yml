@@ -20,4 +20,4 @@ jobs:
       - name: Run rustfmt and clippy executing setup if needed
         run: cargo make format-and-lint
         env:
-          DATABASE_URL: "sqlite://database.db"
+          DATABASE_URL: "sqlite://data/database.db"
