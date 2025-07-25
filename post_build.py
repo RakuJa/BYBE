@@ -37,8 +37,8 @@ def main():
     # Check if the file already exists or needs downloading
     print("Executing post build script...")
     no_cleanup: bool = handle_command_line_arguments() is True
-    clean_db: str = "database.db_copy"
-    dirty_db: str = "database.db"
+    clean_db: str = "data/database.db_copy"
+    dirty_db: str = "data/database.db"
     if os.path.exists(clean_db):
         print("Restoring clean DB file...")
         pathlib.Path(dirty_db).unlink(missing_ok=True)

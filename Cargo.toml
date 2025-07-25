@@ -1,11 +1,12 @@
+
 [package]
 name = "bybe"
-version = "2.7.0"
+version = "3.0.0"
 authors = ["RakuJa"]
 
 # Compiler info
 edition = "2024"
-rust-version = "1.85.1"
+rust-version = "1.88.0"
 
 description = "Beyond Your Bestiary Explorer (BYBE) is a web service that provides tools to help Pathfinder 2e Game Masters."
 readme = "README.md"
@@ -52,27 +53,29 @@ utoipa = { version = "5.4.0", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web", "reqwest"] }
 
 sqlx = { version = "0.8.6", features = ["runtime-async-std", "sqlite"] }
-cached = { version = "0.55.1", features = ["async"] }
+cached = { version = "0.56.0", features = ["async"] }
+
+nomina = { version = "0.0.3", git = "https://github.com/rakuja/nomina.git" }
 
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
-strum = { version = "0.27.1", features = ["derive"] }
+strum = { version = "0.27", features = ["derive"] }
 nanorand = "0.8.0"
 counter = "0.6.0"
 ordered-float = { version = "5", features = ["serde"] }
-num-traits = "0.2.19"
-maplit = "1.0.2"
-itertools = "0.14.0"
+num-traits = "0.2"
+maplit = "1.0"
+itertools = "0.14"
 
-regex = "1.11.1"
+regex = "1.11"
 
-dotenvy = "0.15.7"
+dotenvy = "0.15"
 
-env_logger = "0.11.8"
-log = "0.4.27"
-once = "0.3.4"
-futures = "0.3.31"
+env_logger = "0.11"
+log = "0.4"
+once = "0.3"
+futures = "0.3"
 
 [build-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "rt"] }
