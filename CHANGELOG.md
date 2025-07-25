@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [3.0.0] - 2025-07-25
+
+### Added
+
+- Add npc endpoint (#103)
+
+### Fixed
+
+- Update CI and add a fetch to avoid pipeline failures, update deps (#102)
+- Critical path error with names and nicknames
+
 ## [2.7.0] - 2025-06-30
 
 ### Feature
@@ -171,6 +182,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set filtering was doing union operation instead of intersection
 - Filter correctly vectors containing integer with value < -1
 
+[3.0.0]: https://github.com/RakuJa/BYBE/compare/v2.7.0..v3.0.0
 [2.7.0]: https://github.com/RakuJa/BYBE/compare/v2.6.1..v2.7.0
 [2.6.0]: https://github.com/RakuJa/BYBE/compare/v2.5.0..v2.6.0
 [2.5.0]: https://github.com/RakuJa/BYBE/compare/v2.4.0..v2.5.0
