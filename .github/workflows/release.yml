@@ -29,7 +29,7 @@ jobs:
           set +e
           git switch -c update_changelog
           if [ -f "CHANGELOG.md" ]; then
-            git reset
+            git restore --staged .
             git add CHANGELOG.md
             git commit --no-verify -m "Update changelog after release"
             git push -f https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git update_changelog
