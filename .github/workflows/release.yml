@@ -28,11 +28,16 @@ jobs:
           git config user.email 'github-actions[bot]@users.noreply.github.com'
           set +e
           git switch -c update_changelog
-          git add CHANGELOG.md
-          git commit --no-verify -m "Update changelog after release"
-          git push -f https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git update_changelog
+          if [ -f "CHANGELOG.md" ]; then
+            git reset
+            git add CHANGELOG.md
+            git commit --no-verify -m "Update changelog after release"
+            git push -f https://${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git update_changelog
+          else
+            echo "Error: CHANGELOG.md not found!"
+            exit 1
+          fi
           git fetch
-
 
       - name: Create Changelog Pull Request
         id: cpr
