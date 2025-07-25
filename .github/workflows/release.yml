@@ -24,7 +24,6 @@ jobs:
 
       - name: Clean workspace
         run: |
-          git restore .
           git add CHANGELOG.md
           git clean -fdx
           git status
