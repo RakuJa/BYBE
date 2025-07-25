@@ -1,5 +1,4 @@
-use crate::env;
-use crate::models::npc::name_loader_struct::{Names, NickNameData};
+use crate::AppState;
 use crate::models::npc::request_npc_struct::{
     AncestryData, NameOriginFilter, RandomNameData, RandomNpcData,
 };
@@ -9,9 +8,9 @@ use nanorand::Rng;
 use nanorand::WyRand;
 use nomina::capitalize_each_substring;
 use std::collections::HashMap;
-use std::fs;
 use strum::IntoEnumIterator;
 
+use crate::db::json_fetcher::{get_names_from_json, get_nickname_data_from_json};
 use crate::models::npc::ancestry_enum::Ancestry;
 use crate::models::npc::class_enum::Class;
 use crate::models::npc::culture_enum::Culture;
@@ -21,10 +20,12 @@ use crate::models::npc::request_npc_struct::NameOrigin;
 use crate::models::response_data::ResponseNpc;
 use crate::models::routers_validator_structs::LevelData;
 use crate::traits::random_enum::RandomEnum;
-use cached::proc_macro::cached;
 use cached::proc_macro::once;
 
-pub fn generate_random_npc(npc_req_data: RandomNpcData) -> anyhow::Result<ResponseNpc> {
+pub fn generate_random_npc(
+    app_state: &AppState,
+    npc_req_data: RandomNpcData,
+) -> anyhow::Result<ResponseNpc> {
     let origin = npc_req_data
         .name_origin_filter
         .unwrap_or_else(NameOriginFilter::random);
@@ -60,12 +61,15 @@ pub fn generate_random_npc(npc_req_data: RandomNpcData) -> anyhow::Result<Respon
         NameOrigin::FromCulture(c) => (Ancestry::random(), c.clone().unwrap_or_default()),
     };
     Ok(ResponseNpc {
-        name: generate_random_names(RandomNameData {
-            name_max_length: npc_req_data.name_max_length,
-            max_n_of_names: Some(1),
-            gender: Some(gender.clone()),
-            origin: name_origin,
-        })
+        name: generate_random_names(
+            RandomNameData {
+                name_max_length: npc_req_data.name_max_length,
+                max_n_of_names: Some(1),
+                gender: Some(gender.clone()),
+                origin: name_origin,
+            },
+            &app_state.name_json_path,
+        )
         .first()
         .unwrap()
         .clone(),
@@ -74,7 +78,7 @@ pub fn generate_random_npc(npc_req_data: RandomNpcData) -> anyhow::Result<Respon
         ancestry,
         culture,
         nickname: if npc_req_data.generate_nickname.unwrap_or(false) {
-            generate_random_nickname()
+            generate_random_nickname(&app_state.nick_json_path)
         } else {
             None
         },
@@ -148,9 +152,9 @@ pub fn get_random_class(filter: Option<Vec<Class>>) -> Class {
     Class::filtered_random(&filter.unwrap_or_default())
 }
 
-pub fn generate_random_names(data: RandomNameData) -> Vec<String> {
-    let ancestry_chain = prepare_ancestry_names_builder();
-    let location_chain = prepare_culture_names_builder();
+pub fn generate_random_names(data: RandomNameData, name_path: &str) -> Vec<String> {
+    let ancestry_chain = prepare_ancestry_names_builder(name_path);
+    let location_chain = prepare_culture_names_builder(name_path);
     let (chain, token_size, max_length) = match data.origin {
         NameOrigin::FromAncestry(ancestry) => {
             let a = ancestry.unwrap_or_else(Ancestry::random);
@@ -190,8 +194,8 @@ pub fn generate_random_names(data: RandomNameData) -> Vec<String> {
         .collect()
 }
 
-pub fn generate_random_nickname() -> Option<String> {
-    if let Ok(data) = get_nickname_data_from_json() {
+pub fn generate_random_nickname(nickname_path: &str) -> Option<String> {
+    if let Ok(data) = get_nickname_data_from_json(nickname_path) {
         let adj_list = data.terms.adjective;
         let nouns = data.terms.nouns;
 
@@ -213,8 +217,10 @@ pub fn generate_random_nickname() -> Option<String> {
 }
 
 #[once(sync_writes = true)]
-fn prepare_ancestry_names_builder() -> HashMap<(Ancestry, Gender), HashMap<String, Vec<char>>> {
-    let names = get_names_from_json().unwrap();
+pub fn prepare_ancestry_names_builder(
+    json_path: &str,
+) -> HashMap<(Ancestry, Gender), HashMap<String, Vec<char>>> {
+    let names = get_names_from_json(json_path).unwrap();
     let mut chains = HashMap::new();
     for ancestry_struct in names.by_ancestry {
         let ancestry = ancestry_struct.ancestry;
@@ -234,8 +240,10 @@ fn prepare_ancestry_names_builder() -> HashMap<(Ancestry, Gender), HashMap<Strin
 }
 
 #[once(sync_writes = true)]
-fn prepare_culture_names_builder() -> HashMap<(Culture, Gender), HashMap<String, Vec<char>>> {
-    let names = get_names_from_json().unwrap();
+pub fn prepare_culture_names_builder(
+    json_path: &str,
+) -> HashMap<(Culture, Gender), HashMap<String, Vec<char>>> {
+    let names = get_names_from_json(json_path).unwrap();
     let mut chains = HashMap::new();
     for culture_struct in names.by_culture {
         let culture = culture_struct.culture;
@@ -252,21 +260,4 @@ fn prepare_culture_names_builder() -> HashMap<(Culture, Gender), HashMap<String,
         }
     }
     chains
-}
-
-fn get_nickname_data_from_json() -> anyhow::Result<NickNameData> {
-    Ok(serde_json::from_str(
-        read_file_as_str(env::var("NICKNAMES_PATH").expect("Error fetching nick json")).as_str(),
-    )?)
-}
-
-#[cached]
-fn read_file_as_str(path: String) -> String {
-    fs::read_to_string(path).expect("Unable to read file")
-}
-
-fn get_names_from_json() -> anyhow::Result<Names> {
-    Ok(serde_json::from_str(
-        read_file_as_str(env::var("NAMES_PATH").expect("Error fetching names json")).as_str(),
-    )?)
 }

@@ -1,3 +1,4 @@
+use crate::AppState;
 use crate::models::npc::ancestry_enum::Ancestry;
 use crate::models::npc::class_enum::Class;
 use crate::models::npc::culture_enum::Culture;
@@ -75,11 +76,12 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
 )]
 #[post("/generator")]
 pub async fn get_random_npc(
+    data: web::Data<AppState>,
     body: Option<web::Json<RandomNpcData>>,
 ) -> actix_web::Result<impl Responder> {
     let npc_data = body.map(|x| x.0).unwrap_or_default();
     if npc_data.is_valid() {
-        npc_service::generate_random_npc(npc_data)
+        npc_service::generate_random_npc(&data, npc_data)
             .map_or_else(|_| Err(ErrorBadRequest(
                 "Given parameters are not valid. Check for conflicts e.g. Ancestry's unsupported gender chosen"
             )), |npc| Ok(web::Json(npc)))
@@ -281,8 +283,10 @@ pub async fn get_random_job(
     ),
 )]
 #[post("/generator/nickname")]
-pub async fn get_random_nickname() -> actix_web::Result<impl Responder> {
-    Ok(web::Json(npc_service::generate_random_nickname()))
+pub async fn get_random_nickname(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+    Ok(web::Json(npc_service::generate_random_nickname(
+        &data.nick_json_path,
+    )))
 }
 
 #[utoipa::path(
@@ -303,12 +307,16 @@ pub async fn get_random_nickname() -> actix_web::Result<impl Responder> {
 )]
 #[post("/generator/names")]
 pub async fn get_random_names(
+    data: web::Data<AppState>,
     body: Option<web::Json<RandomNameData>>,
 ) -> actix_web::Result<impl Responder> {
     if let Some(json) = body {
         let rd = json.0;
         if rd.is_valid() {
-            Ok(web::Json(npc_service::generate_random_names(rd)))
+            Ok(web::Json(npc_service::generate_random_names(
+                rd,
+                &data.name_json_path,
+            )))
         } else {
             Err(ErrorBadRequest(
                 "Given parameters are not valid. Check for conflicts e.g. Ancestry unsupported gender chosen",
@@ -317,6 +325,7 @@ pub async fn get_random_names(
     } else {
         Ok(web::Json(npc_service::generate_random_names(
             RandomNameData::default(),
+            &data.name_json_path,
         )))
     }
 }

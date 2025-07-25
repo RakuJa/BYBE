@@ -26,6 +26,8 @@ struct ApiDoc;
 #[derive(Clone)]
 pub struct AppState {
     conn: Pool<Sqlite>,
+    name_json_path: String,
+    nick_json_path: String,
 }
 
 #[derive(Default)]
@@ -60,6 +62,14 @@ async fn index() -> impl Responder {
 
 fn get_service_db_url() -> String {
     env::var("DATABASE_URL").expect("Error fetching database URL")
+}
+
+fn get_nickname_json_path() -> String {
+    env::var("NICKNAMES_PATH").expect("Error fetching nickname json")
+}
+
+fn get_name_json_path() -> String {
+    env::var("NAMES_PATH").expect("Error fetching name json")
 }
 
 fn get_service_ip() -> String {
@@ -98,6 +108,7 @@ fn init_docs(openapi: &mut utoipa::openapi::OpenApi) {
 pub async fn start(
     env_location: Option<String>,
     db_location: Option<String>,
+    jsons_location: Option<(String, String)>,
     init_log_resp: InitializeLogResponsibility,
 ) -> std::io::Result<()> {
     if let Some(env_path) = env_location {
@@ -112,6 +123,8 @@ pub async fn start(
         InitializeLogResponsibility::Delegated => {} // do nothing, someone else has already initialized them
     }
     let db_url = db_location.map_or_else(get_service_db_url, |x| x);
+    let (name_json_path, nick_json_path) =
+        jsons_location.unwrap_or_else(|| (get_name_json_path(), get_nickname_json_path()));
     let service_ip = get_service_ip();
     let service_port = get_service_port();
     let startup_state: StartupState = get_service_startup_state();
@@ -170,7 +183,11 @@ pub async fn start(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )
             .service(SwaggerUi::new("/docs/{_:.*}").url("/api-docs/openapi.json", openapi.clone()))
-            .app_data(web::Data::new(AppState { conn: pool.clone() }))
+            .app_data(web::Data::new(AppState {
+                conn: pool.clone(),
+                name_json_path: name_json_path.clone(),
+                nick_json_path: nick_json_path.clone(),
+            }))
     })
     .workers(service_workers)
     .bind((get_service_ip(), get_service_port()))?;
