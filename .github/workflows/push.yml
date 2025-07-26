@@ -21,6 +21,16 @@ jobs:
         run: cargo make format-and-lint
         env:
           DATABASE_URL: "sqlite://data/database.db"
+
+  build_and_test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - uses: davidB/rust-cargo-make@v1
+      - uses: actions/checkout@v1
       - name: Run cargo build and cargo test executing setup if needed
         run: cargo make build-and-test
         env:
