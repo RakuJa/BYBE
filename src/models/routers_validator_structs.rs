@@ -121,14 +121,9 @@ impl Dice {
     pub fn roll(&self) -> u16 {
         let mut roll_result = 0_u16;
         let n_of_dices = u16::from(self.n_of_dices);
+        let dice_size = u16::from(self.dice_size);
         for _ in 0..n_of_dices {
-            // gen_range panics if n<2 (1..1), panic!
-            // so we directly return 1 if that's the case
-            roll_result += if n_of_dices > 1 {
-                WyRand::new().generate_range(1..=n_of_dices)
-            } else {
-                1
-            }
+            roll_result += WyRand::new().generate_range(1..=dice_size);
         }
         roll_result
     }
@@ -178,5 +173,53 @@ pub struct LevelData {
 impl LevelData {
     pub fn is_data_valid(&self) -> bool {
         self.min_level.unwrap_or(-1) <= self.max_level.unwrap_or(25)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(4, 1, 4)]
+    #[case(100, 1, 100)]
+    #[case(200, 1, 200)]
+    #[case(17, 1, 17)]
+    #[case(255, 1, 255)]
+    #[case(0, 1, 0)]
+    #[case(1, 1, 1)]
+    fn roll_with_lots_of_d1(#[case] n_of_dices: u8, #[case] dice_size: u8, #[case] expected: u16) {
+        let dice = Dice {
+            n_of_dices,
+            dice_size,
+        };
+        for _ in 0..1000 {
+            let res = dice.roll();
+            assert_eq!(res, expected);
+        }
+    }
+
+    #[rstest]
+    #[case(4, 3)]
+    #[case(100, 100)]
+    #[case(200, 20)]
+    #[case(17, 3)]
+    #[case(255, 255)]
+    #[case(12, 12)]
+    #[case(6, 6)]
+    #[case(4, 4)]
+    #[case(4, 8)]
+    #[case(3, 20)]
+    fn roll_with_different_dices_and_sizes(#[case] n_of_dices: u8, #[case] dice_size: u8) {
+        let dice = Dice {
+            n_of_dices,
+            dice_size,
+        };
+        let max_value = u16::from(n_of_dices) * u16::from(dice_size);
+        for _ in 0..1000 {
+            let res = dice.roll();
+            assert!(res > 0 && res <= max_value);
+        }
     }
 }

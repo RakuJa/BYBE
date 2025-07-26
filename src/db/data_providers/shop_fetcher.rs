@@ -252,19 +252,22 @@ pub async fn fetch_items_with_filters(
         + filters.n_of_weapons
         + filters.n_of_armors
         + filters.n_of_consumables;
-    if i64::try_from(items.len()).unwrap_or(i64::MAX) >= n_of_items_to_return {
-        debug!("Result vector is the correct size, no more operations needed");
-        return Ok(items);
-    }
-    debug!("Result vector is not the correct size, duplicating random elements..");
+    Ok(
+        if i64::try_from(items.len()).unwrap_or(i64::MAX) >= n_of_items_to_return {
+            debug!("Result vector is the correct size, no more operations needed");
+            items
+        } else {
+            debug!("Result vector is not the correct size, duplicating random elements..");
 
-    let mut item_vec = fill_item_vec_to_len(&equipment, filters.n_of_equipment);
-    item_vec.extend(fill_item_vec_to_len(&consumables, filters.n_of_consumables));
-    item_vec.extend(fill_item_vec_to_len(&weapons, filters.n_of_weapons));
-    item_vec.extend(fill_item_vec_to_len(&armors, filters.n_of_armors));
-    item_vec.extend(fill_item_vec_to_len(&shields, filters.n_of_shields));
+            let mut item_vec = fill_item_vec_to_len(&equipment, filters.n_of_equipment);
+            item_vec.extend(fill_item_vec_to_len(&consumables, filters.n_of_consumables));
+            item_vec.extend(fill_item_vec_to_len(&weapons, filters.n_of_weapons));
+            item_vec.extend(fill_item_vec_to_len(&armors, filters.n_of_armors));
+            item_vec.extend(fill_item_vec_to_len(&shields, filters.n_of_shields));
 
-    Ok(item_vec)
+            item_vec
+        },
+    )
 }
 
 fn fill_item_vec_to_len(item_vec: &[&Item], desired_len: i64) -> Vec<Item> {
