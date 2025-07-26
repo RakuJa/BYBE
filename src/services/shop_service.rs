@@ -206,7 +206,7 @@ pub fn calculate_n_of_equippable_values(
         )
     };
     let missing = f_n_of_equippables - (e_v + w_v + a_v + s_v);
-    let distributed = divide_equally(missing);
+    let distributed = order_distribution(divide_equally(missing), percentages);
     Ok((
         (e_v + distributed.0)
             .floor()
@@ -225,6 +225,41 @@ pub fn calculate_n_of_equippable_values(
             .to_i64()
             .context("Error converting v to i64")?,
     ))
+}
+
+///
+/// Returns the given `to_distribute` tuple ordered following `og_percentages`
+/// ```Rust
+/// assert_eq!(
+///     (3.0, 2.0, 1.0, 4.0),
+///     order_distribution((4., 2., 3., 1.), (20,20,20,40)
+/// )
+/// ```
+fn order_distribution(
+    to_distribute: (f64, f64, f64, f64),
+    og_percentages: (u8, u8, u8, u8),
+) -> (f64, f64, f64, f64) {
+    let to_order = to_distribute;
+    let by = og_percentages;
+
+    let mut indices_by: Vec<(usize, f64)> = vec![
+        (0, f64::from(by.0)),
+        (1, f64::from(by.1)),
+        (2, f64::from(by.2)),
+        (3, f64::from(by.3)),
+    ];
+
+    indices_by.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+
+    let mut values: [f64; 4] = to_order.into();
+    values.sort_by(|a, b| b.partial_cmp(a).unwrap());
+
+    let mut result = [0.0; 4];
+    for (i, (idx, _)) in indices_by.iter().enumerate() {
+        result[*idx] = values[i];
+    }
+
+    result.into()
 }
 
 ///
@@ -257,6 +292,10 @@ mod tests {
     #[rstest]
     #[case(10, (10,10,10,10), (3,3,2,2))]
     #[case(1, (10,10,10,10), (1,0,0,0))]
+    #[case(8, (20,20,20,10), (3,2,2,1))]
+    #[case(8, (10,20,20,20), (1,3,2,2))]
+    #[case(8, (10,20,20,30), (1,2,2,3))]
+    #[case(8, (20,20,30,10), (2,2,3,1))]
     fn calculate_equippable_values_rounded_over_desired_total_case(
         #[case] input_n_of_equippables: u16,
         #[case] input_percentages: (u8, u8, u8, u8),
@@ -338,6 +377,25 @@ mod tests {
         #[case] expected: (f64, f64, f64, f64),
     ) {
         let result = divide_equally(to_distribute);
+        assert_eq!(expected, result);
+    }
+
+    #[rstest]
+    #[case((4.0, 2.0, 3.0, 1.0), (20, 20, 20, 40), (3.0, 2.0, 1.0, 4.0))]
+    #[case((9.0, 7.0, 8.0, 6.0), (20, 10, 20, 10), (9.0, 7.0, 8.0, 6.0))]
+    #[case((1.0, 2.0, 3.0, 4.0), (10, 20, 30, 40), (1.0, 2.0, 3.0, 4.0))] // already ordered
+    #[case((4.0, 3.0, 2.0, 1.0), (40, 30, 20, 10), (4.0, 3.0, 2.0, 1.0))] // descending by weight
+    #[case((5.0, 6.0, 7.0, 8.0), (1, 1, 1, 1), (8.0, 7.0, 6.0, 5.0))] // equal weights, to_order sorted
+    #[case((10.0, 20.0, 30.0, 40.0), (5, 10, 5, 20), (20.0, 30.0, 10.0, 40.0))]
+    #[case((1.5, 3.3, 2.2, 4.4), (3, 1, 4, 2), (3.3, 1.5, 4.4, 2.2))] // mixed values
+    #[case((10.0, 10.0, 10.0, 10.0), (4, 3, 2, 1), (10.0, 10.0, 10.0, 10.0))] // identical values
+    #[case((1.0, 2.0, 3.0, 4.0), (0, 0, 100, 100), (2.0, 1.0, 4.0, 3.0))] // tie on highest weights
+    fn order_mixed_values(
+        #[case] to_distribute: (f64, f64, f64, f64),
+        #[case] by: (u8, u8, u8, u8),
+        #[case] expected: (f64, f64, f64, f64),
+    ) {
+        let result = order_distribution(to_distribute, by);
         assert_eq!(expected, result);
     }
 }
