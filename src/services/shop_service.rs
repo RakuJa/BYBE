@@ -199,19 +199,89 @@ pub fn calculate_n_of_equippable_values(
     } else {
         (
             //Simpler form: (f_n_of_equippables * ((w_p as f64 * 100.) / sum_of_percentages)) / 100.,
-            (f_n_of_equippables * f64::from(e_p)) / sum_of_percentages,
-            (f_n_of_equippables * f64::from(w_p)) / sum_of_percentages,
-            (f_n_of_equippables * f64::from(a_p)) / sum_of_percentages,
-            (f_n_of_equippables * f64::from(s_p)) / sum_of_percentages,
+            ((f_n_of_equippables * f64::from(e_p)) / sum_of_percentages).floor(),
+            ((f_n_of_equippables * f64::from(w_p)) / sum_of_percentages).floor(),
+            ((f_n_of_equippables * f64::from(a_p)) / sum_of_percentages).floor(),
+            ((f_n_of_equippables * f64::from(s_p)) / sum_of_percentages).floor(),
         )
     };
-
+    let missing = f_n_of_equippables - (e_v + w_v + a_v + s_v);
+    let distributed = order_distribution(divide_equally(missing), percentages);
     Ok((
-        e_v.ceil().to_i64().context("Error converting v to i64")?,
-        w_v.ceil().to_i64().context("Error converting v to i64")?,
-        a_v.ceil().to_i64().context("Error converting v to i64")?,
-        s_v.ceil().to_i64().context("Error converting v to i64")?,
+        (e_v + distributed.0)
+            .floor()
+            .to_i64()
+            .context("Error converting v to i64")?,
+        (w_v + distributed.1)
+            .floor()
+            .to_i64()
+            .context("Error converting v to i64")?,
+        (a_v + distributed.2)
+            .floor()
+            .to_i64()
+            .context("Error converting v to i64")?,
+        (s_v + distributed.3)
+            .floor()
+            .to_i64()
+            .context("Error converting v to i64")?,
     ))
+}
+
+///
+/// Returns the given `to_distribute` tuple ordered following `og_percentages`
+/// ```Rust
+/// assert_eq!(
+///     (3.0, 2.0, 1.0, 4.0),
+///     order_distribution((4., 2., 3., 1.), (20,20,20,40)
+/// )
+/// ```
+fn order_distribution(
+    to_distribute: (f64, f64, f64, f64),
+    og_percentages: (u8, u8, u8, u8),
+) -> (f64, f64, f64, f64) {
+    let to_order = to_distribute;
+    let by = og_percentages;
+
+    let mut indices_by: Vec<(usize, f64)> = vec![
+        (0, f64::from(by.0)),
+        (1, f64::from(by.1)),
+        (2, f64::from(by.2)),
+        (3, f64::from(by.3)),
+    ];
+
+    indices_by.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
+
+    let mut values: [f64; 4] = to_order.into();
+    values.sort_by(|a, b| b.partial_cmp(a).unwrap());
+
+    let mut result = [0.0; 4];
+    for (i, (idx, _)) in indices_by.iter().enumerate() {
+        result[*idx] = values[i];
+    }
+
+    result.into()
+}
+
+///
+/// Returns a tuple of 4 elements that divide equally (as integer) `f` from left to right
+/// e.g.
+/// ```Rust
+/// assert_eq!(divide_equally(3.), (1,1,1,0))
+/// assert_eq!(divide_equally(4.), (1,1,1,1))
+/// assert_eq!(divide_equally(5.), (2,1,1,1))
+/// assert_eq!(divide_equally(6.), (2,2,1,1))
+/// ```
+fn divide_equally(f: f64) -> (f64, f64, f64, f64) {
+    f.to_usize()
+        .map_or([0.; 4], |n| {
+            let base = n / 4;
+            let remainder = n % 4;
+
+            let mut result = [base as f64; 4];
+            result.iter_mut().take(remainder).for_each(|x| *x += 1.);
+            result
+        })
+        .into()
 }
 
 #[cfg(test)]
@@ -220,8 +290,12 @@ mod tests {
     use rstest::rstest;
 
     #[rstest]
-    #[case(10, (10,10,10,10), (3,3,3,3))]
-    #[case(1, (10,10,10,10), (1,1,1,1))]
+    #[case(10, (10,10,10,10), (3,3,2,2))]
+    #[case(1, (10,10,10,10), (1,0,0,0))]
+    #[case(8, (20,20,20,10), (3,2,2,1))]
+    #[case(8, (10,20,20,20), (1,3,2,2))]
+    #[case(8, (10,20,20,30), (1,2,2,3))]
+    #[case(8, (20,20,30,10), (2,2,3,1))]
     fn calculate_equippable_values_rounded_over_desired_total_case(
         #[case] input_n_of_equippables: u16,
         #[case] input_percentages: (u8, u8, u8, u8),
@@ -260,7 +334,7 @@ mod tests {
     #[rstest]
     #[case(10, (10,0,0,0), (10,0,0,0))]
     #[case(10, (10,10,0,0), (5,5,0,0))]
-    #[case(10, (10,10,10,0), (4,4,4,0))]
+    #[case(10, (10,10,10,0), (4,3,3,0))]
     fn calculate_equippable_values_with_missing_percentages(
         #[case] input_n_of_equippables: u16,
         #[case] input_percentages: (u8, u8, u8, u8),
@@ -269,5 +343,59 @@ mod tests {
         let result = calculate_n_of_equippable_values(input_n_of_equippables, input_percentages);
         assert!(result.is_ok());
         assert_eq!(expected, result.unwrap());
+    }
+
+    #[rstest]
+    #[case(4., (1.,1.,1.,1.))]
+    #[case(8., (2.,2.,2.,2.))]
+    #[case(12., (3.,3.,3.,3.))]
+    #[case(16., (4.,4.,4.,4.))]
+    #[case(20., (5.,5.,5.,5.))]
+    #[case(24., (6.,6.,6.,6.))]
+    fn divide_equally_multiple_of_four(
+        #[case] to_distribute: f64,
+        #[case] expected: (f64, f64, f64, f64),
+    ) {
+        let result = divide_equally(to_distribute);
+        assert_eq!(expected, result);
+    }
+
+    #[rstest]
+    #[case(1., (1.,0.,0.,0.))]
+    #[case(2., (1.,1.,0.,0.))]
+    #[case(3., (1.,1.,1.,0.))]
+    #[case(5., (2.,1.,1.,1.))]
+    #[case(6., (2.,2.,1.,1.))]
+    #[case(7., (2.,2.,2.,1.))]
+    #[case(9., (3.,2.,2.,2.))]
+    #[case(13., (4.,3.,3.,3.))]
+    #[case(17., (5.,4.,4.,4.))]
+    #[case(21., (6.,5.,5.,5.))]
+    #[case(25., (7.,6.,6.,6.))]
+    fn divide_equally_not_multiple_of_four(
+        #[case] to_distribute: f64,
+        #[case] expected: (f64, f64, f64, f64),
+    ) {
+        let result = divide_equally(to_distribute);
+        assert_eq!(expected, result);
+    }
+
+    #[rstest]
+    #[case((4.0, 2.0, 3.0, 1.0), (20, 20, 20, 40), (3.0, 2.0, 1.0, 4.0))]
+    #[case((9.0, 7.0, 8.0, 6.0), (20, 10, 20, 10), (9.0, 7.0, 8.0, 6.0))]
+    #[case((1.0, 2.0, 3.0, 4.0), (10, 20, 30, 40), (1.0, 2.0, 3.0, 4.0))] // already ordered
+    #[case((4.0, 3.0, 2.0, 1.0), (40, 30, 20, 10), (4.0, 3.0, 2.0, 1.0))] // descending by weight
+    #[case((5.0, 6.0, 7.0, 8.0), (1, 1, 1, 1), (8.0, 7.0, 6.0, 5.0))] // equal weights, to_order sorted
+    #[case((10.0, 20.0, 30.0, 40.0), (5, 10, 5, 20), (20.0, 30.0, 10.0, 40.0))]
+    #[case((1.5, 3.3, 2.2, 4.4), (3, 1, 4, 2), (3.3, 1.5, 4.4, 2.2))] // mixed values
+    #[case((10.0, 10.0, 10.0, 10.0), (4, 3, 2, 1), (10.0, 10.0, 10.0, 10.0))] // identical values
+    #[case((1.0, 2.0, 3.0, 4.0), (0, 0, 100, 100), (2.0, 1.0, 4.0, 3.0))] // tie on highest weights
+    fn order_mixed_values(
+        #[case] to_distribute: (f64, f64, f64, f64),
+        #[case] by: (u8, u8, u8, u8),
+        #[case] expected: (f64, f64, f64, f64),
+    ) {
+        let result = order_distribution(to_distribute, by);
+        assert_eq!(expected, result);
     }
 }
