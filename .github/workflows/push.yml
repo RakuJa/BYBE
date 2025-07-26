@@ -21,3 +21,7 @@ jobs:
         run: cargo make format-and-lint
         env:
           DATABASE_URL: "sqlite://data/database.db"
+      - name: Run cargo build and cargo test executing setup if needed
+        run: cargo make build-and-test
+        env:
+          DATABASE_URL: "sqlite://data/database.db"

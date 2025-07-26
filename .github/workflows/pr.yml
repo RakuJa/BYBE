@@ -20,3 +20,11 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           mode: review
+      - uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+      - name: Run cargo build and cargo test executing setup if needed
+        run: cargo make build-and-test
+        env:
+          DATABASE_URL: "sqlite://data/database.db"

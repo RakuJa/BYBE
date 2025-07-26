@@ -45,7 +45,7 @@ dependencies = ["clean", "prebuild"]
 dependencies = [
     "format",
     "build",
-    "clippy",
+    "lint",
     "test"
 ]
 
@@ -66,4 +66,10 @@ dependencies = [
 dependencies = [
     "format",
     "lint"
+]
+
+[tasks.build-and-test]
+dependencies = [
+    "build",
+    "test",
 ]
