@@ -1,7 +1,4 @@
-use crate::AppState;
-use crate::db::bestiary_proxy::{get_creatures_passing_all_filters, order_list_by_level};
-use crate::models::bestiary_structs::BestiaryFilterQuery;
-use crate::models::bestiary_structs::CreatureTableFieldsFilter;
+use crate::db::bestiary_proxy::order_list_by_level;
 use crate::models::creature::creature_struct::Creature;
 use crate::models::encounter_structs::{
     AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, RandomEncounterData,
@@ -11,8 +8,6 @@ use crate::services::encounter_handler::encounter_calculator;
 use crate::services::encounter_handler::encounter_calculator::calculate_encounter_scaling_difficulty;
 use anyhow::{Result, ensure};
 use counter::Counter;
-use itertools::Itertools;
-use log::warn;
 use nanorand::{Rng, WyRand};
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)] // it's used for Schema
@@ -23,17 +18,17 @@ use utoipa::ToSchema;
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct EncounterInfoResponse {
     #[schema(minimum = 0, example = 40)]
-    experience: i64,
-    challenge: EncounterChallengeEnum,
+    pub(crate) experience: i64,
+    pub(crate) challenge: EncounterChallengeEnum,
     #[schema(example = json!({EncounterChallengeEnum::Trivial: 40, EncounterChallengeEnum::Low: 60, EncounterChallengeEnum::Moderate: 80, EncounterChallengeEnum::Severe: 120, EncounterChallengeEnum::Extreme: 160, EncounterChallengeEnum::Impossible: 320}))]
-    encounter_exp_levels: BTreeMap<EncounterChallengeEnum, i64>,
+    pub(crate) encounter_exp_levels: BTreeMap<EncounterChallengeEnum, i64>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct RandomEncounterGeneratorResponse {
-    results: Option<Vec<ResponseCreature>>,
-    count: usize,
-    encounter_info: EncounterInfoResponse,
+    pub(crate) results: Option<Vec<ResponseCreature>>,
+    pub(crate) count: usize,
+    pub(crate) encounter_info: EncounterInfoResponse,
 }
 
 pub fn get_encounter_info(enc_params: &EncounterParams) -> EncounterInfoResponse {
@@ -53,125 +48,16 @@ pub fn get_encounter_info(enc_params: &EncounterParams) -> EncounterInfoResponse
     }
 }
 
-pub async fn generate_random_encounter(
-    app_state: &AppState,
-    enc_data: RandomEncounterData,
-) -> RandomEncounterGeneratorResponse {
-    let party_levels = enc_data.party_levels.clone();
-    let encounter_data = calculate_random_encounter(app_state, enc_data, party_levels).await;
-    encounter_data.unwrap_or_else(|error| {
-        warn!("Could not generate a random encounter, reason: {error}");
-        RandomEncounterGeneratorResponse {
-            results: None,
-            count: 0,
-            encounter_info: EncounterInfoResponse {
-                experience: 0,
-                challenge: EncounterChallengeEnum::default(),
-                encounter_exp_levels: BTreeMap::default(),
-            },
-        }
-    })
-}
-
-/// Private method, does not handle failure. For that we use a public method
-async fn calculate_random_encounter(
-    app_state: &AppState,
-    enc_data: RandomEncounterData,
-    party_levels: Vec<i64>,
-) -> Result<RandomEncounterGeneratorResponse> {
-    let is_pwl_on = enc_data.is_pwl_on;
-    let filtered_lvl_combinations = get_lvl_combinations(&enc_data, &party_levels);
-    let unique_levels = filtered_lvl_combinations
-        .clone()
-        .into_iter()
-        .flatten()
-        .sorted()
-        .dedup()
-        .collect::<Vec<_>>();
-    ensure!(
-        !unique_levels.is_empty(),
-        "There are no valid levels to chose from. Encounter could not be built"
-    );
-    let filtered_creatures = get_filtered_creatures(
-        app_state,
-        &BestiaryFilterQuery {
-            creature_table_fields_filter: CreatureTableFieldsFilter {
-                source_filter: enc_data.source_filter.unwrap_or_default(),
-                family_filter: enc_data.family_filter.unwrap_or_default(),
-                alignment_filter: enc_data.alignment_filter.unwrap_or_default(),
-                size_filter: enc_data.size_filter.unwrap_or_default(),
-                rarity_filter: enc_data.rarity_filter.unwrap_or_default(),
-                type_filter: enc_data.type_filter.unwrap_or_default(),
-                role_filter: enc_data.role_filter.unwrap_or_default(),
-                role_lower_threshold: enc_data
-                    .role_lower_threshold
-                    .unwrap_or(CreatureTableFieldsFilter::default_lower_threshold()),
-                role_upper_threshold: enc_data
-                    .role_upper_threshold
-                    .unwrap_or(CreatureTableFieldsFilter::default_upper_threshold()),
-                is_melee_filter: enc_data.attack_list.as_ref().map_or_else(
-                    || vec![true, false],
-                    |x| vec![*x.get("melee").unwrap_or(&false)],
-                ),
-                is_ranged_filter: enc_data.attack_list.as_ref().map_or_else(
-                    || vec![true, false],
-                    |x| vec![*x.get("ranged").unwrap_or(&false)],
-                ),
-                is_spellcaster_filter: enc_data.attack_list.map_or_else(
-                    || vec![true, false],
-                    |x| vec![*x.get("spellcaster").unwrap_or(&false)],
-                ),
-                supported_version: enc_data
-                    .pathfinder_version
-                    .unwrap_or_default()
-                    .to_db_value(),
-                level_filter: unique_levels,
-            },
-            trait_whitelist_filter: enc_data.trait_whitelist_filter.unwrap_or_default(),
-            trait_blacklist_filter: enc_data.trait_blacklist_filter.unwrap_or_default(),
-        },
-        enc_data.allow_weak_variants.is_some_and(|x| x),
-        enc_data.allow_elite_variants.is_some_and(|x| x),
-    )
-    .await?;
-
-    ensure!(
-        !filtered_creatures.is_empty(),
-        "No creatures have been fetched"
-    );
-    let chosen_encounter =
-        choose_random_creatures_combination(&filtered_creatures, filtered_lvl_combinations)?;
-
-    Ok(RandomEncounterGeneratorResponse {
-        count: chosen_encounter.len(),
-        results: Some(
-            chosen_encounter
-                .clone()
-                .into_iter()
-                .map(ResponseCreature::from)
-                .collect(),
-        ),
-        encounter_info: get_encounter_info(&EncounterParams {
-            party_levels,
-            enemy_levels: chosen_encounter
-                .iter()
-                .map(|cr| cr.variant_data.level)
-                .collect(),
-            is_pwl_on,
-        }),
-    })
-}
-
-fn choose_random_creatures_combination(
+pub fn choose_random_creatures_combination(
     filtered_creatures: &[Creature],
     lvl_combinations: HashSet<Vec<i64>>,
 ) -> Result<Vec<Creature>> {
     // Chooses an id combination, could be (1, 1, 2). Admits duplicates
     let creatures_ordered_by_level = order_list_by_level(filtered_creatures);
     let mut list_of_levels = Vec::new();
-    creatures_ordered_by_level
-        .keys()
-        .for_each(|key| list_of_levels.push(*key));
+    for key in creatures_ordered_by_level.keys() {
+        list_of_levels.push(*key);
+    }
     let existing_levels = filter_non_existing_levels(&list_of_levels, lvl_combinations);
     let tmp = existing_levels.iter().collect::<Vec<_>>();
     ensure!(
@@ -246,16 +132,10 @@ fn filter_non_existing_levels(
     result_vec
 }
 
-async fn get_filtered_creatures(
-    app_state: &AppState,
-    filters: &BestiaryFilterQuery,
-    allow_weak: bool,
-    allow_elite: bool,
-) -> Result<Vec<Creature>> {
-    get_creatures_passing_all_filters(app_state, filters, allow_weak, allow_elite).await
-}
-
-fn get_lvl_combinations(enc_data: &RandomEncounterData, party_levels: &[i64]) -> HashSet<Vec<i64>> {
+pub fn get_lvl_combinations(
+    enc_data: &RandomEncounterData,
+    party_levels: &[i64],
+) -> HashSet<Vec<i64>> {
     enc_data.adventure_group.as_ref().map_or_else(
         || get_standard_lvl_combinations(enc_data, party_levels),
         |adv_group| get_adventure_group_lvl_combinations(adv_group, party_levels),

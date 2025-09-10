@@ -13,9 +13,9 @@ use crate::models::shop_structs::ShopTemplateData;
 use crate::models::shop_structs::ShopTemplateEnum;
 use crate::models::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
 use crate::models::shop_structs::{RandomShopData, ShopSortData};
-use crate::services::sanitizer::sanitize_id;
-use crate::services::shop_service;
-use crate::services::shop_service::ShopListingResponse;
+use crate::services::pf2e::shop_service;
+use crate::services::pf2e::shop_service::ShopListingResponse;
+use crate::services::shared::sanitizer::sanitize_id;
 use actix_web::web::Query;
 use actix_web::{Responder, get, post, web};
 use utoipa::OpenApi;
@@ -23,25 +23,25 @@ use utoipa::OpenApi;
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/shop")
-            .service(get_item)
-            .service(get_shop_listing)
-            .service(get_items_traits_list)
-            .service(get_templates_data)
-            .service(get_items_sources_list)
-            .service(get_random_shop_listing),
+            .service(pf_get_item)
+            .service(pf_get_shop_listing)
+            .service(pf_get_items_traits_list)
+            .service(pf_get_templates_data)
+            .service(pf_get_items_sources_list)
+            .service(pf_get_random_shop_listing),
     );
 }
 
-pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
+pub fn init_docs() -> utoipa::openapi::OpenApi {
     #[derive(OpenApi)]
     #[openapi(
         paths(
-            get_shop_listing,
-            get_item,
-            get_random_shop_listing,
-            get_items_traits_list,
-            get_templates_data,
-            get_items_sources_list
+            pf_get_shop_listing,
+            pf_get_item,
+            pf_get_random_shop_listing,
+            pf_get_items_traits_list,
+            pf_get_templates_data,
+            pf_get_items_sources_list
         ),
         components(schemas(
             ResponseItem,
@@ -63,13 +63,13 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     )]
     struct ApiDoc;
 
-    doc.merge(ApiDoc::openapi());
+    ApiDoc::openapi()
 }
 
 #[utoipa::path(
     post,
     path = "/shop/list",
-    tag = "shop",
+    tags = ["pf2e", "shop"],
     request_body(
         content = ItemFieldFilters,
         content_type = "application/json",
@@ -83,7 +83,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     ),
 )]
 #[post("/list")]
-pub async fn get_shop_listing(
+pub async fn pf_get_shop_listing(
     data: web::Data<AppState>,
     web::Json(body): web::Json<ItemFieldFilters>,
     pagination: Query<PaginatedRequest>,
@@ -105,7 +105,7 @@ pub async fn get_shop_listing(
 #[utoipa::path(
     post,
     path = "/shop/generator",
-    tag = "shop",
+    tags = ["pf2e", "shop"],
     request_body(
         content = RandomShopData,
         content_type = "application/json",
@@ -119,7 +119,7 @@ pub async fn get_shop_listing(
     ),
 )]
 #[post("/generator")]
-pub async fn get_random_shop_listing(
+pub async fn pf_get_random_shop_listing(
     data: web::Data<AppState>,
     web::Json(body): web::Json<RandomShopData>,
 ) -> actix_web::Result<impl Responder> {
@@ -131,7 +131,7 @@ pub async fn get_random_shop_listing(
 #[utoipa::path(
     get,
     path = "/shop/item/{item_id}",
-    tag = "shop",
+    tags = ["pf2e", "shop"],
     params(
         ("item_id" = String, Path, description = "id of the item to fetch")
     ),
@@ -141,7 +141,7 @@ pub async fn get_random_shop_listing(
     ),
 )]
 #[get("/item/{item_id}")]
-pub async fn get_item(
+pub async fn pf_get_item(
     data: web::Data<AppState>,
     item_id: web::Path<String>,
 ) -> actix_web::Result<impl Responder> {
@@ -153,7 +153,7 @@ pub async fn get_item(
 #[utoipa::path(
     get,
     path = "/shop/sources",
-    tag = "shop",
+    tags = ["pf2e", "shop"],
     params(
 
     ),
@@ -163,7 +163,7 @@ pub async fn get_item(
     ),
 )]
 #[get("/sources")]
-pub async fn get_items_sources_list(
+pub async fn pf_get_items_sources_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_sources_list(&data).await))
@@ -172,7 +172,7 @@ pub async fn get_items_sources_list(
 #[utoipa::path(
     get,
     path = "/shop/traits",
-    tag = "shop",
+    tags = ["pf2e", "shop"],
     params(
 
     ),
@@ -182,14 +182,16 @@ pub async fn get_items_sources_list(
     ),
 )]
 #[get("/traits")]
-pub async fn get_items_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn pf_get_items_traits_list(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_traits_list(&data).await))
 }
 
 #[utoipa::path(
     get,
     path = "/shop/templates_data",
-    tag = "shop",
+    tags = ["pf2e", "shop"],
     params(
 
     ),
@@ -199,6 +201,6 @@ pub async fn get_items_traits_list(data: web::Data<AppState>) -> actix_web::Resu
     ),
 )]
 #[get("/templates_data")]
-pub async fn get_templates_data() -> actix_web::Result<impl Responder> {
+pub async fn pf_get_templates_data() -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_shop_templates_data()))
 }

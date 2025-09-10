@@ -1,4 +1,5 @@
 use crate::models::item::weapon_struct::DamageData;
+use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
 use sqlx::{Pool, Sqlite};
 
@@ -13,86 +14,191 @@ pub async fn fetch_unique_values_of_field(
     Ok(sqlx::query_scalar(query.as_str()).fetch_all(conn).await?)
 }
 
-pub async fn fetch_item_traits(conn: &Pool<Sqlite>, item_id: i64) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar!(
-        "SELECT name
-         FROM TRAIT_TABLE INTERSECT
-         SELECT trait_id FROM TRAIT_ITEM_ASSOCIATION_TABLE WHERE item_id == ($1)
-         ORDER BY name",
-        item_id
-    )
-    .fetch_all(conn)
-    .await?)
+pub async fn fetch_item_traits(
+    conn: &Pool<Sqlite>,
+    gs: &GameSystem,
+    item_id: i64,
+) -> Result<Vec<String>> {
+    let query = match gs {
+        GameSystem::Pathfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                 FROM pf_trait_table INTERSECT
+                 SELECT trait_id FROM pf_trait_item_association_table WHERE item_id == ($1)
+                 ORDER BY name",
+                item_id
+            )
+        }
+        GameSystem::Starfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                 FROM sf_trait_table INTERSECT
+                 SELECT trait_id FROM sf_trait_item_association_table WHERE item_id == ($1)
+                 ORDER BY name",
+                item_id
+            )
+        }
+    };
+    Ok(query.fetch_all(conn).await?)
 }
 
-pub async fn fetch_weapon_traits(conn: &Pool<Sqlite>, weapon_id: i64) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar!(
-        "SELECT name
-         FROM TRAIT_TABLE INTERSECT
-         SELECT trait_id FROM TRAIT_WEAPON_ASSOCIATION_TABLE WHERE weapon_id == ($1)
-         ORDER BY name",
-        weapon_id
-    )
-    .fetch_all(conn)
-    .await?)
+pub async fn fetch_weapon_traits(
+    conn: &Pool<Sqlite>,
+    gs: &GameSystem,
+    weapon_id: i64,
+) -> Result<Vec<String>> {
+    let query = match gs {
+        GameSystem::Pathfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                 FROM pf_trait_table INTERSECT
+                 SELECT trait_id FROM pf_trait_weapon_association_table WHERE weapon_id == ($1)
+                 ORDER BY name",
+                weapon_id
+            )
+        }
+        GameSystem::Starfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                 FROM sf_trait_table INTERSECT
+                 SELECT trait_id FROM sf_trait_weapon_association_table WHERE weapon_id == ($1)
+                 ORDER BY name",
+                weapon_id
+            )
+        }
+    };
+    Ok(query.fetch_all(conn).await?)
 }
 
-pub async fn fetch_shield_traits(conn: &Pool<Sqlite>, shield_id: i64) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar!(
-        "SELECT name
-         FROM TRAIT_TABLE INTERSECT
-         SELECT trait_id FROM TRAIT_SHIELD_ASSOCIATION_TABLE WHERE shield_id == ($1)
-         ORDER BY name",
-        shield_id
-    )
-    .fetch_all(conn)
-    .await?)
+pub async fn fetch_shield_traits(
+    conn: &Pool<Sqlite>,
+    gs: &GameSystem,
+    shield_id: i64,
+) -> Result<Vec<String>> {
+    let query = match gs {
+        GameSystem::Pathfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                 FROM pf_trait_table INTERSECT
+                 SELECT trait_id FROM pf_trait_shield_association_table WHERE shield_id == ($1)
+                 ORDER BY name",
+                shield_id
+            )
+        }
+        GameSystem::Starfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                 FROM sf_trait_table INTERSECT
+                 SELECT trait_id FROM sf_trait_shield_association_table WHERE shield_id == ($1)
+                 ORDER BY name",
+                shield_id
+            )
+        }
+    };
+
+    Ok(query.fetch_all(conn).await?)
 }
 
-pub async fn fetch_armor_traits(conn: &Pool<Sqlite>, armor_id: i64) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar!(
-        "SELECT name
-         FROM TRAIT_TABLE INTERSECT
-         SELECT trait_id FROM TRAIT_ARMOR_ASSOCIATION_TABLE WHERE armor_id == ($1)
-         ORDER BY name",
-        armor_id
-    )
-    .fetch_all(conn)
-    .await?)
+pub async fn fetch_armor_traits(
+    conn: &Pool<Sqlite>,
+    gs: &GameSystem,
+    armor_id: i64,
+) -> Result<Vec<String>> {
+    let query = match gs {
+        GameSystem::Pathfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                 FROM pf_trait_table INTERSECT
+                 SELECT trait_id FROM pf_trait_armor_association_table WHERE armor_id == ($1)
+                 ORDER BY name",
+                armor_id
+            )
+        }
+        GameSystem::Starfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                 FROM sf_trait_table INTERSECT
+                 SELECT trait_id FROM sf_trait_armor_association_table WHERE armor_id == ($1)
+                 ORDER BY name",
+                armor_id
+            )
+        }
+    };
+    Ok(query.fetch_all(conn).await?)
 }
 
-pub async fn fetch_weapon_runes(conn: &Pool<Sqlite>, wp_id: i64) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar!(
-        "SELECT name
-         FROM RUNE_TABLE INTERSECT
-         SELECT rune_id FROM RUNE_WEAPON_ASSOCIATION_TABLE WHERE weapon_id == ($1)
-         ORDER BY name",
-        wp_id
-    )
-    .fetch_all(conn)
-    .await?)
+pub async fn fetch_weapon_runes(
+    conn: &Pool<Sqlite>,
+    gs: &GameSystem,
+    wp_id: i64,
+) -> Result<Vec<String>> {
+    let query = match gs {
+        GameSystem::Pathfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                 FROM pf_rune_table INTERSECT
+                 SELECT rune_id FROM pf_rune_weapon_association_table WHERE weapon_id == ($1)
+                 ORDER BY name",
+                wp_id
+            )
+        }
+        GameSystem::Starfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                 FROM sf_rune_table INTERSECT
+                 SELECT rune_id FROM sf_rune_weapon_association_table WHERE weapon_id == ($1)
+                 ORDER BY name",
+                wp_id
+            )
+        }
+    };
+
+    Ok(query.fetch_all(conn).await?)
 }
 
-pub async fn fetch_weapon_damage_data(conn: &Pool<Sqlite>, wp_id: i64) -> Result<Vec<DamageData>> {
+pub async fn fetch_weapon_damage_data(
+    conn: &Pool<Sqlite>,
+    gs: &GameSystem,
+    wp_id: i64,
+) -> Result<Vec<DamageData>> {
     Ok(sqlx::query_as(
-        "SELECT id, bonus_dmg, dmg_type, number_of_dice, die_size
-         FROM WEAPON_DAMAGE_TABLE dm RIGHT JOIN (
-         SELECT id AS wp_id FROM WEAPON_TABLE WHERE wp_id == ($1)
-         ) ON wp_id == dm.weapon_id",
+        format!(
+            "SELECT id, bonus_dmg, dmg_type, number_of_dice, die_size
+             FROM {gs}_weapon_damage_table dm RIGHT JOIN (
+             SELECT id AS wp_id FROM {gs}_weapon_table WHERE wp_id == ($1)
+             ) ON wp_id == dm.weapon_id",
+        )
+        .as_str(),
     )
     .bind(wp_id)
     .fetch_all(conn)
     .await?)
 }
 
-pub async fn fetch_armor_runes(conn: &Pool<Sqlite>, wp_id: i64) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar!(
-        "SELECT name
-         FROM RUNE_TABLE INTERSECT
-         SELECT rune_id FROM RUNE_ARMOR_ASSOCIATION_TABLE WHERE armor_id == ($1)
-         ORDER BY name",
-        wp_id
-    )
-    .fetch_all(conn)
-    .await?)
+pub async fn fetch_armor_runes(
+    conn: &Pool<Sqlite>,
+    gs: &GameSystem,
+    wp_id: i64,
+) -> Result<Vec<String>> {
+    let query = match gs {
+        GameSystem::Pathfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                 FROM pf_rune_table INTERSECT
+                 SELECT rune_id FROM pf_rune_armor_association_table WHERE armor_id == ($1)
+                 ORDER BY name",
+                wp_id
+            )
+        }
+        GameSystem::Starfinder => {
+            sqlx::query_scalar!(
+                "SELECT name
+                FROM sf_rune_table INTERSECT
+                SELECT rune_id FROM sf_rune_armor_association_table WHERE armor_id == ($1)
+                ORDER BY name",
+                wp_id
+            )
+        }
+    };
+    Ok(query.fetch_all(conn).await?)
 }

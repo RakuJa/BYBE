@@ -5,7 +5,7 @@ use crate::models::creature::creature_component::creature_spellcaster::CreatureS
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
-use crate::models::pf_version_enum::PathfinderVersionEnum;
+use crate::models::pf_version_enum::GameSystemVersionEnum;
 use crate::models::routers_validator_structs::CreatureFieldFilters;
 use serde::{Deserialize, Serialize};
 
@@ -195,10 +195,10 @@ impl Creature {
                         }
                     })
                 }))
-            && match filters.pathfinder_version.clone().unwrap_or_default() {
-                PathfinderVersionEnum::Legacy => !self.core_data.essential.remaster,
-                PathfinderVersionEnum::Remaster => self.core_data.essential.remaster,
-                PathfinderVersionEnum::Any => true,
+            && match filters.game_system_version.clone().unwrap_or_default() {
+                GameSystemVersionEnum::Legacy => !self.core_data.essential.remaster,
+                GameSystemVersionEnum::Remaster => self.core_data.essential.remaster,
+                GameSystemVersionEnum::Any => true,
             }
     }
 

@@ -1,11 +1,13 @@
 use crate::models::bestiary_structs::{BestiaryFilterQuery, CreatureTableFieldsFilter};
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
+use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shop_structs::{ItemTableFieldsFilter, ShopFilterQuery};
 use log::debug;
 
-pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String {
+pub fn prepare_filtered_get_items(gs: &GameSystem, shop_filter_query: &ShopFilterQuery) -> String {
     let equipment_query = prepare_item_subquery(
+        gs,
         &ItemTypeEnum::Equipment,
         shop_filter_query.n_of_equipment,
         &shop_filter_query.item_table_fields_filter,
@@ -13,6 +15,7 @@ pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String
         shop_filter_query.trait_blacklist_filter.iter(),
     );
     let consumable_query = prepare_item_subquery(
+        gs,
         &ItemTypeEnum::Consumable,
         shop_filter_query.n_of_consumables,
         &shop_filter_query.item_table_fields_filter,
@@ -20,6 +23,7 @@ pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String
         shop_filter_query.trait_blacklist_filter.iter(),
     );
     let weapon_query = prepare_item_subquery(
+        gs,
         &ItemTypeEnum::Weapon,
         shop_filter_query.n_of_weapons,
         &shop_filter_query.item_table_fields_filter,
@@ -27,6 +31,7 @@ pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String
         shop_filter_query.trait_blacklist_filter.iter(),
     );
     let armor_query = prepare_item_subquery(
+        gs,
         &ItemTypeEnum::Armor,
         shop_filter_query.n_of_armors,
         &shop_filter_query.item_table_fields_filter,
@@ -34,6 +39,7 @@ pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String
         shop_filter_query.trait_blacklist_filter.iter(),
     );
     let shield_query = prepare_item_subquery(
+        gs,
         &ItemTypeEnum::Shield,
         shop_filter_query.n_of_shields,
         &shop_filter_query.item_table_fields_filter,
@@ -41,17 +47,20 @@ pub fn prepare_filtered_get_items(shop_filter_query: &ShopFilterQuery) -> String
         shop_filter_query.trait_blacklist_filter.iter(),
     );
     let query = format!(
-        "SELECT * FROM ITEM_TABLE WHERE id IN ( {equipment_query} ) OR id IN ({consumable_query} )
+        "SELECT * FROM {gs}_item_table WHERE id IN ( {equipment_query} ) OR id IN ({consumable_query} )
         OR id IN ({weapon_query} ) OR id IN ({armor_query} ) OR id IN ({shield_query} )"
     );
     debug!("{query}");
     query
 }
-pub fn prepare_filtered_get_creatures_core(bestiary_filter_query: &BestiaryFilterQuery) -> String {
-    let initial_statement = "SELECT id FROM CREATURE_CORE";
+pub fn prepare_filtered_get_creatures_core(
+    gs: &GameSystem,
+    bestiary_filter_query: &BestiaryFilterQuery,
+) -> String {
+    let initial_statement = format!("SELECT id FROM {gs}_creature_core");
     let trait_query_tmp = prepare_trait_filter_statement(
-        &prepare_creature_trait_filter(bestiary_filter_query.trait_whitelist_filter.iter()),
-        &prepare_creature_trait_filter(bestiary_filter_query.trait_blacklist_filter.iter()),
+        &prepare_creature_trait_filter(gs, bestiary_filter_query.trait_whitelist_filter.iter()),
+        &prepare_creature_trait_filter(gs, bestiary_filter_query.trait_blacklist_filter.iter()),
     );
     let trait_query = if trait_query_tmp.is_empty() {
         String::new()
@@ -66,7 +75,7 @@ pub fn prepare_filtered_get_creatures_core(bestiary_filter_query: &BestiaryFilte
         "
     WITH CreatureRankedByLevel AS (
         SELECT *, ROW_NUMBER() OVER (PARTITION BY level ORDER BY RANDOM()) AS rn
-        FROM CREATURE_CORE cc WHERE cc.id IN ({where_query})
+        FROM {gs}_creature_core cc WHERE cc.id IN ({where_query})
     )
     SELECT * FROM CreatureRankedByLevel WHERE id IN (
         SELECT id FROM CreatureRankedByLevel WHERE rn>1 ORDER BY RANDOM() LIMIT 20
@@ -110,6 +119,7 @@ fn prepare_bounded_check(column: &str, lower_bound: i64, upper_bound: i64) -> St
 /// ON tcat.trait_id = tt.name GROUP BY tcat.creature_id
 ///```
 fn prepare_trait_filter<I, S>(
+    gs: &GameSystem,
     id_column: &str,
     association_table_name: &str,
     column_values: I,
@@ -122,7 +132,7 @@ where
     in_string.push_str(prepare_case_insensitive_in_statement("tt.name", column_values).as_str());
     if !in_string.is_empty() {
         let select_query = format!("SELECT tcat.{id_column} FROM {association_table_name}");
-        let inner_query = format!("SELECT * FROM TRAIT_TABLE tt WHERE {in_string}");
+        let inner_query = format!("SELECT * FROM {gs}_trait_table tt WHERE {in_string}");
         return format!(
             "{select_query} tcat RIGHT JOIN ({inner_query}) jt ON tcat.trait_id = jt.name"
         );
@@ -184,6 +194,7 @@ where
 }
 
 fn prepare_item_subquery<I, S>(
+    gs: &GameSystem,
     item_type: &ItemTypeEnum,
     n_of_item: i64,
     shop_filter_vectors: &ItemTableFieldsFilter,
@@ -195,9 +206,9 @@ where
     S: ToString,
 {
     let item_type_query = prepare_get_id_matching_item_type_query(item_type);
-    let initial_statement = "SELECT id FROM ITEM_TABLE";
-    let whitelist_query = prepare_item_trait_filter(trait_whitelist_filter);
-    let blacklist_query = prepare_item_trait_filter(trait_blacklist_filter);
+    let initial_statement = format!("SELECT id FROM {gs}_item_table");
+    let whitelist_query = prepare_item_trait_filter(gs, trait_whitelist_filter);
+    let blacklist_query = prepare_item_trait_filter(gs, trait_blacklist_filter);
     let trait_query_tmp = prepare_trait_filter_statement(&whitelist_query, &blacklist_query);
     let trait_query = if trait_query_tmp.is_empty() {
         String::new()
@@ -359,12 +370,12 @@ fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum) -> String {
 /// (SELECT * FROM TRAIT_TABLE WHERE name IN ('good')) tt
 /// ON tcat.trait_id = tt.name GROUP BY tcat.item_id
 ///```
-fn prepare_item_trait_filter<I, S>(column_values: I) -> String
+fn prepare_item_trait_filter<I, S>(gs: &GameSystem, column_values: I) -> String
 where
     I: Iterator<Item = S>,
     S: ToString,
 {
-    prepare_trait_filter("item_id", "TRAIT_ITEM_ASSOCIATION_TABLE", column_values)
+    prepare_trait_filter(gs, "item_id", "TRAIT_ITEM_ASSOCIATION_TABLE", column_values)
 }
 
 /// Prepares a query that gets all the ids linked with a given list of traits, example
@@ -375,12 +386,13 @@ where
 /// (SELECT * FROM TRAIT_TABLE WHERE name IN ('good')) tt
 /// ON tcat.trait_id = tt.name GROUP BY tcat.creature_id
 ///```
-fn prepare_creature_trait_filter<I, S>(column_values: I) -> String
+fn prepare_creature_trait_filter<I, S>(gs: &GameSystem, column_values: I) -> String
 where
     I: Iterator<Item = S>,
     S: ToString,
 {
     prepare_trait_filter(
+        gs,
         "creature_id",
         "TRAIT_CREATURE_ASSOCIATION_TABLE",
         column_values,

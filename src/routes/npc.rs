@@ -7,7 +7,7 @@ use crate::models::npc::job_enum::Job;
 use crate::models::npc::request_npc_struct::{AncestryData, RandomNameData, RandomNpcData};
 use crate::models::response_data::ResponseNpc;
 use crate::models::routers_validator_structs::LevelData;
-use crate::services::npc_service;
+use crate::services::shared::npc_service;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{Responder, get, post, web};
 use utoipa::OpenApi;
@@ -32,7 +32,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     );
 }
 
-pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
+pub fn init_docs() -> utoipa::openapi::OpenApi {
     #[derive(OpenApi)]
     #[openapi(
         paths(
@@ -55,7 +55,7 @@ pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
     )]
     struct ApiDoc;
 
-    doc.merge(ApiDoc::openapi());
+    ApiDoc::openapi()
 }
 
 #[utoipa::path(
@@ -141,12 +141,12 @@ pub async fn get_random_class(
 pub async fn get_random_level(
     body: Option<web::Json<LevelData>>,
 ) -> actix_web::Result<impl Responder> {
-    if let Some(json) = &body {
-        if !json.0.is_data_valid() {
-            return Err(ErrorBadRequest(
-                "Given parameters are not valid. Check for conflicts e.g. min lvl > max lvl",
-            ));
-        }
+    if let Some(json) = &body
+        && !json.0.is_data_valid()
+    {
+        return Err(ErrorBadRequest(
+            "Given parameters are not valid. Check for conflicts e.g. min lvl > max lvl",
+        ));
     }
     Ok(web::Json(npc_service::get_random_level(body.map(|x| x.0))))
 }

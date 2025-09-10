@@ -2,7 +2,7 @@ use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
-use crate::models::pf_version_enum::PathfinderVersionEnum;
+use crate::models::pf_version_enum::GameSystemVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use nanorand::{Rng, WyRand};
@@ -37,7 +37,7 @@ pub struct CreatureFieldFilters {
 
     #[schema(example = json!({"melee": true, "ranged": false, "spellcaster": true}))]
     pub attack_data_filter: Option<BTreeMap<String, Option<bool>>>,
-    pub pathfinder_version: Option<PathfinderVersionEnum>,
+    pub game_system_version: Option<GameSystemVersionEnum>,
 }
 
 #[derive(Serialize, Deserialize, IntoParams, ToSchema)]
@@ -76,7 +76,7 @@ pub struct ItemFieldFilters {
     pub type_filter: Option<Vec<ItemTypeEnum>>,
     pub rarity_filter: Option<Vec<RarityEnum>>,
     pub size_filter: Option<Vec<SizeEnum>>,
-    pub pathfinder_version: Option<PathfinderVersionEnum>,
+    pub game_system_version: Option<GameSystemVersionEnum>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display)]

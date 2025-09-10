@@ -1,5 +1,5 @@
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
-use crate::models::pf_version_enum::PathfinderVersionEnum;
+use crate::models::pf_version_enum::GameSystemVersionEnum;
 use crate::models::routers_validator_structs::{Dice, OrderEnum, PaginatedRequest};
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
@@ -166,7 +166,7 @@ pub struct RandomShopData {
     pub shield_percentage: Option<u8>,
 
     pub shop_template: Option<ShopTemplateEnum>,
-    pub pathfinder_version: Option<PathfinderVersionEnum>,
+    pub game_system_version: Option<GameSystemVersionEnum>,
 }
 
 pub struct ItemTableFieldsFilter {

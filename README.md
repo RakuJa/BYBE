@@ -7,7 +7,7 @@
 
 # BYBE - Backend
 
-> Beyond Your Bestiary Explorer (BYBE) provides tools to help Pathfinder 2e Game Masters. Built as the backend of [BYBE - Frontend](https://github.com/TheAsel/BYBE-frontend/)
+> Beyond Your Bestiary Explorer (BYBE) provides tools to help Pathfinder/Starfinder 2e Game Masters. Built as the backend of [BYBE - Frontend](https://github.com/TheAsel/BYBE-frontend/)
 
 ## Features
 
