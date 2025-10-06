@@ -10,4 +10,5 @@ pub mod response_data;
 pub mod routers_validator_structs;
 pub mod scales_struct;
 pub mod shared;
+pub mod shearable_data;
 pub mod shop_structs;

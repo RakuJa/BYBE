@@ -13,7 +13,7 @@ pub struct Weapon {
     pub weapon_data: WeaponData,
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct WeaponData {
     pub id: i64,
     #[schema(example = 0)]
@@ -67,7 +67,7 @@ impl Weapon {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct DamageData {
     pub id: i64,
     #[schema(example = 10)]

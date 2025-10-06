@@ -105,7 +105,7 @@ impl Default for PaginatedRequest {
     }
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Eq, PartialEq, Hash, Clone)]
+#[derive(Serialize, Deserialize, ToSchema, Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Dice {
     #[schema(minimum = 0, maximum = 255, example = 1)]
     pub n_of_dices: u8,

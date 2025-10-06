@@ -45,7 +45,7 @@ impl From<Creature> for ResponseCreature {
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, PartialEq, Eq, Debug)]
 pub struct ResponseItem {
     pub core_item: Item,
     pub weapon_data: Option<WeaponData>,
@@ -68,7 +68,13 @@ impl From<(Item, GameSystem)> for ResponseItem {
     }
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, ToSchema)]
+pub struct NpcGenerationResponse {
+    pub npc: ResponseNpc,
+    pub game_system: GameSystem,
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 pub struct ResponseNpc {
     pub name: String,
     pub nickname: Option<String>,
@@ -78,7 +84,6 @@ pub struct ResponseNpc {
     pub level: i64,
     pub culture: String,
     pub class: String,
-    pub game_system: GameSystem,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Default)]

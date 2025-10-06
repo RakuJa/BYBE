@@ -6,7 +6,7 @@ use strum::EnumIter;
 use utoipa::ToSchema;
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Eq, Hash, PartialEq, Ord, PartialOrd, Type, EnumIter,
+    Serialize, Deserialize, ToSchema, Eq, Hash, PartialEq, Ord, PartialOrd, Type, EnumIter, Debug,
 )]
 pub enum ItemTypeEnum {
     #[serde(alias = "consumable", alias = "CONSUMABLE")]
@@ -91,7 +91,7 @@ impl Display for ItemTypeEnum {
 }
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Eq, Hash, PartialEq, Ord, PartialOrd, Type, EnumIter,
+    Serialize, Deserialize, ToSchema, Eq, Hash, PartialEq, Ord, PartialOrd, Type, EnumIter, Debug,
 )]
 pub enum WeaponTypeEnum {
     #[serde(alias = "melee", alias = "MELEE")]

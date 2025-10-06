@@ -20,7 +20,7 @@ use crate::models::npc::name_origin_enum::{
     NameSystemOrigin, NameSystemOriginFilter, PfNameOrigin, PfNameOriginFilter, SfNameOrigin,
     SfNameOriginFilter,
 };
-use crate::models::response_data::ResponseNpc;
+use crate::models::response_data::{NpcGenerationResponse, ResponseNpc};
 use crate::models::routers_validator_structs::LevelData;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::services::pf::npc_service as pf_npc_service;
@@ -58,7 +58,7 @@ where
 pub fn generate_random_npc(
     app_state: &AppState,
     npc_req_data: RandomNpcData,
-) -> anyhow::Result<ResponseNpc> {
+) -> anyhow::Result<NpcGenerationResponse> {
     let game_system = match &npc_req_data.name_origin_filter {
         NameSystemOriginFilter::FromPf(_) => GameSystem::Pathfinder,
         NameSystemOriginFilter::FromSf(_) => GameSystem::Pathfinder,
@@ -106,30 +106,32 @@ pub fn generate_random_npc(
         },
     };
 
-    Ok(ResponseNpc {
-        name: generate_random_names(
-            RandomNameData {
-                name_max_length: npc_req_data.name_max_length,
-                max_n_of_names: Some(1),
-                gender: Some(gender.clone()),
-                origin: name_origin,
+    Ok(NpcGenerationResponse {
+        npc: ResponseNpc {
+            name: generate_random_names(
+                RandomNameData {
+                    name_max_length: npc_req_data.name_max_length,
+                    max_n_of_names: Some(1),
+                    gender: Some(gender.clone()),
+                    origin: name_origin,
+                },
+                &app_state.name_json_path,
+            )
+            .first()
+            .unwrap()
+            .clone(),
+            gender,
+            level: get_random_level(npc_req_data.level_filter),
+            ancestry,
+            culture,
+            nickname: if npc_req_data.generate_nickname.unwrap_or(false) {
+                generate_random_nickname(&app_state.nick_json_path)
+            } else {
+                None
             },
-            &app_state.name_json_path,
-        )
-        .first()
-        .unwrap()
-        .clone(),
-        gender,
-        level: get_random_level(npc_req_data.level_filter),
-        ancestry,
-        culture,
-        nickname: if npc_req_data.generate_nickname.unwrap_or(false) {
-            generate_random_nickname(&app_state.nick_json_path)
-        } else {
-            None
+            job: get_random_job(npc_req_data.job_filter),
+            class: get_random_class(npc_req_data.class_filter),
         },
-        job: get_random_job(npc_req_data.job_filter),
-        class: get_random_class(npc_req_data.class_filter),
         game_system,
     })
 }
