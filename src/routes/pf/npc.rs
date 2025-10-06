@@ -118,9 +118,9 @@ pub async fn pf_get_random_class(
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(npc_service::get_random_class(
         if let Some(body) = body {
-            Some(body.0)
+            body.0
         } else {
-            None
+            ClassFilter::FromPf(None)
         },
     )))
 }
@@ -265,9 +265,9 @@ pub async fn pf_get_random_job(
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(npc_service::get_random_job(
         if let Some(body) = body {
-            Some(body.0)
+            body.0
         } else {
-            None
+            JobFilter::FromPf(None)
         },
     )))
 }

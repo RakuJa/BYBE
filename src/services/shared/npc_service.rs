@@ -61,7 +61,7 @@ pub fn generate_random_npc(
 ) -> anyhow::Result<NpcGenerationResponse> {
     let game_system = match &npc_req_data.name_origin_filter {
         NameSystemOriginFilter::FromPf(_) => GameSystem::Pathfinder,
-        NameSystemOriginFilter::FromSf(_) => GameSystem::Pathfinder,
+        NameSystemOriginFilter::FromSf(_) => GameSystem::Starfinder,
     };
     let (gender, name_origin) = match npc_req_data.name_origin_filter {
         NameSystemOriginFilter::FromPf(pf) => match pf.unwrap_or_default() {
@@ -129,8 +129,14 @@ pub fn generate_random_npc(
             } else {
                 None
             },
-            job: get_random_job(npc_req_data.job_filter),
-            class: get_random_class(npc_req_data.class_filter),
+            job: get_random_job(npc_req_data.job_filter.unwrap_or_else(|| match &game_system {
+                GameSystem::Pathfinder => JobFilter::FromPf(None),
+                GameSystem::Starfinder => JobFilter::FromSf(None),
+            })),
+            class: get_random_class(npc_req_data.class_filter.unwrap_or_else(|| match &game_system {
+                GameSystem::Pathfinder => ClassFilter::FromPf(None),
+                GameSystem::Starfinder => ClassFilter::FromSf(None),
+            })),
         },
         game_system,
     })
@@ -158,8 +164,8 @@ pub fn get_classes_list(game_system: &GameSystem) -> Vec<String> {
     }
 }
 
-pub fn get_random_job(filter: Option<JobFilter>) -> String {
-    match filter.unwrap_or_default() {
+pub fn get_random_job(filter: JobFilter) -> String {
+    match filter {
         JobFilter::FromPf(pj) => PfJob::filtered_random(&pj.unwrap_or_default()).to_string(),
         JobFilter::FromSf(sj) => SfJob::filtered_random(&sj.unwrap_or_default()).to_string(),
     }
@@ -207,8 +213,8 @@ pub fn get_random_gender(filter: Option<Vec<Gender>>) -> anyhow::Result<Gender> 
     }
 }
 
-pub fn get_random_class(filter: Option<ClassFilter>) -> String {
-    match filter.unwrap_or_default() {
+pub fn get_random_class(filter: ClassFilter) -> String {
+    match filter {
         ClassFilter::FromPf(pc) => PfClass::filtered_random(&pc.unwrap_or_default()).to_string(),
         ClassFilter::FromSf(sc) => SfClass::filtered_random(&sc.unwrap_or_default()).to_string(),
     }

@@ -14,11 +14,13 @@ pub struct ShareableNpcList {
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, PartialEq, Debug)]
 pub struct ShareableShop {
+    pub(crate) shop_name: String,
     pub(crate) items_data: Vec<ShareableItem>,
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Debug, PartialEq, Eq)]
 pub struct ShareableEncounter {
+    pub(crate) encounter_name: String,
     pub(crate) creatures_data: Vec<SharableCreature>,
 }
 
@@ -55,6 +57,7 @@ mod tests {
 
     fn get_test_shareable_shop(n_items: u64) -> ShareableShop {
         ShareableShop {
+            shop_name: "Osi".to_string(),
             items_data: (0..=n_items)
                 .map(|n| ShareableItem {
                     id: n,
@@ -67,6 +70,7 @@ mod tests {
 
     fn get_test_shareable_encounter(n_items: u64) -> ShareableEncounter {
         ShareableEncounter {
+            encounter_name: "Osi".to_string(),
             creatures_data: (0..=n_items)
                 .map(|n| SharableCreature {
                     id: n,
@@ -81,14 +85,25 @@ mod tests {
     #[tokio::test]
     async fn test_shop_encode_w_one_item() {
         let shop = get_test_shareable_shop(1);
-        assert_eq!("KLUv_QBYOQAAAgABAAEBAA==", shop.encode().await.unwrap())
+        assert_eq!("KLUv_QBYWQAAA09zaQIAAQABAQA=", shop.encode().await.unwrap())
+    }
+
+    #[tokio::test]
+    async fn test_shop_decode_w_one_item() {
+        let shop = get_test_shareable_shop(1);
+        assert_eq!(
+            ShareableShop::decode("KLUv_QBYWQAAA09zaQIAAQABAQA=".to_string())
+                .await
+                .unwrap(),
+            shop
+        )
     }
 
     #[tokio::test]
     async fn test_shop_encode_w_20_items() {
         let shop = get_test_shareable_shop(20);
         assert_eq!(
-            "KLUv_QBYVQEAAoQJlGQiIhEREREREREQ51xzzC2nXHLIHWdcccQNJ1xwwK1Tlw7d7hMA",
+            "KLUv_QBYrQEAQkQMFJA7Y_c7fXd3vbZt27bdRERIkpQCvrjiiSN-uOGFEz644IED3pz5cuXJz5HvMs7TXAA=",
             shop.encode().await.unwrap()
         )
     }
@@ -97,34 +112,41 @@ mod tests {
     async fn test_shop_decode_w_20_items() {
         let shop = get_test_shareable_shop(20);
         assert_eq!(
-            ShareableShop::decode("KLUv_QBYVQEAAoQJlGQiIhEREREREREQ51xzzC2nXHLIHWdcccQNJ1xwwK1Tlw7d7hMA".to_string())
-                .await
-                .unwrap(),
-            shop
-        )
-    }
-    #[tokio::test]
-    async fn test_shop_decode_w_one_item() {
-        let shop = get_test_shareable_shop(1);
-        assert_eq!(
-            ShareableShop::decode("KLUv_QBYOQAAAgABAAEBAA==".to_string())
-                .await
-                .unwrap(),
+            ShareableShop::decode(
+                "KLUv_QBYrQEAQkQMFJA7Y_c7fXd3vbZt27bdRERIkpQCvrjiiSN-uOGFEz644IED3pz5cuXJz5HvMs7TXAA=".to_string()
+            )
+            .await
+            .unwrap(),
             shop
         )
     }
 
+
     #[tokio::test]
     async fn test_encounter_encode_w_one_item() {
         let encounter = get_test_shareable_encounter(1);
-        assert_eq!("KLUv_QBYSQAAAgABAgABAQIA", encounter.encode().await.unwrap())
+        assert_eq!(
+            "KLUv_QBYaQAAA09zaQIAAQIAAQECAA==",
+            encounter.encode().await.unwrap()
+        )
+    }
+
+    #[tokio::test]
+    async fn test_encounter_decode_w_one_item() {
+        let encounter = get_test_shareable_encounter(1);
+        assert_eq!(
+            ShareableEncounter::decode("KLUv_QBYaQAAA09zaQIAAQIAAQECAA==".to_string())
+                .await
+                .unwrap(),
+            encounter
+        )
     }
 
     #[tokio::test]
     async fn test_encounter_encode_w_20_items() {
         let encounter = get_test_shareable_encounter(20);
         assert_eq!(
-            "KLUv_QBYfQEAUsUKCRCoGnYwC8Uqd27GvbgVd-JG3IfbcBduwj24BXfgBtzLrdzJjdzHPfdumwA=",
+            "KLUv_QBY7QEAkkUOFJA7a_c7fXd3vbZt23YTEREhMqUUbaJFtIfW0BZaQjtoBW2gBbRNy7RLq7RJi7RHe9pb2xSMxuIEAA==",
             encounter.encode().await.unwrap()
         )
     }
@@ -134,7 +156,7 @@ mod tests {
         let encounter = get_test_shareable_encounter(20);
         assert_eq!(
             ShareableEncounter::decode(
-                "KLUv_QBYfQEAUsUKCRCoGnYwC8Uqd27GvbgVd-JG3IfbcBduwj24BXfgBtzLrdzJjdzHPfdumwA="
+                "KLUv_QBY7QEAkkUOFJA7a_c7fXd3vbZt23YTEREhMqUUbaJFtIfW0BZaQjtoBW2gBbRNy7RLq7RJi7RHe9pb2xSMxuIEAA=="
                     .to_string()
             )
             .await
@@ -142,14 +164,5 @@ mod tests {
             encounter
         )
     }
-    #[tokio::test]
-    async fn test_encounter_decode_w_one_item() {
-        let encounter = get_test_shareable_encounter(1);
-        assert_eq!(
-            ShareableEncounter::decode("KLUv_QBYSQAAAgABAgABAQIA".to_string())
-                .await
-                .unwrap(),
-            encounter
-        )
-    }
+
 }
