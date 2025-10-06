@@ -13,7 +13,7 @@ use crate::models::encounter_structs::{
 use crate::models::response_data::{ResponseCreature, ResponseDataModifiers};
 use crate::models::routers_validator_structs::CreatureFieldFilters;
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::services::sf2e::encounter_service::get_filtered_creatures;
+use crate::services::pf::encounter_service::get_filtered_creatures;
 use crate::services::shared::encounter_calculator::{
     EncounterInfoResponse, RandomEncounterGeneratorResponse, choose_random_creatures_combination,
     get_encounter_info, get_lvl_combinations,
@@ -41,7 +41,7 @@ pub async fn get_creature(
 ) -> HashMap<String, Option<ResponseCreature>> {
     hashmap! {
         String::from("results") =>
-        bestiary_proxy::get_creature_by_id(app_state, &GameSystem::Starfinder, id, CreatureVariant::Base, response_data_mods).await.map(ResponseCreature::from)
+        bestiary_proxy::get_creature_by_id(app_state, &GameSystem::Pathfinder, id, CreatureVariant::Base, response_data_mods).await.map(ResponseCreature::from)
     }
 }
 
@@ -52,7 +52,7 @@ pub async fn get_elite_creature(
 ) -> HashMap<String, Option<ResponseCreature>> {
     hashmap! {
         String::from("results") =>
-        bestiary_proxy::get_elite_creature_by_id(app_state, &GameSystem::Starfinder, id, response_data_mods).await.map(ResponseCreature::from)
+        bestiary_proxy::get_elite_creature_by_id(app_state, &GameSystem::Pathfinder, id, response_data_mods).await.map(ResponseCreature::from)
     }
 }
 
@@ -63,7 +63,7 @@ pub async fn get_weak_creature(
 ) -> HashMap<String, Option<ResponseCreature>> {
     hashmap! {
         String::from("results") =>
-        bestiary_proxy::get_weak_creature_by_id(app_state, &GameSystem::Starfinder, id, response_data_mods).await.map(ResponseCreature::from)
+        bestiary_proxy::get_weak_creature_by_id(app_state, &GameSystem::Pathfinder, id, response_data_mods).await.map(ResponseCreature::from)
     }
 }
 
@@ -77,7 +77,7 @@ pub async fn get_bestiary_listing(
         pagination,
         bestiary_proxy::get_paginated_creatures(
             app_state,
-            &GameSystem::Starfinder,
+            &GameSystem::Pathfinder,
             field_filter,
             pagination,
         )
@@ -88,7 +88,7 @@ pub async fn get_bestiary_listing(
 pub async fn get_families_list(app_state: &AppState) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(
         app_state,
-        &GameSystem::Starfinder,
+        &GameSystem::Pathfinder,
         CreatureFilter::Family,
     )
     .await
@@ -97,7 +97,7 @@ pub async fn get_families_list(app_state: &AppState) -> Vec<String> {
 pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(
         app_state,
-        &GameSystem::Starfinder,
+        &GameSystem::Pathfinder,
         CreatureFilter::Traits,
     )
     .await
@@ -106,7 +106,7 @@ pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
 pub async fn get_sources_list(app_state: &AppState) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(
         app_state,
-        &GameSystem::Starfinder,
+        &GameSystem::Pathfinder,
         CreatureFilter::Sources,
     )
     .await
@@ -115,7 +115,7 @@ pub async fn get_sources_list(app_state: &AppState) -> Vec<String> {
 pub async fn get_rarities_list(app_state: &AppState) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(
         app_state,
-        &GameSystem::Starfinder,
+        &GameSystem::Pathfinder,
         CreatureFilter::Rarity,
     )
     .await
@@ -124,7 +124,7 @@ pub async fn get_rarities_list(app_state: &AppState) -> Vec<String> {
 pub async fn get_sizes_list(app_state: &AppState) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(
         app_state,
-        &GameSystem::Starfinder,
+        &GameSystem::Pathfinder,
         CreatureFilter::Size,
     )
     .await
@@ -133,7 +133,7 @@ pub async fn get_sizes_list(app_state: &AppState) -> Vec<String> {
 pub async fn get_alignments_list(app_state: &AppState) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(
         app_state,
-        &GameSystem::Starfinder,
+        &GameSystem::Pathfinder,
         CreatureFilter::Alignment,
     )
     .await
@@ -142,7 +142,7 @@ pub async fn get_alignments_list(app_state: &AppState) -> Vec<String> {
 pub async fn get_creature_types_list(app_state: &AppState) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(
         app_state,
-        &GameSystem::Starfinder,
+        &GameSystem::Pathfinder,
         CreatureFilter::CreatureTypes,
     )
     .await
@@ -201,6 +201,7 @@ pub async fn generate_random_encounter(
                 challenge: EncounterChallengeEnum::default(),
                 encounter_exp_levels: BTreeMap::default(),
             },
+            game_system: GameSystem::Pathfinder,
         }
     })
 }
@@ -291,5 +292,6 @@ async fn calculate_random_encounter(
                 .collect(),
             is_pwl_on,
         }),
+        game_system: GameSystem::Pathfinder,
     })
 }

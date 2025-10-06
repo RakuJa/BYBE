@@ -1,9 +1,11 @@
+use crate::traits::ancestry::average_name_length::AverageNameLength;
+use crate::traits::ancestry::context_size::ContextSize;
 use crate::traits::random_enum::RandomEnum;
 use serde::{Deserialize, Serialize};
-use strum::Display;
 use strum::EnumCount;
 use strum::EnumIter;
 use strum::FromRepr;
+use strum::{Display, EnumString};
 use utoipa::ToSchema;
 
 #[derive(
@@ -11,6 +13,7 @@ use utoipa::ToSchema;
     FromRepr,
     Deserialize,
     EnumCount,
+    EnumString,
     Default,
     ToSchema,
     EnumIter,
@@ -21,7 +24,7 @@ use utoipa::ToSchema;
     Display,
     Debug,
 )]
-pub enum Culture {
+pub enum PfCulture {
     #[default]
     Garund,
     Kelesh,
@@ -34,21 +37,23 @@ pub enum Culture {
     Varisian,
 }
 
-impl RandomEnum for Culture {
+impl RandomEnum for PfCulture {
     fn from_repr(value: usize) -> Option<Self> {
         Self::from_repr(value)
     }
 }
 
-impl Culture {
-    pub const fn get_default_order_size(&self) -> usize {
+impl ContextSize for PfCulture {
+    fn context_size(&self) -> usize {
         match self {
             Self::Ulfen | Self::Taldan | Self::Tian => 3,
             _ => 2,
         }
     }
+}
 
-    pub const fn get_default_name_length(&self) -> usize {
+impl AverageNameLength for PfCulture {
+    fn get_average_name_length(&self) -> usize {
         match self {
             Self::Shoanti | Self::Kellid | Self::Varisian => 8,
             Self::Garund | Self::Kelesh | Self::Ulfen => 9,
@@ -56,5 +61,44 @@ impl Culture {
             Self::Tian => 20,
             Self::Mwangi => 15,
         }
+    }
+}
+
+#[derive(
+    Serialize,
+    FromRepr,
+    Deserialize,
+    EnumCount,
+    EnumString,
+    Default,
+    ToSchema,
+    EnumIter,
+    Clone,
+    Eq,
+    PartialEq,
+    Hash,
+    Display,
+    Debug,
+)]
+pub enum SfCulture {
+    #[default]
+    Space,
+}
+
+impl RandomEnum for SfCulture {
+    fn from_repr(value: usize) -> Option<Self> {
+        Self::from_repr(value)
+    }
+}
+
+impl ContextSize for SfCulture {
+    fn context_size(&self) -> usize {
+        2
+    }
+}
+
+impl AverageNameLength for SfCulture {
+    fn get_average_name_length(&self) -> usize {
+        10
     }
 }

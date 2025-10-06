@@ -193,15 +193,17 @@ pub async fn get_creatures_passing_all_filters(
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
                 CreatureVariant::Weak,
+                *gs,
             ));
         }
         if fetch_elite && level_vec.contains(&(core.essential.base_level + 1)) {
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
                 CreatureVariant::Elite,
+                *gs,
             ));
         }
-        creature_vec.push(Creature::from_core(core));
+        creature_vec.push(Creature::from_core(core, *gs));
     }
     Ok(creature_vec)
 }
@@ -296,10 +298,13 @@ async fn get_list(
 ) -> Vec<Creature> {
     if let Ok(creatures) = get_all_creatures_from_db(app_state, gs).await {
         return match variant {
-            CreatureVariant::Base => creatures.into_iter().map(Creature::from_core).collect(),
+            CreatureVariant::Base => creatures
+                .into_iter()
+                .map(|x| Creature::from_core(x, *gs))
+                .collect(),
             _ => creatures
                 .into_iter()
-                .map(|cr| Creature::from_core_with_variant(cr, variant))
+                .map(|cr| Creature::from_core_with_variant(cr, variant, *gs))
                 .collect(),
         };
     }

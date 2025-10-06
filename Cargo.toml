@@ -55,7 +55,7 @@ utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web", "reqwest"] }
 sqlx = { version = "0.8.6", features = ["runtime-async-std", "sqlite"] }
 cached = { version = "0.56.0", features = ["async"] }
 
-nomina = { version = "0.0.3", git = "https://github.com/rakuja/nomina.git" }
+nomina = { version = "0.0.4", git = "https://github.com/rakuja/nomina.git" }
 
 anyhow = "1.0"
 serde = { version = "1.0", features = ["derive"] }

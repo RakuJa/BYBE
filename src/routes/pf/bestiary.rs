@@ -8,7 +8,7 @@ use crate::models::response_data::ResponseDataModifiers;
 use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
-use crate::services::pf2e::bestiary_service::BestiaryResponse;
+use crate::services::pf::bestiary_service::BestiaryResponse;
 
 use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_combat::SavingThrows;
@@ -33,7 +33,7 @@ use crate::models::bestiary_structs::CreatureSortEnum;
 use crate::models::bestiary_structs::{BestiaryPaginatedRequest, BestiarySortData};
 use crate::models::db::sense::Sense;
 use crate::models::routers_validator_structs::{CreatureFieldFilters, PaginatedRequest};
-use crate::services::pf2e::bestiary_service;
+use crate::services::pf::bestiary_service;
 use crate::services::shared::sanitizer::sanitize_id;
 use actix_web::web::Query;
 use actix_web::{Responder, get, post, web};
@@ -112,7 +112,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
 #[utoipa::path(
     post,
     path = "/bestiary/list",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     request_body(
         content = CreatureFieldFilters,
         content_type = "application/json"
@@ -148,7 +148,7 @@ pub async fn pf_get_bestiary_listing(
 #[utoipa::path(
     get,
     path = "/bestiary/families",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     params(
 
     ),
@@ -165,7 +165,7 @@ pub async fn pf_get_families_list(data: web::Data<AppState>) -> actix_web::Resul
 #[utoipa::path(
     get,
     path = "/bestiary/traits",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     params(
 
     ),
@@ -182,7 +182,7 @@ pub async fn pf_get_traits_list(data: web::Data<AppState>) -> actix_web::Result<
 #[utoipa::path(
     get,
     path = "/bestiary/sources",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     params(
 
     ),
@@ -199,7 +199,7 @@ pub async fn pf_get_sources_list(data: web::Data<AppState>) -> actix_web::Result
 #[utoipa::path(
     get,
     path = "/bestiary/rarities",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     params(
 
     ),
@@ -216,7 +216,7 @@ pub async fn pf_get_rarities_list(data: web::Data<AppState>) -> actix_web::Resul
 #[utoipa::path(
     get,
     path = "/bestiary/sizes",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     params(
 
     ),
@@ -233,7 +233,7 @@ pub async fn pf_get_sizes_list(data: web::Data<AppState>) -> actix_web::Result<i
 #[utoipa::path(
     get,
     path = "/bestiary/alignments",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     params(
 
     ),
@@ -254,7 +254,7 @@ pub async fn pf_get_alignments_list(
 #[utoipa::path(
     get,
     path = "/bestiary/creature_types",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     params(
 
     ),
@@ -275,7 +275,7 @@ pub async fn pf_get_creature_types_list(
 #[utoipa::path(
     get,
     path = "/bestiary/creature_roles",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     params(
 
     ),
@@ -292,7 +292,7 @@ pub async fn pf_get_creature_roles_list() -> actix_web::Result<impl Responder> {
 #[utoipa::path(
     get,
     path = "/bestiary/base/{creature_id}",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
         ResponseDataModifiers,
@@ -317,7 +317,7 @@ pub async fn pf_get_creature(
 #[utoipa::path(
     get,
     path = "/bestiary/elite/{creature_id}",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
         ResponseDataModifiers
@@ -346,7 +346,7 @@ pub async fn pf_get_elite_creature(
 #[utoipa::path(
     get,
     path = "/bestiary/weak/{creature_id}",
-    tags = ["pf2e", "bestiary"],
+    tags = ["pf", "bestiary"],
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
         ResponseDataModifiers,

@@ -7,14 +7,14 @@ use crate::models::item::shield_struct::ShieldData;
 use crate::models::item::weapon_struct::DamageData;
 use crate::models::item::weapon_struct::WeaponData;
 use crate::models::response_data::ResponseItem;
+use crate::models::response_data::ShopListingResponse;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::routers_validator_structs::{Dice, PaginatedRequest};
 use crate::models::shop_structs::ShopTemplateData;
 use crate::models::shop_structs::ShopTemplateEnum;
 use crate::models::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
 use crate::models::shop_structs::{RandomShopData, ShopSortData};
-use crate::services::sf2e::shop_service;
-use crate::services::sf2e::shop_service::ShopListingResponse;
+use crate::services::sf::shop_service;
 use crate::services::shared::sanitizer::sanitize_id;
 use actix_web::web::Query;
 use actix_web::{Responder, get, post, web};
@@ -23,12 +23,12 @@ use utoipa::OpenApi;
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/shop")
-            .service(sf2e_get_item)
-            .service(sf2e_get_shop_listing)
-            .service(sf2e_get_items_traits_list)
-            .service(sf2e_get_templates_data)
-            .service(sf2e_get_items_sources_list)
-            .service(sf2e_get_random_shop_listing),
+            .service(sf_get_item)
+            .service(sf_get_shop_listing)
+            .service(sf_get_items_traits_list)
+            .service(sf_get_templates_data)
+            .service(sf_get_items_sources_list)
+            .service(sf_get_random_shop_listing),
     );
 }
 
@@ -36,12 +36,12 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
     #[derive(OpenApi)]
     #[openapi(
         paths(
-            sf2e_get_shop_listing,
-            sf2e_get_item,
-            sf2e_get_random_shop_listing,
-            sf2e_get_items_traits_list,
-            sf2e_get_templates_data,
-            sf2e_get_items_sources_list
+            sf_get_shop_listing,
+            sf_get_item,
+            sf_get_random_shop_listing,
+            sf_get_items_traits_list,
+            sf_get_templates_data,
+            sf_get_items_sources_list
         ),
         components(schemas(
             ResponseItem,
@@ -69,7 +69,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
 #[utoipa::path(
     post,
     path = "/shop/list",
-    tags = ["sf2e", "shop"],
+    tags = ["sf", "shop"],
     request_body(
         content = ItemFieldFilters,
         content_type = "application/json",
@@ -83,7 +83,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
     ),
 )]
 #[post("/list")]
-pub async fn sf2e_get_shop_listing(
+pub async fn sf_get_shop_listing(
     data: web::Data<AppState>,
     web::Json(body): web::Json<ItemFieldFilters>,
     pagination: Query<PaginatedRequest>,
@@ -105,7 +105,7 @@ pub async fn sf2e_get_shop_listing(
 #[utoipa::path(
     post,
     path = "/shop/generator",
-    tags = ["sf2e", "shop"],
+    tags = ["sf", "shop"],
     request_body(
         content = RandomShopData,
         content_type = "application/json",
@@ -119,7 +119,7 @@ pub async fn sf2e_get_shop_listing(
     ),
 )]
 #[post("/generator")]
-pub async fn sf2e_get_random_shop_listing(
+pub async fn sf_get_random_shop_listing(
     data: web::Data<AppState>,
     web::Json(body): web::Json<RandomShopData>,
 ) -> actix_web::Result<impl Responder> {
@@ -131,7 +131,7 @@ pub async fn sf2e_get_random_shop_listing(
 #[utoipa::path(
     get,
     path = "/shop/item/{item_id}",
-    tags = ["sf2e", "shop"],
+    tags = ["sf", "shop"],
     params(
         ("item_id" = String, Path, description = "id of the item to fetch")
     ),
@@ -141,7 +141,7 @@ pub async fn sf2e_get_random_shop_listing(
     ),
 )]
 #[get("/item/{item_id}")]
-pub async fn sf2e_get_item(
+pub async fn sf_get_item(
     data: web::Data<AppState>,
     item_id: web::Path<String>,
 ) -> actix_web::Result<impl Responder> {
@@ -153,7 +153,7 @@ pub async fn sf2e_get_item(
 #[utoipa::path(
     get,
     path = "/shop/sources",
-    tags = ["sf2e", "shop"],
+    tags = ["sf", "shop"],
     params(
 
     ),
@@ -163,7 +163,7 @@ pub async fn sf2e_get_item(
     ),
 )]
 #[get("/sources")]
-pub async fn sf2e_get_items_sources_list(
+pub async fn sf_get_items_sources_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_sources_list(&data).await))
@@ -172,7 +172,7 @@ pub async fn sf2e_get_items_sources_list(
 #[utoipa::path(
     get,
     path = "/shop/traits",
-    tags = ["sf2e", "shop"],
+    tags = ["sf", "shop"],
     params(
 
     ),
@@ -182,7 +182,7 @@ pub async fn sf2e_get_items_sources_list(
     ),
 )]
 #[get("/traits")]
-pub async fn sf2e_get_items_traits_list(
+pub async fn sf_get_items_traits_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_traits_list(&data).await))
@@ -191,7 +191,7 @@ pub async fn sf2e_get_items_traits_list(
 #[utoipa::path(
     get,
     path = "/shop/templates_data",
-    tags = ["sf2e", "shop"],
+    tags = ["sf", "shop"],
     params(
 
     ),
@@ -201,6 +201,6 @@ pub async fn sf2e_get_items_traits_list(
     ),
 )]
 #[get("/templates_data")]
-pub async fn sf2e_get_templates_data() -> actix_web::Result<impl Responder> {
+pub async fn sf_get_templates_data() -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_shop_templates_data()))
 }

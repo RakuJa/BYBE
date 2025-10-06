@@ -1,14 +1,26 @@
 use crate::traits::random_enum::RandomEnum;
 use serde::{Deserialize, Serialize};
-use strum::EnumCount;
 use strum::EnumIter;
 use strum::FromRepr;
+use strum::{Display, EnumCount};
 use utoipa::ToSchema;
 
 #[derive(
-    Serialize, FromRepr, Deserialize, EnumCount, Default, ToSchema, EnumIter, Clone, Debug,
+    Serialize,
+    FromRepr,
+    Deserialize,
+    EnumCount,
+    Default,
+    ToSchema,
+    EnumIter,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Display,
 )]
-pub enum Job {
+pub enum PfJob {
     Alchemist,
     AnimalTrainer,
     #[default]
@@ -206,8 +218,171 @@ pub enum Job {
     FireEater,
 }
 
-impl RandomEnum for Job {
+impl RandomEnum for PfJob {
     fn from_repr(value: usize) -> Option<Self> {
         Self::from_repr(value)
+    }
+}
+
+#[derive(
+    Serialize,
+    FromRepr,
+    Deserialize,
+    EnumCount,
+    Default,
+    ToSchema,
+    EnumIter,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Display,
+)]
+pub enum SfJob {
+    BountyHunter,
+    Freelancer,
+    Smuggler,
+    #[default]
+    Pirate,
+    Mercenary,
+    Soldier,
+    StarshipPilot,
+    Engineer,
+    Technician,
+    Scientist,
+    Biologist,
+    Chemist,
+    Physicist,
+    Navigator,
+    Doctor,
+    Medic,
+    Hacker,
+    Diplomat,
+    Trader,
+    Merchant,
+    Archaeologist,
+    Explorer,
+    Scout,
+    Researcher,
+    Psionic,
+    Mystic,
+    Technomancer,
+    MysticHealer,
+    LawOfficer,
+    SecurityOfficer,
+    MechPilot,
+    RoboticsEngineer,
+    RoboticsOperator,
+    Salvager,
+    Miner,
+    SpaceMarine,
+    SpaceMonk,
+    Astrologer,
+    Historian,
+    Courier,
+    Chef,
+    Farmer,
+    Shipwright,
+    ShipAISpecialist,
+    DroneOperator,
+    OrbitalDockworker,
+    JumpgateTechnician,
+    CorporateExecutive,
+    CorporateMercenary,
+    SolarCultist,
+    Xenozoologist,
+    Pilot,
+    NavigatorAssistant,
+    WeaponsSpecialist,
+    ArmorTechnician,
+    SpaceMedic,
+    CombatEngineer,
+    CommunicationsOfficer,
+    IntelligenceOfficer,
+    ResearchScientist,
+    PlanetaryGeologist,
+    Astrophysicist,
+    Pharmacologist,
+    Cyberneticist,
+    StarshipMechanic,
+    StarshipEngineer,
+    StarshipTactician,
+    StarshipGunner,
+    StarshipNavigator,
+    StarshipCommunications,
+    StarshipOperations,
+    CargoTechnician,
+    LogisticsOfficer,
+    Quartermaster,
+    SupplyOfficer,
+    Exobiologist,
+    Xenobotanist,
+    Xenologist,
+    Linguist,
+    Anthropologist,
+    Psychologist,
+    Counselor,
+    HistorianArchivist,
+    Archivist,
+    Curator,
+    DiplomaticAttaché,
+    CorporateSpy,
+    IntelligenceAnalyst,
+    SecurityConsultant,
+    SystemsEngineer,
+    ComputerProgrammer,
+    AIOperator,
+    DroidTechnician,
+    MaintenanceTechnician,
+    MinerSupervisor,
+    SpaceTrader,
+    ShuttlePilot,
+    StellarCartographer,
+    AsteroidSurveyor,
+    OrbitalFarmer,
+    HydroponicsTechnician,
+    CommunicationsTechnician,
+    MedicalTechnician,
+    HospitalAdministrator,
+    EnvironmentalEngineer,
+    PlanetarySurveyor,
+    ResearchAssistant,
+}
+
+impl RandomEnum for SfJob {
+    fn from_repr(value: usize) -> Option<Self> {
+        Self::from_repr(value)
+    }
+}
+
+#[derive(
+    Serialize,
+    FromRepr,
+    Deserialize,
+    EnumCount,
+    ToSchema,
+    EnumIter,
+    Clone,
+    Eq,
+    PartialEq,
+    Hash,
+    Display,
+    Debug,
+)]
+pub enum JobFilter {
+    FromPf(Option<Vec<PfJob>>),
+    FromSf(Option<Vec<SfJob>>),
+}
+
+impl RandomEnum for JobFilter {
+    fn from_repr(value: usize) -> Option<Self> {
+        Self::from_repr(value)
+    }
+}
+
+impl Default for JobFilter {
+    fn default() -> Self {
+        Self::FromPf(None)
     }
 }

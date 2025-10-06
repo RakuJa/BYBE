@@ -8,7 +8,7 @@ use crate::models::response_data::ResponseDataModifiers;
 use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
-use crate::services::sf2e::bestiary_service::BestiaryResponse;
+use crate::services::sf::bestiary_service::BestiaryResponse;
 
 use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_combat::SavingThrows;
@@ -33,7 +33,7 @@ use crate::models::bestiary_structs::CreatureSortEnum;
 use crate::models::bestiary_structs::{BestiaryPaginatedRequest, BestiarySortData};
 use crate::models::db::sense::Sense;
 use crate::models::routers_validator_structs::{CreatureFieldFilters, PaginatedRequest};
-use crate::services::sf2e::bestiary_service;
+use crate::services::sf::bestiary_service;
 use crate::services::shared::sanitizer::sanitize_id;
 use actix_web::web::Query;
 use actix_web::{Responder, get, post, web};
@@ -42,18 +42,18 @@ use utoipa::OpenApi;
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/bestiary")
-            .service(sf2e_get_bestiary_listing)
-            .service(sf2e_get_elite_creature)
-            .service(sf2e_get_weak_creature)
-            .service(sf2e_get_creature)
-            .service(sf2e_get_families_list)
-            .service(sf2e_get_traits_list)
-            .service(sf2e_get_sources_list)
-            .service(sf2e_get_rarities_list)
-            .service(sf2e_get_creature_types_list)
-            .service(sf2e_get_creature_roles_list)
-            .service(sf2e_get_sizes_list)
-            .service(sf2e_get_alignments_list),
+            .service(sf_get_bestiary_listing)
+            .service(sf_get_elite_creature)
+            .service(sf_get_weak_creature)
+            .service(sf_get_creature)
+            .service(sf_get_families_list)
+            .service(sf_get_traits_list)
+            .service(sf_get_sources_list)
+            .service(sf_get_rarities_list)
+            .service(sf_get_creature_types_list)
+            .service(sf_get_creature_roles_list)
+            .service(sf_get_sizes_list)
+            .service(sf_get_alignments_list),
     );
 }
 
@@ -61,18 +61,18 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
     #[derive(OpenApi)]
     #[openapi(
         paths(
-            sf2e_get_bestiary_listing,
-            sf2e_get_families_list,
-            sf2e_get_traits_list,
-            sf2e_get_sources_list,
-            sf2e_get_rarities_list,
-            sf2e_get_sizes_list,
-            sf2e_get_alignments_list,
-            sf2e_get_creature_types_list,
-            sf2e_get_creature_roles_list,
-            sf2e_get_creature,
-            sf2e_get_elite_creature,
-            sf2e_get_weak_creature,
+            sf_get_bestiary_listing,
+            sf_get_families_list,
+            sf_get_traits_list,
+            sf_get_sources_list,
+            sf_get_rarities_list,
+            sf_get_sizes_list,
+            sf_get_alignments_list,
+            sf_get_creature_types_list,
+            sf_get_creature_roles_list,
+            sf_get_creature,
+            sf_get_elite_creature,
+            sf_get_weak_creature,
         ),
         components(schemas(
             BestiaryResponse,
@@ -113,7 +113,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
 #[utoipa::path(
     post,
     path = "/bestiary/list",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     request_body(
         content = CreatureFieldFilters,
         content_type = "application/json"
@@ -127,7 +127,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
     ),
 )]
 #[post("/list")]
-pub async fn sf2e_get_bestiary_listing(
+pub async fn sf_get_bestiary_listing(
     data: web::Data<AppState>,
     web::Json(body): web::Json<CreatureFieldFilters>,
     pagination: Query<PaginatedRequest>,
@@ -149,7 +149,7 @@ pub async fn sf2e_get_bestiary_listing(
 #[utoipa::path(
     get,
     path = "/bestiary/families",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     params(
 
     ),
@@ -159,16 +159,14 @@ pub async fn sf2e_get_bestiary_listing(
     ),
 )]
 #[get("/families")]
-pub async fn sf2e_get_families_list(
-    data: web::Data<AppState>,
-) -> actix_web::Result<impl Responder> {
+pub async fn sf_get_families_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_families_list(&data).await))
 }
 
 #[utoipa::path(
     get,
     path = "/bestiary/traits",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     params(
 
     ),
@@ -178,14 +176,14 @@ pub async fn sf2e_get_families_list(
     ),
 )]
 #[get("/traits")]
-pub async fn sf2e_get_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn sf_get_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_traits_list(&data).await))
 }
 
 #[utoipa::path(
     get,
     path = "/bestiary/sources",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     params(
 
     ),
@@ -195,14 +193,14 @@ pub async fn sf2e_get_traits_list(data: web::Data<AppState>) -> actix_web::Resul
     ),
 )]
 #[get("/sources")]
-pub async fn sf2e_get_sources_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn sf_get_sources_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_sources_list(&data).await))
 }
 
 #[utoipa::path(
     get,
     path = "/bestiary/rarities",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     params(
 
     ),
@@ -212,16 +210,14 @@ pub async fn sf2e_get_sources_list(data: web::Data<AppState>) -> actix_web::Resu
     ),
 )]
 #[get("/rarities")]
-pub async fn sf2e_get_rarities_list(
-    data: web::Data<AppState>,
-) -> actix_web::Result<impl Responder> {
+pub async fn sf_get_rarities_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_rarities_list(&data).await))
 }
 
 #[utoipa::path(
     get,
     path = "/bestiary/sizes",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     params(
 
     ),
@@ -231,14 +227,14 @@ pub async fn sf2e_get_rarities_list(
     ),
 )]
 #[get("/sizes")]
-pub async fn sf2e_get_sizes_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn sf_get_sizes_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_sizes_list(&data).await))
 }
 
 #[utoipa::path(
     get,
     path = "/bestiary/alignments",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     params(
 
     ),
@@ -248,7 +244,7 @@ pub async fn sf2e_get_sizes_list(data: web::Data<AppState>) -> actix_web::Result
     ),
 )]
 #[get("/alignments")]
-pub async fn sf2e_get_alignments_list(
+pub async fn sf_get_alignments_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
@@ -259,7 +255,7 @@ pub async fn sf2e_get_alignments_list(
 #[utoipa::path(
     get,
     path = "/bestiary/creature_types",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     params(
 
     ),
@@ -269,7 +265,7 @@ pub async fn sf2e_get_alignments_list(
     ),
 )]
 #[get("/creature_types")]
-pub async fn sf2e_get_creature_types_list(
+pub async fn sf_get_creature_types_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
@@ -280,7 +276,7 @@ pub async fn sf2e_get_creature_types_list(
 #[utoipa::path(
     get,
     path = "/bestiary/creature_roles",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     params(
 
     ),
@@ -290,14 +286,14 @@ pub async fn sf2e_get_creature_types_list(
     ),
 )]
 #[get("/creature_roles")]
-pub async fn sf2e_get_creature_roles_list() -> actix_web::Result<impl Responder> {
+pub async fn sf_get_creature_roles_list() -> actix_web::Result<impl Responder> {
     Ok(web::Json(bestiary_service::get_creature_roles_list()))
 }
 
 #[utoipa::path(
     get,
     path = "/bestiary/base/{creature_id}",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
         ResponseDataModifiers,
@@ -308,7 +304,7 @@ pub async fn sf2e_get_creature_roles_list() -> actix_web::Result<impl Responder>
     ),
 )]
 #[get("/base/{creature_id}")]
-pub async fn sf2e_get_creature(
+pub async fn sf_get_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
     response_data_mods: Query<ResponseDataModifiers>,
@@ -322,7 +318,7 @@ pub async fn sf2e_get_creature(
 #[utoipa::path(
     get,
     path = "/bestiary/elite/{creature_id}",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
         ResponseDataModifiers
@@ -333,7 +329,7 @@ pub async fn sf2e_get_creature(
     ),
 )]
 #[get("/elite/{creature_id}")]
-pub async fn sf2e_get_elite_creature(
+pub async fn sf_get_elite_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
     response_data_mods: Query<ResponseDataModifiers>,
@@ -351,7 +347,7 @@ pub async fn sf2e_get_elite_creature(
 #[utoipa::path(
     get,
     path = "/bestiary/weak/{creature_id}",
-    tags = ["sf2e", "bestiary"],
+    tags = ["sf", "bestiary"],
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
         ResponseDataModifiers,
@@ -362,7 +358,7 @@ pub async fn sf2e_get_elite_creature(
     ),
 )]
 #[get("/weak/{creature_id}")]
-pub async fn sf2e_get_weak_creature(
+pub async fn sf_get_weak_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
     response_data_mods: Query<ResponseDataModifiers>,

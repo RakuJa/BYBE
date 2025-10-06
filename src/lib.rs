@@ -9,7 +9,7 @@ mod services;
 mod traits;
 
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::routes::{health, npc, pf, sf};
+use crate::routes::{health, pf, sf};
 use actix_cors::Cors;
 use actix_web::http::header::{CacheControl, CacheDirective};
 use actix_web::{App, HttpResponse, HttpServer, Responder, get, middleware, web};
@@ -100,13 +100,14 @@ fn get_service_workers() -> usize {
 fn init_docs(openapi: utoipa::openapi::OpenApi) -> utoipa::openapi::OpenApi {
     openapi
         .merge_from(health::init_docs())
-        .merge_from(npc::init_docs())
-        .nest("/pf2e", pf::bestiary::init_docs())
-        .nest("/pf2e", pf::encounter::init_docs())
-        .nest("/pf2e", pf::shop::init_docs())
-        .nest("/sf2e", sf::bestiary::init_docs())
-        .nest("/sf2e", sf::encounter::init_docs())
-        .nest("/sf2e", sf::shop::init_docs())
+        .nest("/pf", pf::bestiary::init_docs())
+        .nest("/pf", pf::encounter::init_docs())
+        .nest("/pf", pf::shop::init_docs())
+        .nest("/pf", pf::npc::init_docs())
+        .nest("/sf", sf::bestiary::init_docs())
+        .nest("/sf", sf::encounter::init_docs())
+        .nest("/sf", sf::shop::init_docs())
+        .nest("/sf", sf::npc::init_docs())
 }
 
 #[actix_web::main]
@@ -184,19 +185,20 @@ pub async fn start(
             )
             .service(index)
             .service(
-                web::scope("/pf2e")
+                web::scope("/pf")
                     .configure(pf::bestiary::init_endpoints)
                     .configure(pf::encounter::init_endpoints)
-                    .configure(pf::shop::init_endpoints),
+                    .configure(pf::shop::init_endpoints)
+                    .configure(pf::npc::init_endpoints),
             )
             .service(
-                web::scope("/sf2e")
+                web::scope("/sf")
                     .configure(sf::bestiary::init_endpoints)
                     .configure(sf::encounter::init_endpoints)
-                    .configure(sf::shop::init_endpoints),
+                    .configure(sf::shop::init_endpoints)
+                    .configure(sf::npc::init_endpoints),
             )
             .configure(health::init_endpoints)
-            .configure(npc::init_endpoints)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )

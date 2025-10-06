@@ -917,6 +917,7 @@ pub async fn fetch_creature_by_id(
         } else {
             None
         },
+        game_system: *gs,
     }
     .convert_creature_to_variant(variant);
     Ok(if response_data_mods.is_pwl_on.unwrap_or(false) {

@@ -6,15 +6,14 @@ use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::ShieldData;
 use crate::models::item::weapon_struct::DamageData;
 use crate::models::item::weapon_struct::WeaponData;
-use crate::models::response_data::ResponseItem;
+use crate::models::response_data::{ResponseItem, ShopListingResponse};
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::routers_validator_structs::{Dice, PaginatedRequest};
 use crate::models::shop_structs::ShopTemplateData;
 use crate::models::shop_structs::ShopTemplateEnum;
 use crate::models::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
 use crate::models::shop_structs::{RandomShopData, ShopSortData};
-use crate::services::pf2e::shop_service;
-use crate::services::pf2e::shop_service::ShopListingResponse;
+use crate::services::pf::shop_service;
 use crate::services::shared::sanitizer::sanitize_id;
 use actix_web::web::Query;
 use actix_web::{Responder, get, post, web};
@@ -69,7 +68,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
 #[utoipa::path(
     post,
     path = "/shop/list",
-    tags = ["pf2e", "shop"],
+    tags = ["pf", "shop"],
     request_body(
         content = ItemFieldFilters,
         content_type = "application/json",
@@ -105,7 +104,7 @@ pub async fn pf_get_shop_listing(
 #[utoipa::path(
     post,
     path = "/shop/generator",
-    tags = ["pf2e", "shop"],
+    tags = ["pf", "shop"],
     request_body(
         content = RandomShopData,
         content_type = "application/json",
@@ -131,7 +130,7 @@ pub async fn pf_get_random_shop_listing(
 #[utoipa::path(
     get,
     path = "/shop/item/{item_id}",
-    tags = ["pf2e", "shop"],
+    tags = ["pf", "shop"],
     params(
         ("item_id" = String, Path, description = "id of the item to fetch")
     ),
@@ -153,7 +152,7 @@ pub async fn pf_get_item(
 #[utoipa::path(
     get,
     path = "/shop/sources",
-    tags = ["pf2e", "shop"],
+    tags = ["pf", "shop"],
     params(
 
     ),
@@ -172,7 +171,7 @@ pub async fn pf_get_items_sources_list(
 #[utoipa::path(
     get,
     path = "/shop/traits",
-    tags = ["pf2e", "shop"],
+    tags = ["pf", "shop"],
     params(
 
     ),
@@ -191,7 +190,7 @@ pub async fn pf_get_items_traits_list(
 #[utoipa::path(
     get,
     path = "/shop/templates_data",
-    tags = ["pf2e", "shop"],
+    tags = ["pf", "shop"],
     params(
 
     ),

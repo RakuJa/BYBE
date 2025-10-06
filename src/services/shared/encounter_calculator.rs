@@ -4,6 +4,7 @@ use crate::models::encounter_structs::{
     AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, RandomEncounterData,
 };
 use crate::models::response_data::ResponseCreature;
+use crate::models::shared::game_system_enum::GameSystem;
 use crate::services::encounter_handler::encounter_calculator;
 use crate::services::encounter_handler::encounter_calculator::calculate_encounter_scaling_difficulty;
 use anyhow::{Result, ensure};
@@ -29,6 +30,7 @@ pub struct RandomEncounterGeneratorResponse {
     pub(crate) results: Option<Vec<ResponseCreature>>,
     pub(crate) count: usize,
     pub(crate) encounter_info: EncounterInfoResponse,
+    pub(crate) game_system: GameSystem,
 }
 
 pub fn get_encounter_info(enc_params: &EncounterParams) -> EncounterInfoResponse {

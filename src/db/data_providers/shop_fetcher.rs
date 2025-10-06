@@ -28,24 +28,27 @@ pub async fn fetch_item_by_id(
     .await?;
     item.traits = fetch_item_traits(conn, gs, item_id).await?;
     Ok(match item.item_type {
-        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => ResponseItem::from(item),
+        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => ResponseItem::from((item, *gs)),
         ItemTypeEnum::Weapon => ResponseItem {
             core_item: item,
             weapon_data: fetch_weapon_data_by_item_id(conn, gs, item_id).await.ok(),
             armor_data: None,
             shield_data: None,
+            game_system: *gs,
         },
         ItemTypeEnum::Armor => ResponseItem {
             core_item: item,
             weapon_data: None,
             armor_data: fetch_armor_data_by_item_id(conn, gs, item_id).await.ok(),
             shield_data: None,
+            game_system: *gs,
         },
         ItemTypeEnum::Shield => ResponseItem {
             core_item: item,
             weapon_data: None,
             armor_data: None,
             shield_data: fetch_shield_data_by_item_id(conn, gs, item_id).await.ok(),
+            game_system: *gs,
         },
     })
 }

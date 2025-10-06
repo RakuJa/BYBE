@@ -1,27 +1,41 @@
-use crate::models::npc::culture_enum::Culture;
-use crate::models::{
-    npc::{ancestry_enum::Ancestry, gender_enum::Gender},
-    shared::rarity_enum::RarityEnum,
-};
+use crate::models::npc::gender_enum::Gender;
 use serde::Deserialize;
 
 #[derive(Deserialize)]
-#[allow(dead_code)]
 pub struct Names {
-    rarity: RarityEnum,
-    pub by_ancestry: Vec<NamesByAncestry>,
+    pub pf_names: GameSystemNames,
+    pub sf_names: GameSystemNames,
+}
+
+#[derive(Deserialize)]
+pub struct GameSystemNames {
+    pub by_ancestry: NamesByAncestryRarity,
     pub by_culture: Vec<NamesByCulture>,
 }
 
 #[derive(Deserialize)]
+pub struct NamesByAncestryRarity {
+    pub rarity: NamesByRarity,
+}
+
+#[derive(Deserialize)]
+//#[allow(dead_code)]
+pub struct NamesByRarity {
+    pub common: Vec<NamesByAncestry>,
+    pub uncommon: Vec<NamesByAncestry>,
+    pub rare: Vec<NamesByAncestry>,
+    pub unique: Vec<NamesByAncestry>,
+}
+
+#[derive(Deserialize)]
 pub struct NamesByAncestry {
-    pub ancestry: Ancestry,
+    pub ancestry: String,
     pub names: Vec<NamesByGender>,
 }
 
 #[derive(Deserialize)]
 pub struct NamesByCulture {
-    pub culture: Culture,
+    pub culture: String,
     pub names: Vec<NamesByGender>,
 }
 

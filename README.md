@@ -17,7 +17,9 @@
 - Support for both remaster and legacy content.
 - Browse and filter a list of all items.
 - Generate random shop with custom templates.
-- More to come...
+- Support for Starfinder 2e.
+- Generate random npc.
+- Share encounters/shops.
 
 ## Requirements
 

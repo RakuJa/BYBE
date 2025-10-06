@@ -1,12 +1,14 @@
 use crate::AppState;
-use crate::models::npc::ancestry_enum::Ancestry;
-use crate::models::npc::class_enum::Class;
-use crate::models::npc::culture_enum::Culture;
+use crate::models::npc::ancestry_enum::PfAncestry;
+use crate::models::npc::class_enum::ClassFilter;
+use crate::models::npc::culture_enum::PfCulture;
 use crate::models::npc::gender_enum::Gender;
-use crate::models::npc::job_enum::Job;
+use crate::models::npc::job_enum::JobFilter;
 use crate::models::npc::request_npc_struct::{AncestryData, RandomNameData, RandomNpcData};
 use crate::models::response_data::ResponseNpc;
 use crate::models::routers_validator_structs::LevelData;
+use crate::models::shared::game_system_enum::GameSystem;
+use crate::services::pf::npc_service as pf_npc_service;
 use crate::services::shared::npc_service;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{Responder, get, post, web};
@@ -15,20 +17,20 @@ use utoipa::OpenApi;
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/npc")
-            .service(get_random_npc)
-            .service(get_random_ancestry)
-            .service(get_random_culture)
-            .service(get_random_class)
-            .service(get_random_gender)
-            .service(get_random_job)
-            .service(get_random_names)
-            .service(get_random_nickname)
-            .service(get_random_level)
-            .service(get_npc_classes_list)
-            .service(get_npc_genders_list)
-            .service(get_npc_jobs_list)
-            .service(get_npc_ancestries_list)
-            .service(get_npc_cultures_list),
+            .service(pf_get_random_npc)
+            .service(pf_get_random_ancestry)
+            .service(pf_get_random_culture)
+            .service(pf_get_random_class)
+            .service(pf_get_random_gender)
+            .service(pf_get_random_job)
+            .service(pf_get_random_names)
+            .service(pf_get_random_nickname)
+            .service(pf_get_random_level)
+            .service(pf_get_npc_classes_list)
+            .service(pf_get_npc_genders_list)
+            .service(pf_get_npc_jobs_list)
+            .service(pf_get_npc_ancestries_list)
+            .service(pf_get_npc_cultures_list),
     );
 }
 
@@ -36,20 +38,20 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
     #[derive(OpenApi)]
     #[openapi(
         paths(
-            get_random_npc,
-            get_random_ancestry,
-            get_random_culture,
-            get_random_class,
-            get_random_gender,
-            get_random_job,
-            get_random_names,
-            get_random_nickname,
-            get_random_level,
-            get_npc_classes_list,
-            get_npc_genders_list,
-            get_npc_jobs_list,
-            get_npc_ancestries_list,
-            get_npc_cultures_list
+            pf_get_random_npc,
+            pf_get_random_ancestry,
+            pf_get_random_culture,
+            pf_get_random_class,
+            pf_get_random_gender,
+            pf_get_random_job,
+            pf_get_random_names,
+            pf_get_random_nickname,
+            pf_get_random_level,
+            pf_get_npc_classes_list,
+            pf_get_npc_genders_list,
+            pf_get_npc_jobs_list,
+            pf_get_npc_ancestries_list,
+            pf_get_npc_cultures_list
         ),
         components(schemas(ResponseNpc, RandomNpcData, RandomNameData, AncestryData))
     )]
@@ -61,7 +63,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
 #[utoipa::path(
     post,
     path = "/npc/generator",
-    tag = "npc",
+    tags = ["pf", "npc"],
     request_body(
         content = RandomNpcData,
         content_type = "application/json",
@@ -75,11 +77,13 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
     ),
 )]
 #[post("/generator")]
-pub async fn get_random_npc(
+pub async fn pf_get_random_npc(
     data: web::Data<AppState>,
     body: Option<web::Json<RandomNpcData>>,
 ) -> actix_web::Result<impl Responder> {
-    let npc_data = body.map(|x| x.0).unwrap_or_default();
+    let npc_data = body
+        .map(|x| x.0)
+        .unwrap_or_else(|| RandomNpcData::default_with_system(GameSystem::Pathfinder));
     if npc_data.is_valid() {
         npc_service::generate_random_npc(&data, npc_data)
             .map_or_else(|_| Err(ErrorBadRequest(
@@ -95,9 +99,9 @@ pub async fn get_random_npc(
 #[utoipa::path(
     post,
     path = "/npc/generator/class",
-    tag = "npc",
+    tags = ["pf", "npc"],
     request_body(
-        content = Option<Vec<Class>>,
+        content = Option<ClassFilter>,
         content_type = "application/json",
     ),
     params(
@@ -109,8 +113,8 @@ pub async fn get_random_npc(
     ),
 )]
 #[post("/generator/class")]
-pub async fn get_random_class(
-    body: Option<web::Json<Vec<Class>>>,
+pub async fn pf_get_random_class(
+    body: Option<web::Json<ClassFilter>>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(npc_service::get_random_class(
         if let Some(body) = body {
@@ -124,7 +128,7 @@ pub async fn get_random_class(
 #[utoipa::path(
     post,
     path = "/npc/generator/level",
-    tag = "npc",
+    tags = ["pf", "npc"],
     request_body(
         content = LevelData,
         content_type = "application/json",
@@ -138,7 +142,7 @@ pub async fn get_random_class(
     ),
 )]
 #[post("/generator/level")]
-pub async fn get_random_level(
+pub async fn pf_get_random_level(
     body: Option<web::Json<LevelData>>,
 ) -> actix_web::Result<impl Responder> {
     if let Some(json) = &body
@@ -154,9 +158,9 @@ pub async fn get_random_level(
 #[utoipa::path(
     post,
     path = "/npc/generator/ancestry",
-    tag = "npc",
+    tags = ["pf", "npc"],
     request_body(
-        content = Option<Vec<Ancestry>>,
+        content = Option<Vec<PfAncestry>>,
         content_type = "application/json",
     ),
     params(
@@ -168,10 +172,10 @@ pub async fn get_random_level(
     ),
 )]
 #[post("/generator/ancestry")]
-pub async fn get_random_ancestry(
-    body: Option<web::Json<Vec<Ancestry>>>,
+pub async fn pf_get_random_ancestry(
+    body: Option<web::Json<Vec<PfAncestry>>>,
 ) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(npc_service::get_random_ancestry(
+    Ok(web::Json(pf_npc_service::get_random_ancestry(
         if let Some(body) = body {
             Some(body.0)
         } else {
@@ -183,9 +187,9 @@ pub async fn get_random_ancestry(
 #[utoipa::path(
     post,
     path = "/npc/generator/culture",
-    tag = "npc",
+    tags = ["pf", "npc"],
     request_body(
-        content = Option<Vec<Culture>>,
+        content = Option<Vec<PfCulture>>,
         content_type = "application/json",
     ),
     params(
@@ -197,10 +201,10 @@ pub async fn get_random_ancestry(
     ),
 )]
 #[post("/generator/culture")]
-pub async fn get_random_culture(
-    body: Option<web::Json<Vec<Culture>>>,
+pub async fn pf_get_random_culture(
+    body: Option<web::Json<Vec<PfCulture>>>,
 ) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(npc_service::get_random_culture(
+    Ok(web::Json(pf_npc_service::get_random_culture(
         if let Some(body) = body {
             Some(body.0)
         } else {
@@ -212,7 +216,7 @@ pub async fn get_random_culture(
 #[utoipa::path(
     post,
     path = "/npc/generator/gender",
-    tag = "npc",
+    tags = ["pf", "npc"],
     request_body(
         content = Option<Vec<Gender>>,
         content_type = "application/json",
@@ -226,7 +230,7 @@ pub async fn get_random_culture(
     ),
 )]
 #[post("/generator/gender")]
-pub async fn get_random_gender(
+pub async fn pf_get_random_gender(
     body: Option<web::Json<Vec<Gender>>>,
 ) -> actix_web::Result<impl Responder> {
     npc_service::get_random_gender(if let Some(body) = body {
@@ -242,9 +246,9 @@ pub async fn get_random_gender(
 #[utoipa::path(
     post,
     path = "/npc/generator/job",
-    tag = "npc",
+    tags = ["pf", "npc"],
     request_body(
-        content = Option<Vec<Job>>,
+        content = Option<JobFilter>,
         content_type = "application/json",
     ),
     params(
@@ -256,8 +260,8 @@ pub async fn get_random_gender(
     ),
 )]
 #[post("/generator/job")]
-pub async fn get_random_job(
-    body: Option<web::Json<Vec<Job>>>,
+pub async fn pf_get_random_job(
+    body: Option<web::Json<JobFilter>>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(npc_service::get_random_job(
         if let Some(body) = body {
@@ -271,7 +275,7 @@ pub async fn get_random_job(
 #[utoipa::path(
     post,
     path = "/npc/generator/nickname",
-    tag = "npc",
+    tags = ["pf", "npc"],
     request_body(
     ),
     params(
@@ -283,7 +287,9 @@ pub async fn get_random_job(
     ),
 )]
 #[post("/generator/nickname")]
-pub async fn get_random_nickname(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn pf_get_random_nickname(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(npc_service::generate_random_nickname(
         &data.nick_json_path,
     )))
@@ -292,7 +298,7 @@ pub async fn get_random_nickname(data: web::Data<AppState>) -> actix_web::Result
 #[utoipa::path(
     post,
     path = "/npc/generator/names",
-    tag = "npc",
+    tags = ["pf", "npc"],
     request_body(
         content = RandomNameData,
         content_type = "application/json",
@@ -306,7 +312,7 @@ pub async fn get_random_nickname(data: web::Data<AppState>) -> actix_web::Result
     ),
 )]
 #[post("/generator/names")]
-pub async fn get_random_names(
+pub async fn pf_get_random_names(
     data: web::Data<AppState>,
     body: Option<web::Json<RandomNameData>>,
 ) -> actix_web::Result<impl Responder> {
@@ -324,7 +330,7 @@ pub async fn get_random_names(
         }
     } else {
         Ok(web::Json(npc_service::generate_random_names(
-            RandomNameData::default(),
+            RandomNameData::default_with_system(GameSystem::Pathfinder),
             &data.name_json_path,
         )))
     }
@@ -333,7 +339,7 @@ pub async fn get_random_names(
 #[utoipa::path(
     get,
     path = "/npc/ancestries",
-    tag = "npc",
+    tags = ["pf", "npc"],
     params(
 
     ),
@@ -343,14 +349,16 @@ pub async fn get_random_names(
     ),
 )]
 #[get("/ancestries")]
-pub async fn get_npc_ancestries_list() -> actix_web::Result<impl Responder> {
-    Ok(web::Json(npc_service::get_ancestries_list()))
+pub async fn pf_get_npc_ancestries_list() -> actix_web::Result<impl Responder> {
+    Ok(web::Json(npc_service::get_ancestries_list(
+        GameSystem::Pathfinder,
+    )))
 }
 
 #[utoipa::path(
     get,
     path = "/npc/cultures",
-    tag = "npc",
+    tags = ["pf", "npc"],
     params(
 
     ),
@@ -360,14 +368,14 @@ pub async fn get_npc_ancestries_list() -> actix_web::Result<impl Responder> {
     ),
 )]
 #[get("/cultures")]
-pub async fn get_npc_cultures_list() -> actix_web::Result<impl Responder> {
+pub async fn pf_get_npc_cultures_list() -> actix_web::Result<impl Responder> {
     Ok(web::Json(npc_service::get_cultures_list()))
 }
 
 #[utoipa::path(
     get,
     path = "/npc/genders",
-    tag = "npc",
+    tags = ["pf", "npc"],
     params(
 
     ),
@@ -377,14 +385,14 @@ pub async fn get_npc_cultures_list() -> actix_web::Result<impl Responder> {
     ),
 )]
 #[get("/genders")]
-pub async fn get_npc_genders_list() -> actix_web::Result<impl Responder> {
+pub async fn pf_get_npc_genders_list() -> actix_web::Result<impl Responder> {
     Ok(web::Json(npc_service::get_genders_list()))
 }
 
 #[utoipa::path(
     get,
     path = "/npc/jobs",
-    tag = "npc",
+    tags = ["pf", "npc"],
     params(
 
     ),
@@ -394,14 +402,16 @@ pub async fn get_npc_genders_list() -> actix_web::Result<impl Responder> {
     ),
 )]
 #[get("/jobs")]
-pub async fn get_npc_jobs_list() -> actix_web::Result<impl Responder> {
-    Ok(web::Json(npc_service::get_jobs_list()))
+pub async fn pf_get_npc_jobs_list() -> actix_web::Result<impl Responder> {
+    Ok(web::Json(npc_service::get_jobs_list(
+        &GameSystem::Pathfinder,
+    )))
 }
 
 #[utoipa::path(
     get,
     path = "/npc/classes",
-    tag = "npc",
+    tags = ["pf", "npc"],
     params(
 
     ),
@@ -411,6 +421,8 @@ pub async fn get_npc_jobs_list() -> actix_web::Result<impl Responder> {
     ),
 )]
 #[get("/classes")]
-pub async fn get_npc_classes_list() -> actix_web::Result<impl Responder> {
-    Ok(web::Json(npc_service::get_classes_list()))
+pub async fn pf_get_npc_classes_list() -> actix_web::Result<impl Responder> {
+    Ok(web::Json(npc_service::get_classes_list(
+        &GameSystem::Pathfinder,
+    )))
 }

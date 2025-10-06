@@ -1,6 +1,7 @@
 use crate::AppState;
 use crate::db::shop_proxy;
 use crate::models::response_data::ResponseItem;
+use crate::models::response_data::ShopListingResponse;
 use crate::models::routers_validator_structs::{Dice, ItemFieldFilters};
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shop_structs::{
@@ -10,23 +11,13 @@ use crate::models::shop_structs::{
 use crate::services::shared::url_calculator::shop_next_url;
 use anyhow::{Context, bail};
 use num_traits::ToPrimitive;
-use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
-use utoipa::ToSchema;
-
-#[derive(Serialize, Deserialize, ToSchema, Default)]
-pub struct ShopListingResponse {
-    results: Option<Vec<ResponseItem>>,
-    count: usize,
-    total: usize,
-    next: Option<String>,
-}
 
 pub async fn get_item(app_state: &AppState, id: i64) -> HashMap<String, Option<ResponseItem>> {
     hashmap! {
         String::from("results") =>
-        shop_proxy::get_item_by_id(app_state, &GameSystem::Starfinder,  id).await
+        shop_proxy::get_item_by_id(app_state, &GameSystem::Pathfinder,  id).await
     }
 }
 
@@ -40,7 +31,7 @@ pub async fn get_shop_listing(
         pagination,
         shop_proxy::get_paginated_items(
             app_state,
-            &GameSystem::Starfinder,
+            &GameSystem::Pathfinder,
             field_filter,
             pagination,
         )
@@ -72,7 +63,7 @@ pub async fn generate_random_shop_listing(
     let n_of_equippables = shop_data.equippable_dices.iter().map(Dice::roll).sum();
     // The request is correct, but will result in an empty list.
     if n_of_consumables == 0 && n_of_equippables == 0 {
-        return ShopListingResponse::default();
+        return ShopListingResponse::default_with_system(GameSystem::Pathfinder);
     }
 
     let equipment_percentage = shop_data.equipment_percentage;
@@ -101,7 +92,7 @@ pub async fn generate_random_shop_listing(
     {
         (shop_proxy::get_filtered_items(
             app_state,
-            &GameSystem::Starfinder,
+            &GameSystem::Pathfinder,
             &ShopFilterQuery {
                 item_table_fields_filter: ItemTableFieldsFilter {
                     category_filter: shop_data.category_filter.clone().unwrap_or_default(),
@@ -134,28 +125,34 @@ pub async fn generate_random_shop_listing(
         )
         .await)
             .map_or_else(
-                |_| ShopListingResponse::default(),
+                |_| ShopListingResponse::default_with_system(GameSystem::Pathfinder),
                 |result| {
                     let n_of_items = result.len();
                     ShopListingResponse {
-                        results: Some(result.into_iter().map(ResponseItem::from).collect()),
+                        results: Some(
+                            result
+                                .into_iter()
+                                .map(|x| ResponseItem::from((x, GameSystem::Pathfinder)))
+                                .collect(),
+                        ),
                         count: n_of_items,
                         next: None,
                         total: n_of_items,
+                        game_system: GameSystem::Pathfinder,
                     }
                 },
             )
     } else {
-        ShopListingResponse::default()
+        ShopListingResponse::default_with_system(GameSystem::Pathfinder)
     }
 }
 
 pub async fn get_sources_list(app_state: &AppState) -> Vec<String> {
-    shop_proxy::get_all_sources(app_state, &GameSystem::Starfinder).await
+    shop_proxy::get_all_sources(app_state, &GameSystem::Pathfinder).await
 }
 
 pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
-    shop_proxy::get_all_traits(app_state, &GameSystem::Starfinder).await
+    shop_proxy::get_all_traits(app_state, &GameSystem::Pathfinder).await
 }
 
 pub fn get_shop_templates_data() -> Vec<ShopTemplateData> {
@@ -184,9 +181,10 @@ fn convert_result_to_shop_response(
                     None
                 },
                 total: res.0 as usize,
+                game_system: GameSystem::Pathfinder,
             }
         }
-        Err(_) => ShopListingResponse::default(),
+        Err(_) => ShopListingResponse::default_with_system(GameSystem::Pathfinder),
     }
 }
 

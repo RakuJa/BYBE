@@ -2,7 +2,7 @@ use crate::AppState;
 use crate::models::encounter_structs::{
     AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, RandomEncounterData,
 };
-use crate::services::pf2e::bestiary_service;
+use crate::services::pf::bestiary_service;
 use crate::services::shared::encounter_calculator;
 use crate::services::shared::encounter_calculator::EncounterInfoResponse;
 use crate::services::shared::encounter_calculator::RandomEncounterGeneratorResponse;
@@ -37,7 +37,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
 #[utoipa::path(
     post,
     path = "/encounter/info",
-    tags = ["pf2e", "encounter"],
+    tags = ["pf", "encounter"],
     request_body(
         content = EncounterParams,
         description = "Party and enemy levels.\
@@ -59,7 +59,7 @@ pub async fn pf_get_encounter_info(
 #[utoipa::path(
     post,
     path = "/encounter/generator",
-    tags = ["pf2e", "encounter"],
+    tags = ["pf", "encounter"],
     request_body(
         content = RandomEncounterData,
         description = "Party levels as a vector of integers,\

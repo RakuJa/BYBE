@@ -115,6 +115,7 @@ async fn get_list(app_state: &AppState, gs: &GameSystem) -> Vec<ResponseItem> {
             weapon_data: None,
             armor_data: None,
             shield_data: None,
+            game_system: *gs,
         });
     }
     for el in get_all_weapons_from_db(app_state, gs)
@@ -126,6 +127,7 @@ async fn get_list(app_state: &AppState, gs: &GameSystem) -> Vec<ResponseItem> {
             weapon_data: Some(el.weapon_data),
             armor_data: None,
             shield_data: None,
+            game_system: *gs,
         });
     }
     for el in get_all_armors_from_db(app_state, gs)
@@ -137,6 +139,7 @@ async fn get_list(app_state: &AppState, gs: &GameSystem) -> Vec<ResponseItem> {
             weapon_data: None,
             armor_data: Some(el.armor_data),
             shield_data: None,
+            game_system: *gs,
         });
     }
     for el in get_all_shields_from_db(app_state, gs).await.unwrap() {
@@ -145,6 +148,7 @@ async fn get_list(app_state: &AppState, gs: &GameSystem) -> Vec<ResponseItem> {
             weapon_data: None,
             armor_data: None,
             shield_data: Some(el.shield_data),
+            game_system: *gs,
         });
     }
     response_vec

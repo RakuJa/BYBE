@@ -2,7 +2,7 @@ use crate::AppState;
 use crate::models::encounter_structs::{
     AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, RandomEncounterData,
 };
-use crate::services::sf2e::bestiary_service;
+use crate::services::sf::bestiary_service;
 use crate::services::shared::encounter_calculator;
 use crate::services::shared::encounter_calculator::EncounterInfoResponse;
 use crate::services::shared::encounter_calculator::RandomEncounterGeneratorResponse;
@@ -12,15 +12,15 @@ use utoipa::OpenApi;
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/encounter")
-            .service(sf2e_get_encounter_info)
-            .service(sf2e_get_generated_random_encounter),
+            .service(sf_get_encounter_info)
+            .service(sf_get_generated_random_encounter),
     );
 }
 
 pub fn init_docs() -> utoipa::openapi::OpenApi {
     #[derive(OpenApi)]
     #[openapi(
-        paths(sf2e_get_encounter_info, sf2e_get_generated_random_encounter),
+        paths(sf_get_encounter_info, sf_get_generated_random_encounter),
         components(schemas(
             EncounterInfoResponse,
             RandomEncounterData,
@@ -37,7 +37,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
 #[utoipa::path(
     post,
     path = "/encounter/info",
-    tags = ["sf2e", "encounter"],
+    tags = ["sf", "encounter"],
     request_body(
         content = EncounterParams,
         description = "Party and enemy levels.\
@@ -50,7 +50,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
     ),
 )]
 #[post("/info")]
-pub async fn sf2e_get_encounter_info(
+pub async fn sf_get_encounter_info(
     web::Json(body): web::Json<EncounterParams>,
 ) -> Result<impl Responder> {
     Ok(web::Json(encounter_calculator::get_encounter_info(&body)))
@@ -59,7 +59,7 @@ pub async fn sf2e_get_encounter_info(
 #[utoipa::path(
     post,
     path = "/encounter/generator",
-    tags = ["sf2e", "encounter"],
+    tags = ["sf", "encounter"],
     request_body(
         content = RandomEncounterData,
         description = "Party levels as a vector of integers,\
@@ -76,7 +76,7 @@ pub async fn sf2e_get_encounter_info(
     ),
 )]
 #[post("/generator")]
-pub async fn sf2e_get_generated_random_encounter(
+pub async fn sf_get_generated_random_encounter(
     data: web::Data<AppState>,
     web::Json(body): web::Json<RandomEncounterData>,
 ) -> Result<impl Responder> {
