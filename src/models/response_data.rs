@@ -1,3 +1,4 @@
+use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_core::CreatureCoreData;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
 use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
@@ -8,9 +9,6 @@ use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::ShieldData;
 use crate::models::item::weapon_struct::WeaponData;
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::models::{
-    creature::creature_component::creature_combat::CreatureCombatData, npc::gender_enum::Gender,
-};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
@@ -72,7 +70,7 @@ impl From<(Item, GameSystem)> for ResponseItem {
 pub struct ResponseNpc {
     pub name: String,
     pub nickname: Option<String>,
-    pub gender: Gender,
+    pub gender: String,
     pub ancestry: String,
     pub job: String,
     pub level: i64,

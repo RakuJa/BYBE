@@ -119,7 +119,7 @@ pub fn generate_random_npc(
         .first()
         .unwrap()
         .clone(),
-        gender,
+        gender: gender.to_string(),
         level: get_random_level(npc_req_data.level_filter),
         ancestry,
         culture,
