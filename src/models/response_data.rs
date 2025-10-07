@@ -29,7 +29,7 @@ pub struct ResponseCreature {
     pub extra_data: Option<CreatureExtraData>,
     pub combat_data: Option<CreatureCombatData>,
     pub spellcaster_data: Option<CreatureSpellcasterData>,
-    pub game_system: GameSystem,
+    pub game: GameSystem,
 }
 
 impl From<Creature> for ResponseCreature {
@@ -40,7 +40,7 @@ impl From<Creature> for ResponseCreature {
             extra_data: cr.extra_data,
             spellcaster_data: cr.spellcaster_data,
             combat_data: cr.combat_data,
-            game_system: cr.game_system,
+            game: cr.game_system,
         }
     }
 }
@@ -51,7 +51,7 @@ pub struct ResponseItem {
     pub weapon_data: Option<WeaponData>,
     pub armor_data: Option<ArmorData>,
     pub shield_data: Option<ShieldData>,
-    pub game_system: GameSystem,
+    pub game: GameSystem,
 }
 
 impl From<(Item, GameSystem)> for ResponseItem {
@@ -63,15 +63,9 @@ impl From<(Item, GameSystem)> for ResponseItem {
             weapon_data: None,
             armor_data: None,
             shield_data: None,
-            game_system,
+            game: game_system,
         }
     }
-}
-
-#[derive(Serialize, Deserialize, Clone, ToSchema)]
-pub struct NpcGenerationResponse {
-    pub npc: ResponseNpc,
-    pub game_system: GameSystem,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
@@ -84,6 +78,7 @@ pub struct ResponseNpc {
     pub level: i64,
     pub culture: String,
     pub class: String,
+    pub game: GameSystem,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Default)]
@@ -91,7 +86,7 @@ pub struct ShopListingResponse {
     pub(crate) results: Option<Vec<ResponseItem>>,
     pub(crate) count: usize,
     pub(crate) total: usize,
-    pub(crate) game_system: GameSystem,
+    pub(crate) game: GameSystem,
     pub(crate) next: Option<String>,
 }
 
@@ -101,7 +96,7 @@ impl ShopListingResponse {
             results: None,
             count: 0,
             total: 0,
-            game_system,
+            game: game_system,
             next: None,
         }
     }

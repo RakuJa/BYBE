@@ -138,7 +138,7 @@ pub async fn generate_random_shop_listing(
                         count: n_of_items,
                         next: None,
                         total: n_of_items,
-                        game_system: GameSystem::Pathfinder,
+                        game: GameSystem::Pathfinder,
                     }
                 },
             )
@@ -181,7 +181,7 @@ fn convert_result_to_shop_response(
                     None
                 },
                 total: res.0 as usize,
-                game_system: GameSystem::Pathfinder,
+                game: GameSystem::Pathfinder,
             }
         }
         Err(_) => ShopListingResponse::default_with_system(GameSystem::Pathfinder),

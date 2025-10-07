@@ -201,7 +201,7 @@ pub async fn generate_random_encounter(
                 challenge: EncounterChallengeEnum::default(),
                 encounter_exp_levels: BTreeMap::default(),
             },
-            game_system: GameSystem::Pathfinder,
+            game: GameSystem::Pathfinder,
         }
     })
 }
@@ -292,6 +292,6 @@ async fn calculate_random_encounter(
                 .collect(),
             is_pwl_on,
         }),
-        game_system: GameSystem::Pathfinder,
+        game: GameSystem::Pathfinder,
     })
 }

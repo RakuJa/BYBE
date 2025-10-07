@@ -9,7 +9,8 @@ use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema)]
 pub struct ShareableNpcList {
-    pub(crate) npcs: Vec<ResponseNpc>,
+    pub(crate) list_name: String,
+    pub(crate) npcs_data: Vec<ResponseNpc>,
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, PartialEq, Debug)]
@@ -121,7 +122,6 @@ mod tests {
         )
     }
 
-
     #[tokio::test]
     async fn test_encounter_encode_w_one_item() {
         let encounter = get_test_shareable_encounter(1);
@@ -164,5 +164,4 @@ mod tests {
             encounter
         )
     }
-
 }

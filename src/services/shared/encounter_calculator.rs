@@ -30,7 +30,7 @@ pub struct RandomEncounterGeneratorResponse {
     pub(crate) results: Option<Vec<ResponseCreature>>,
     pub(crate) count: usize,
     pub(crate) encounter_info: EncounterInfoResponse,
-    pub(crate) game_system: GameSystem,
+    pub(crate) game: GameSystem,
 }
 
 pub fn get_encounter_info(enc_params: &EncounterParams) -> EncounterInfoResponse {

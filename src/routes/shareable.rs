@@ -127,8 +127,6 @@ pub async fn get_shop_from_shareable_link(
             |res| Ok(web::Json(res)),
         )
 }
-//KLUv_QBYUQAAAf7_______8fAA==
-//KLUv_QBYUQAAAf7_______8fAA==
 
 #[utoipa::path(
     get,
