@@ -301,7 +301,8 @@ pub async fn fetch_items_with_filters(
 ) -> Result<Vec<Item>> {
     let items: Vec<Item> = query_as(prepare_filtered_get_items(gs, filters).as_str())
         .fetch_all(conn)
-        .await?;
+        .await
+        .unwrap();
     let equipment: Vec<&Item> = items
         .iter()
         .filter(|x| x.item_type == ItemTypeEnum::Equipment)

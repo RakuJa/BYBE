@@ -9,12 +9,14 @@ use crate::models::item::weapon_struct::WeaponData;
 use crate::models::response_data::{ResponseItem, ShopListingResponse};
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::routers_validator_structs::{Dice, PaginatedRequest};
+use crate::models::shared::game_system_enum::GameSystem;
+use crate::models::shop_structs::PfShopTemplateEnum;
 use crate::models::shop_structs::ShopTemplateData;
-use crate::models::shop_structs::ShopTemplateEnum;
 use crate::models::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
 use crate::models::shop_structs::{RandomShopData, ShopSortData};
 use crate::services::pf::shop_service;
 use crate::services::shared::sanitizer::sanitize_id;
+use crate::services::shared::shop_service as shared_shop_service;
 use actix_web::web::Query;
 use actix_web::{Responder, get, post, web};
 use utoipa::OpenApi;
@@ -47,9 +49,9 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
             ItemTypeEnum,
             ShopListingResponse,
             Item,
-            RandomShopData,
+            RandomShopData<PfShopTemplateEnum>,
             Dice,
-            ShopTemplateEnum,
+            PfShopTemplateEnum,
             ShopTemplateData,
             ItemFieldFilters,
             ItemSortEnum,
@@ -106,7 +108,7 @@ pub async fn pf_get_shop_listing(
     path = "/shop/generator",
     tags = ["pf", "shop"],
     request_body(
-        content = RandomShopData,
+        content = RandomShopData<PfShopTemplateEnum>,
         content_type = "application/json",
     ),
     params(
@@ -120,10 +122,11 @@ pub async fn pf_get_shop_listing(
 #[post("/generator")]
 pub async fn pf_get_random_shop_listing(
     data: web::Data<AppState>,
-    web::Json(body): web::Json<RandomShopData>,
+    web::Json(body): web::Json<RandomShopData<PfShopTemplateEnum>>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shop_service::generate_random_shop_listing(&data, &body).await,
+        shared_shop_service::generate_random_shop_listing(&data, &GameSystem::Pathfinder, &body)
+            .await,
     ))
 }
 

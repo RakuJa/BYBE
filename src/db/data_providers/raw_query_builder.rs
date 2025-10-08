@@ -131,7 +131,7 @@ where
     let mut in_string = String::new();
     in_string.push_str(prepare_case_insensitive_in_statement("tt.name", column_values).as_str());
     if !in_string.is_empty() {
-        let select_query = format!("SELECT tcat.{id_column} FROM {association_table_name}");
+        let select_query = format!("SELECT tcat.{id_column} FROM {gs}_{association_table_name}");
         let inner_query = format!("SELECT * FROM {gs}_trait_table tt WHERE {in_string}");
         return format!(
             "{select_query} tcat RIGHT JOIN ({inner_query}) jt ON tcat.trait_id = jt.name"
@@ -205,7 +205,7 @@ where
     I: Iterator<Item = S>,
     S: ToString,
 {
-    let item_type_query = prepare_get_id_matching_item_type_query(item_type);
+    let item_type_query = prepare_get_id_matching_item_type_query(item_type, gs);
     let initial_statement = format!("SELECT id FROM {gs}_item_table");
     let whitelist_query = prepare_item_trait_filter(gs, trait_whitelist_filter);
     let blacklist_query = prepare_item_trait_filter(gs, trait_blacklist_filter);
@@ -335,7 +335,7 @@ where
     }
 }
 
-fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum) -> String {
+fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum, gs: &GameSystem) -> String {
     let (item_id_field, type_query) = match item_type {
         ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => {
             ("id", format!("AND UPPER(item_type) = UPPER('{item_type}')"))
@@ -357,8 +357,8 @@ fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum) -> String {
         SELECT {item_id_field} FROM {} tmain
         LEFT OUTER JOIN {} tass ON tmain.id = tass.{tass_item_id_field}
         WHERE tass.{tass_item_id_field} IS NULL {type_query}",
-        item_type.to_db_main_table_name(),
-        item_type.to_db_association_table_name(),
+        item_type.to_db_main_table_name(gs),
+        item_type.to_db_association_table_name(gs),
     )
 }
 
@@ -394,7 +394,7 @@ where
     prepare_trait_filter(
         gs,
         "creature_id",
-        "TRAIT_CREATURE_ASSOCIATION_TABLE",
+        "trait_creature_association_table",
         column_values,
     )
 }

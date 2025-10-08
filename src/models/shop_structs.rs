@@ -3,6 +3,7 @@ use crate::models::pf_version_enum::GameSystemVersionEnum;
 use crate::models::routers_validator_structs::{Dice, OrderEnum, PaginatedRequest};
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
+use crate::traits::template_enum::{GenericTemplate, ItemTemplate};
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
 use utoipa::{IntoParams, ToSchema};
@@ -27,8 +28,11 @@ pub struct ShopTemplateData {
     pub item_traits_blacklist: Vec<String>,
 }
 
-impl From<ShopTemplateEnum> for ShopTemplateData {
-    fn from(template_enum: ShopTemplateEnum) -> Self {
+impl<T> From<T> for ShopTemplateData
+where
+    T: GenericTemplate + ToString + ItemTemplate,
+{
+    fn from(template_enum: T) -> Self {
         let (e_p, w_p, a_p, s_p) = template_enum.get_equippable_percentages();
         Self {
             name: template_enum.to_string(),
@@ -38,7 +42,7 @@ impl From<ShopTemplateEnum> for ShopTemplateData {
             armor_percentage: a_p,
             shield_percentage: s_p,
             item_types: template_enum.get_allowed_item_types(),
-            item_rarities: template_enum.get_allowed_item_rarities(),
+            item_rarities: template_enum.get_allowed_rarities(),
             item_traits_whitelist: template_enum.get_traits_whitelist(),
             item_traits_blacklist: template_enum.get_traits_blacklist(),
         }
@@ -58,27 +62,72 @@ impl From<ShopTemplateEnum> for ShopTemplateData {
     PartialOrd,
     Clone,
     Display,
+    Debug,
 )]
-pub enum ShopTemplateEnum {
-    Blacksmith,
-    Alchemist,
+pub enum SfShopTemplateEnum {
+    Fabricator,
+    Biochemist,
     #[default]
     General,
 }
 
-impl ShopTemplateEnum {
-    /// Returns percentage of equipment, weapons, armor, shield for the given template
-    pub const fn get_equippable_percentages(&self) -> (u8, u8, u8, u8) {
+impl GenericTemplate for SfShopTemplateEnum {
+    fn get_equippable_percentages(&self) -> (u8, u8, u8, u8) {
         match self {
-            Self::Blacksmith => (10, 40, 25, 25),
-            Self::Alchemist => (100, 0, 0, 0),
+            Self::Fabricator => (10, 40, 25, 25),
+            Self::Biochemist => (100, 0, 0, 0),
             Self::General => (70, 10, 10, 10),
         }
     }
 
-    pub fn get_allowed_item_types(&self) -> Vec<ItemTypeEnum> {
+    fn get_allowed_rarities(&self) -> Vec<RarityEnum> {
         match self {
-            Self::Blacksmith | Self::General => {
+            Self::Fabricator | Self::Biochemist | Self::General => {
+                vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
+            }
+        }
+    }
+
+    fn get_traits_whitelist(&self) -> Vec<String> {
+        // For future-proof, right now contains 0 logic
+        match self {
+            Self::Fabricator | Self::General => {
+                vec![]
+            }
+            Self::Biochemist => {
+                vec![
+                    "Alchemical".to_string(),
+                    "Bomb".to_string(),
+                    "Splash".to_string(),
+                    "Potion".to_string(),
+                ]
+            }
+        }
+    }
+
+    fn get_traits_blacklist(&self) -> Vec<String> {
+        match self {
+            Self::Fabricator | Self::Biochemist | Self::General => {
+                vec![]
+            }
+        }
+    }
+
+    fn get_description(&self) -> String {
+        String::from(match self {
+            Self::Fabricator => {
+                "Mainly weapons, armors and shields, sometimes equipment and consumables"
+            }
+            Self::Biochemist => "Only equipment and consumables, no weapons, armors or shields",
+            Self::General => "All kinds of items",
+        })
+    }
+}
+
+impl ItemTemplate for SfShopTemplateEnum {
+    fn get_allowed_item_types(&self) -> Vec<ItemTypeEnum> {
+        match self {
+            Self::Fabricator | Self::General => {
                 vec![
                     ItemTypeEnum::Armor,
                     ItemTypeEnum::Shield,
@@ -87,13 +136,45 @@ impl ShopTemplateEnum {
                     ItemTypeEnum::Equipment,
                 ]
             }
-            Self::Alchemist => {
+            Self::Biochemist => {
                 vec![ItemTypeEnum::Consumable, ItemTypeEnum::Equipment]
             }
         }
     }
+}
 
-    pub fn get_allowed_item_rarities(&self) -> Vec<RarityEnum> {
+#[derive(
+    Serialize,
+    Deserialize,
+    ToSchema,
+    Default,
+    EnumIter,
+    Eq,
+    PartialEq,
+    Hash,
+    Ord,
+    PartialOrd,
+    Clone,
+    Display,
+    Debug,
+)]
+pub enum PfShopTemplateEnum {
+    Blacksmith,
+    Alchemist,
+    #[default]
+    General,
+}
+
+impl GenericTemplate for PfShopTemplateEnum {
+    fn get_equippable_percentages(&self) -> (u8, u8, u8, u8) {
+        match self {
+            Self::Blacksmith => (10, 40, 25, 25),
+            Self::Alchemist => (100, 0, 0, 0),
+            Self::General => (70, 10, 10, 10),
+        }
+    }
+
+    fn get_allowed_rarities(&self) -> Vec<RarityEnum> {
         match self {
             Self::Blacksmith | Self::Alchemist | Self::General => {
                 vec![RarityEnum::Common, RarityEnum::Uncommon, RarityEnum::Rare]
@@ -101,7 +182,7 @@ impl ShopTemplateEnum {
         }
     }
 
-    pub fn get_traits_whitelist(&self) -> Vec<String> {
+    fn get_traits_whitelist(&self) -> Vec<String> {
         // For future-proof, right now contains 0 logic
         match self {
             Self::Blacksmith | Self::General => {
@@ -118,7 +199,7 @@ impl ShopTemplateEnum {
         }
     }
 
-    pub const fn get_traits_blacklist(&self) -> Vec<String> {
+    fn get_traits_blacklist(&self) -> Vec<String> {
         match self {
             Self::Blacksmith | Self::Alchemist | Self::General => {
                 vec![]
@@ -126,7 +207,7 @@ impl ShopTemplateEnum {
         }
     }
 
-    pub fn get_description(&self) -> String {
+    fn get_description(&self) -> String {
         String::from(match self {
             Self::Blacksmith => {
                 "Mainly weapons, armors and shields, sometimes equipment and consumables"
@@ -137,8 +218,27 @@ impl ShopTemplateEnum {
     }
 }
 
+impl ItemTemplate for PfShopTemplateEnum {
+    fn get_allowed_item_types(&self) -> Vec<ItemTypeEnum> {
+        match self {
+            Self::Blacksmith | Self::General => {
+                vec![
+                    ItemTypeEnum::Armor,
+                    ItemTypeEnum::Shield,
+                    ItemTypeEnum::Weapon,
+                    ItemTypeEnum::Consumable,
+                    ItemTypeEnum::Equipment,
+                ]
+            }
+            Self::Alchemist => {
+                vec![ItemTypeEnum::Consumable, ItemTypeEnum::Equipment]
+            }
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
-pub struct RandomShopData {
+pub struct RandomShopData<T: GenericTemplate + ItemTemplate> {
     pub category_filter: Option<Vec<String>>,
     pub source_filter: Option<Vec<String>>,
     pub trait_whitelist_filter: Option<Vec<String>>,
@@ -165,7 +265,7 @@ pub struct RandomShopData {
     #[schema(minimum = 0, maximum = 100, example = 25)]
     pub shield_percentage: Option<u8>,
 
-    pub shop_template: Option<ShopTemplateEnum>,
+    pub shop_template: Option<T>,
     pub game_system_version: Option<GameSystemVersionEnum>,
 }
 
