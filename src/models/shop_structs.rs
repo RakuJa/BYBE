@@ -264,7 +264,6 @@ pub struct RandomShopData<T: GenericTemplate + ItemTemplate> {
     pub armor_percentage: Option<u8>,
     #[schema(minimum = 0, maximum = 100, example = 25)]
     pub shield_percentage: Option<u8>,
-
     pub shop_template: Option<T>,
     pub game_system_version: Option<GameSystemVersionEnum>,
 }

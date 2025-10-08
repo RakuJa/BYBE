@@ -1,6 +1,6 @@
 repos:
 -   repo: https://github.com/crate-ci/typos
-    rev: varcon-core-v5.0.2
+    rev: v1.38.1
     hooks:
     -   id: typos
 -   repo: https://github.com/doublify/pre-commit-rust
@@ -25,8 +25,8 @@ repos:
 #    rev: v0.1.55
 #    hooks:
 #    -   id: udeps
--   repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
-    rev: v0.8.0
-    hooks:
-    -   id: pre-commit-update
-        args: [--all-versions]
+#-   repo: https://gitlab.com/vojko.pribudic.foss/pre-commit-update
+#    rev: v0.8.0
+#   hooks:
+#    -   id: pre-commit-update
+#        args: [--all-versions]

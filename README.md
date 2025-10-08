@@ -93,3 +93,13 @@ Also consider supporting [TheAsel](https://github.com/TheAsel), the frontend dev
 
 ## BYBE-Portable
 If you were looking for the BYBE Local Application, it can be found [Here](https://github.com/rakuJa/BYBE-desktop)
+
+## Coding guide
+1. Install pre-commit
+```bash
+sudo pacman -S pre-commit
+```
+2. Enable pre-commit
+```bash
+pre-commit install
+```
