@@ -15,9 +15,8 @@ use crate::models::shop_structs::SfShopTemplateEnum;
 use crate::models::shop_structs::ShopTemplateData;
 use crate::models::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
 use crate::models::shop_structs::{RandomShopData, ShopSortData};
-use crate::services::sf::shop_service;
 use crate::services::shared::sanitizer::sanitize_id;
-use crate::services::shared::shop_service as shared_shop_service;
+use crate::services::shared::shop_service;
 use actix_web::web::Query;
 use actix_web::{Responder, get, post, web};
 use utoipa::OpenApi;
@@ -99,6 +98,7 @@ pub async fn sf_get_shop_listing(
                 paginated_request: pagination.0,
                 shop_sort_data: sort_data.0,
             },
+            &GameSystem::Starfinder,
         )
         .await,
     ))
@@ -126,8 +126,7 @@ pub async fn sf_get_random_shop_listing(
     web::Json(body): web::Json<RandomShopData<SfShopTemplateEnum>>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shared_shop_service::generate_random_shop_listing(&data, &GameSystem::Starfinder, &body)
-            .await,
+        shop_service::generate_random_shop_listing(&data, &body, &GameSystem::Starfinder).await,
     ))
 }
 
@@ -149,7 +148,7 @@ pub async fn sf_get_item(
     item_id: web::Path<String>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shop_service::get_item(&data, sanitize_id(&item_id)?).await,
+        shop_service::get_item(&data, sanitize_id(&item_id)?, &GameSystem::Starfinder).await,
     ))
 }
 
@@ -169,7 +168,9 @@ pub async fn sf_get_item(
 pub async fn sf_get_items_sources_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(shop_service::get_sources_list(&data).await))
+    Ok(web::Json(
+        shop_service::get_sources_list(&data, &GameSystem::Starfinder).await,
+    ))
 }
 
 #[utoipa::path(
@@ -188,7 +189,9 @@ pub async fn sf_get_items_sources_list(
 pub async fn sf_get_items_traits_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(shop_service::get_traits_list(&data).await))
+    Ok(web::Json(
+        shop_service::get_traits_list(&data, &GameSystem::Starfinder).await,
+    ))
 }
 
 #[utoipa::path(
@@ -205,5 +208,7 @@ pub async fn sf_get_items_traits_list(
 )]
 #[get("/templates_data")]
 pub async fn sf_get_templates_data() -> actix_web::Result<impl Responder> {
-    Ok(web::Json(shop_service::get_shop_templates_data()))
+    Ok(web::Json(shop_service::get_shop_templates_data(
+        &GameSystem::Starfinder,
+    )))
 }
