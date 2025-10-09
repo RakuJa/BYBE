@@ -2,7 +2,8 @@ use crate::AppState;
 use crate::models::encounter_structs::{
     AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, RandomEncounterData,
 };
-use crate::services::sf::bestiary_service;
+use crate::models::shared::game_system_enum::GameSystem;
+use crate::services::shared::bestiary_service;
 use crate::services::shared::encounter_calculator;
 use crate::services::shared::encounter_calculator::EncounterInfoResponse;
 use crate::services::shared::encounter_calculator::RandomEncounterGeneratorResponse;
@@ -81,6 +82,6 @@ pub async fn sf_get_generated_random_encounter(
     web::Json(body): web::Json<RandomEncounterData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::generate_random_encounter(&data, body).await,
+        bestiary_service::generate_random_encounter(&data, body, &GameSystem::Starfinder).await,
     ))
 }

@@ -8,7 +8,7 @@ use crate::models::response_data::ResponseDataModifiers;
 use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
-use crate::services::sf::bestiary_service::BestiaryResponse;
+use crate::services::shared::bestiary_service::BestiaryResponse;
 
 use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_combat::SavingThrows;
@@ -33,7 +33,8 @@ use crate::models::bestiary_structs::CreatureSortEnum;
 use crate::models::bestiary_structs::{BestiaryPaginatedRequest, BestiarySortData};
 use crate::models::db::sense::Sense;
 use crate::models::routers_validator_structs::{CreatureFieldFilters, PaginatedRequest};
-use crate::services::sf::bestiary_service;
+use crate::models::shared::game_system_enum::GameSystem;
+use crate::services::shared::bestiary_service;
 use crate::services::shared::sanitizer::sanitize_id;
 use actix_web::web::Query;
 use actix_web::{Responder, get, post, web};
@@ -141,6 +142,7 @@ pub async fn sf_get_bestiary_listing(
                 paginated_request: pagination.0,
                 bestiary_sort_data: sort_data.0,
             },
+            &GameSystem::Starfinder,
         )
         .await,
     ))
@@ -160,7 +162,9 @@ pub async fn sf_get_bestiary_listing(
 )]
 #[get("/families")]
 pub async fn sf_get_families_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_families_list(&data).await))
+    Ok(web::Json(
+        bestiary_service::get_families_list(&data, &GameSystem::Starfinder).await,
+    ))
 }
 
 #[utoipa::path(
@@ -177,7 +181,9 @@ pub async fn sf_get_families_list(data: web::Data<AppState>) -> actix_web::Resul
 )]
 #[get("/traits")]
 pub async fn sf_get_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_traits_list(&data).await))
+    Ok(web::Json(
+        bestiary_service::get_traits_list(&data, &GameSystem::Starfinder).await,
+    ))
 }
 
 #[utoipa::path(
@@ -194,7 +200,9 @@ pub async fn sf_get_traits_list(data: web::Data<AppState>) -> actix_web::Result<
 )]
 #[get("/sources")]
 pub async fn sf_get_sources_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_sources_list(&data).await))
+    Ok(web::Json(
+        bestiary_service::get_sources_list(&data, &GameSystem::Starfinder).await,
+    ))
 }
 
 #[utoipa::path(
@@ -211,7 +219,9 @@ pub async fn sf_get_sources_list(data: web::Data<AppState>) -> actix_web::Result
 )]
 #[get("/rarities")]
 pub async fn sf_get_rarities_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_rarities_list(&data).await))
+    Ok(web::Json(
+        bestiary_service::get_rarities_list(&data, &GameSystem::Starfinder).await,
+    ))
 }
 
 #[utoipa::path(
@@ -228,7 +238,9 @@ pub async fn sf_get_rarities_list(data: web::Data<AppState>) -> actix_web::Resul
 )]
 #[get("/sizes")]
 pub async fn sf_get_sizes_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(bestiary_service::get_sizes_list(&data).await))
+    Ok(web::Json(
+        bestiary_service::get_sizes_list(&data, &GameSystem::Starfinder).await,
+    ))
 }
 
 #[utoipa::path(
@@ -248,7 +260,7 @@ pub async fn sf_get_alignments_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_alignments_list(&data).await,
+        bestiary_service::get_alignments_list(&data, &GameSystem::Starfinder).await,
     ))
 }
 
@@ -269,7 +281,7 @@ pub async fn sf_get_creature_types_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_creature_types_list(&data).await,
+        bestiary_service::get_creature_types_list(&data, &GameSystem::Starfinder).await,
     ))
 }
 
@@ -310,8 +322,13 @@ pub async fn sf_get_creature(
     response_data_mods: Query<ResponseDataModifiers>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        bestiary_service::get_creature(&data, sanitize_id(&creature_id)?, &response_data_mods.0)
-            .await,
+        bestiary_service::get_creature(
+            &data,
+            sanitize_id(&creature_id)?,
+            &response_data_mods.0,
+            &GameSystem::Starfinder,
+        )
+        .await,
     ))
 }
 
@@ -339,6 +356,7 @@ pub async fn sf_get_elite_creature(
             &data,
             sanitize_id(&creature_id)?,
             &response_data_mods.0,
+            &GameSystem::Starfinder,
         )
         .await,
     ))
@@ -368,6 +386,7 @@ pub async fn sf_get_weak_creature(
             &data,
             sanitize_id(&creature_id)?,
             &response_data_mods.0,
+            &GameSystem::Starfinder,
         )
         .await,
     ))
