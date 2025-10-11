@@ -8,13 +8,13 @@ use crate::traits::origin::culture::Culture;
 use crate::traits::origin::has_valid_genders::HasValidGenders;
 use crate::traits::random_enum::RandomEnum;
 use std::collections::HashMap;
-use std::fmt::Display;
+use std::fmt::{Debug, Display};
 
 pub trait NameOriginFilter: RandomEnum + Filter + Into<GameSystem> + Clone {
     type NameOriginType: NameOrigin; // used for conversion
-    type AncestryType: Ancestry + Into<Self> + Display + ToString;
+    type AncestryType: Ancestry + Into<Self> + Display + ToString + Debug;
 
-    type CultureType: Culture + Display + ToString;
+    type CultureType: Culture + Display + ToString + Debug;
 
     fn ancestries_have_at_least_one_valid_gender(&self, g_filter: Vec<Gender>) -> bool {
         self.get_ancestries().is_none_or(|a_list| {
