@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
 
-use crate::db::json_fetcher::{get_nickname_data_from_json};
+use crate::db::json_fetcher::get_nickname_data_from_json;
 use crate::models::npc::ancestry_enum::{PfAncestry, SfAncestry};
 use crate::models::npc::class_enum::{PfClass, SfClass};
 use crate::models::npc::culture_enum::PfCulture;
@@ -27,7 +27,7 @@ use crate::traits::origin::context_size::ContextSize;
 use crate::traits::origin::culture::Culture;
 use crate::traits::origin::has_valid_genders::HasValidGenders;
 use crate::traits::random_enum::RandomEnum;
-use cached::proc_macro::{cached};
+use cached::proc_macro::cached;
 
 pub fn generate_random_npc<C, NF, J>(
     app_state: &AppState,

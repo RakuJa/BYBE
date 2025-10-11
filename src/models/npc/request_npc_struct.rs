@@ -6,35 +6,41 @@ use crate::traits::name_system::{NameOrigin, NameOriginFilter};
 use crate::traits::origin::average_name_length::AverageNameLength;
 use crate::traits::origin::has_valid_genders::HasValidGenders;
 use crate::traits::random_enum::RandomEnum;
+pub use schemas::*;
 use serde::Deserialize;
 use serde::Serialize;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, ToSchema, Clone, Debug, Default)]
-pub struct RandomNpcData<C: ClassEnum, N: NameOriginFilter, J: JobEnum> {
-    pub name_origin_filter: N,
-    pub gender_filter: Option<Vec<Gender>>,
-    pub class_filter: Option<Vec<C>>,
-    pub level_filter: Option<LevelData>,
-    pub job_filter: Option<Vec<J>>,
-    pub name_max_length: Option<usize>,
-    pub generate_nickname: Option<bool>,
-}
+#[allow(clippy::option_if_let_else)]
+mod schemas {
+    use super::*;
 
-#[derive(Serialize, Deserialize, ToSchema, Clone)]
-pub struct AncestryData {
-    pub ancestry: String,
-    pub valid_genders: Vec<Gender>,
-}
+    #[derive(Serialize, Deserialize, ToSchema, Clone, Debug, Default)]
+    pub struct RandomNpcData<C: ClassEnum, N: NameOriginFilter, J: JobEnum> {
+        pub name_origin_filter: N,
+        pub gender_filter: Option<Vec<Gender>>,
+        pub class_filter: Option<Vec<C>>,
+        pub level_filter: Option<LevelData>,
+        pub job_filter: Option<Vec<J>>,
+        pub name_max_length: Option<usize>,
+        pub generate_nickname: Option<bool>,
+    }
 
-#[derive(Serialize, Deserialize, ToSchema, Clone)]
-pub struct RandomNameData<N: NameOrigin> {
-    #[schema(minimum = 2, maximum = 40, example = 10)]
-    pub name_max_length: Option<usize>,
-    #[schema(minimum = 1, maximum = 100, example = 10)]
-    pub max_n_of_names: Option<usize>,
-    pub origin: N,
-    pub gender: Option<Gender>,
+    #[derive(Serialize, Deserialize, ToSchema, Clone)]
+    pub struct AncestryData {
+        pub ancestry: String,
+        pub valid_genders: Vec<Gender>,
+    }
+
+    #[derive(Serialize, Deserialize, ToSchema, Clone)]
+    pub struct RandomNameData<N: NameOrigin> {
+        #[schema(minimum = 2, maximum = 40, example = 10)]
+        pub name_max_length: Option<usize>,
+        #[schema(minimum = 1, maximum = 100, example = 10)]
+        pub max_n_of_names: Option<usize>,
+        pub origin: N,
+        pub gender: Option<Gender>,
+    }
 }
 
 impl<N: NameOrigin> RandomNameData<N> {
