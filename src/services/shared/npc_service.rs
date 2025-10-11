@@ -9,7 +9,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
 
-use crate::db::json_fetcher::{get_names_from_json, get_nickname_data_from_json};
+use crate::db::json_fetcher::{get_nickname_data_from_json};
 use crate::models::npc::ancestry_enum::{PfAncestry, SfAncestry};
 use crate::models::npc::class_enum::{PfClass, SfClass};
 use crate::models::npc::culture_enum::PfCulture;
@@ -27,7 +27,7 @@ use crate::traits::origin::context_size::ContextSize;
 use crate::traits::origin::culture::Culture;
 use crate::traits::origin::has_valid_genders::HasValidGenders;
 use crate::traits::random_enum::RandomEnum;
-use cached::proc_macro::once;
+use cached::proc_macro::{cached};
 
 pub fn generate_random_npc<C, NF, J>(
     app_state: &AppState,
@@ -244,9 +244,10 @@ pub fn generate_random_nickname(nickname_path: &str) -> Option<String> {
     }
 }
 
+#[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 pub fn get_ancestry_name_builder(
     ancestry_struct: NamesByAncestryRarity,
-    game_system: GameSystem,
+    gs: GameSystem,
 ) -> HashMap<(String, Gender), HashMap<String, Vec<char>>> {
     let mut chains = HashMap::new();
     let x = ancestry_struct.rarity;
@@ -262,7 +263,7 @@ pub fn get_ancestry_name_builder(
         for el in names_by_rarity.names {
             let gender = el.gender;
             let curr_names: Vec<_> = el.list.iter().map(String::as_str).collect();
-            let context_size = match game_system {
+            let context_size = match gs {
                 GameSystem::Pathfinder => PfAncestry::from_str(ancestry.as_str())
                     .unwrap_or_default()
                     .context_size(),
@@ -279,9 +280,10 @@ pub fn get_ancestry_name_builder(
     chains
 }
 
+#[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 pub fn get_culture_name_builder(
     names_by_culture: Vec<NamesByCulture>,
-    game_system: GameSystem,
+    gs: GameSystem,
 ) -> HashMap<(String, Gender), HashMap<String, Vec<char>>> {
     let mut chains = HashMap::new();
     for culture_struct in names_by_culture {
@@ -289,7 +291,7 @@ pub fn get_culture_name_builder(
         for el in culture_struct.names {
             let gender = el.gender;
             let curr_names: Vec<_> = el.list.iter().map(String::as_str).collect();
-            let context_size = match game_system {
+            let context_size = match gs {
                 GameSystem::Pathfinder => PfCulture::from_str(culture.as_str())
                     .unwrap_or_default()
                     .context_size(),
@@ -303,12 +305,4 @@ pub fn get_culture_name_builder(
     }
 
     chains
-}
-
-#[once(sync_writes = true)]
-pub fn prepare_pf_culture_names_builder(
-    json_path: &str,
-) -> HashMap<(String, Gender), HashMap<String, Vec<char>>> {
-    let names = get_names_from_json(json_path).unwrap();
-    get_culture_name_builder(names.pf_names.by_culture, GameSystem::Pathfinder)
 }
