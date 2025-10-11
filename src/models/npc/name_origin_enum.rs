@@ -409,9 +409,9 @@ impl NameOrigin for PfNameOrigin {
         let names = get_names_from_json(json_path).unwrap();
         match self {
             Self::FromAncestry(_) => {
-                get_ancestry_name_builder(names.sf_names.by_ancestry, GameSystem::Pathfinder)
+                get_ancestry_name_builder(names.pf_names.by_ancestry, GameSystem::Pathfinder)
             }
-            _ => get_culture_name_builder(names.sf_names.by_culture, GameSystem::Pathfinder),
+            _ => get_culture_name_builder(names.pf_names.by_culture, GameSystem::Pathfinder),
         }
     }
 }

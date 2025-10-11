@@ -119,7 +119,6 @@ pub async fn get_encounter_shareable_link(
 pub async fn get_shop_from_shareable_link(
     encoded_data: web::Path<String>,
 ) -> Result<impl Responder> {
-    println!("{}", encoded_data.clone());
     ShareableShop::decode(encoded_data.clone())
         .await
         .map_or_else(
