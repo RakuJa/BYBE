@@ -1,26 +1,36 @@
 use serde::{Deserialize, Serialize};
-use std::fmt::{Display, Formatter};
+use strum::Display;
 use utoipa::ToSchema;
 
-#[derive(PartialEq, Eq, Clone, Copy, Deserialize, Serialize, ToSchema, Hash, Default, Debug)]
+#[derive(
+    PartialEq, Eq, Clone, Copy, Deserialize, Serialize, ToSchema, Hash, Default, Debug, Display,
+)]
 pub enum GameSystem {
     #[default]
+    #[serde(
+        alias = "pathfinder",
+        alias = "PATHFINDER",
+        alias = "Pathfinder",
+        alias = "pf",
+        alias = "PF",
+        alias = "Pf"
+    )]
+    #[strum(to_string = "pf")]
+    #[serde(rename = "pf")]
     Pathfinder,
+    #[serde(
+        alias = "starfinder",
+        alias = "STARFINDER",
+        alias = "Starfinder",
+        alias = "sf",
+        alias = "SF",
+        alias = "Sf"
+    )]
+    #[strum(to_string = "sf")]
+    #[serde(rename = "sf")]
     Starfinder,
 }
 
-impl Display for GameSystem {
-    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "{}",
-            match self {
-                Self::Pathfinder => "pf",
-                Self::Starfinder => "sf",
-            }
-        )
-    }
-}
 impl From<&GameSystem> for i64 {
     fn from(game_system: &GameSystem) -> Self {
         match game_system {
