@@ -27,14 +27,20 @@ pub async fn create_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) ->
         license TEXT NOT NULL DEFAULT '',
         source TEXT NOT NULL DEFAULT '',
         remaster BOOL NOT NULL DEFAULT 0,
-        alignment TEXT NOT NULL DEFAULT NO
+        alignment TEXT NOT NULL DEFAULT NO,
+        brute_percentage INTEGER NOT NULL DEFAULT 0,
+        magical_striker_percentage INTEGER NOT NULL DEFAULT 0,
+        skill_paragon_percentage INTEGER NOT NULL DEFAULT 0,
+        skirmisher_percentage INTEGER NOT NULL DEFAULT 0,
+        sniper_percentage INTEGER NOT NULL DEFAULT 0,
+        soldier_percentage INTEGER NOT NULL DEFAULT 0,
+        spellcaster_percentage INTEGER NOT NULL DEFAULT 0
     )"
         )
         .as_str(),
     )
     .execute(conn)
     .await?;
-    insert_role_columns_in_core_table(conn, gs).await?;
     Ok(())
 }
 
@@ -93,26 +99,6 @@ pub async fn initialize_data(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()>
             is_spellcaster, archive_link, cr_type, family, focus_points
         FROM {gs}_tmp_creature_core;
         "
-        )
-        .as_str(),
-    )
-    .execute(conn)
-    .await?;
-    Ok(())
-}
-
-async fn insert_role_columns_in_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()> {
-    sqlx::query(
-        format!(
-            "
-        ALTER TABLE {gs}_creature_core ADD brute_percentage INTEGER NOT NULL DEFAULT 0;
-        ALTER TABLE {gs}_creature_core ADD magical_striker_percentage INTEGER NOT NULL DEFAULT 0;
-        ALTER TABLE {gs}_creature_core ADD skill_paragon_percentage INTEGER NOT NULL DEFAULT 0;
-        ALTER TABLE {gs}_creature_core ADD skirmisher_percentage INTEGER NOT NULL DEFAULT 0;
-        ALTER TABLE {gs}_creature_core ADD sniper_percentage INTEGER NOT NULL DEFAULT 0;
-        ALTER TABLE {gs}_creature_core ADD soldier_percentage INTEGER NOT NULL DEFAULT 0;
-        ALTER TABLE {gs}_creature_core ADD spellcaster_percentage INTEGER NOT NULL DEFAULT 0;
-    "
         )
         .as_str(),
     )

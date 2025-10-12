@@ -2017,8 +2017,8 @@ checksum = "6e3d189da485332e96ba8a5ef646a311871abd7915bf06ac848a9117f19cf6e4"
 
 [[package]]
 name = "nomina"
-version = "0.0.4"
-source = "git+https://github.com/rakuja/nomina.git#b785413b504df720700957a0999b2ec2b7b5d81d"
+version = "0.0.5"
+source = "git+https://github.com/rakuja/nomina.git#bbe03cc050062322897efd8be4328db33442f3f0"
 dependencies = [
  "capitalize",
  "itertools",
