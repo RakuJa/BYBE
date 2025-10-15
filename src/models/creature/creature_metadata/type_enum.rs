@@ -20,8 +20,8 @@ use utoipa::ToSchema;
 )]
 pub enum CreatureTypeEnum {
     #[default]
-    #[serde(alias = "monster", alias = "MONSTER")]
-    Monster,
+    #[serde(alias = "creature", alias = "CREATURE")]
+    Creature,
     #[serde(alias = "npc", alias = "NPC")]
     #[strum(to_string = "NPC")]
     #[serde(rename = "NPC")]
@@ -51,7 +51,7 @@ impl FromStr for CreatureTypeEnum {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
             "NPC" => Ok(Self::Npc),
-            _ => Ok(Self::Monster),
+            _ => Ok(Self::Creature),
         }
     }
 }
@@ -59,7 +59,7 @@ impl FromStr for CreatureTypeEnum {
 impl Clone for CreatureTypeEnum {
     fn clone(&self) -> Self {
         match self {
-            Self::Monster => Self::Monster,
+            Self::Creature => Self::Creature,
             Self::Npc => Self::Npc,
         }
     }

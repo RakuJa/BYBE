@@ -22,7 +22,7 @@ pub async fn create_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) ->
         is_spellcaster BOOL NOT NULL DEFAULT 0,
         focus_points INTEGER NOT NULL DEFAULT -99,
         archive_link TEXT,
-        cr_type TEXT NOT NULL DEFAULT 'MONSTER',
+        cr_type TEXT NOT NULL DEFAULT 'CREATURE',
         family TEXT NOT NULL DEFAULT '-',
         license TEXT NOT NULL DEFAULT '',
         source TEXT NOT NULL DEFAULT '',
@@ -67,14 +67,14 @@ async fn create_temporary_table(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<
         )
   		THEN TRUE ELSE FALSE END AS is_ranged,
         CASE WHEN st.creature_id IS NOT NULL THEN TRUE ELSE FALSE END AS is_spellcaster,
-        CASE WHEN ct.aon_id IS NOT NULL THEN CONCAT('https://2e.aonprd.com/', CAST(UPPER(COALESCE(UPPER(ct.cr_type) , 'MONSTER')) AS TEXT), 's' , '.aspx?ID=', CAST(ct.aon_id AS TEXT)) ELSE NULL END AS archive_link,
-        COALESCE(ct.cr_type , 'Monster') AS cr_type,
+        CASE WHEN ct.aon_id IS NOT NULL THEN CONCAT('https://2e.aonprd.com/', CAST(UPPER(COALESCE(UPPER(ct.cr_type) , 'CREATURE')) AS TEXT), 's' , '.aspx?ID=', CAST(ct.aon_id AS TEXT)) ELSE NULL END AS archive_link,
+        COALESCE(ct.cr_type , 'Creature') AS cr_type,
         COALESCE(ct.family , '-') AS family
         FROM {gs}_creature_table ct
         LEFT JOIN {gs}_spell_table st ON ct.id = st.creature_id
         GROUP BY ct.id;
     ").as_str()
-        // Be careful, cr_type must be either Monster or NPC or we have runtime error
+        // Be careful, cr_type must be either Creature or NPC or we have runtime error
     ).execute(conn).await?;
     Ok(())
 }
