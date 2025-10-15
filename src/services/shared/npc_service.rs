@@ -9,103 +9,72 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
 
-use crate::db::json_fetcher::{get_names_from_json, get_nickname_data_from_json};
+use crate::db::json_fetcher::get_nickname_data_from_json;
 use crate::models::npc::ancestry_enum::{PfAncestry, SfAncestry};
-use crate::models::npc::class_enum::{ClassFilter, PfClass, SfClass};
-use crate::models::npc::culture_enum::{PfCulture, SfCulture};
+use crate::models::npc::class_enum::{PfClass, SfClass};
+use crate::models::npc::culture_enum::PfCulture;
 use crate::models::npc::gender_enum::Gender;
-use crate::models::npc::job_enum::{JobFilter, PfJob, SfJob};
+use crate::models::npc::job_enum::{PfJob, SfJob};
 use crate::models::npc::name_loader_struct::{NamesByAncestryRarity, NamesByCulture};
-use crate::models::npc::name_origin_enum::{
-    NameSystemOrigin, NameSystemOriginFilter, PfNameOrigin, PfNameOriginFilter, SfNameOrigin,
-    SfNameOriginFilter,
-};
 use crate::models::response_data::ResponseNpc;
 use crate::models::routers_validator_structs::LevelData;
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::services::pf::npc_service as pf_npc_service;
-use crate::services::sf::npc_service as sf_npc_service;
-use crate::traits::ancestry::average_name_length::AverageNameLength;
-use crate::traits::ancestry::context_size::ContextSize;
-use crate::traits::ancestry::has_valid_genders::HasValidGenders;
+use crate::traits::class_enum::ClassEnum;
+use crate::traits::job_enum::JobEnum;
+use crate::traits::name_system::{NameOrigin, NameOriginFilter};
+use crate::traits::origin::ancestry::Ancestry;
+use crate::traits::origin::context_size::ContextSize;
+use crate::traits::origin::culture::Culture;
+use crate::traits::origin::has_valid_genders::HasValidGenders;
 use crate::traits::random_enum::RandomEnum;
-use cached::proc_macro::once;
+use cached::proc_macro::cached;
 
-fn process_ancestry<T>(
-    ancestry: T,
-    gender_filter: Option<&Vec<Gender>>,
-    origin_constructor: impl FnOnce(T) -> NameSystemOrigin,
-) -> anyhow::Result<(Gender, NameSystemOrigin)>
-where
-    T: Clone + HasValidGenders,
-{
-    let valid_genders = ancestry.get_valid_genders();
-    let name_origin = origin_constructor(ancestry);
-
-    let gender = if let Some(g_filter) = gender_filter {
-        let filtered: Vec<_> = valid_genders
-            .into_iter()
-            .filter(|g| g_filter.contains(g))
-            .collect();
-        get_random_gender(Some(filtered))?
-    } else {
-        Gender::filtered_random(&valid_genders)
-    };
-
-    Ok((gender, name_origin))
-}
-
-pub fn generate_random_npc(
+pub fn generate_random_npc<C, NF, J>(
     app_state: &AppState,
-    npc_req_data: RandomNpcData,
-) -> anyhow::Result<ResponseNpc> {
-    let game_system = match &npc_req_data.name_origin_filter {
-        NameSystemOriginFilter::FromPf(_) => GameSystem::Pathfinder,
-        NameSystemOriginFilter::FromSf(_) => GameSystem::Pathfinder,
-    };
-    let (gender, name_origin) = match npc_req_data.name_origin_filter {
-        NameSystemOriginFilter::FromPf(pf) => match pf.unwrap_or_default() {
-            PfNameOriginFilter::FromAncestry(ancestries) => process_ancestry(
-                pf_npc_service::get_random_ancestry(ancestries),
-                npc_req_data.gender_filter.as_ref(),
-                |a| NameSystemOrigin::FromPf(Some(PfNameOrigin::FromAncestry(Some(a)))),
-            )?,
-            PfNameOriginFilter::FromCulture(pf_locations) => {
-                let culture = pf_npc_service::get_random_culture(pf_locations);
-                (
-                    Gender::random(),
-                    NameSystemOrigin::FromPf(Some(PfNameOrigin::FromCulture(Some(culture)))),
-                )
-            }
-        },
-        NameSystemOriginFilter::FromSf(sf) => match sf.unwrap_or_default() {
-            SfNameOriginFilter::FromAncestry(ancestries) => process_ancestry(
-                sf_npc_service::get_random_ancestry(ancestries),
-                npc_req_data.gender_filter.as_ref(),
-                |a| NameSystemOrigin::FromSf(Some(SfNameOrigin::FromAncestry(Some(a)))),
-            )?,
-        },
-    };
+    npc_req_data: RandomNpcData<C, NF, J>,
+) -> anyhow::Result<ResponseNpc>
+where
+    C: ClassEnum,
+    NF: NameOriginFilter,
+    J: JobEnum,
+{
+    let game_system = &npc_req_data.name_origin_filter.clone().into();
+    let (gender, ancestry, culture, name_origin) =
+        if let Some(ancestries) = npc_req_data.name_origin_filter.get_ancestries() {
+            let random_ancestry = get_random_ancestry(Some(ancestries));
+            let valid_genders = random_ancestry.get_valid_genders();
 
-    let (ancestry, culture) = match &name_origin {
-        NameSystemOrigin::FromPf(pf) => match pf.clone().unwrap_or_default() {
-            PfNameOrigin::FromAncestry(a) => (
-                a.unwrap_or_default().to_string(),
-                PfCulture::random().to_string(),
-            ),
-            PfNameOrigin::FromCulture(c) => (
-                PfAncestry::random().to_string(),
-                c.unwrap_or_default().to_string(),
-            ),
-        },
-        NameSystemOrigin::FromSf(sf) => match sf.clone().unwrap_or_default() {
-            SfNameOrigin::FromAncestry(a) => (
-                a.unwrap_or_default().to_string(),
-                SfCulture::random().to_string(),
-            ),
-        },
-    };
+            let gender = if let Some(g_filter) = &npc_req_data.gender_filter.as_ref() {
+                let filtered: Vec<_> = valid_genders
+                    .into_iter()
+                    .filter(|g| g_filter.contains(g))
+                    .collect();
+                get_random_gender(Some(filtered))?
+            } else {
+                Gender::filtered_random(&valid_genders)
+            };
 
+            (
+                gender,
+                random_ancestry.clone(),
+                get_random_culture(None),
+                npc_req_data
+                    .name_origin_filter
+                    .to_name_origin(None, Some(random_ancestry))?,
+            )
+        } else if let Some(cultures) = &npc_req_data.name_origin_filter.get_cultures() {
+            let random_culture = get_random_culture(Some(cultures.to_vec()));
+            (
+                Gender::random(),
+                get_random_ancestry(None),
+                random_culture.clone(),
+                npc_req_data
+                    .name_origin_filter
+                    .to_name_origin(Some(random_culture), None)?,
+            )
+        } else {
+            bail!("Illegal state found")
+        };
     Ok(ResponseNpc {
         name: generate_random_names(
             RandomNameData {
@@ -119,18 +88,18 @@ pub fn generate_random_npc(
         .first()
         .unwrap()
         .clone(),
-        gender,
+        gender: gender.to_string(),
         level: get_random_level(npc_req_data.level_filter),
-        ancestry,
-        culture,
+        ancestry: ancestry.to_string(),
+        culture: culture.to_string(),
         nickname: if npc_req_data.generate_nickname.unwrap_or(false) {
             generate_random_nickname(&app_state.nick_json_path)
         } else {
             None
         },
-        job: get_random_job(npc_req_data.job_filter),
-        class: get_random_class(npc_req_data.class_filter),
-        game_system,
+        job: get_random_job(npc_req_data.job_filter.unwrap_or_default()),
+        class: get_random_class(npc_req_data.class_filter.unwrap_or_default()),
+        game: *game_system,
     })
 }
 
@@ -140,6 +109,14 @@ pub fn get_cultures_list() -> Vec<PfCulture> {
 
 pub fn get_genders_list() -> Vec<Gender> {
     Gender::iter().collect()
+}
+
+pub fn get_random_ancestry<T: Ancestry>(filter: Option<Vec<T>>) -> T {
+    T::filtered_random(&filter.unwrap_or_default())
+}
+
+pub fn get_random_culture<T: Culture>(filter: Option<Vec<T>>) -> T {
+    T::filtered_random(&filter.unwrap_or_default())
 }
 
 pub fn get_jobs_list(game_system: &GameSystem) -> Vec<String> {
@@ -153,13 +130,6 @@ pub fn get_classes_list(game_system: &GameSystem) -> Vec<String> {
     match game_system {
         GameSystem::Pathfinder => PfClass::iter().map(|x| x.to_string()).collect(),
         GameSystem::Starfinder => SfClass::iter().map(|x| x.to_string()).collect(),
-    }
-}
-
-pub fn get_random_job(filter: Option<JobFilter>) -> String {
-    match filter.unwrap_or_default() {
-        JobFilter::FromPf(pj) => PfJob::filtered_random(&pj.unwrap_or_default()).to_string(),
-        JobFilter::FromSf(sj) => SfJob::filtered_random(&sj.unwrap_or_default()).to_string(),
     }
 }
 
@@ -205,55 +175,39 @@ pub fn get_random_gender(filter: Option<Vec<Gender>>) -> anyhow::Result<Gender> 
     }
 }
 
-pub fn get_random_class(filter: Option<ClassFilter>) -> String {
-    match filter.unwrap_or_default() {
-        ClassFilter::FromPf(pc) => PfClass::filtered_random(&pc.unwrap_or_default()).to_string(),
-        ClassFilter::FromSf(sc) => SfClass::filtered_random(&sc.unwrap_or_default()).to_string(),
-    }
+pub fn get_random_class<C>(filter: Vec<C>) -> String
+where
+    C: ClassEnum,
+{
+    C::filtered_random(&filter).to_string()
 }
 
-pub fn generate_random_names(data: RandomNameData, name_path: &str) -> Vec<String> {
-    let (chain, token_size, max_length) = match data.origin {
-        NameSystemOrigin::FromPf(pf) => match pf.unwrap_or_default() {
-            PfNameOrigin::FromAncestry(ancestry) => {
-                let a = ancestry.unwrap_or_else(PfAncestry::random);
-                let gender = data
-                    .gender
-                    .unwrap_or_else(|| Gender::filtered_random(&a.get_valid_genders()));
-                (prepare_pf_ancestry_names_builder(name_path).get(&(a.to_string(), gender.clone())).unwrap_or_else(|| {
-                        panic!(
-                            "Could not fetch the initializer for the given Ancestry {a} and Gender {gender}"
-                        )
-                    }).clone(),
-                     a.context_size(), a.get_average_name_length())
-            }
-            PfNameOrigin::FromCulture(location) => {
-                let l = location.unwrap_or_else(PfCulture::random);
+pub fn get_random_job<J>(filter: Vec<J>) -> String
+where
+    J: JobEnum,
+{
+    J::filtered_random(&filter).to_string()
+}
 
-                let gender = data.gender.unwrap_or_else(Gender::random);
-                (prepare_pf_culture_names_builder(name_path).get(&(l.to_string(), gender.clone())).unwrap_or_else(|| {
-                        panic!(
-                            "Could not fetch the initializer for the given Location {l} and Gender {gender}"
-                        )
-                    }).clone(),
-                     l.context_size(), l.get_average_name_length())
-            }
-        },
-        NameSystemOrigin::FromSf(sf) => match sf.unwrap_or_default() {
-            SfNameOrigin::FromAncestry(ancestry) => {
-                let a = ancestry.unwrap_or_else(SfAncestry::random);
-                let gender = data
-                    .gender
-                    .unwrap_or_else(|| Gender::filtered_random(&a.get_valid_genders()));
-                (prepare_sf_ancestry_names_builder(name_path).get(&(a.to_string(), gender.clone())).unwrap_or_else(|| {
-                        panic!(
-                            "Could not fetch the initializer for the given Ancestry {a} and Gender {gender}"
-                        )
-                    }).clone(),
-                     a.context_size(), a.get_average_name_length())
-            }
-        },
-    };
+pub fn generate_random_names<N>(data: RandomNameData<N>, name_path: &str) -> Vec<String>
+where
+    N: NameOrigin,
+{
+    let name_origin = data.origin;
+    let key = name_origin
+        .get_ancestry()
+        .map(|x| x.to_string())
+        .unwrap_or_else(|| name_origin.get_culture().unwrap_or_default().to_string());
+    let token_size = name_origin.context_size();
+    let max_length = name_origin.get_average_name_length();
+    let gender = data
+        .gender
+        .unwrap_or_else(|| name_origin.get_random_gender());
+    let chain = name_origin.get_name_builder(name_path).get(&(key.clone(), gender.clone())).unwrap_or_else(|| {
+        panic!(
+            "Could not fetch the initializer for the given Key (Location/Ancestry) {key} and Gender {gender}"
+        )
+    }).clone();
 
     (0..data.max_n_of_names.unwrap_or(10))
         .map(|_| {
@@ -290,25 +244,10 @@ pub fn generate_random_nickname(nickname_path: &str) -> Option<String> {
     }
 }
 
-#[once(sync_writes = true)]
-pub fn prepare_pf_ancestry_names_builder(
-    json_path: &str,
-) -> HashMap<(String, Gender), HashMap<String, Vec<char>>> {
-    let names = get_names_from_json(json_path).unwrap();
-    get_ancestry_name_builder(names.pf_names.by_ancestry, GameSystem::Pathfinder)
-}
-
-#[once(sync_writes = true)]
-pub fn prepare_sf_ancestry_names_builder(
-    json_path: &str,
-) -> HashMap<(String, Gender), HashMap<String, Vec<char>>> {
-    let names = get_names_from_json(json_path).unwrap();
-    get_ancestry_name_builder(names.sf_names.by_ancestry, GameSystem::Starfinder)
-}
-
-fn get_ancestry_name_builder(
+#[cached(key = "i64", convert = r##"{ gs.into() }"##)]
+pub fn get_ancestry_name_builder(
     ancestry_struct: NamesByAncestryRarity,
-    game_system: GameSystem,
+    gs: GameSystem,
 ) -> HashMap<(String, Gender), HashMap<String, Vec<char>>> {
     let mut chains = HashMap::new();
     let x = ancestry_struct.rarity;
@@ -324,7 +263,7 @@ fn get_ancestry_name_builder(
         for el in names_by_rarity.names {
             let gender = el.gender;
             let curr_names: Vec<_> = el.list.iter().map(String::as_str).collect();
-            let context_size = match game_system {
+            let context_size = match gs {
                 GameSystem::Pathfinder => PfAncestry::from_str(ancestry.as_str())
                     .unwrap_or_default()
                     .context_size(),
@@ -341,9 +280,10 @@ fn get_ancestry_name_builder(
     chains
 }
 
-fn get_culture_name_builder(
+#[cached(key = "i64", convert = r##"{ gs.into() }"##)]
+pub fn get_culture_name_builder(
     names_by_culture: Vec<NamesByCulture>,
-    game_system: GameSystem,
+    gs: GameSystem,
 ) -> HashMap<(String, Gender), HashMap<String, Vec<char>>> {
     let mut chains = HashMap::new();
     for culture_struct in names_by_culture {
@@ -351,7 +291,7 @@ fn get_culture_name_builder(
         for el in culture_struct.names {
             let gender = el.gender;
             let curr_names: Vec<_> = el.list.iter().map(String::as_str).collect();
-            let context_size = match game_system {
+            let context_size = match gs {
                 GameSystem::Pathfinder => PfCulture::from_str(culture.as_str())
                     .unwrap_or_default()
                     .context_size(),
@@ -365,12 +305,4 @@ fn get_culture_name_builder(
     }
 
     chains
-}
-
-#[once(sync_writes = true)]
-pub fn prepare_pf_culture_names_builder(
-    json_path: &str,
-) -> HashMap<(String, Gender), HashMap<String, Vec<char>>> {
-    let names = get_names_from_json(json_path).unwrap();
-    get_culture_name_builder(names.pf_names.by_culture, GameSystem::Pathfinder)
 }

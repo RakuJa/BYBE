@@ -4,6 +4,7 @@ use dotenvy::dotenv;
 use sqlx::sqlite::SqliteConnectOptions;
 use sqlx::{Pool, Sqlite, SqlitePool};
 use std::env;
+use std::fmt::{Display, Formatter};
 use std::str::FromStr;
 
 #[tokio::main]
@@ -34,8 +35,6 @@ async fn init_creature_core(conn: Pool<Sqlite>, gs: &GameSystem) {
         .await
         .expect("Could not clean up the db. Dirty state detected, closing..");
 }
-
-use std::fmt::{Display, Formatter};
 
 #[derive(PartialEq, Eq)]
 pub enum GameSystem {

@@ -12,7 +12,7 @@ use sqlx::{Error, FromRow, Row};
 use std::str::FromStr;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Hash, Eq, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Hash, Eq, PartialEq, Debug)]
 pub struct Item {
     pub id: i64,
     pub name: String,

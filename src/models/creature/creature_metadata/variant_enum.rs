@@ -17,6 +17,7 @@ use utoipa::ToSchema;
     Ord,
     PartialOrd,
     Default,
+    Debug,
 )]
 pub enum CreatureVariant {
     Weak,

@@ -10,7 +10,7 @@ pub struct Shield {
     pub shield_data: ShieldData,
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct ShieldData {
     pub id: i64,
     #[schema(example = 0)]

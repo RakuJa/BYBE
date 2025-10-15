@@ -4,19 +4,43 @@ use crate::models::response_data::{ResponseItem, ShopListingResponse};
 use crate::models::routers_validator_structs::{Dice, ItemFieldFilters};
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shop_structs::{
-    ItemTableFieldsFilter, RandomShopData, ShopFilterQuery, ShopPaginatedRequest, ShopTemplateData,
-    ShopTemplateEnum,
+    ItemTableFieldsFilter, PfShopTemplateEnum, RandomShopData, SfShopTemplateEnum, ShopFilterQuery,
+    ShopPaginatedRequest, ShopTemplateData,
 };
 use crate::services::shared::url_calculator::shop_next_url;
+use crate::traits::template_enum::{GenericTemplate, ItemTemplate};
 use anyhow::{Context, bail};
 use num_traits::ToPrimitive;
 use std::collections::HashMap;
 use strum::IntoEnumIterator;
 
-pub async fn get_item(app_state: &AppState, id: i64) -> HashMap<String, Option<ResponseItem>> {
+pub async fn get_item(
+    app_state: &AppState,
+    id: i64,
+    gs: &GameSystem,
+) -> HashMap<String, Option<ResponseItem>> {
     hashmap! {
         String::from("results") =>
-        shop_proxy::get_item_by_id(app_state, &GameSystem::Starfinder,  id).await
+        shop_proxy::get_item_by_id(app_state, gs,  id).await
+    }
+}
+
+pub async fn get_sources_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+    shop_proxy::get_all_sources(app_state, gs).await
+}
+
+pub async fn get_traits_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+    shop_proxy::get_all_traits(app_state, gs).await
+}
+
+pub fn get_shop_templates_data(gs: &GameSystem) -> Vec<ShopTemplateData> {
+    match gs {
+        GameSystem::Pathfinder => PfShopTemplateEnum::iter()
+            .map(std::convert::Into::into)
+            .collect(),
+        GameSystem::Starfinder => SfShopTemplateEnum::iter()
+            .map(std::convert::Into::into)
+            .collect(),
     }
 }
 
@@ -24,23 +48,19 @@ pub async fn get_shop_listing(
     app_state: &AppState,
     field_filter: &ItemFieldFilters,
     pagination: &ShopPaginatedRequest,
+    gs: &GameSystem,
 ) -> ShopListingResponse {
     convert_result_to_shop_response(
         field_filter,
         pagination,
-        shop_proxy::get_paginated_items(
-            app_state,
-            &GameSystem::Starfinder,
-            field_filter,
-            pagination,
-        )
-        .await,
+        shop_proxy::get_paginated_items(app_state, gs, field_filter, pagination).await,
     )
 }
 
-pub async fn generate_random_shop_listing(
+pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(
     app_state: &AppState,
-    shop_data: &RandomShopData,
+    shop_data: &RandomShopData<T>,
+    gs: &GameSystem,
 ) -> ShopListingResponse {
     let (type_filter, rarity_filter) = shop_data.shop_template.clone().map_or_else(
         || {
@@ -49,7 +69,7 @@ pub async fn generate_random_shop_listing(
                 shop_data.rarity_filter.clone().unwrap_or_default(),
             )
         },
-        |x| (x.get_allowed_item_types(), x.get_allowed_item_rarities()),
+        |x| (x.get_allowed_item_types(), x.get_allowed_rarities()),
     );
     let shop_type = shop_data.shop_template.clone().unwrap_or_default();
     let n_of_consumables = i64::from(
@@ -62,7 +82,7 @@ pub async fn generate_random_shop_listing(
     let n_of_equippables = shop_data.equippable_dices.iter().map(Dice::roll).sum();
     // The request is correct, but will result in an empty list.
     if n_of_consumables == 0 && n_of_equippables == 0 {
-        return ShopListingResponse::default_with_system(GameSystem::Starfinder);
+        return ShopListingResponse::default_with_system(*gs);
     }
 
     let equipment_percentage = shop_data.equipment_percentage;
@@ -91,7 +111,7 @@ pub async fn generate_random_shop_listing(
     {
         (shop_proxy::get_filtered_items(
             app_state,
-            &GameSystem::Starfinder,
+            gs,
             &ShopFilterQuery {
                 item_table_fields_filter: ItemTableFieldsFilter {
                     category_filter: shop_data.category_filter.clone().unwrap_or_default(),
@@ -124,66 +144,25 @@ pub async fn generate_random_shop_listing(
         )
         .await)
             .map_or_else(
-                |_| ShopListingResponse::default_with_system(GameSystem::Starfinder),
+                |_| ShopListingResponse::default_with_system(*gs),
                 |result| {
                     let n_of_items = result.len();
                     ShopListingResponse {
                         results: Some(
                             result
                                 .into_iter()
-                                .map(|x| ResponseItem::from((x, GameSystem::Starfinder)))
+                                .map(|x| ResponseItem::from((x, *gs)))
                                 .collect(),
                         ),
                         count: n_of_items,
                         next: None,
                         total: n_of_items,
-                        game_system: GameSystem::Starfinder,
+                        game: *gs,
                     }
                 },
             )
     } else {
-        ShopListingResponse::default_with_system(GameSystem::Starfinder)
-    }
-}
-
-pub async fn get_sources_list(app_state: &AppState) -> Vec<String> {
-    shop_proxy::get_all_sources(app_state, &GameSystem::Starfinder).await
-}
-
-pub async fn get_traits_list(app_state: &AppState) -> Vec<String> {
-    shop_proxy::get_all_traits(app_state, &GameSystem::Starfinder).await
-}
-
-pub fn get_shop_templates_data() -> Vec<ShopTemplateData> {
-    ShopTemplateEnum::iter()
-        .map(std::convert::Into::into)
-        .collect()
-}
-
-fn convert_result_to_shop_response(
-    field_filters: &ItemFieldFilters,
-    pagination: &ShopPaginatedRequest,
-    result: anyhow::Result<(u32, Vec<ResponseItem>)>,
-) -> ShopListingResponse {
-    match result {
-        Ok(res) => {
-            let item: Vec<ResponseItem> = res.1;
-            let n_of_items = item.len();
-            ShopListingResponse {
-                results: Some(item),
-                count: n_of_items,
-                next: if n_of_items
-                    >= pagination.paginated_request.page_size.unsigned_abs() as usize
-                {
-                    Some(shop_next_url(field_filters, pagination, n_of_items as u32))
-                } else {
-                    None
-                },
-                total: res.0 as usize,
-                game_system: GameSystem::Starfinder,
-            }
-        }
-        Err(_) => ShopListingResponse::default_with_system(GameSystem::Starfinder),
+        ShopListingResponse::default_with_system(*gs)
     }
 }
 
@@ -287,6 +266,33 @@ fn divide_equally(f: f64) -> (f64, f64, f64, f64) {
             result
         })
         .into()
+}
+
+fn convert_result_to_shop_response(
+    field_filters: &ItemFieldFilters,
+    pagination: &ShopPaginatedRequest,
+    result: anyhow::Result<(u32, Vec<ResponseItem>)>,
+) -> ShopListingResponse {
+    match result {
+        Ok(res) => {
+            let item: Vec<ResponseItem> = res.1;
+            let n_of_items = item.len();
+            ShopListingResponse {
+                results: Some(item),
+                count: n_of_items,
+                next: if n_of_items
+                    >= pagination.paginated_request.page_size.unsigned_abs() as usize
+                {
+                    Some(shop_next_url(field_filters, pagination, n_of_items as u32))
+                } else {
+                    None
+                },
+                total: res.0 as usize,
+                game: GameSystem::Starfinder,
+            }
+        }
+        Err(_) => ShopListingResponse::default_with_system(GameSystem::Starfinder),
+    }
 }
 
 #[cfg(test)]

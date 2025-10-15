@@ -34,21 +34,21 @@ pub async fn fetch_item_by_id(
             weapon_data: fetch_weapon_data_by_item_id(conn, gs, item_id).await.ok(),
             armor_data: None,
             shield_data: None,
-            game_system: *gs,
+            game: *gs,
         },
         ItemTypeEnum::Armor => ResponseItem {
             core_item: item,
             weapon_data: None,
             armor_data: fetch_armor_data_by_item_id(conn, gs, item_id).await.ok(),
             shield_data: None,
-            game_system: *gs,
+            game: *gs,
         },
         ItemTypeEnum::Shield => ResponseItem {
             core_item: item,
             weapon_data: None,
             armor_data: None,
             shield_data: fetch_shield_data_by_item_id(conn, gs, item_id).await.ok(),
-            game_system: *gs,
+            game: *gs,
         },
     })
 }
@@ -301,7 +301,8 @@ pub async fn fetch_items_with_filters(
 ) -> Result<Vec<Item>> {
     let items: Vec<Item> = query_as(prepare_filtered_get_items(gs, filters).as_str())
         .fetch_all(conn)
-        .await?;
+        .await
+        .unwrap();
     let equipment: Vec<&Item> = items
         .iter()
         .filter(|x| x.item_type == ItemTypeEnum::Equipment)

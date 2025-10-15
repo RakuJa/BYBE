@@ -5,7 +5,18 @@ use strum::Display;
 use utoipa::ToSchema;
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Display, Eq, Hash, PartialEq, Ord, PartialOrd, Default, Type,
+    Serialize,
+    Deserialize,
+    ToSchema,
+    Display,
+    Eq,
+    Hash,
+    PartialEq,
+    Ord,
+    PartialOrd,
+    Default,
+    Type,
+    Debug,
 )]
 pub enum RarityEnum {
     #[default]

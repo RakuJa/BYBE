@@ -1,3 +1,4 @@
+use crate::traits::class_enum::ClassEnum;
 use crate::traits::random_enum::RandomEnum;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
@@ -57,6 +58,8 @@ impl RandomEnum for PfClass {
     }
 }
 
+impl ClassEnum for PfClass {}
+
 #[derive(
     Serialize,
     FromRepr,
@@ -88,33 +91,4 @@ impl RandomEnum for SfClass {
     }
 }
 
-#[derive(
-    Serialize,
-    FromRepr,
-    Deserialize,
-    EnumCount,
-    ToSchema,
-    EnumIter,
-    Clone,
-    Eq,
-    PartialEq,
-    Hash,
-    Display,
-    Debug,
-)]
-pub enum ClassFilter {
-    FromPf(Option<Vec<PfClass>>),
-    FromSf(Option<Vec<SfClass>>),
-}
-
-impl RandomEnum for ClassFilter {
-    fn from_repr(value: usize) -> Option<Self> {
-        Self::from_repr(value)
-    }
-}
-
-impl Default for ClassFilter {
-    fn default() -> Self {
-        Self::FromPf(None)
-    }
-}
+impl ClassEnum for SfClass {}

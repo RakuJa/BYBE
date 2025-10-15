@@ -1,3 +1,4 @@
+use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_core::CreatureCoreData;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
 use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
@@ -8,9 +9,6 @@ use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::ShieldData;
 use crate::models::item::weapon_struct::WeaponData;
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::models::{
-    creature::creature_component::creature_combat::CreatureCombatData, npc::gender_enum::Gender,
-};
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
@@ -29,7 +27,7 @@ pub struct ResponseCreature {
     pub extra_data: Option<CreatureExtraData>,
     pub combat_data: Option<CreatureCombatData>,
     pub spellcaster_data: Option<CreatureSpellcasterData>,
-    pub game_system: GameSystem,
+    pub game: GameSystem,
 }
 
 impl From<Creature> for ResponseCreature {
@@ -40,18 +38,18 @@ impl From<Creature> for ResponseCreature {
             extra_data: cr.extra_data,
             spellcaster_data: cr.spellcaster_data,
             combat_data: cr.combat_data,
-            game_system: cr.game_system,
+            game: cr.game_system,
         }
     }
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, PartialEq, Eq, Debug)]
 pub struct ResponseItem {
     pub core_item: Item,
     pub weapon_data: Option<WeaponData>,
     pub armor_data: Option<ArmorData>,
     pub shield_data: Option<ShieldData>,
-    pub game_system: GameSystem,
+    pub game: GameSystem,
 }
 
 impl From<(Item, GameSystem)> for ResponseItem {
@@ -63,22 +61,22 @@ impl From<(Item, GameSystem)> for ResponseItem {
             weapon_data: None,
             armor_data: None,
             shield_data: None,
-            game_system,
+            game: game_system,
         }
     }
 }
 
-#[derive(Serialize, Deserialize, ToSchema)]
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
 pub struct ResponseNpc {
     pub name: String,
     pub nickname: Option<String>,
-    pub gender: Gender,
+    pub gender: String,
     pub ancestry: String,
     pub job: String,
     pub level: i64,
     pub culture: String,
     pub class: String,
-    pub game_system: GameSystem,
+    pub game: GameSystem,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Default)]
@@ -86,7 +84,7 @@ pub struct ShopListingResponse {
     pub(crate) results: Option<Vec<ResponseItem>>,
     pub(crate) count: usize,
     pub(crate) total: usize,
-    pub(crate) game_system: GameSystem,
+    pub(crate) game: GameSystem,
     pub(crate) next: Option<String>,
 }
 
@@ -96,7 +94,7 @@ impl ShopListingResponse {
             results: None,
             count: 0,
             total: 0,
-            game_system,
+            game: game_system,
             next: None,
         }
     }

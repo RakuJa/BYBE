@@ -1,3 +1,4 @@
+use crate::traits::job_enum::JobEnum;
 use crate::traits::random_enum::RandomEnum;
 use serde::{Deserialize, Serialize};
 use strum::EnumIter;
@@ -356,33 +357,6 @@ impl RandomEnum for SfJob {
     }
 }
 
-#[derive(
-    Serialize,
-    FromRepr,
-    Deserialize,
-    EnumCount,
-    ToSchema,
-    EnumIter,
-    Clone,
-    Eq,
-    PartialEq,
-    Hash,
-    Display,
-    Debug,
-)]
-pub enum JobFilter {
-    FromPf(Option<Vec<PfJob>>),
-    FromSf(Option<Vec<SfJob>>),
-}
+impl JobEnum for SfJob {}
 
-impl RandomEnum for JobFilter {
-    fn from_repr(value: usize) -> Option<Self> {
-        Self::from_repr(value)
-    }
-}
-
-impl Default for JobFilter {
-    fn default() -> Self {
-        Self::FromPf(None)
-    }
-}
+impl JobEnum for PfJob {}

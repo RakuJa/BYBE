@@ -1,13 +1,13 @@
 use crate::AppState;
 use crate::models::npc::ancestry_enum::SfAncestry;
-use crate::models::npc::class_enum::ClassFilter;
+use crate::models::npc::class_enum::SfClass;
 use crate::models::npc::gender_enum::Gender;
-use crate::models::npc::job_enum::JobFilter;
+use crate::models::npc::job_enum::SfJob;
+use crate::models::npc::name_origin_enum::{SfNameOrigin, SfNameOriginFilter};
 use crate::models::npc::request_npc_struct::{AncestryData, RandomNameData, RandomNpcData};
 use crate::models::response_data::ResponseNpc;
 use crate::models::routers_validator_structs::LevelData;
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::services::sf::npc_service as sf_npc_service;
 use crate::services::shared::npc_service;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{Responder, get, post, web};
@@ -50,7 +50,12 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
             sf_get_npc_ancestries_list,
             sf_get_npc_cultures_list
         ),
-        components(schemas(ResponseNpc, RandomNpcData, RandomNameData, AncestryData))
+        components(schemas(
+            ResponseNpc,
+            RandomNpcData<SfClass, SfNameOriginFilter, SfJob>,
+            RandomNameData<SfNameOrigin>,
+            AncestryData
+        ))
     )]
     struct ApiDoc;
 
@@ -62,7 +67,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
     path = "/npc/generator",
     tags = ["sf", "npc"],
     request_body(
-        content = RandomNpcData,
+        content = RandomNpcData<SfClass, SfNameOriginFilter, SfJob>,
         content_type = "application/json",
     ),
     params(
@@ -76,11 +81,9 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
 #[post("/generator")]
 pub async fn sf_get_random_npc(
     data: web::Data<AppState>,
-    body: Option<web::Json<RandomNpcData>>,
+    body: Option<web::Json<RandomNpcData<SfClass, SfNameOriginFilter, SfJob>>>,
 ) -> actix_web::Result<impl Responder> {
-    let npc_data = body
-        .map(|x| x.0)
-        .unwrap_or_else(|| RandomNpcData::default_with_system(GameSystem::Starfinder));
+    let npc_data = body.map(|x| x.0).unwrap_or_default();
     if npc_data.is_valid() {
         npc_service::generate_random_npc(&data, npc_data)
             .map_or_else(|_| Err(ErrorBadRequest(
@@ -98,7 +101,7 @@ pub async fn sf_get_random_npc(
     path = "/npc/generator/class",
     tags = ["sf", "npc"],
     request_body(
-        content = Option<ClassFilter>,
+        content = Option<Vec<SfClass>>,
         content_type = "application/json",
     ),
     params(
@@ -111,13 +114,13 @@ pub async fn sf_get_random_npc(
 )]
 #[post("/generator/class")]
 pub async fn sf_get_random_class(
-    body: Option<web::Json<ClassFilter>>,
+    body: Option<web::Json<Vec<SfClass>>>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(npc_service::get_random_class(
         if let Some(body) = body {
-            Some(body.0)
+            body.0
         } else {
-            None
+            vec![]
         },
     )))
 }
@@ -154,7 +157,7 @@ pub async fn sf_get_random_level(
 
 #[utoipa::path(
     post,
-    path = "/npc/generator/ancestry",
+    path = "/npc/generator/origin",
     tags = ["sf", "npc"],
     request_body(
         content = Option<Vec<SfAncestry>>,
@@ -168,11 +171,11 @@ pub async fn sf_get_random_level(
         (status=400, description = "Bad request.")
     ),
 )]
-#[post("/generator/ancestry")]
+#[post("/generator/origin")]
 pub async fn sf_get_random_ancestry(
     body: Option<web::Json<Vec<SfAncestry>>>,
 ) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(sf_npc_service::get_random_ancestry(
+    Ok(web::Json(npc_service::get_random_ancestry(
         if let Some(body) = body {
             Some(body.0)
         } else {
@@ -216,7 +219,7 @@ pub async fn sf_get_random_gender(
     path = "/npc/generator/job",
     tags = ["sf", "npc"],
     request_body(
-        content = Option<JobFilter>,
+        content = Option<Vec<SfJob>>,
         content_type = "application/json",
     ),
     params(
@@ -229,13 +232,13 @@ pub async fn sf_get_random_gender(
 )]
 #[post("/generator/job")]
 pub async fn sf_get_random_job(
-    body: Option<web::Json<JobFilter>>,
+    body: Option<web::Json<Vec<SfJob>>>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(npc_service::get_random_job(
         if let Some(body) = body {
-            Some(body.0)
+            body.0
         } else {
-            None
+            vec![]
         },
     )))
 }
@@ -268,7 +271,7 @@ pub async fn sf_get_random_nickname(
     path = "/npc/generator/names",
     tags = ["sf", "npc"],
     request_body(
-        content = RandomNameData,
+        content = RandomNameData<SfNameOrigin>,
         content_type = "application/json",
     ),
     params(
@@ -282,7 +285,7 @@ pub async fn sf_get_random_nickname(
 #[post("/generator/names")]
 pub async fn sf_get_random_names(
     data: web::Data<AppState>,
-    body: Option<web::Json<RandomNameData>>,
+    body: Option<web::Json<RandomNameData<SfNameOrigin>>>,
 ) -> actix_web::Result<impl Responder> {
     if let Some(json) = body {
         let rd = json.0;
@@ -298,7 +301,7 @@ pub async fn sf_get_random_names(
         }
     } else {
         Ok(web::Json(npc_service::generate_random_names(
-            RandomNameData::default_with_system(GameSystem::Starfinder),
+            RandomNameData::default_with_system(SfNameOrigin::default()),
             &data.name_json_path,
         )))
     }

@@ -1,5 +1,6 @@
-use crate::traits::ancestry::average_name_length::AverageNameLength;
-use crate::traits::ancestry::context_size::ContextSize;
+use crate::traits::origin::average_name_length::AverageNameLength;
+use crate::traits::origin::context_size::ContextSize;
+use crate::traits::origin::culture::Culture;
 use crate::traits::random_enum::RandomEnum;
 use serde::{Deserialize, Serialize};
 use strum::EnumCount;
@@ -64,6 +65,8 @@ impl AverageNameLength for PfCulture {
     }
 }
 
+impl Culture for PfCulture {}
+
 #[derive(
     Serialize,
     FromRepr,
@@ -102,3 +105,5 @@ impl AverageNameLength for SfCulture {
         10
     }
 }
+
+impl Culture for SfCulture {}

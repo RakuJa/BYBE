@@ -1,3 +1,4 @@
+use crate::models::shared::game_system_enum::GameSystem;
 use serde::{Deserialize, Serialize};
 use sqlx::Type;
 use std::fmt::{Display, Formatter};
@@ -6,7 +7,7 @@ use strum::EnumIter;
 use utoipa::ToSchema;
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Eq, Hash, PartialEq, Ord, PartialOrd, Type, EnumIter,
+    Serialize, Deserialize, ToSchema, Eq, Hash, PartialEq, Ord, PartialOrd, Type, EnumIter, Debug,
 )]
 pub enum ItemTypeEnum {
     #[serde(alias = "consumable", alias = "CONSUMABLE")]
@@ -22,12 +23,15 @@ pub enum ItemTypeEnum {
 }
 
 impl ItemTypeEnum {
-    pub fn to_db_main_table_name(&self) -> String {
-        format!("{}_TABLE", self.to_db_table_name())
+    pub fn to_db_main_table_name(&self, gs: &GameSystem) -> String {
+        format!("{gs}_{}_table", self.to_db_table_name())
     }
 
-    pub fn to_db_association_table_name(&self) -> String {
-        format!("{}_CREATURE_ASSOCIATION_TABLE", self.to_db_table_name())
+    pub fn to_db_association_table_name(&self, gs: &GameSystem) -> String {
+        format!(
+            "{gs}_{}_creature_association_table",
+            self.to_db_table_name()
+        )
     }
 
     /// Utility method to reduce code redundancy.
@@ -91,7 +95,7 @@ impl Display for ItemTypeEnum {
 }
 
 #[derive(
-    Serialize, Deserialize, ToSchema, Eq, Hash, PartialEq, Ord, PartialOrd, Type, EnumIter,
+    Serialize, Deserialize, ToSchema, Eq, Hash, PartialEq, Ord, PartialOrd, Type, EnumIter, Debug,
 )]
 pub enum WeaponTypeEnum {
     #[serde(alias = "melee", alias = "MELEE")]

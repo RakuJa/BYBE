@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 use std::fmt::{Display, Formatter};
 use utoipa::ToSchema;
 
-#[derive(PartialEq, Eq, Clone, Copy, Deserialize, Serialize, ToSchema, Hash, Default)]
+#[derive(PartialEq, Eq, Clone, Copy, Deserialize, Serialize, ToSchema, Hash, Default, Debug)]
 pub enum GameSystem {
     #[default]
     Pathfinder,

@@ -9,7 +9,7 @@ mod services;
 mod traits;
 
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::routes::{health, pf, sf};
+use crate::routes::{health, pf, sf, shareable};
 use actix_cors::Cors;
 use actix_web::http::header::{CacheControl, CacheDirective};
 use actix_web::{App, HttpResponse, HttpServer, Responder, get, middleware, web};
@@ -100,6 +100,7 @@ fn get_service_workers() -> usize {
 fn init_docs(openapi: utoipa::openapi::OpenApi) -> utoipa::openapi::OpenApi {
     openapi
         .merge_from(health::init_docs())
+        .merge_from(shareable::init_docs())
         .nest("/pf", pf::bestiary::init_docs())
         .nest("/pf", pf::encounter::init_docs())
         .nest("/pf", pf::shop::init_docs())
@@ -199,6 +200,7 @@ pub async fn start(
                     .configure(sf::npc::init_endpoints),
             )
             .configure(health::init_endpoints)
+            .configure(shareable::init_endpoints)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )

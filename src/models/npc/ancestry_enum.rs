@@ -1,7 +1,8 @@
 use crate::models::npc::gender_enum::Gender;
-use crate::traits::ancestry::average_name_length::AverageNameLength;
-use crate::traits::ancestry::context_size::ContextSize;
-use crate::traits::ancestry::has_valid_genders::HasValidGenders;
+use crate::traits::origin::ancestry::Ancestry;
+use crate::traits::origin::average_name_length::AverageNameLength;
+use crate::traits::origin::context_size::ContextSize;
+use crate::traits::origin::has_valid_genders::HasValidGenders;
 use crate::traits::random_enum::RandomEnum;
 use serde::{Deserialize, Serialize};
 use strum::EnumCount;
@@ -84,6 +85,8 @@ pub enum PfAncestry {
     */
 }
 
+impl Ancestry for PfAncestry {}
+
 impl RandomEnum for PfAncestry {
     fn from_repr(value: usize) -> Option<Self> {
         Self::from_repr(value)
@@ -132,6 +135,7 @@ impl AverageNameLength for PfAncestry {
     Hash,
     Display,
     Debug,
+    Copy,
 )]
 pub enum SfAncestry {
     // Common
@@ -191,3 +195,5 @@ impl AverageNameLength for SfAncestry {
         }
     }
 }
+
+impl Ancestry for SfAncestry {}
