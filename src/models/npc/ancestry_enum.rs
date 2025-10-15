@@ -105,7 +105,7 @@ impl HasValidGenders for PfAncestry {
 impl ContextSize for PfAncestry {
     fn context_size(&self) -> usize {
         match self {
-            Self::Leshy => 3,
+            Self::Leshy | Self::Human | Self::Halfling | Self::Gnome | Self::Elf | Self::Orc => 3,
             _ => 2,
         }
     }
@@ -181,7 +181,8 @@ impl ContextSize for SfAncestry {
     fn context_size(&self) -> usize {
         match self {
             Self::Khizar | Self::Contemplative => 3,
-            _ => 2,
+            Self::Ysoki | Self::Barathu => 2,
+            _ => 3,
         }
     }
 }
@@ -189,7 +190,7 @@ impl ContextSize for SfAncestry {
 impl AverageNameLength for SfAncestry {
     fn get_average_name_length(&self) -> usize {
         match self {
-            Self::Khizar | Self::Contemplative => 35,
+            Self::Khizar | Self::Contemplative => 30,
             Self::Ysoki => 10,
             _ => 15,
         }

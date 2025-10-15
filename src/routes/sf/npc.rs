@@ -157,7 +157,7 @@ pub async fn sf_get_random_level(
 
 #[utoipa::path(
     post,
-    path = "/npc/generator/origin",
+    path = "/npc/generator/ancestry",
     tags = ["sf", "npc"],
     request_body(
         content = Option<Vec<SfAncestry>>,
@@ -171,7 +171,7 @@ pub async fn sf_get_random_level(
         (status=400, description = "Bad request.")
     ),
 )]
-#[post("/generator/origin")]
+#[post("/generator/ancestry")]
 pub async fn sf_get_random_ancestry(
     body: Option<web::Json<Vec<SfAncestry>>>,
 ) -> actix_web::Result<impl Responder> {
