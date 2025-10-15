@@ -16,12 +16,12 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(get_health);
 }
 
-pub fn init_docs(doc: &mut utoipa::openapi::OpenApi) {
+pub fn init_docs() -> utoipa::openapi::OpenApi {
     #[derive(OpenApi)]
     #[openapi(paths(get_health), components(schemas(HealthResponse)))]
     struct ApiDoc;
 
-    doc.merge(ApiDoc::openapi());
+    ApiDoc::openapi()
 }
 
 #[utoipa::path(

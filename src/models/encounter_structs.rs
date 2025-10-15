@@ -1,7 +1,7 @@
 use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
-use crate::models::pf_version_enum::PathfinderVersionEnum;
+use crate::models::pf_version_enum::GameSystemVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use nanorand::Rng;
@@ -48,7 +48,7 @@ pub struct RandomEncounterData {
     pub allow_elite_variants: Option<bool>,
     pub allow_weak_variants: Option<bool>,
     pub is_pwl_on: bool,
-    pub pathfinder_version: Option<PathfinderVersionEnum>,
+    pub game_system_version: Option<GameSystemVersionEnum>,
 }
 
 #[derive(

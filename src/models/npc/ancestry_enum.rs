@@ -1,11 +1,14 @@
 use crate::models::npc::gender_enum::Gender;
+use crate::traits::ancestry::average_name_length::AverageNameLength;
+use crate::traits::ancestry::context_size::ContextSize;
+use crate::traits::ancestry::has_valid_genders::HasValidGenders;
 use crate::traits::random_enum::RandomEnum;
 use serde::{Deserialize, Serialize};
-use strum::Display;
 use strum::EnumCount;
 use strum::EnumIter;
 use strum::FromRepr;
 use strum::IntoEnumIterator;
+use strum::{Display, EnumString};
 use utoipa::ToSchema;
 
 #[derive(
@@ -13,6 +16,7 @@ use utoipa::ToSchema;
     FromRepr,
     Deserialize,
     EnumCount,
+    EnumString,
     Default,
     ToSchema,
     EnumIter,
@@ -23,7 +27,7 @@ use utoipa::ToSchema;
     Display,
     Debug,
 )]
-pub enum Ancestry {
+pub enum PfAncestry {
     // Common
     Dwarf,
     Elf,
@@ -80,30 +84,110 @@ pub enum Ancestry {
     */
 }
 
-impl RandomEnum for Ancestry {
+impl RandomEnum for PfAncestry {
     fn from_repr(value: usize) -> Option<Self> {
         Self::from_repr(value)
     }
 }
-impl Ancestry {
-    pub fn get_valid_genders(&self) -> Vec<Gender> {
+
+impl HasValidGenders for PfAncestry {
+    fn get_valid_genders(&self) -> Vec<Gender> {
         match self {
             Self::Leshy => vec![Gender::NonBinary],
             _ => Gender::iter().collect(),
         }
     }
+}
 
-    pub const fn get_default_name_length(&self) -> usize {
+impl ContextSize for PfAncestry {
+    fn context_size(&self) -> usize {
+        match self {
+            Self::Leshy => 3,
+            _ => 2,
+        }
+    }
+}
+
+impl AverageNameLength for PfAncestry {
+    fn get_average_name_length(&self) -> usize {
         match self {
             Self::Leshy => 30,
             _ => 15,
         }
     }
+}
 
-    pub const fn get_default_order_size(&self) -> usize {
+#[derive(
+    Serialize,
+    FromRepr,
+    Deserialize,
+    EnumCount,
+    EnumString,
+    Default,
+    ToSchema,
+    EnumIter,
+    Clone,
+    Eq,
+    PartialEq,
+    Hash,
+    Display,
+    Debug,
+)]
+pub enum SfAncestry {
+    // Common
+    Android,
+    Astrazoan,
+    Barathu,
+    Contemplative,
+    Dragonkin,
+    #[default]
+    Human,
+    Ikeshti,
+    Kalo,
+    Kasatha,
+    Lashunta,
+    Pahtra,
+    Sarcesian,
+    Shirren,
+    Shobhad,
+    Skittermander,
+    Vesk,
+    Vlaka,
+    Ysoki,
+    // Uncommon
+    Khizar,
+}
+
+impl RandomEnum for SfAncestry {
+    fn from_repr(value: usize) -> Option<Self> {
+        Self::from_repr(value)
+    }
+}
+
+impl HasValidGenders for SfAncestry {
+    fn get_valid_genders(&self) -> Vec<Gender> {
         match self {
-            Self::Leshy => 3,
+            Self::Android => vec![Gender::NonBinary],
+            _ => Gender::iter().collect(),
+        }
+    }
+}
+
+impl ContextSize for SfAncestry {
+    fn context_size(&self) -> usize {
+        match self {
+            Self::Khizar | Self::Contemplative => 3,
             _ => 2,
+        }
+    }
+}
+
+impl AverageNameLength for SfAncestry {
+    fn get_average_name_length(&self) -> usize {
+        match self {
+            Self::Khizar | Self::Contemplative => 35,
+            Self::Ysoki => 10,
+            _ => 15,
         }
     }
 }

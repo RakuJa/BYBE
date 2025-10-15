@@ -8,7 +8,8 @@ mod services;
 
 mod traits;
 
-use crate::routes::{bestiary, encounter, health, npc, shop};
+use crate::models::shared::game_system_enum::GameSystem;
+use crate::routes::{health, pf, sf};
 use actix_cors::Cors;
 use actix_web::http::header::{CacheControl, CacheDirective};
 use actix_web::{App, HttpResponse, HttpServer, Responder, get, middleware, web};
@@ -96,12 +97,17 @@ fn get_service_workers() -> usize {
         })
 }
 
-fn init_docs(openapi: &mut utoipa::openapi::OpenApi) {
-    health::init_docs(openapi);
-    bestiary::init_docs(openapi);
-    encounter::init_docs(openapi);
-    shop::init_docs(openapi);
-    npc::init_docs(openapi);
+fn init_docs(openapi: utoipa::openapi::OpenApi) -> utoipa::openapi::OpenApi {
+    openapi
+        .merge_from(health::init_docs())
+        .nest("/pf", pf::bestiary::init_docs())
+        .nest("/pf", pf::encounter::init_docs())
+        .nest("/pf", pf::shop::init_docs())
+        .nest("/pf", pf::npc::init_docs())
+        .nest("/sf", sf::bestiary::init_docs())
+        .nest("/sf", sf::encounter::init_docs())
+        .nest("/sf", sf::shop::init_docs())
+        .nest("/sf", sf::npc::init_docs())
 }
 
 #[actix_web::main]
@@ -140,8 +146,13 @@ pub async fn start(
         .expect("Error building connection pool");
     match startup_state {
         StartupState::Clean => {
-            log::info!("Starting DB Table cleanup & creation of update CORE tables");
-            db::cr_core_initializer::update_creature_core_table(&pool)
+            log::info!("Starting DB PF2E Table cleanup & creation of update CORE tables");
+            db::cr_core_initializer::update_creature_core_table(&pool, &GameSystem::Pathfinder)
+                .await
+                .expect("Could not initialize correctly core creature table.. Startup failed");
+
+            log::info!("Starting DB SF2E Table cleanup & creation of update CORE tables");
+            db::cr_core_initializer::update_creature_core_table(&pool, &GameSystem::Starfinder)
                 .await
                 .expect("Could not initialize correctly core creature table.. Startup failed");
         }
@@ -155,8 +166,7 @@ pub async fn start(
     );
 
     // Swagger initialization
-    let mut openapi = ApiDoc::openapi();
-    init_docs(&mut openapi);
+    let openapi = init_docs(ApiDoc::openapi());
 
     // Configure endpoints
     let server = HttpServer::new(move || {
@@ -174,11 +184,21 @@ pub async fn start(
                     .add(("X-Content-Type-Options", "nosniff")),
             )
             .service(index)
+            .service(
+                web::scope("/pf")
+                    .configure(pf::bestiary::init_endpoints)
+                    .configure(pf::encounter::init_endpoints)
+                    .configure(pf::shop::init_endpoints)
+                    .configure(pf::npc::init_endpoints),
+            )
+            .service(
+                web::scope("/sf")
+                    .configure(sf::bestiary::init_endpoints)
+                    .configure(sf::encounter::init_endpoints)
+                    .configure(sf::shop::init_endpoints)
+                    .configure(sf::npc::init_endpoints),
+            )
             .configure(health::init_endpoints)
-            .configure(bestiary::init_endpoints)
-            .configure(encounter::init_endpoints)
-            .configure(shop::init_endpoints)
-            .configure(npc::init_endpoints)
             .service(
                 SwaggerUi::new("/swagger-ui/{_:.*}").url("/api-docs/openapi.json", openapi.clone()),
             )

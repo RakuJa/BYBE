@@ -1,14 +1,26 @@
 use crate::traits::random_enum::RandomEnum;
 use serde::{Deserialize, Serialize};
-use strum::EnumCount;
 use strum::EnumIter;
 use strum::FromRepr;
+use strum::{Display, EnumCount};
 use utoipa::ToSchema;
 
 #[derive(
-    Serialize, FromRepr, Deserialize, EnumCount, Default, ToSchema, EnumIter, Clone, Debug,
+    Serialize,
+    FromRepr,
+    Deserialize,
+    EnumCount,
+    Default,
+    ToSchema,
+    EnumIter,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Display,
 )]
-pub enum Class {
+pub enum PfClass {
     Alchemist,
     Animist,
     Druid,
@@ -39,8 +51,70 @@ pub enum Class {
     Exemplar,
 }
 
-impl RandomEnum for Class {
+impl RandomEnum for PfClass {
     fn from_repr(value: usize) -> Option<Self> {
         Self::from_repr(value)
+    }
+}
+
+#[derive(
+    Serialize,
+    FromRepr,
+    Deserialize,
+    EnumCount,
+    Default,
+    ToSchema,
+    EnumIter,
+    Clone,
+    Debug,
+    Eq,
+    PartialEq,
+    Hash,
+    Display,
+)]
+pub enum SfClass {
+    Envoy,
+    Mystic,
+    Operative,
+    Solarian,
+    #[default]
+    Soldier,
+    Witchwarper,
+}
+
+impl RandomEnum for SfClass {
+    fn from_repr(value: usize) -> Option<Self> {
+        Self::from_repr(value)
+    }
+}
+
+#[derive(
+    Serialize,
+    FromRepr,
+    Deserialize,
+    EnumCount,
+    ToSchema,
+    EnumIter,
+    Clone,
+    Eq,
+    PartialEq,
+    Hash,
+    Display,
+    Debug,
+)]
+pub enum ClassFilter {
+    FromPf(Option<Vec<PfClass>>),
+    FromSf(Option<Vec<SfClass>>),
+}
+
+impl RandomEnum for ClassFilter {
+    fn from_repr(value: usize) -> Option<Self> {
+        Self::from_repr(value)
+    }
+}
+
+impl Default for ClassFilter {
+    fn default() -> Self {
+        Self::FromPf(None)
     }
 }

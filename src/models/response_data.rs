@@ -7,10 +7,7 @@ use crate::models::item::armor_struct::ArmorData;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::ShieldData;
 use crate::models::item::weapon_struct::WeaponData;
-use crate::models::npc::ancestry_enum::Ancestry;
-use crate::models::npc::class_enum::Class;
-use crate::models::npc::culture_enum::Culture;
-use crate::models::npc::job_enum::Job;
+use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::{
     creature::creature_component::creature_combat::CreatureCombatData, npc::gender_enum::Gender,
 };
@@ -32,17 +29,18 @@ pub struct ResponseCreature {
     pub extra_data: Option<CreatureExtraData>,
     pub combat_data: Option<CreatureCombatData>,
     pub spellcaster_data: Option<CreatureSpellcasterData>,
+    pub game_system: GameSystem,
 }
 
 impl From<Creature> for ResponseCreature {
-    fn from(value: Creature) -> Self {
-        let cr = value;
+    fn from(cr: Creature) -> Self {
         Self {
             core_data: cr.core_data,
             variant_data: cr.variant_data,
             extra_data: cr.extra_data,
             spellcaster_data: cr.spellcaster_data,
             combat_data: cr.combat_data,
+            game_system: cr.game_system,
         }
     }
 }
@@ -53,15 +51,19 @@ pub struct ResponseItem {
     pub weapon_data: Option<WeaponData>,
     pub armor_data: Option<ArmorData>,
     pub shield_data: Option<ShieldData>,
+    pub game_system: GameSystem,
 }
 
-impl From<Item> for ResponseItem {
-    fn from(value: Item) -> Self {
+impl From<(Item, GameSystem)> for ResponseItem {
+    fn from(value: (Item, GameSystem)) -> Self {
+        let item = value.0;
+        let game_system = value.1;
         Self {
-            core_item: value,
+            core_item: item,
             weapon_data: None,
             armor_data: None,
             shield_data: None,
+            game_system,
         }
     }
 }
@@ -71,9 +73,31 @@ pub struct ResponseNpc {
     pub name: String,
     pub nickname: Option<String>,
     pub gender: Gender,
-    pub ancestry: Ancestry,
-    pub job: Job,
+    pub ancestry: String,
+    pub job: String,
     pub level: i64,
-    pub culture: Culture,
-    pub class: Class,
+    pub culture: String,
+    pub class: String,
+    pub game_system: GameSystem,
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Default)]
+pub struct ShopListingResponse {
+    pub(crate) results: Option<Vec<ResponseItem>>,
+    pub(crate) count: usize,
+    pub(crate) total: usize,
+    pub(crate) game_system: GameSystem,
+    pub(crate) next: Option<String>,
+}
+
+impl ShopListingResponse {
+    pub const fn default_with_system(game_system: GameSystem) -> Self {
+        Self {
+            results: None,
+            count: 0,
+            total: 0,
+            game_system,
+            next: None,
+        }
+    }
 }

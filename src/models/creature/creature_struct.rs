@@ -5,8 +5,9 @@ use crate::models::creature::creature_component::creature_spellcaster::CreatureS
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
-use crate::models::pf_version_enum::PathfinderVersionEnum;
+use crate::models::pf_version_enum::GameSystemVersionEnum;
 use crate::models::routers_validator_structs::CreatureFieldFilters;
+use crate::models::shared::game_system_enum::GameSystem;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
@@ -16,6 +17,7 @@ pub struct Creature {
     pub extra_data: Option<CreatureExtraData>,
     pub combat_data: Option<CreatureCombatData>,
     pub spellcaster_data: Option<CreatureSpellcasterData>,
+    pub game_system: GameSystem,
 }
 
 impl Creature {
@@ -24,7 +26,7 @@ impl Creature {
     /// Decrease the creature’s AC, attack modifiers, DCs, saving throws, Perception, and skill modifiers by 2.
     /// Decrease the damage of its Strikes and other offensive abilities by 2. If the creature has limits on how many times or how often it can use an ability (such as a spellcaster’s spells or a dragon’s breath), decrease the damage by 4 instead.
     pub fn convert_creature_to_variant(self, variant: CreatureVariant) -> Self {
-        let mut cr = Self::from_core_with_variant(self.core_data, variant);
+        let mut cr = Self::from_core_with_variant(self.core_data, variant, self.game_system);
         cr.extra_data = self
             .extra_data
             .map(|x| x.convert_from_base_to_variant(variant));
@@ -54,9 +56,10 @@ impl Creature {
             spellcaster_data: self
                 .spellcaster_data
                 .map(|x| x.convert_from_base_to_pwl(pwl_mod)),
+            game_system: self.game_system,
         }
     }
-    pub fn from_core(core: CreatureCoreData) -> Self {
+    pub fn from_core(core: CreatureCoreData, game_system: GameSystem) -> Self {
         let level = core.essential.base_level;
         let archive_link = core.derived.archive_link.clone();
         Self {
@@ -69,12 +72,14 @@ impl Creature {
             extra_data: None,
             combat_data: None,
             spellcaster_data: None,
+            game_system,
         }
     }
 
     pub fn from_core_with_variant(
         mut core: CreatureCoreData,
         creature_variant: CreatureVariant,
+        game_system: GameSystem,
     ) -> Self {
         let variant_hp =
             creature_variant.get_variant_hp(core.essential.hp, core.essential.base_level);
@@ -92,6 +97,7 @@ impl Creature {
             extra_data: None,
             combat_data: None,
             spellcaster_data: None,
+            game_system,
         }
     }
     pub fn is_passing_filters(&self, filters: &CreatureFieldFilters) -> bool {
@@ -195,10 +201,10 @@ impl Creature {
                         }
                     })
                 }))
-            && match filters.pathfinder_version.clone().unwrap_or_default() {
-                PathfinderVersionEnum::Legacy => !self.core_data.essential.remaster,
-                PathfinderVersionEnum::Remaster => self.core_data.essential.remaster,
-                PathfinderVersionEnum::Any => true,
+            && match filters.game_system_version.clone().unwrap_or_default() {
+                GameSystemVersionEnum::Legacy => !self.core_data.essential.remaster,
+                GameSystemVersionEnum::Remaster => self.core_data.essential.remaster,
+                GameSystemVersionEnum::Any => true,
             }
     }
 

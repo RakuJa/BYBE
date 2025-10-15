@@ -13,46 +13,51 @@ use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
-use crate::models::pf_version_enum::PathfinderVersionEnum;
+use crate::models::pf_version_enum::GameSystemVersionEnum;
 use crate::models::response_data::ResponseDataModifiers;
 use crate::models::routers_validator_structs::{CreatureFieldFilters, OrderEnum};
+use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
-use cached::proc_macro::once;
+use cached::proc_macro::cached;
 use itertools::Itertools;
 use strum::IntoEnumIterator;
 
 pub async fn get_creature_by_id(
     app_state: &AppState,
+    gs: &GameSystem,
     id: i64,
     variant: CreatureVariant,
     response_data_mods: &ResponseDataModifiers,
 ) -> Option<Creature> {
-    creature_fetcher::fetch_creature_by_id(&app_state.conn, variant, response_data_mods, id)
+    creature_fetcher::fetch_creature_by_id(&app_state.conn, gs, variant, response_data_mods, id)
         .await
         .ok()
 }
 
 pub async fn get_weak_creature_by_id(
     app_state: &AppState,
+    gs: &GameSystem,
     id: i64,
     optional_data: &ResponseDataModifiers,
 ) -> Option<Creature> {
-    get_creature_by_id(app_state, id, CreatureVariant::Weak, optional_data).await
+    get_creature_by_id(app_state, gs, id, CreatureVariant::Weak, optional_data).await
 }
 pub async fn get_elite_creature_by_id(
     app_state: &AppState,
+    gs: &GameSystem,
     id: i64,
     optional_data: &ResponseDataModifiers,
 ) -> Option<Creature> {
-    get_creature_by_id(app_state, id, CreatureVariant::Elite, optional_data).await
+    get_creature_by_id(app_state, gs, id, CreatureVariant::Elite, optional_data).await
 }
 
 pub async fn get_paginated_creatures(
     app_state: &AppState,
+    gs: &GameSystem,
     filters: &CreatureFieldFilters,
     pagination: &BestiaryPaginatedRequest,
 ) -> Result<(u32, Vec<Creature>)> {
-    let list = get_list(app_state, CreatureVariant::Base).await;
+    let list = get_list(app_state, gs, CreatureVariant::Base).await;
 
     let mut filtered_list: Vec<Creature> = list
         .into_iter()
@@ -153,6 +158,7 @@ pub async fn get_paginated_creatures(
 
 pub async fn get_creatures_passing_all_filters(
     app_state: &AppState,
+    gs: &GameSystem,
     filters: &BestiaryFilterQuery,
     fetch_weak: bool,
     fetch_elite: bool,
@@ -171,9 +177,12 @@ pub async fn get_creatures_passing_all_filters(
             fetch_elite,
         );
 
-    for core in
-        creature_fetcher::fetch_creatures_core_data_with_filters(&app_state.conn, &modified_filters)
-            .await?
+    for core in creature_fetcher::fetch_creatures_core_data_with_filters(
+        &app_state.conn,
+        gs,
+        &modified_filters,
+    )
+    .await?
     {
         // We have fetched creature with level +1 if weak is allowed or level-1 if elite is allowed
         // (or both). Now we catalogue correctly giving them the elite or weak variant, this does not
@@ -184,24 +193,27 @@ pub async fn get_creatures_passing_all_filters(
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
                 CreatureVariant::Weak,
+                *gs,
             ));
         }
         if fetch_elite && level_vec.contains(&(core.essential.base_level + 1)) {
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
                 CreatureVariant::Elite,
+                *gs,
             ));
         }
-        creature_vec.push(Creature::from_core(core));
+        creature_vec.push(Creature::from_core(core, *gs));
     }
     Ok(creature_vec)
 }
 
 pub async fn get_all_possible_values_of_filter(
     app_state: &AppState,
+    gs: &GameSystem,
     field: CreatureFilter,
 ) -> Vec<String> {
-    let runtime_fields_values = get_all_keys(app_state).await;
+    let runtime_fields_values = get_all_keys(app_state, gs).await;
     let mut x = match field {
         CreatureFilter::Size => runtime_fields_values.list_of_sizes,
         CreatureFilter::Rarity => runtime_fields_values.list_of_rarities,
@@ -215,7 +227,7 @@ pub async fn get_all_possible_values_of_filter(
         CreatureFilter::Level => runtime_fields_values.list_of_levels,
         CreatureFilter::CreatureTypes => CreatureTypeEnum::iter().map(|x| x.to_string()).collect(),
         CreatureFilter::CreatureRoles => CreatureRoleEnum::iter().map(|x| x.to_string()).collect(),
-        CreatureFilter::PathfinderVersion => PathfinderVersionEnum::iter()
+        CreatureFilter::PathfinderVersion => GameSystemVersionEnum::iter()
             .map(|x| x.to_string())
             .collect(),
     };
@@ -224,43 +236,43 @@ pub async fn get_all_possible_values_of_filter(
 }
 
 /// Gets all the runtime keys (each table column unique values). It will cache the result
-#[once(sync_writes = true)]
-async fn get_all_keys(app_state: &AppState) -> FieldsUniqueValuesStruct {
+#[cached(key = "i64", convert = r##"{ gs.into() }"##)]
+async fn get_all_keys(app_state: &AppState, gs: &GameSystem) -> FieldsUniqueValuesStruct {
     FieldsUniqueValuesStruct {
         list_of_levels: generic_fetcher::fetch_unique_values_of_field(
             &app_state.conn,
-            "CREATURE_CORE",
+            format!("{gs}_creature_core").as_str(),
             "level",
         )
         .await
         .unwrap_or_default(),
         list_of_families: generic_fetcher::fetch_unique_values_of_field(
             &app_state.conn,
-            "CREATURE_CORE",
+            format!("{gs}_creature_core").as_str(),
             "family",
         )
         .await
         .unwrap(),
-        list_of_traits: fetch_traits_associated_with_creatures(&app_state.conn)
+        list_of_traits: fetch_traits_associated_with_creatures(&app_state.conn, gs)
             .await
             .unwrap_or_default(),
         list_of_sources: generic_fetcher::fetch_unique_values_of_field(
             &app_state.conn,
-            "CREATURE_CORE",
+            format!("{gs}_creature_core").as_str(),
             "source",
         )
         .await
         .unwrap_or_default(),
         list_of_sizes: generic_fetcher::fetch_unique_values_of_field(
             &app_state.conn,
-            "CREATURE_CORE",
+            format!("{gs}_creature_core").as_str(),
             "size",
         )
         .await
         .unwrap_or_default(),
         list_of_rarities: generic_fetcher::fetch_unique_values_of_field(
             &app_state.conn,
-            "CREATURE_CORE",
+            format!("{gs}_creature_core").as_str(),
             "rarity",
         )
         .await
@@ -269,20 +281,30 @@ async fn get_all_keys(app_state: &AppState) -> FieldsUniqueValuesStruct {
 }
 
 /// Gets all the creature core data from the DB. It will not fetch data outside of variant and core.
-/// It will cache the result.
-async fn get_all_creatures_from_db(app_state: &AppState) -> Result<Vec<CreatureCoreData>> {
-    creature_fetcher::fetch_creatures_core_data(&app_state.conn, 0, -1).await
+async fn get_all_creatures_from_db(
+    app_state: &AppState,
+    gs: &GameSystem,
+) -> Result<Vec<CreatureCoreData>> {
+    creature_fetcher::fetch_creatures_core_data(&app_state.conn, gs, 0, -1).await
 }
 
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec
-#[once(sync_writes = true)]
-async fn get_list(app_state: &AppState, variant: CreatureVariant) -> Vec<Creature> {
-    if let Ok(creatures) = get_all_creatures_from_db(app_state).await {
+/// It will cache result
+#[cached(key = "i64", convert = r##"{ gs.into() }"##)]
+async fn get_list(
+    app_state: &AppState,
+    gs: &GameSystem,
+    variant: CreatureVariant,
+) -> Vec<Creature> {
+    if let Ok(creatures) = get_all_creatures_from_db(app_state, gs).await {
         return match variant {
-            CreatureVariant::Base => creatures.into_iter().map(Creature::from_core).collect(),
+            CreatureVariant::Base => creatures
+                .into_iter()
+                .map(|x| Creature::from_core(x, *gs))
+                .collect(),
             _ => creatures
                 .into_iter()
-                .map(|cr| Creature::from_core_with_variant(cr, variant))
+                .map(|cr| Creature::from_core_with_variant(cr, variant, *gs))
                 .collect(),
         };
     }

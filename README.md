@@ -7,7 +7,7 @@
 
 # BYBE - Backend
 
-> Beyond Your Bestiary Explorer (BYBE) provides tools to help Pathfinder 2e Game Masters. Built as the backend of [BYBE - Frontend](https://github.com/TheAsel/BYBE-frontend/)
+> Beyond Your Bestiary Explorer (BYBE) provides tools to help Pathfinder/Starfinder 2e Game Masters. Built as the backend of [BYBE - Frontend](https://github.com/TheAsel/BYBE-frontend/)
 
 ## Features
 
@@ -17,7 +17,9 @@
 - Support for both remaster and legacy content.
 - Browse and filter a list of all items.
 - Generate random shop with custom templates.
-- More to come...
+- Support for Starfinder 2e.
+- Generate random npc.
+- Share encounters/shops.
 
 ## Requirements
 

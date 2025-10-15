@@ -1,6 +1,6 @@
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::ordered_float_to_schema;
-use crate::models::pf_version_enum::PathfinderVersionEnum;
+use crate::models::pf_version_enum::GameSystemVersionEnum;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
@@ -146,10 +146,10 @@ impl Item {
                 .type_filter
                 .as_ref()
                 .is_none_or(|x| x.contains(&self.item_type))
-            && match filters.pathfinder_version.clone().unwrap_or_default() {
-                PathfinderVersionEnum::Legacy => !self.remaster,
-                PathfinderVersionEnum::Remaster => self.remaster,
-                PathfinderVersionEnum::Any => true,
+            && match filters.game_system_version.clone().unwrap_or_default() {
+                GameSystemVersionEnum::Legacy => !self.remaster,
+                GameSystemVersionEnum::Remaster => self.remaster,
+                GameSystemVersionEnum::Any => true,
             }
     }
 
