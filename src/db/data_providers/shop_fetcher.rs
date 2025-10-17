@@ -61,8 +61,8 @@ async fn fetch_weapon_by_item_id(
     let mut weapon: Weapon = sqlx::query_as(
         format!(
             "
-        SELECT wt.id AS weapon_id, wt.bonus_dmg, wt.to_hit_bonus, wt.dmg_type,
-        wt.number_of_dice, wt.die_size, wt.splash_dmg, wt.n_of_potency_runes,
+        SELECT wt.id AS weapon_id, wt.to_hit_bonus,
+        wt.splash_dmg, wt.n_of_potency_runes,
         wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
         it.*
         FROM {gs}_weapon_table wt
