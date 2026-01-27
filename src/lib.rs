@@ -129,7 +129,7 @@ pub async fn start(
         }
         InitializeLogResponsibility::Delegated => {} // do nothing, someone else has already initialized them
     }
-    let db_url = db_location.map_or_else(get_service_db_url, |x| x);
+    let db_url = db_location.unwrap_or_else(get_service_db_url);
     let (name_json_path, nick_json_path) =
         jsons_location.unwrap_or_else(|| (get_name_json_path(), get_nickname_json_path()));
     let service_ip = get_service_ip();

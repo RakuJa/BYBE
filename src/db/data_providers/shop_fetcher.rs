@@ -20,9 +20,9 @@ pub async fn fetch_item_by_id(
     gs: &GameSystem,
     item_id: i64,
 ) -> Result<ResponseItem> {
-    let mut item: Item = sqlx::query_as(
-        format!("SELECT * FROM {gs}_item_table WHERE id = ? ORDER BY name LIMIT 1").as_str(),
-    )
+    let mut item: Item = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT * FROM {gs}_item_table WHERE id = ? ORDER BY name LIMIT 1"
+    )))
     .bind(item_id)
     .fetch_one(conn)
     .await?;
@@ -58,9 +58,8 @@ async fn fetch_weapon_by_item_id(
     gs: &GameSystem,
     item_id: i64,
 ) -> Result<Weapon> {
-    let mut weapon: Weapon = sqlx::query_as(
-        format!(
-            "
+    let mut weapon: Weapon = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
         SELECT wt.id AS weapon_id, wt.to_hit_bonus,
         wt.splash_dmg, wt.n_of_potency_runes,
         wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
@@ -69,9 +68,7 @@ async fn fetch_weapon_by_item_id(
         LEFT JOIN {gs}_item_table it ON wt.base_item_id = it.id
         WHERE wt.base_item_id = ($1)
         "
-        )
-        .as_str(),
-    )
+    )))
     .bind(item_id)
     .fetch_one(conn)
     .await?;
@@ -87,9 +84,8 @@ async fn fetch_armor_by_item_id(
     gs: &GameSystem,
     item_id: i64,
 ) -> Result<Armor> {
-    let mut armor: Armor = sqlx::query_as(
-        format!(
-            "
+    let mut armor: Armor = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
         SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
         at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id,
         it.*
@@ -97,9 +93,7 @@ async fn fetch_armor_by_item_id(
         LEFT JOIN {gs}_item_table it ON at.base_item_id = it.id
         WHERE at.base_item_id = ($1)
         "
-        )
-        .as_str(),
-    )
+    )))
     .bind(item_id)
     .fetch_one(conn)
     .await?;
@@ -113,18 +107,15 @@ async fn fetch_shield_by_item_id(
     gs: &GameSystem,
     item_id: i64,
 ) -> Result<Shield> {
-    let mut shield: Shield = sqlx::query_as(
-        format!(
-            "
+    let mut shield: Shield = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
         SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty,
         it.*
         FROM {gs}_shield_table st
         LEFT JOIN {gs}_item_table it ON st.base_item_id = it.id
         WHERE st.base_item_id = ($1)
         "
-        )
-        .as_str(),
-    )
+    )))
     .bind(item_id)
     .fetch_one(conn)
     .await?;
@@ -166,17 +157,14 @@ pub async fn fetch_items(
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<Item>> {
-    let items: Vec<Item> = sqlx::query_as(
-        format!(
-            "
+    let items: Vec<Item> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
         SELECT * FROM {gs}_item_table
         WHERE is_derived = False
             AND UPPER(item_type) == 'EQUIPMENT' OR UPPER(item_type) == 'CONSUMABLE'
         GROUP BY id
         ORDER BY name LIMIT ?,?"
-        )
-        .as_str(),
-    )
+    )))
     .bind(cursor)
     .bind(page_size)
     .fetch_all(conn)
@@ -190,9 +178,8 @@ pub async fn fetch_weapons(
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<Weapon>> {
-    let x: Vec<Weapon> = sqlx::query_as(
-        format!(
-            "
+    let x: Vec<Weapon> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
         SELECT wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
             wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
             it.*
@@ -202,9 +189,7 @@ pub async fn fetch_weapons(
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     "
-        )
-        .as_str(),
-    )
+    )))
     .bind(cursor)
     .bind(page_size)
     .fetch_all(conn)
@@ -225,9 +210,8 @@ pub async fn fetch_armors(
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<Armor>> {
-    let x: Vec<Armor> = sqlx::query_as(
-        format!(
-            "
+    let x: Vec<Armor> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
         SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
             at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id, it.*
         FROM {gs}_armor_table at
@@ -236,9 +220,7 @@ pub async fn fetch_armors(
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     "
-        )
-        .as_str(),
-    )
+    )))
     .bind(cursor)
     .bind(page_size)
     .fetch_all(conn)
@@ -258,9 +240,8 @@ pub async fn fetch_shields(
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<Shield>> {
-    let x: Vec<Shield> = sqlx::query_as(
-        format!(
-            "
+    let x: Vec<Shield> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
         SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty, it.*
         FROM {gs}_shield_table st
         LEFT JOIN {gs}_item_table it ON st.base_item_id = it.id
@@ -268,9 +249,7 @@ pub async fn fetch_shields(
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     "
-        )
-        .as_str(),
-    )
+    )))
     .bind(cursor)
     .bind(page_size)
     .fetch_all(conn)
@@ -299,10 +278,9 @@ pub async fn fetch_items_with_filters(
     gs: &GameSystem,
     filters: &ShopFilterQuery,
 ) -> Result<Vec<Item>> {
-    let items: Vec<Item> = query_as(prepare_filtered_get_items(gs, filters).as_str())
+    let items: Vec<Item> = query_as(sqlx::AssertSqlSafe(prepare_filtered_get_items(gs, filters)))
         .fetch_all(conn)
-        .await
-        .unwrap();
+        .await?;
     let equipment: Vec<&Item> = items
         .iter()
         .filter(|x| x.item_type == ItemTypeEnum::Equipment)

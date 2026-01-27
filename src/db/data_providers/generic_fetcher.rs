@@ -11,7 +11,9 @@ pub async fn fetch_unique_values_of_field(
     let query = format!(
         "SELECT CAST(t1.{field} AS TEXT) FROM ((SELECT DISTINCT ({field}) FROM {table})) t1"
     );
-    Ok(sqlx::query_scalar(query.as_str()).fetch_all(conn).await?)
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(query))
+        .fetch_all(conn)
+        .await?)
 }
 
 pub async fn fetch_item_traits(
@@ -161,15 +163,12 @@ pub async fn fetch_weapon_damage_data(
     gs: &GameSystem,
     wp_id: i64,
 ) -> Result<Vec<DamageData>> {
-    Ok(sqlx::query_as(
-        format!(
-            "SELECT id, bonus_dmg, dmg_type, number_of_dice, die_size
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT id, bonus_dmg, dmg_type, number_of_dice, die_size
              FROM {gs}_weapon_damage_table dm RIGHT JOIN (
              SELECT id AS wp_id FROM {gs}_weapon_table WHERE wp_id == ($1)
              ) ON wp_id == dm.weapon_id",
-        )
-        .as_str(),
-    )
+    )))
     .bind(wp_id)
     .fetch_all(conn)
     .await?)

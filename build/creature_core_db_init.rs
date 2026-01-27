@@ -6,9 +6,8 @@ use crate::GameSystem;
 pub async fn create_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()> {
     delete_core_table(conn, gs).await?;
     create_temporary_table(conn, gs).await?;
-    sqlx::query(
-        format!(
-            "
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "
     CREATE TABLE IF NOT EXISTS {gs}_creature_core(
         id INTEGER PRIMARY KEY NOT NULL,
         aon_id INTEGER,
@@ -36,16 +35,14 @@ pub async fn create_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) ->
         soldier_percentage INTEGER NOT NULL DEFAULT 0,
         spellcaster_percentage INTEGER NOT NULL DEFAULT 0
     )"
-        )
-        .as_str(),
-    )
+    )))
     .execute(conn)
     .await?;
     Ok(())
 }
 
 async fn create_temporary_table(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()> {
-    sqlx::query(format!("
+    sqlx::query(sqlx::AssertSqlSafe(format!("
     CREATE TABLE IF NOT EXISTS {gs}_tmp_creature_core AS
         SELECT
         ct.id,
@@ -79,16 +76,15 @@ async fn create_temporary_table(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<
         FROM {gs}_creature_table ct
         LEFT JOIN {gs}_spell_table st ON ct.id = st.creature_id
         GROUP BY ct.id;
-    ").as_str()
+    ")
         // Be careful, cr_type must be either Creature or NPC or we have runtime error
-    ).execute(conn).await?;
+    )).execute(conn).await?;
     Ok(())
 }
 
 pub async fn initialize_data(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()> {
-    sqlx::query(
-        format!(
-            "
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "
         INSERT INTO {gs}_creature_core (
             id, aon_id, name, hp, level, size, rarity,
             license, source, remaster, is_melee, is_ranged,
@@ -99,9 +95,7 @@ pub async fn initialize_data(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()>
             is_spellcaster, archive_link, cr_type, family, focus_points
         FROM {gs}_tmp_creature_core;
         "
-        )
-        .as_str(),
-    )
+    )))
     .execute(conn)
     .await?;
     Ok(())
@@ -109,15 +103,19 @@ pub async fn initialize_data(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()>
 
 /// Removes temporary tables created during execution of init
 pub async fn cleanup_db(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()> {
-    sqlx::query(format!("DROP TABLE {gs}_tmp_creature_core").as_str())
-        .execute(conn)
-        .await?;
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "DROP TABLE {gs}_tmp_creature_core"
+    )))
+    .execute(conn)
+    .await?;
     Ok(())
 }
 
 async fn delete_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()> {
-    sqlx::query(format!("DROP TABLE IF EXISTS {gs}_creature_core").as_str())
-        .execute(conn)
-        .await?;
+    sqlx::query(sqlx::AssertSqlSafe(format!(
+        "DROP TABLE IF EXISTS {gs}_creature_core"
+    )))
+    .execute(conn)
+    .await?;
     Ok(())
 }

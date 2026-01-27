@@ -334,12 +334,12 @@ async fn fetch_creature_ability_scores(
 }
 
 async fn fetch_creature_ac(conn: &Pool<Sqlite>, gs: &GameSystem, creature_id: i64) -> Result<i8> {
-    Ok(
-        sqlx::query_scalar(format!("SELECT ac FROM {gs}_creature_table WHERE id = $1").as_str())
-            .bind(creature_id)
-            .fetch_one(conn)
-            .await?,
-    )
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT ac FROM {gs}_creature_table WHERE id = $1"
+    )))
+    .bind(creature_id)
+    .fetch_one(conn)
+    .await?)
 }
 
 async fn fetch_creature_ac_detail(
@@ -347,9 +347,9 @@ async fn fetch_creature_ac_detail(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
-    Ok(sqlx::query_scalar(
-        format!("SELECT ac_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1").as_str(),
-    )
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT ac_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
+    )))
     .bind(creature_id)
     .fetch_optional(conn)
     .await?)
@@ -360,9 +360,9 @@ async fn fetch_creature_hp_detail(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
-    Ok(sqlx::query_scalar(
-        format!("SELECT hp_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1").as_str(),
-    )
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT hp_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
+    )))
     .bind(creature_id)
     .fetch_optional(conn)
     .await?)
@@ -373,9 +373,9 @@ async fn fetch_creature_language_detail(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
-    Ok(sqlx::query_scalar(
-        format!("SELECT language_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1").as_str(),
-    )
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT language_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
+    )))
     .bind(creature_id)
     .fetch_optional(conn)
     .await?)
@@ -386,9 +386,9 @@ async fn fetch_creature_perception(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<i8> {
-    Ok(sqlx::query_scalar(
-        format!("SELECT perception FROM {gs}_creature_table WHERE id = $1 LIMIT 1").as_str(),
-    )
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT perception FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
+    )))
     .bind(creature_id)
     .fetch_one(conn)
     .await?)
@@ -399,9 +399,9 @@ async fn fetch_creature_vision(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<bool> {
-    Ok(sqlx::query_scalar(
-        format!("SELECT vision FROM {gs}_creature_table WHERE id = $1 LIMIT 1").as_str(),
-    )
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT vision FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
+    )))
     .bind(creature_id)
     .fetch_one(conn)
     .await?)
@@ -412,10 +412,9 @@ async fn fetch_creature_perception_detail(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
-    Ok(sqlx::query_scalar(
-        format!("SELECT perception_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1",)
-            .as_str(),
-    )
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT perception_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
+    )))
     .bind(creature_id)
     .fetch_optional(conn)
     .await?)
@@ -426,13 +425,10 @@ pub async fn fetch_creature_traits(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar(
-        format!(
-            "SELECT name FROM {gs}_trait_table INTERSECT SELECT trait_id
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT name FROM {gs}_trait_table INTERSECT SELECT trait_id
              FROM {gs}_trait_creature_association_table WHERE creature_id == ($1)"
-        )
-        .as_str(),
-    )
+    )))
     .bind(creature_id)
     .fetch_all(conn)
     .await?)
@@ -443,9 +439,8 @@ async fn fetch_creature_weapons(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Weapon>> {
-    let weapons: Vec<Weapon> = sqlx::query_as(
-        format!(
-            "
+    let weapons: Vec<Weapon> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
         SELECT wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
         wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
         it.*
@@ -456,9 +451,7 @@ async fn fetch_creature_weapons(
         GROUP BY ica.weapon_id
         ORDER BY name
         "
-        )
-        .as_str(),
-    )
+    )))
     .bind(creature_id)
     .fetch_all(conn)
     .await?;
@@ -485,9 +478,8 @@ async fn fetch_creature_armors(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Armor>> {
-    let armors: Vec<Armor> = sqlx::query_as(
-        format!(
-            "
+    let armors: Vec<Armor> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
         SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
         at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id,
         it.*
@@ -498,9 +490,7 @@ async fn fetch_creature_armors(
         GROUP BY aca.armor_id
         ORDER BY name
         "
-        )
-        .as_str(),
-    )
+    )))
     .bind(creature_id)
     .fetch_all(conn)
     .await?;
@@ -523,9 +513,8 @@ async fn fetch_creature_shields(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Shield>> {
-    let shields: Vec<Shield> = sqlx::query_as(
-        format!(
-            "
+    let shields: Vec<Shield> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
         SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty,
         it.*
         FROM {gs}_shield_creature_association_table sca
@@ -535,9 +524,7 @@ async fn fetch_creature_shields(
         GROUP BY sca.shield_id
         ORDER BY name
         ",
-        )
-        .as_str(),
-    )
+    )))
     .bind(creature_id)
     .fetch_all(conn)
     .await?;
@@ -558,18 +545,15 @@ async fn fetch_creature_items(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Item>> {
-    let items: Vec<Item> = sqlx::query_as(
-        format!(
-            "SELECT * FROM {gs}_item_table WHERE id IN (
+    let items: Vec<Item> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT * FROM {gs}_item_table WHERE id IN (
             SELECT item_id FROM {gs}_item_creature_association_table WHERE creature_id == ($1)
             )
             AND id NOT IN (SELECT base_item_id FROM {gs}_armor_table)
             AND id NOT IN (SELECT base_item_id FROM {gs}_weapon_table)
             AND id NOT IN (SELECT base_item_id FROM {gs}_shield_table)
             "
-        )
-        .as_str(),
-    )
+    )))
     .bind(creature_id)
     .fetch_all(conn)
     .await?;
@@ -830,9 +814,9 @@ async fn fetch_creature_core_data(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<CreatureCoreData> {
-    let mut cr_core: CreatureCoreData = sqlx::query_as(
-        format!("SELECT * FROM {gs}_creature_core WHERE id = ? ORDER BY name LIMIT 1").as_str(),
-    )
+    let mut cr_core: CreatureCoreData = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT * FROM {gs}_creature_core WHERE id = ? ORDER BY name LIMIT 1"
+    )))
     .bind(creature_id)
     .fetch_one(conn)
     .await?;
@@ -867,16 +851,13 @@ pub async fn fetch_traits_associated_with_creatures(
     conn: &Pool<Sqlite>,
     gs: &GameSystem,
 ) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar(
-        format!(
-            "
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "
         SELECT
             tt.name
         FROM {gs}_trait_creature_association_table tcat
             LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name GROUP BY tt.name",
-        )
-        .as_str(),
-    )
+    )))
     .fetch_all(conn)
     .await?
     .iter()
@@ -933,7 +914,9 @@ pub async fn fetch_creatures_core_data_with_filters(
     bestiary_filter_query: &BestiaryFilterQuery,
 ) -> Result<Vec<CreatureCoreData>> {
     let query = prepare_filtered_get_creatures_core(gs, bestiary_filter_query);
-    let core_data: Vec<CreatureCoreData> = sqlx::query_as(query.as_str()).fetch_all(conn).await?;
+    let core_data: Vec<CreatureCoreData> = sqlx::query_as(sqlx::AssertSqlSafe(query))
+        .fetch_all(conn)
+        .await?;
     Ok(update_creatures_core_with_traits(conn, gs, core_data).await)
 }
 
@@ -945,9 +928,9 @@ pub async fn fetch_creatures_core_data(
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<CreatureCoreData>> {
-    let cr_core: Vec<CreatureCoreData> = sqlx::query_as(
-        format!("SELECT * FROM {gs}_creature_core ORDER BY name LIMIT ?,?").as_str(),
-    )
+    let cr_core: Vec<CreatureCoreData> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT * FROM {gs}_creature_core ORDER BY name LIMIT ?,?"
+    )))
     .bind(cursor)
     .bind(page_size)
     .fetch_all(conn)

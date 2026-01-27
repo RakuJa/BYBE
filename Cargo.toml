@@ -1,7 +1,7 @@
 
 [package]
 name = "bybe"
-version = "4.0.0"
+version = "4.0.1"
 authors = ["RakuJa"]
 
 # Compiler info
@@ -46,13 +46,13 @@ nursery = { level = "warn", priority = 1 }
 
 
 [dependencies]
-actix-web = "4.11.0"
+actix-web = "4.12.1"
 actix-cors = "0.7.1"
 
 utoipa = { version = "5.4.0", features = ["actix_extras"] }
 utoipa-swagger-ui = { version = "9.0.2", features = ["actix-web", "reqwest"] }
 
-sqlx = { version = "0.8.6", features = ["runtime-async-std", "sqlite"] }
+sqlx = { version = "0.9.0-alpha.1", features = ["runtime-async-std", "sqlite"] }
 cached = { version = "0.56.0", features = ["async"] }
 
 nomina = { version = "0.0.5", git = "https://github.com/rakuja/nomina.git" }
@@ -68,12 +68,12 @@ num-traits = "0.2"
 maplit = "1.0"
 itertools = "0.14"
 
-base64ct = { version = "1.8.0", features = ["alloc"] }
+base64ct = { version = "1.8.3", features = ["alloc"] }
 postcard = { version = "1.1.3", features = ["alloc"] }
-async-compression = {version = "0.4.32", features = ["zstd", "tokio"]}
-tokio = { version = "1.48.0" }
+async-compression = {version = "0.4.37", features = ["zstd", "tokio"]}
+tokio = { version = "1.49.0" }
 
-regex = "1.11"
+regex = "1.12"
 
 dotenvy = "0.15"
 
@@ -85,7 +85,7 @@ futures = "0.3"
 [build-dependencies]
 tokio = { version = "1", features = ["macros", "rt-multi-thread", "rt"] }
 anyhow = "1.0"
-sqlx = { version = "0.8.6", features = ["runtime-async-std", "sqlite"] }
+sqlx = { version = "0.9.0-alpha.1", features = ["runtime-async-std", "sqlite"] }
 dotenvy = "0.15.7"
 
 [dev-dependencies]
