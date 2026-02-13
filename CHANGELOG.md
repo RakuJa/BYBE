@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [4.0.1] - 2026-02-13
+
+### Added
+
+- Add auto release of docker image & enable backend to be packaged on flatpak
+
+### Fixed
+
+- Align weapon data query to correct db structure (#116)
+
 ## [4.0.0] - 2025-10-15
 
 ### Added
@@ -199,6 +209,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Set filtering was doing union operation instead of intersection
 - Filter correctly vectors containing integer with value < -1
 
+[4.0.1]: https://github.com/RakuJa/BYBE/compare/v4.0.0..v4.0.1
 [4.0.0]: https://github.com/RakuJa/BYBE/compare/v3.0.0..v4.0.0
 [3.0.0]: https://github.com/RakuJa/BYBE/compare/v2.7.0..v3.0.0
 [2.7.0]: https://github.com/RakuJa/BYBE/compare/v2.6.1..v2.7.0
