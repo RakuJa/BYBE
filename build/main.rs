@@ -10,11 +10,14 @@ use std::str::FromStr;
 #[tokio::main]
 async fn main() {
     dotenv().ok();
-    let db_url = &env::var("DATABASE_URL")
-        .expect("DB URL IS NOT SET.. Aborting. Hint: set DATABASE_URL environmental variable");
+    let manifest_dir = env::var("CARGO_MANIFEST_DIR").unwrap();
+    let db_path = std::path::Path::new(&manifest_dir).join("data/database.db");
 
+    // Set DATABASE_URL to absolute path for SQLx compile-time checks
+    let db_url = format!("sqlite://{}", db_path.display());
+    println!("cargo:rustc-env=DATABASE_URL={}", db_url);
     let conn = SqlitePool::connect_with(
-        SqliteConnectOptions::from_str(db_url)
+        SqliteConnectOptions::from_str(&db_url)
             .expect("Could not find a valid db in the given path")
             .create_if_missing(true),
     )
