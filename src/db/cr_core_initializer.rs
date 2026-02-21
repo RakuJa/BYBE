@@ -9,6 +9,7 @@ use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
+use crate::models::shared::status_enum::Status;
 use anyhow::{Result, bail};
 use log::warn;
 use serde::{Deserialize, Serialize};
@@ -37,6 +38,7 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) ->
             cr_type: CreatureTypeEnum::from(cr.cr_type),
             alignment,
             focus_points: cr.n_of_focus_points,
+            status: cr.status,
         };
         let extra_data = fetch_creature_extra_data(conn, gs, essential_data.id).await?;
         let combat_data = fetch_creature_combat_data(conn, gs, essential_data.id).await?;
@@ -252,7 +254,7 @@ async fn get_creatures_raw_essential_data(
                 RawEssentialData,
                 "SELECT
                 id, aon_id, name, hp, level, size, family, rarity,
-                license, remaster, source, cr_type, n_of_focus_points
+                license, remaster, source, cr_type, n_of_focus_points, status
                 FROM pf_creature_table ORDER BY name LIMIT ?,?",
                 cursor,
                 page_size
@@ -265,7 +267,7 @@ async fn get_creatures_raw_essential_data(
                 RawEssentialData,
                 "SELECT
                 id, aon_id, name, hp, level, size, family, rarity,
-                license, remaster, source, cr_type, n_of_focus_points
+                license, remaster, source, cr_type, n_of_focus_points, status
                 FROM sf_creature_table ORDER BY name LIMIT ?,?",
                 cursor,
                 page_size
@@ -291,4 +293,5 @@ pub struct RawEssentialData {
     pub source: String,
     pub cr_type: Option<String>,
     pub n_of_focus_points: i64,
+    pub status: Status,
 }

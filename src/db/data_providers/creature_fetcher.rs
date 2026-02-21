@@ -815,7 +815,7 @@ async fn fetch_creature_core_data(
     creature_id: i64,
 ) -> Result<CreatureCoreData> {
     let mut cr_core: CreatureCoreData = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT * FROM {gs}_creature_core WHERE id = ? ORDER BY name LIMIT 1"
+        "SELECT * FROM {gs}_creature_core WHERE id = ? AND status = 'valid'  ORDER BY name LIMIT 1"
     )))
     .bind(creature_id)
     .fetch_one(conn)
@@ -929,7 +929,7 @@ pub async fn fetch_creatures_core_data(
     page_size: i16,
 ) -> Result<Vec<CreatureCoreData>> {
     let cr_core: Vec<CreatureCoreData> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT * FROM {gs}_creature_core ORDER BY name LIMIT ?,?"
+        "SELECT * FROM {gs}_creature_core WHERE status = 'valid' ORDER BY name LIMIT ?,?"
     )))
     .bind(cursor)
     .bind(page_size)

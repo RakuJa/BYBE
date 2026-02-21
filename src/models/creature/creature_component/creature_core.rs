@@ -2,6 +2,7 @@ use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
+use crate::models::shared::status_enum::Status;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)]
 use serde_json::json;
@@ -34,6 +35,7 @@ pub struct EssentialData {
     pub cr_type: CreatureTypeEnum,
     pub alignment: AlignmentEnum,
     pub focus_points: i64,
+    pub status: Status,
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
@@ -51,6 +53,7 @@ impl<'r> FromRow<'r, SqliteRow> for EssentialData {
         let rarity: String = row.try_get("rarity")?;
         let size: String = row.try_get("size")?;
         let alignment: String = row.try_get("alignment")?;
+        let status_str: String = row.try_get("status").unwrap_or_default();
         Ok(Self {
             id: row.try_get("id")?,
             aon_id: row.try_get("aon_id").ok(),
@@ -66,6 +69,7 @@ impl<'r> FromRow<'r, SqliteRow> for EssentialData {
             cr_type: CreatureTypeEnum::from(row.try_get("cr_type").ok()),
             alignment: AlignmentEnum::from(alignment),
             focus_points: row.try_get("focus_points")?,
+            status: status_str.into(),
         })
     }
 }

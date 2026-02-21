@@ -33,7 +33,8 @@ pub async fn create_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) ->
         skirmisher_percentage INTEGER NOT NULL DEFAULT 0,
         sniper_percentage INTEGER NOT NULL DEFAULT 0,
         soldier_percentage INTEGER NOT NULL DEFAULT 0,
-        spellcaster_percentage INTEGER NOT NULL DEFAULT 0
+        spellcaster_percentage INTEGER NOT NULL DEFAULT 0,
+        status TEXT NOT NULL DEFAULT 'valid'
     )"
     )))
     .execute(conn)
@@ -56,6 +57,7 @@ async fn create_temporary_table(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<
         ct.source,
         ct.n_of_focus_points as focus_points,
         ct.remaster,
+        ct.status,
       	CASE WHEN ct.id IN (
       		SELECT wcat.creature_id
                 FROM {gs}_weapon_creature_association_table wcat LEFT JOIN (
@@ -88,11 +90,11 @@ pub async fn initialize_data(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()>
         INSERT INTO {gs}_creature_core (
             id, aon_id, name, hp, level, size, rarity,
             license, source, remaster, is_melee, is_ranged,
-            is_spellcaster, archive_link, cr_type, family, focus_points
+            is_spellcaster, archive_link, cr_type, family, focus_points, status
         ) SELECT
             id, aon_id, name, hp, level, size, rarity,
             license, source, remaster, is_melee, is_ranged,
-            is_spellcaster, archive_link, cr_type, family, focus_points
+            is_spellcaster, archive_link, cr_type, family, focus_points, status
         FROM {gs}_tmp_creature_core;
         "
     )))

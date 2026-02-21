@@ -4,6 +4,7 @@ use crate::models::pf_version_enum::GameSystemVersionEnum;
 use crate::models::routers_validator_structs::ItemFieldFilters;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
+use crate::models::shared::status_enum::Status;
 use ordered_float::OrderedFloat;
 use ordered_float_to_schema::ordered_float_to_schema;
 use serde::{Deserialize, Serialize};
@@ -47,6 +48,8 @@ pub struct Item {
     pub rarity: RarityEnum,
     pub size: SizeEnum,
     pub traits: Vec<String>,
+
+    pub status: Status,
 }
 
 impl<'r> FromRow<'r, SqliteRow> for Item {
@@ -55,6 +58,7 @@ impl<'r> FromRow<'r, SqliteRow> for Item {
         let size: String = row.try_get("size")?;
         let type_str: String = row.try_get("item_type")?;
         let bulk: f64 = row.try_get("bulk")?;
+        let status_str: String = row.try_get("status").unwrap_or_default();
         Ok(Self {
             id: row.try_get("id")?,
             name: row.try_get("name")?,
@@ -81,6 +85,7 @@ impl<'r> FromRow<'r, SqliteRow> for Item {
             usage: row.try_get("usage")?,
             number_of_uses: row.try_get("number_of_uses").ok(),
             group: row.try_get("item_group")?,
+            status: status_str.into(),
         })
     }
 }

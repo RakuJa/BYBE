@@ -21,7 +21,7 @@ pub async fn fetch_item_by_id(
     item_id: i64,
 ) -> Result<ResponseItem> {
     let mut item: Item = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT * FROM {gs}_item_table WHERE id = ? ORDER BY name LIMIT 1"
+        "SELECT * FROM {gs}_item_table WHERE status = 'valid' AND id = ? ORDER BY name LIMIT 1"
     )))
     .bind(item_id)
     .fetch_one(conn)
@@ -66,7 +66,7 @@ async fn fetch_weapon_by_item_id(
         it.*
         FROM {gs}_weapon_table wt
         LEFT JOIN {gs}_item_table it ON wt.base_item_id = it.id
-        WHERE wt.base_item_id = ($1)
+        WHERE wt.base_item_id = ($1) AND it.status = 'valid'
         "
     )))
     .bind(item_id)
@@ -91,7 +91,7 @@ async fn fetch_armor_by_item_id(
         it.*
         FROM {gs}_armor_table at
         LEFT JOIN {gs}_item_table it ON at.base_item_id = it.id
-        WHERE at.base_item_id = ($1)
+        WHERE at.base_item_id = ($1) AND it.status = 'valid'
         "
     )))
     .bind(item_id)
@@ -113,7 +113,7 @@ async fn fetch_shield_by_item_id(
         it.*
         FROM {gs}_shield_table st
         LEFT JOIN {gs}_item_table it ON st.base_item_id = it.id
-        WHERE st.base_item_id = ($1)
+        WHERE st.base_item_id = ($1) AND it.status = 'valid'
         "
     )))
     .bind(item_id)
@@ -160,7 +160,7 @@ pub async fn fetch_items(
     let items: Vec<Item> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT * FROM {gs}_item_table
-        WHERE is_derived = False
+        WHERE is_derived = False AND status = 'valid'
             AND UPPER(item_type) == 'EQUIPMENT' OR UPPER(item_type) == 'CONSUMABLE'
         GROUP BY id
         ORDER BY name LIMIT ?,?"
@@ -185,7 +185,7 @@ pub async fn fetch_weapons(
             it.*
         FROM {gs}_weapon_table wt
         LEFT JOIN {gs}_item_table it ON wt.base_item_id = it.id
-        WHERE it.is_derived = False
+        WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     "
@@ -216,7 +216,7 @@ pub async fn fetch_armors(
             at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id, it.*
         FROM {gs}_armor_table at
         LEFT JOIN {gs}_item_table it ON at.base_item_id = it.id
-        WHERE it.is_derived = False
+        WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     "
@@ -245,7 +245,7 @@ pub async fn fetch_shields(
         SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty, it.*
         FROM {gs}_shield_table st
         LEFT JOIN {gs}_item_table it ON st.base_item_id = it.id
-        WHERE it.is_derived = False
+        WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
         ORDER BY name LIMIT ?,?
     "

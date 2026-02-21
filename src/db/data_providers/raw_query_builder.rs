@@ -47,7 +47,7 @@ pub fn prepare_filtered_get_items(gs: &GameSystem, shop_filter_query: &ShopFilte
         shop_filter_query.trait_blacklist_filter.iter(),
     );
     let query = format!(
-        "SELECT * FROM {gs}_item_table WHERE id IN ( {equipment_query} ) OR id IN ({consumable_query} )
+        "SELECT * FROM {gs}_item_table WHERE status = 'valid' AND id IN ( {equipment_query} ) OR id IN ({consumable_query} )
         OR id IN ({weapon_query} ) OR id IN ({armor_query} ) OR id IN ({shield_query} )"
     );
     debug!("{query}");
@@ -69,13 +69,14 @@ pub fn prepare_filtered_get_creatures_core(
     };
     let creature_fields_filter_query =
         prepare_creature_filter_statement(&bestiary_filter_query.creature_table_fields_filter);
-    let where_query =
-        format!("{initial_statement} WHERE {creature_fields_filter_query} {trait_query}");
+    let where_query = format!(
+        "{initial_statement} WHERE status = 'valid' AND {creature_fields_filter_query} {trait_query}"
+    );
     let query = format!(
         "
     WITH CreatureRankedByLevel AS (
         SELECT *, ROW_NUMBER() OVER (PARTITION BY level ORDER BY RANDOM()) AS rn
-        FROM {gs}_creature_core cc WHERE cc.id IN ({where_query})
+        FROM {gs}_creature_core cc WHERE status = 'valid' AND cc.id IN ({where_query})
     )
     SELECT * FROM CreatureRankedByLevel WHERE id IN (
         SELECT id FROM CreatureRankedByLevel WHERE rn>1 ORDER BY RANDOM() LIMIT 20

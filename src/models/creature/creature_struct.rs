@@ -131,6 +131,10 @@ impl Creature {
             .as_ref()
             .is_none_or(|x| x.contains(&self.core_data.essential.rarity))
             && filters
+                .source_filter
+                .as_ref()
+                .is_none_or(|x| x.contains(&self.core_data.essential.source))
+            && filters
                 .size_filter
                 .as_ref()
                 .is_none_or(|x| x.contains(&self.core_data.essential.size))
