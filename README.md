@@ -9,11 +9,27 @@
 
 > Beyond Your Bestiary Explorer (BYBE) provides tools to help Pathfinder/Starfinder 2e Game Masters. Built as the backend of [BYBE - Frontend](https://github.com/TheAsel/BYBE-frontend/)
 
+## Download & Run (Docker)
+Install from command line
+```bash
+docker pull ghcr.io/rakuja/bybe-backend:latest
+```
+Run
+```bash
+docker run -p 25566:25566 --name bybe-container bybe-backend
+```
+
+To run it
+
+## Download & Run (Application)
+If you were looking for the BYBE Local Application, it can be found [Here](https://github.com/rakuJa/BYBE-desktop)
+
 ## Features
 
 - Browse and filter a list of all creatures.
-- Balance encounters based on your party size and level.
-- Generate random encounters based on your requirements.
+- Browse and filter a list of all hazards.
+- Balance encounters based on your party size and level (creatures + hazards).
+- Generate random encounters based on your requirements (creatures + hazards).
 - Support for both remaster and legacy content.
 - Browse and filter a list of all items.
 - Generate random shop with custom templates.
@@ -28,7 +44,7 @@ Built using:
 - [Rust](https://www.rust-lang.org/tools/install)
 - [SQLite](https://www.sqlite.org/download.html)
 
-## Installation guide - Local
+## Building guide - Local Development
 
 1. Install [Rust](https://www.rust-lang.org/tools/install) on your machine.
 2. Populate the SQLite database (public release date TBA).
@@ -65,7 +81,7 @@ cargo build --release
 cargo run
 ```
 
-## Installation guide using Docker
+## Building guide using Docker - Local development
 
 1. Install Docker on your local machine
 2. Clone the repository or download the ZIP
@@ -90,9 +106,6 @@ If you like this tool, consider supporting me:
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/rakuja)
 
 Also consider supporting [TheAsel](https://github.com/TheAsel), the frontend developer. Thank you!
-
-## BYBE-Portable
-If you were looking for the BYBE Local Application, it can be found [Here](https://github.com/rakuJa/BYBE-desktop)
 
 ## Coding guide
 1. Install pre-commit

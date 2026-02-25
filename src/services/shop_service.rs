@@ -1,13 +1,14 @@
 use crate::AppState;
 use crate::db::shop_proxy;
-use crate::models::response_data::{ResponseItem, ShopListingResponse};
-use crate::models::routers_validator_structs::{Dice, ItemFieldFilters};
-use crate::models::shared::game_system_enum::GameSystem;
-use crate::models::shop_structs::{
+use crate::models::item::item_field_filter::ItemFieldFilters;
+use crate::models::item::shop_structs::{
     ItemTableFieldsFilter, PfShopTemplateEnum, RandomShopData, SfShopTemplateEnum, ShopFilterQuery,
     ShopPaginatedRequest, ShopTemplateData,
 };
-use crate::services::shared::url_calculator::shop_next_url;
+use crate::models::response_data::{ResponseItem, ShopListingResponse};
+use crate::models::routers_validator_structs::Dice;
+use crate::models::shared::game_system_enum::GameSystem;
+use crate::services::url_calculator::shop_next_url;
 use crate::traits::template_enum::{GenericTemplate, ItemTemplate};
 use anyhow::{Context, bail};
 use num_traits::ToPrimitive;
@@ -35,12 +36,8 @@ pub async fn get_traits_list(app_state: &AppState, gs: &GameSystem) -> Vec<Strin
 
 pub fn get_shop_templates_data(gs: &GameSystem) -> Vec<ShopTemplateData> {
     match gs {
-        GameSystem::Pathfinder => PfShopTemplateEnum::iter()
-            .map(std::convert::Into::into)
-            .collect(),
-        GameSystem::Starfinder => SfShopTemplateEnum::iter()
-            .map(std::convert::Into::into)
-            .collect(),
+        GameSystem::Pathfinder => PfShopTemplateEnum::iter().map(Into::into).collect(),
+        GameSystem::Starfinder => SfShopTemplateEnum::iter().map(Into::into).collect(),
     }
 }
 
@@ -123,7 +120,6 @@ pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(
                     max_level: shop_data.max_level.unwrap_or(30),
                     supported_version: shop_data
                         .game_system_version
-                        .clone()
                         .unwrap_or_default()
                         .to_db_value(),
                 },

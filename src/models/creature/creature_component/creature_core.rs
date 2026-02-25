@@ -11,13 +11,13 @@ use sqlx::{Error, FromRow, Row};
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct CreatureCoreData {
     pub essential: EssentialData,
     pub derived: DerivedData,
     pub traits: Vec<String>,
 }
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct EssentialData {
     pub id: i64,
     pub aon_id: Option<i64>,
@@ -38,7 +38,7 @@ pub struct EssentialData {
     pub status: Status,
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct DerivedData {
     pub archive_link: Option<String>,
 

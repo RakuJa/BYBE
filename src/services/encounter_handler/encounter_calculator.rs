@@ -1,268 +1,225 @@
-use crate::models::encounter_structs::{EncounterChallengeEnum, ExpRange};
+use crate::db::bestiary_proxy::order_list_by_level;
+use crate::models::encounter_structs::{
+    AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, ExpRange,
+};
+use crate::models::hazard::hazard_field_filter::HazardComplexityEnum;
+use crate::models::response_data::{ResponseCreature, ResponseHazard};
+use crate::models::shared::game_system_enum::GameSystem;
 use crate::services::encounter_handler::difficulty_utilities::scale_difficulty_exp;
-use std::collections::{HashMap, HashSet};
-use std::ops::Neg;
-// Used to explicitly tell about the iter trait
-use strum::IntoEnumIterator;
+use crate::services::encounter_handler::encounter_math;
+use crate::services::encounter_handler::encounter_math::calculate_encounter_scaling_difficulty;
+use crate::traits::has_level::HasLevel;
+use anyhow::{Result, ensure};
+use counter::Counter;
+use nanorand::{Rng, WyRand};
+use serde::{Deserialize, Serialize};
+#[allow(unused_imports)] // it's used for Schema
+use serde_json::json;
+use std::collections::{BTreeMap, HashSet};
+use utoipa::ToSchema;
 
-fn calculate_max_lvl_diff(lvl_and_exp_map: &HashMap<i64, i64>) -> i64 {
-    lvl_and_exp_map.keys().min().map_or_else(
-        || panic!("No valid lvl and exp map was passed. Abort"),
-        |max_lvl_diff| *max_lvl_diff,
-    )
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct EncounterInfoResponse {
+    #[schema(minimum = 0, example = 40)]
+    pub(crate) experience: i64,
+    pub(crate) challenge: EncounterChallengeEnum,
+    #[schema(example = json!({EncounterChallengeEnum::Trivial: 40, EncounterChallengeEnum::Low: 60, EncounterChallengeEnum::Moderate: 80, EncounterChallengeEnum::Severe: 120, EncounterChallengeEnum::Extreme: 160, EncounterChallengeEnum::Impossible: 320}))]
+    pub(crate) encounter_exp_levels: BTreeMap<EncounterChallengeEnum, i64>,
 }
 
-fn calculate_lvl_and_exp_map(is_pwl_on: bool) -> HashMap<i64, i64> {
-    // PWL stands for proficiency without level
-    if is_pwl_on {
-        hashmap! {
-            -7 => 9,
-            -6 => 12,
-            -5 => 14,
-            -4 => 18,
-            -3 => 21,
-            -2 => 26,
-            -1 => 32,
-            0 => 40,
-            1 => 48,
-            2 => 60,
-            3 => 72,
-            4 => 90,
-            5 => 108,
-            6 => 135,
-            7 => 160,
-        }
-    } else {
-        hashmap! {
-            -4 => 10,
-            -3 => 15,
-            -2 => 20,
-            -1 => 30,
-            0 => 40,
-            1 => 60,
-            2 => 80,
-            3 => 120,
-            4 => 160,
-        }
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct EncounterContent {
+    pub(crate) creatures: Option<Vec<ResponseCreature>>,
+    pub(crate) hazards: Option<Vec<ResponseHazard>>,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct RandomEncounterGeneratorResponse {
+    pub(crate) results: EncounterContent,
+    pub(crate) count: usize,
+    pub(crate) encounter_info: EncounterInfoResponse,
+    pub(crate) game: GameSystem,
+}
+
+pub fn get_encounter_info(enc_params: &EncounterParams) -> EncounterInfoResponse {
+    let enc_exp = encounter_math::calculate_encounter_exp(
+        &enc_params.party_levels,
+        &enc_params.creatures_params,
+        &enc_params.hazards_params,
+    );
+
+    let scaled_exp = calculate_encounter_scaling_difficulty(enc_params.party_levels.len());
+
+    let enc_diff = encounter_math::calculate_encounter_difficulty(enc_exp, &scaled_exp);
+    EncounterInfoResponse {
+        experience: enc_exp,
+        challenge: enc_diff,
+        encounter_exp_levels: scaled_exp.into_iter().collect(),
     }
 }
 
-pub fn calculate_encounter_exp(party_levels: &[i64], enemy_levels: &[i64], is_pwl_on: bool) -> i64 {
-    // Given a party and enemy party, it calculates the exp that the
-    // party will get from defeating the enemy
-    let party_avg = party_levels.iter().sum::<i64>() as f64 / party_levels.len() as f64;
-    enemy_levels
-        .iter()
-        .map(|&curr_enemy_lvl| {
-            let enemy_lvl = curr_enemy_lvl as f64;
-            let lvl_diff = if enemy_lvl < 0. && enemy_lvl < party_avg {
-                (enemy_lvl - party_avg).abs().neg()
-            } else {
-                enemy_lvl - party_avg
-            };
-            convert_lvl_diff_into_exp(
-                lvl_diff,
-                party_levels.len(),
-                &calculate_lvl_and_exp_map(is_pwl_on),
-            )
-        })
-        .sum()
+pub fn choose_random_combination<T>(
+    elements_used_to_filter_lvl_combinations: &[T],
+    lvl_combinations: HashSet<Vec<i64>>,
+) -> Result<Vec<T>>
+where
+    T: HasLevel + Clone,
+{
+    let items_ordered_by_level = order_list_by_level(elements_used_to_filter_lvl_combinations);
+    let list_of_levels = items_ordered_by_level.keys().copied().collect::<Vec<_>>();
+
+    let existing_levels = filter_non_existing_levels(&list_of_levels, lvl_combinations);
+    let tmp = existing_levels.iter().collect::<Vec<_>>();
+    ensure!(
+        !tmp.is_empty(),
+        "No valid level combinations to randomly choose from"
+    );
+
+    // do not remove ensure. the random picker will panic if tmp is empty
+    let random_combo = tmp[WyRand::new().generate_range(..tmp.len())];
+    let level_count = random_combo.iter().collect::<Counter<_>>();
+    // Now, having chosen the combo, we may have only x filtered creature with level y but
+    // x+1 instances of level y. We need to create a vector with duplicates to fill it up to
+    // the number of instances of the required level
+
+    let mut result_vec: Vec<T> = Vec::new();
+    for (level, required_count) in level_count {
+        let curr_lvl_values = items_ordered_by_level.get(level).unwrap();
+        let mut filled =
+            fill_vector_if_it_does_not_contain_enough_elements(curr_lvl_values, required_count)?;
+        WyRand::new().shuffle(&mut filled);
+        result_vec.extend(filled.into_iter().take(required_count));
+    }
+
+    Ok(result_vec)
 }
 
-pub fn calculate_encounter_scaling_difficulty(
-    party_size: usize,
-) -> HashMap<EncounterChallengeEnum, i64> {
-    // Given the party size, it scales and calculates the threshold for the various difficulty levels
-    let mut diff_scaled_exp_map = HashMap::new();
-    for curr_diff in EncounterChallengeEnum::iter() {
-        diff_scaled_exp_map.insert(
-            curr_diff.clone(),
-            scale_difficulty_exp(&curr_diff, i64::try_from(party_size).unwrap_or(i64::MAX))
-                .lower_bound,
+fn fill_vector_if_it_does_not_contain_enough_elements<T: Clone>(
+    elements: &[T],
+    n_of_required_elements: usize,
+) -> Result<Vec<T>> {
+    ensure!(!elements.is_empty(), "No elements for the chosen level");
+    let mut vec = elements.to_vec();
+    while vec.len() < n_of_required_elements {
+        vec.push(
+            // We could do choose multiples, but it does not allow repetition
+            // this is bad because it increases the probability of the same one getting picked
+            // example [A,B] => [A,B,A] => [A,B,A,A] etc
+            vec.get(WyRand::new().generate_range(..vec.len()))
+                .unwrap()
+                .clone(),
         );
     }
-    diff_scaled_exp_map
+    Ok(vec)
 }
 
-pub fn calculate_encounter_difficulty(
-    encounter_exp: i64,
-    scaled_exp_levels: &HashMap<EncounterChallengeEnum, i64>,
-) -> EncounterChallengeEnum {
-    // This method is ugly, it's 1:1 from python and as such needs refactor
-    if &encounter_exp < scaled_exp_levels.get(&EncounterChallengeEnum::Low).unwrap() {
-        return EncounterChallengeEnum::Trivial;
-    } else if &encounter_exp
-        < scaled_exp_levels
-            .get(&EncounterChallengeEnum::Moderate)
-            .unwrap()
-    {
-        return EncounterChallengeEnum::Low;
-    } else if &encounter_exp
-        < scaled_exp_levels
-            .get(&EncounterChallengeEnum::Severe)
-            .unwrap()
-    {
-        return EncounterChallengeEnum::Moderate;
-    } else if &encounter_exp
-        < scaled_exp_levels
-            .get(&EncounterChallengeEnum::Extreme)
-            .unwrap()
-    {
-        return EncounterChallengeEnum::Severe;
-    } else if &encounter_exp
-        < scaled_exp_levels
-            .get(&EncounterChallengeEnum::Impossible)
-            .unwrap()
-    {
-        return EncounterChallengeEnum::Extreme;
+fn filter_non_existing_levels(
+    existing_levels: &[i64],
+    level_combinations: HashSet<Vec<i64>>,
+) -> HashSet<Vec<i64>> {
+    let mut result_vec = HashSet::new();
+    for curr_combo in level_combinations {
+        if !curr_combo.is_empty() && curr_combo.iter().all(|lvl| existing_levels.contains(lvl)) {
+            result_vec.insert(curr_combo);
+        }
     }
-    EncounterChallengeEnum::Impossible
+    result_vec
 }
 
-pub fn calculate_lvl_combination_for_encounter(
-    difficulty: &EncounterChallengeEnum,
+pub const fn get_scaled_exp(base_difficulty: EncounterChallengeEnum, party_size: i64) -> ExpRange {
+    scale_difficulty_exp(base_difficulty, party_size)
+}
+
+pub fn get_creature_lvl_combinations(
     party_levels: &[i64],
+    exp_range: ExpRange,
     is_pwl_on: bool,
+    min_n_of_elements: Option<u8>,
+    max_n_of_elements: Option<u8>,
+    adventure_group: Option<AdventureGroupEnum>,
 ) -> HashSet<Vec<i64>> {
-    // Given an encounter difficulty it calculates all possible encounter permutations
-    let exp_range = scale_difficulty_exp(
-        difficulty,
-        i64::try_from(party_levels.len()).unwrap_or(i64::MAX),
-    );
-    let party_avg: f64 = party_levels.iter().sum::<i64>() as f64 / party_levels.len() as f64;
-    calculate_lvl_combinations_for_given_exp(
-        exp_range,
-        party_avg.floor() as i64,
-        &calculate_lvl_and_exp_map(is_pwl_on),
-    )
-}
-
-pub fn filter_combinations_outside_range(
-    combinations: HashSet<Vec<i64>>,
-    lower_bound: Option<u8>,
-    upper_bound: Option<u8>,
-) -> HashSet<Vec<i64>> {
-    let mut lower = i64::from(lower_bound.unwrap_or(0));
-    let mut upper = i64::from(upper_bound.unwrap_or(0));
-    if lower != 0 && upper == 0 {
-        upper = lower;
-    } else if lower == 0 && upper != 0 {
-        lower = upper;
-    } else if lower == 0 && upper == 0 {
-        return combinations;
-    }
-    combinations
-        .into_iter()
-        .filter(|curr_combo| {
-            curr_combo.len() >= lower.unsigned_abs() as usize
-                && curr_combo.len() <= upper.unsigned_abs() as usize
-        })
-        .collect::<HashSet<Vec<i64>>>()
-}
-
-fn convert_lvl_diff_into_exp(
-    lvl_diff: f64,
-    party_size: usize,
-    lvl_and_exp_map: &HashMap<i64, i64>,
-) -> i64 {
-    let lvl_diff_rounded_down = lvl_diff.floor() as i64;
-    lvl_and_exp_map.get(&lvl_diff_rounded_down).map_or_else(
+    adventure_group.as_ref().map_or_else(
         || {
-            if lvl_diff_rounded_down < calculate_max_lvl_diff(lvl_and_exp_map) {
-                0
-            } else {
-                // To avoid the party of 50 level 1 pg destroying a lvl 20
-                scale_difficulty_exp(
-                    &EncounterChallengeEnum::Impossible,
-                    i64::try_from(party_size).unwrap_or(i64::MAX),
-                )
-                .lower_bound
-            }
+            encounter_math::filter_combinations_outside_range(
+                encounter_math::calculate_lvl_combination_for_creature_encounter(
+                    exp_range,
+                    party_levels,
+                    is_pwl_on,
+                ),
+                min_n_of_elements,
+                max_n_of_elements,
+            )
         },
-        |value| value.abs(),
+        |adv_group| get_adventure_group_lvl_combinations(adv_group, party_levels),
     )
 }
 
-fn calculate_lvl_combinations_for_given_exp(
-    experience_range: ExpRange,
-    party_lvl: i64,
-    lvl_and_exp_map: &HashMap<i64, i64>,
+pub fn get_hazard_lvl_combinations(
+    party_levels: &[i64],
+    exp_range: ExpRange,
+    hazard_complexity: HazardComplexityEnum,
+    min_n_of_elements: Option<u8>,
+    max_n_of_elements: Option<u8>,
+) -> HashSet<Vec<(HazardComplexityEnum, i64)>> {
+    encounter_math::filter_combinations_outside_range(
+        encounter_math::calculate_lvl_combination_for_hazard_encounter(
+            exp_range,
+            party_levels,
+            hazard_complexity,
+        ),
+        min_n_of_elements,
+        max_n_of_elements,
+    )
+}
+
+fn get_adventure_group_lvl_combinations(
+    adv_group: &AdventureGroupEnum,
+    party_levels: &[i64],
 ) -> HashSet<Vec<i64>> {
-    // Given an encounter experience it calculates all possible encounter permutations
-    let exp_list = lvl_and_exp_map.values().copied().collect::<Vec<i64>>();
-    find_combinations(&exp_list, experience_range)
-        .iter()
-        .map(|curr_combination| {
-            curr_combination
-                .iter()
-                .map(|curr_exp| convert_exp_to_lvl_diff(*curr_exp, lvl_and_exp_map))
-                .filter(Option::is_some)
-                .map(|lvl_diff| party_lvl + lvl_diff.unwrap())
-                .collect()
-        })
-        .filter(|x: &Vec<i64>| !x.is_empty())
-        // there are no creature with level<-1
-        .filter(|x| x.iter().all(|curr_lvl| *curr_lvl >= -1))
-        .collect::<HashSet<Vec<i64>>>()
-}
-
-fn convert_exp_to_lvl_diff(experience: i64, lvl_and_exp_map: &HashMap<i64, i64>) -> Option<i64> {
-    lvl_and_exp_map
-        .iter()
-        .find_map(|(key, &exp)| if exp == experience { Some(*key) } else { None })
-}
-
-fn find_combinations(candidates: &[i64], target_range: ExpRange) -> Vec<Vec<i64>> {
-    // Find all the combination of numbers in the candidates vector
-    // that sums up to the target. I.e coin changing problem
-    fn backtrack(
-        candidates: &[i64],
-        lb_target: i64,
-        ub_target: i64,
-        start: usize,
-        path: &mut Vec<i64>,
-        result: &mut Vec<Vec<i64>>,
-    ) {
-        if lb_target == 0 || (lb_target < 0 && ub_target > 0) {
-            // If target is reached OR we exceeded lower bound but still not have reached upper bound,
-            // AKA we did not go over the current difficulty level,
-            // add the current path to results list
-            result.push(path.clone());
+    let party_avg =
+        party_levels.iter().sum::<i64>() / i64::try_from(party_levels.len()).unwrap_or(i64::MAX);
+    let mut result = HashSet::new();
+    result.insert(match adv_group {
+        AdventureGroupEnum::BossAndLackeys => {
+            //One creature of party level + 2, four creatures of party level – 4
+            vec![
+                party_avg + 2,
+                party_avg - 4,
+                party_avg - 4,
+                party_avg - 4,
+                party_avg - 4,
+            ]
         }
-
-        if lb_target > 0 {
-            // Iterate through the candidates starting from the given index
-            for i in start..candidates.len() {
-                path.push(candidates[i]);
-                backtrack(
-                    candidates,
-                    lb_target - candidates[i],
-                    ub_target - candidates[i],
-                    i,
-                    path,
-                    result,
-                );
-                path.pop();
-            }
+        AdventureGroupEnum::BossAndLieutenant => {
+            //One creature of party level + 2, one creature of party level
+            vec![party_avg + 2, party_avg]
         }
-
-        if lb_target < 1 {
-            // If target is negative or 0 no need to continue as
-            // adding more numbers will exceed the target
+        AdventureGroupEnum::EliteEnemies => {
+            //Three creatures of party level
+            vec![party_avg; 3]
         }
-    }
-
-    let mut result = Vec::new(); // List to store all combinations
-    let mut path = Vec::new(); // Sort the candidates list for optimization
-    // Start the backtracking from the first index
-    backtrack(
-        candidates,
-        target_range.lower_bound,
-        target_range.upper_bound,
-        0,
-        &mut path,
-        &mut result,
-    );
-
+        AdventureGroupEnum::LieutenantAndLackeys => {
+            //One creature of party level, four creatures of party level – 4
+            vec![
+                party_avg,
+                party_avg - 4,
+                party_avg - 4,
+                party_avg - 4,
+                party_avg - 4,
+            ]
+        }
+        AdventureGroupEnum::MatedPair => {
+            //Two creatures of party level
+            vec![party_avg; 2]
+        }
+        AdventureGroupEnum::Troop => {
+            //One creature of party level, two creatures of party level – 2
+            vec![party_avg, party_avg - 2, party_avg - 2]
+        }
+        AdventureGroupEnum::MookSquad => {
+            //Six creatures of party level – 4
+            vec![party_avg - 4; 6]
+        }
+    });
     result
 }

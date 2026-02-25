@@ -1,6 +1,7 @@
 use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::hazard::hazard_field_filter::HazardComplexityEnum;
 use crate::models::pf_version_enum::GameSystemVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
@@ -15,16 +16,45 @@ use strum::EnumIter;
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, ToSchema)]
-pub struct EncounterParams {
-    #[schema(min_items = 1, example = json!([4,4,4,4]))]
-    pub party_levels: Vec<i64>,
+pub struct CreatureEncounterParams {
     #[schema(min_items = 1, example = json!([4,4,4,4]))]
     pub enemy_levels: Vec<i64>,
     pub is_pwl_on: bool,
 }
 
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
+pub struct HazardEncounterParams {
+    pub hazards: Vec<HazardEncounterElement>,
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
+pub struct HazardEncounterElement {
+    pub complexity: HazardComplexityEnum,
+    pub level: i64,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct EncounterParams {
+    #[schema(min_items = 1, example = json!([4,4,4,4]))]
+    pub party_levels: Vec<i64>,
+    pub creatures_params: Option<CreatureEncounterParams>,
+    pub hazards_params: Option<HazardEncounterParams>,
+}
+
 #[derive(Serialize, Deserialize, ToSchema)]
 pub struct RandomEncounterData {
+    #[schema(min_items = 1)]
+    pub party_levels: Vec<i64>,
+    #[schema(minimum = 0, maximum = 100, example = 100)]
+    pub creature_percentage: Option<u8>,
+    #[schema(minimum = 0, maximum = 100, example = 0)]
+    pub hazard_percentage: Option<u8>,
+    pub creature_data: Option<RandomCreatureData>,
+    pub hazard_data: Option<RandomHazardData>,
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
+pub struct RandomCreatureData {
     pub source_filter: Option<Vec<String>>,
     pub trait_whitelist_filter: Option<Vec<String>>,
     pub trait_blacklist_filter: Option<Vec<String>>,
@@ -43,15 +73,68 @@ pub struct RandomEncounterData {
     pub min_creatures: Option<u8>,
     #[schema(minimum = 1, maximum = 30, example = 5)]
     pub max_creatures: Option<u8>,
-    #[schema(min_items = 1)]
-    pub party_levels: Vec<i64>,
+
     pub allow_elite_variants: Option<bool>,
     pub allow_weak_variants: Option<bool>,
     pub is_pwl_on: bool,
     pub game_system_version: Option<GameSystemVersionEnum>,
 }
 
+#[derive(Serialize, Deserialize, ToSchema, Clone)]
+pub struct RandomHazardData {
+    pub source_filter: Option<Vec<String>>,
+    pub trait_whitelist_filter: Option<Vec<String>>,
+    pub trait_blacklist_filter: Option<Vec<String>>,
+    pub rarity_filter: Option<Vec<RarityEnum>>,
+    pub size_filter: Option<Vec<SizeEnum>>,
+
+    #[schema(minimum = 0, maximum = 30, example = 0)]
+    pub min_level: Option<u8>,
+    #[schema(minimum = 0, maximum = 30, example = 5)]
+    pub max_level: Option<u8>,
+
+    #[schema(example = 0)]
+    pub min_ac: Option<i64>,
+    #[schema(example = 5)]
+    pub max_ac: Option<i64>,
+
+    #[schema(example = 0)]
+    pub min_hardness: Option<i64>,
+    #[schema(example = 5)]
+    pub max_hardness: Option<i64>,
+
+    #[schema(example = 0)]
+    pub min_hp: Option<i64>,
+    #[schema(example = 5)]
+    pub max_hp: Option<i64>,
+
+    #[schema(example = 0)]
+    pub min_will: Option<i64>,
+    #[schema(example = 5)]
+    pub max_will: Option<i64>,
+
+    #[schema(example = 0)]
+    pub min_reflex: Option<i64>,
+    #[schema(example = 5)]
+    pub max_reflex: Option<i64>,
+
+    #[schema(example = 0)]
+    pub min_fortitude: Option<i64>,
+    #[schema(example = 5)]
+    pub max_fortitude: Option<i64>,
+
+    #[schema(minimum = 1, maximum = 30, example = 1)]
+    pub min_hazards: Option<u8>,
+    #[schema(minimum = 1, maximum = 30, example = 5)]
+    pub max_hazards: Option<u8>,
+
+    pub(crate) hazard_complexity: Option<HazardComplexityEnum>,
+
+    pub game_system_version: Option<GameSystemVersionEnum>,
+}
+
 #[derive(
+    Copy,
     Serialize,
     Deserialize,
     ToSchema,
@@ -64,6 +147,7 @@ pub struct RandomEncounterData {
     PartialOrd,
     Clone,
     EnumCount,
+    Debug,
 )]
 pub enum EncounterChallengeEnum {
     #[serde(alias = "trivial", alias = "TRIVIAL")]
@@ -157,7 +241,7 @@ pub enum AdventureGroupEnum {
     MookSquad,
 }
 
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, Debug)]
 pub struct ExpRange {
     pub lower_bound: i64,
     pub upper_bound: i64,

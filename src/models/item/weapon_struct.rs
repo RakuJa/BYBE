@@ -7,7 +7,7 @@ use sqlx::{Error, FromRow, Row};
 use std::str::FromStr;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct Weapon {
     pub item_core: Item,
     pub weapon_data: WeaponData,

@@ -1,13 +1,23 @@
 use crate::models::bestiary_structs::BestiaryPaginatedRequest;
-use crate::models::routers_validator_structs::{CreatureFieldFilters, ItemFieldFilters};
-use crate::models::shop_structs::ShopPaginatedRequest;
+use crate::models::creature::creature_field_filter::CreatureFieldFilters;
+use crate::models::hazard::hazard_field_filter::HazardFieldFilters;
+use crate::models::hazard::hazard_listing_struct::HazardListingPaginatedRequest;
+use crate::models::item::item_field_filter::ItemFieldFilters;
+use crate::models::item::shop_structs::ShopPaginatedRequest;
+use cached::proc_macro::cached;
+use std::env;
+
+#[cached]
+fn get_website_url() -> String {
+    env::var("BACKEND_URL").expect("Error fetching backend URL")
+}
 
 pub fn shop_next_url(
     field_filters: &ItemFieldFilters,
     pagination: &ShopPaginatedRequest,
     next_cursor: u32,
 ) -> String {
-    let base_url = "https://backbybe.fly.dev/shop/list/";
+    let base_url = format!("{}/shop/list/", get_website_url());
     let filter_query = shop_filter_query_calculator(field_filters);
 
     let pagination_query = format!(
@@ -33,7 +43,7 @@ pub fn bestiary_next_url(
     pagination: &BestiaryPaginatedRequest,
     next_cursor: u32,
 ) -> String {
-    let base_url = "https://backbybe.fly.dev/bestiary/list/";
+    let base_url = format!("{}/bestiary/list/", get_website_url());
     let filter_query = creature_filter_query_calculator(field_filters);
 
     let pagination_query = format!(
@@ -52,6 +62,15 @@ pub fn bestiary_next_url(
             .unwrap_or_default()
     );
     format!("{base_url}{filter_query}{pagination_query}")
+}
+
+pub fn hazard_listing_next_url(
+    _field_filters: &HazardFieldFilters,
+    _pagination: &HazardListingPaginatedRequest,
+    _next_cursor: u32,
+) -> String {
+    let base_url = format!("{}/hazards/list/", get_website_url());
+    base_url
 }
 
 pub fn add_boolean_query(url: Option<&String>, key: &String, value: bool) -> Option<String> {

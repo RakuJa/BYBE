@@ -9,7 +9,7 @@ use serde_json::json;
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct AbilityScores {
     #[schema(example = 0)]
     pub charisma: i64,
@@ -25,7 +25,7 @@ pub struct AbilityScores {
     pub wisdom: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct CreatureExtraData {
     pub actions: Vec<Action>,
     pub skills: Vec<Skill>,

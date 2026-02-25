@@ -1,6 +1,7 @@
 pub mod base64;
 pub mod class_enum;
 pub mod filter;
+pub mod has_level;
 pub mod job_enum;
 pub mod name_system;
 pub mod origin;

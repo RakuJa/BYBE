@@ -3,7 +3,7 @@ use strum::{Display, EnumIter};
 use utoipa::ToSchema;
 
 #[derive(
-    Serialize, Deserialize, Eq, PartialEq, Hash, Default, ToSchema, Clone, EnumIter, Display,
+    Serialize, Deserialize, Eq, PartialEq, Hash, Default, ToSchema, Clone, EnumIter, Display, Copy,
 )]
 pub enum GameSystemVersionEnum {
     #[serde(alias = "legacy", alias = "LEGACY", alias = "2")]
@@ -16,7 +16,7 @@ pub enum GameSystemVersionEnum {
 }
 
 impl GameSystemVersionEnum {
-    pub fn to_db_value(&self) -> Vec<String> {
+    pub fn to_db_value(self) -> Vec<String> {
         match self {
             // The db column is a boolean called "remaster" so we translate the enum to
             // FALSE if legacy, TRUE if remaster and TRUE, FALSE if both

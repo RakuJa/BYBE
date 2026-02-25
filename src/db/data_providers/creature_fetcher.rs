@@ -30,7 +30,7 @@ use crate::models::item::armor_struct::Armor;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::Shield;
 use crate::models::item::weapon_struct::Weapon;
-use crate::models::response_data::ResponseDataModifiers;
+use crate::models::response_data::CreatureResponseDataModifiers;
 use crate::models::scales_struct::ability_scales::AbilityScales;
 use crate::models::scales_struct::ac_scales::AcScales;
 use crate::models::scales_struct::area_dmg_scales::AreaDmgScales;
@@ -698,7 +698,9 @@ async fn fetch_creature_actions(
         GameSystem::Pathfinder => {
             sqlx::query_as!(
                 Action,
-                "SELECT * FROM pf_action_table WHERE creature_id == ($1)",
+                "SELECT a.* FROM pf_action_table AS a
+                JOIN pf_creature_action_association_table AS ca ON ca.action_id = a.id
+                WHERE ca.creature_id == ($1)",
                 creature_id
             )
             .fetch_all(conn)
@@ -707,7 +709,9 @@ async fn fetch_creature_actions(
         GameSystem::Starfinder => {
             sqlx::query_as!(
                 Action,
-                "SELECT * FROM sf_action_table WHERE creature_id == ($1)",
+                "SELECT a.* FROM sf_action_table AS a
+                JOIN sf_creature_action_association_table AS ca ON ca.action_id = a.id
+                WHERE ca.creature_id == ($1)",
                 creature_id
             )
             .fetch_all(conn)
@@ -870,7 +874,7 @@ pub async fn fetch_creature_by_id(
     conn: &Pool<Sqlite>,
     gs: &GameSystem,
     variant: CreatureVariant,
-    response_data_mods: &ResponseDataModifiers,
+    response_data_mods: &CreatureResponseDataModifiers,
     id: i64,
 ) -> Result<Creature> {
     let core_data = fetch_creature_core_data(conn, gs, id).await?;
