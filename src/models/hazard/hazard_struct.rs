@@ -1,8 +1,8 @@
-use crate::models::creature::items::action::Action;
 use crate::models::hazard::hazard_component::hazard_core::HazardEssentialData;
 use crate::models::hazard::hazard_field_filter::{HazardComplexityEnum, HazardFieldFilters};
-use crate::models::pf_version_enum::GameSystemVersionEnum;
+use crate::models::shared::action::Action;
 use crate::models::shared::game_system_enum::GameSystem;
+use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::traits::has_level::HasLevel;
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqliteRow;

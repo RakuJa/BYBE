@@ -1,4 +1,3 @@
-use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
@@ -6,6 +5,7 @@ use crate::models::item::shield_struct::Shield;
 use crate::models::response_data::CreatureResponseDataModifiers;
 use crate::models::response_data::ResponseCreature;
 use crate::models::routers_validator_structs::OrderEnum;
+use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 
@@ -18,14 +18,14 @@ use crate::models::creature::creature_component::creature_extra::AbilityScores;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
 use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
-use crate::models::pf_version_enum::GameSystemVersionEnum;
+use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 
-use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::creature::items::spell::Spell;
 use crate::models::creature::items::spellcaster_entry::SpellcasterEntry;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::weapon_struct::Weapon;
+use crate::models::shared::action::Action;
 
 use crate::AppState;
 use crate::models::bestiary_structs::CreatureSortEnum;

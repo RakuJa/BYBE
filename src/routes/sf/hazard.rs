@@ -158,7 +158,7 @@ pub async fn pf_get_sizes_list(data: web::Data<AppState>) -> actix_web::Result<i
 #[utoipa::path(
     get,
     path = "/hazard/{hazard_id}",
-    tags = ["pf", "bestiary"],
+    tags = ["pf", "hazard"],
     params(
         ("hazard_id" = String, Path, description = "id of the hazard to fetch"),
     ),

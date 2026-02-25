@@ -1,4 +1,4 @@
-use crate::models::pf_version_enum::GameSystemVersionEnum;
+use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};

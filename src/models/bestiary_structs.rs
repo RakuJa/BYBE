@@ -1,7 +1,7 @@
-use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::routers_validator_structs::{OrderEnum, PaginatedRequest};
+use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};

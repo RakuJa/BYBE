@@ -1,7 +1,7 @@
 use crate::models::item::item_field_filter::ItemFieldFilters;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::ordered_float_to_schema;
-use crate::models::pf_version_enum::GameSystemVersionEnum;
+use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use crate::models::shared::status_enum::Status;

@@ -1,10 +1,9 @@
-use crate::db::data_providers::generic_fetcher::fetch_item_traits;
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_hazards;
-use crate::models::creature::creature_metadata::alignment_enum::ALIGNMENT_TRAITS;
-use crate::models::creature::items::action::Action;
 use crate::models::hazard::hazard_listing_struct::HazardFilterQuery;
 use crate::models::hazard::hazard_struct::Hazard;
 use crate::models::response_data::ResponseHazard;
+use crate::models::shared::action::Action;
+use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
 use sqlx::{Pool, Sqlite};
@@ -38,32 +37,6 @@ async fn fetch_hazard_actions(
             .await?
         }
     })
-}
-async fn fetch_hazard_core_data(
-    conn: &Pool<Sqlite>,
-    gs: &GameSystem,
-    hazard_id: i64,
-) -> Result<Hazard> {
-    let mut hz_core: Hazard = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT id, name, ac, hardness, has_health, hp, description, disable_description,
-         reset_description, is_complex, level, license, remaster, source, fortitude,
-         reflex, will, rarity, size
-         FROM {gs}_hazard_table WHERE id = ? ORDER BY name LIMIT 1"
-    )))
-    .bind(hazard_id)
-    .fetch_one(conn)
-    .await?;
-    hz_core.traits = fetch_hazard_traits(conn, gs, hazard_id)
-        .await
-        .unwrap_or_default()
-        .iter()
-        .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.as_str().to_uppercase()))
-        .cloned()
-        .collect();
-    hz_core.actions = fetch_hazard_actions(conn, gs, hazard_id)
-        .await
-        .unwrap_or_default();
-    Ok(hz_core)
 }
 
 async fn update_hazards_core_with_traits(
@@ -121,16 +94,17 @@ pub async fn fetch_hazard_by_id(
     gs: &GameSystem,
     id: i64,
 ) -> Result<ResponseHazard> {
-    let mut item: Hazard = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT * FROM {gs}_item_table WHERE status = 'valid' AND id = ? ORDER BY name LIMIT 1"
+    let mut core_hazard: Hazard = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT * FROM {gs}_hazard_table WHERE id = ? ORDER BY name LIMIT 1"
     )))
     .bind(id)
     .fetch_one(conn)
     .await?;
-    item.traits = fetch_item_traits(conn, gs, id).await?;
+    core_hazard.traits = fetch_hazard_traits(conn, gs, id).await?;
+    core_hazard.actions = fetch_hazard_actions(conn, gs, id).await?;
 
     Ok(ResponseHazard {
-        core_hazard: fetch_hazard_core_data(conn, gs, id).await?,
+        core_hazard,
         game: *gs,
     })
 }
