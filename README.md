@@ -117,3 +117,7 @@ cargo install --locked prek
 ```bash
 prek install
 ```
+3. Install cargo dependencies
+```bash
+cargo install cargo-udeps --locked
+```
