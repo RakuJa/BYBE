@@ -1,14 +1,13 @@
-use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::item::shield_struct::Shield;
 use crate::models::response_data::ResponseCreature;
-use crate::models::response_data::ResponseDataModifiers;
+use crate::models::response_data::{BestiaryResponse, CreatureResponseDataModifiers};
 use crate::models::routers_validator_structs::OrderEnum;
+use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
-use crate::services::shared::bestiary_service::BestiaryResponse;
 
 use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_combat::SavingThrows;
@@ -19,23 +18,24 @@ use crate::models::creature::creature_component::creature_extra::AbilityScores;
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
 use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
-use crate::models::pf_version_enum::GameSystemVersionEnum;
+use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 
-use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::creature::items::spell::Spell;
 use crate::models::creature::items::spellcaster_entry::SpellcasterEntry;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::weapon_struct::Weapon;
+use crate::models::shared::action::Action;
 
 use crate::AppState;
 use crate::models::bestiary_structs::CreatureSortEnum;
 use crate::models::bestiary_structs::{BestiaryPaginatedRequest, BestiarySortData};
+use crate::models::creature::creature_field_filter::CreatureFieldFilters;
 use crate::models::db::sense::Sense;
-use crate::models::routers_validator_structs::{CreatureFieldFilters, PaginatedRequest};
+use crate::models::routers_validator_structs::PaginatedRequest;
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::services::shared::bestiary_service;
-use crate::services::shared::sanitizer::sanitize_id;
+use crate::services::bestiary_service;
+use crate::services::sanitizer::sanitize_id;
 use actix_web::web::Query;
 use actix_web::{Responder, get, post, web};
 use utoipa::OpenApi;
@@ -308,7 +308,7 @@ pub async fn sf_get_creature_roles_list() -> actix_web::Result<impl Responder> {
     tags = ["sf", "bestiary"],
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
-        ResponseDataModifiers,
+        CreatureResponseDataModifiers,
     ),
     responses(
         (status=200, description = "Successful Response", body = ResponseCreature),
@@ -319,7 +319,7 @@ pub async fn sf_get_creature_roles_list() -> actix_web::Result<impl Responder> {
 pub async fn sf_get_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
-    response_data_mods: Query<ResponseDataModifiers>,
+    response_data_mods: Query<CreatureResponseDataModifiers>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_creature(
@@ -338,7 +338,7 @@ pub async fn sf_get_creature(
     tags = ["sf", "bestiary"],
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
-        ResponseDataModifiers
+        CreatureResponseDataModifiers
     ),
     responses(
         (status=200, description = "Successful Response", body = ResponseCreature),
@@ -349,7 +349,7 @@ pub async fn sf_get_creature(
 pub async fn sf_get_elite_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
-    response_data_mods: Query<ResponseDataModifiers>,
+    response_data_mods: Query<CreatureResponseDataModifiers>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_elite_creature(
@@ -368,7 +368,7 @@ pub async fn sf_get_elite_creature(
     tags = ["sf", "bestiary"],
     params(
         ("creature_id" = String, Path, description = "id of the creature to fetch"),
-        ResponseDataModifiers,
+        CreatureResponseDataModifiers,
     ),
     responses(
         (status=200, description = "Successful Response", body = ResponseCreature),
@@ -379,7 +379,7 @@ pub async fn sf_get_elite_creature(
 pub async fn sf_get_weak_creature(
     data: web::Data<AppState>,
     creature_id: web::Path<String>,
-    response_data_mods: Query<ResponseDataModifiers>,
+    response_data_mods: Query<CreatureResponseDataModifiers>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         bestiary_service::get_weak_creature(

@@ -13,10 +13,8 @@ use crate::models::creature::creature_component::creature_extra::{
 };
 use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
-use crate::models::creature::creature_metadata::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::creature::creature_struct::Creature;
-use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::creature::items::spell::Spell;
 use crate::models::creature::items::spellcaster_entry::{SpellcasterData, SpellcasterEntry};
@@ -30,7 +28,7 @@ use crate::models::item::armor_struct::Armor;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::Shield;
 use crate::models::item::weapon_struct::Weapon;
-use crate::models::response_data::ResponseDataModifiers;
+use crate::models::response_data::CreatureResponseDataModifiers;
 use crate::models::scales_struct::ability_scales::AbilityScales;
 use crate::models::scales_struct::ac_scales::AcScales;
 use crate::models::scales_struct::area_dmg_scales::AreaDmgScales;
@@ -44,6 +42,8 @@ use crate::models::scales_struct::skill_scales::SkillScales;
 use crate::models::scales_struct::spell_dc_and_atk_scales::SpellDcAndAtkScales;
 use crate::models::scales_struct::strike_bonus_scales::StrikeBonusScales;
 use crate::models::scales_struct::strike_dmg_scales::StrikeDmgScales;
+use crate::models::shared::action::Action;
+use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
 use futures::future::join_all;
@@ -698,7 +698,9 @@ async fn fetch_creature_actions(
         GameSystem::Pathfinder => {
             sqlx::query_as!(
                 Action,
-                "SELECT * FROM pf_action_table WHERE creature_id == ($1)",
+                "SELECT a.* FROM pf_action_table AS a
+                JOIN pf_creature_action_association_table AS ca ON ca.action_id = a.id
+                WHERE ca.creature_id == ($1)",
                 creature_id
             )
             .fetch_all(conn)
@@ -707,7 +709,9 @@ async fn fetch_creature_actions(
         GameSystem::Starfinder => {
             sqlx::query_as!(
                 Action,
-                "SELECT * FROM sf_action_table WHERE creature_id == ($1)",
+                "SELECT a.* FROM sf_action_table AS a
+                JOIN sf_creature_action_association_table AS ca ON ca.action_id = a.id
+                WHERE ca.creature_id == ($1)",
                 creature_id
             )
             .fetch_all(conn)
@@ -870,7 +874,7 @@ pub async fn fetch_creature_by_id(
     conn: &Pool<Sqlite>,
     gs: &GameSystem,
     variant: CreatureVariant,
-    response_data_mods: &ResponseDataModifiers,
+    response_data_mods: &CreatureResponseDataModifiers,
     id: i64,
 ) -> Result<Creature> {
     let core_data = fetch_creature_core_data(conn, gs, id).await?;

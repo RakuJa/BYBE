@@ -15,6 +15,7 @@ use utoipa::ToSchema;
     PartialOrd,
     Default,
     EnumIter,
+    Debug,
 )]
 pub enum AlignmentEnum {
     #[strum(to_string = "CE")]

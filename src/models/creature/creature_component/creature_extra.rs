@@ -1,15 +1,15 @@
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
-use crate::models::creature::items::action::Action;
 use crate::models::creature::items::skill::Skill;
 use crate::models::db::sense::Sense;
 use crate::models::item::item_struct::Item;
+use crate::models::shared::action::Action;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)] // it's actually used in the example schema
 use serde_json::json;
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct AbilityScores {
     #[schema(example = 0)]
     pub charisma: i64,
@@ -25,7 +25,7 @@ pub struct AbilityScores {
     pub wisdom: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct CreatureExtraData {
     pub actions: Vec<Action>,
     pub skills: Vec<Skill>,

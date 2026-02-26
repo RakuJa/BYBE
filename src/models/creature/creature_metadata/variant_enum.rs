@@ -1,4 +1,4 @@
-use crate::services::shared::url_calculator::add_boolean_query;
+use crate::services::url_calculator::add_boolean_query;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use strum::Display;

@@ -3,7 +3,7 @@ use crate::models::npc::ancestry_enum::{PfAncestry, SfAncestry};
 use crate::models::npc::culture_enum::{PfCulture, SfCulture};
 use crate::models::npc::gender_enum::Gender;
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::services::shared::npc_service::{get_ancestry_name_builder, get_culture_name_builder};
+use crate::services::npc_service::{get_ancestry_name_builder, get_culture_name_builder};
 use crate::traits::filter::Filter;
 use crate::traits::name_system::{NameOrigin, NameOriginFilter};
 use crate::traits::origin::average_name_length::AverageNameLength;

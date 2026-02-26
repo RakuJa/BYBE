@@ -1,13 +1,13 @@
 use crate::AppState;
 use crate::db::shop_proxy;
-use crate::models::response_data::{ResponseItem, ShopListingResponse};
-use crate::models::routers_validator_structs::{Dice, ItemFieldFilters};
-use crate::models::shared::game_system_enum::GameSystem;
-use crate::models::shop_structs::{
+use crate::models::item::item_field_filter::ItemFieldFilters;
+use crate::models::item::shop_structs::{
     ItemTableFieldsFilter, PfShopTemplateEnum, RandomShopData, SfShopTemplateEnum, ShopFilterQuery,
     ShopPaginatedRequest, ShopTemplateData,
 };
-use crate::services::shared::url_calculator::shop_next_url;
+use crate::models::response_data::{ResponseItem, ShopListingResponse, convert_result_to_response};
+use crate::models::routers_validator_structs::Dice;
+use crate::models::shared::game_system_enum::GameSystem;
 use crate::traits::template_enum::{GenericTemplate, ItemTemplate};
 use anyhow::{Context, bail};
 use num_traits::ToPrimitive;
@@ -35,12 +35,8 @@ pub async fn get_traits_list(app_state: &AppState, gs: &GameSystem) -> Vec<Strin
 
 pub fn get_shop_templates_data(gs: &GameSystem) -> Vec<ShopTemplateData> {
     match gs {
-        GameSystem::Pathfinder => PfShopTemplateEnum::iter()
-            .map(std::convert::Into::into)
-            .collect(),
-        GameSystem::Starfinder => SfShopTemplateEnum::iter()
-            .map(std::convert::Into::into)
-            .collect(),
+        GameSystem::Pathfinder => PfShopTemplateEnum::iter().map(Into::into).collect(),
+        GameSystem::Starfinder => SfShopTemplateEnum::iter().map(Into::into).collect(),
     }
 }
 
@@ -50,8 +46,7 @@ pub async fn get_shop_listing(
     pagination: &ShopPaginatedRequest,
     gs: &GameSystem,
 ) -> ShopListingResponse {
-    convert_result_to_shop_response(
-        field_filter,
+    convert_result_to_response(
         pagination,
         shop_proxy::get_paginated_items(app_state, gs, field_filter, pagination).await,
     )
@@ -123,7 +118,6 @@ pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(
                     max_level: shop_data.max_level.unwrap_or(30),
                     supported_version: shop_data
                         .game_system_version
-                        .clone()
                         .unwrap_or_default()
                         .to_db_value(),
                 },
@@ -266,33 +260,6 @@ fn divide_equally(f: f64) -> (f64, f64, f64, f64) {
             result
         })
         .into()
-}
-
-fn convert_result_to_shop_response(
-    field_filters: &ItemFieldFilters,
-    pagination: &ShopPaginatedRequest,
-    result: anyhow::Result<(u32, Vec<ResponseItem>)>,
-) -> ShopListingResponse {
-    match result {
-        Ok(res) => {
-            let item: Vec<ResponseItem> = res.1;
-            let n_of_items = item.len();
-            ShopListingResponse {
-                results: Some(item),
-                count: n_of_items,
-                next: if n_of_items
-                    >= pagination.paginated_request.page_size.unsigned_abs() as usize
-                {
-                    Some(shop_next_url(field_filters, pagination, n_of_items as u32))
-                } else {
-                    None
-                },
-                total: res.0 as usize,
-                game: GameSystem::Starfinder,
-            }
-        }
-        Err(_) => ShopListingResponse::default_with_system(GameSystem::Starfinder),
-    }
 }
 
 #[cfg(test)]

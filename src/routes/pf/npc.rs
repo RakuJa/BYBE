@@ -9,7 +9,7 @@ use crate::models::npc::request_npc_struct::{AncestryData, RandomNameData, Rando
 use crate::models::response_data::ResponseNpc;
 use crate::models::routers_validator_structs::LevelData;
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::services::shared::npc_service;
+use crate::services::npc_service;
 use actix_web::error::ErrorBadRequest;
 use actix_web::{Responder, get, post, web};
 use utoipa::OpenApi;

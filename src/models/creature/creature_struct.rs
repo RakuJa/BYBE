@@ -3,11 +3,12 @@ use crate::models::creature::creature_component::creature_core::CreatureCoreData
 use crate::models::creature::creature_component::creature_extra::CreatureExtraData;
 use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
+use crate::models::creature::creature_field_filter::CreatureFieldFilters;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
-use crate::models::pf_version_enum::GameSystemVersionEnum;
-use crate::models::routers_validator_structs::CreatureFieldFilters;
 use crate::models::shared::game_system_enum::GameSystem;
+use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
+use crate::traits::has_level::HasLevel;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
@@ -18,6 +19,12 @@ pub struct Creature {
     pub combat_data: Option<CreatureCombatData>,
     pub spellcaster_data: Option<CreatureSpellcasterData>,
     pub game_system: GameSystem,
+}
+
+impl HasLevel for Creature {
+    fn level(&self) -> i64 {
+        self.variant_data.level
+    }
 }
 
 impl Creature {
@@ -205,7 +212,7 @@ impl Creature {
                         }
                     })
                 }))
-            && match filters.game_system_version.clone().unwrap_or_default() {
+            && match filters.game_system_version.unwrap_or_default() {
                 GameSystemVersionEnum::Legacy => !self.core_data.essential.remaster,
                 GameSystemVersionEnum::Remaster => self.core_data.essential.remaster,
                 GameSystemVersionEnum::Any => true,

@@ -20,9 +20,16 @@ pub struct ShareableShop {
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Debug, PartialEq, Eq)]
+pub struct LegacyShareableEncounter {
+    pub(crate) encounter_name: String,
+    pub(crate) creatures_data: Vec<SharableCreature>,
+}
+
+#[derive(Serialize, Deserialize, Clone, ToSchema, Debug, PartialEq, Eq)]
 pub struct ShareableEncounter {
     pub(crate) encounter_name: String,
     pub(crate) creatures_data: Vec<SharableCreature>,
+    pub(crate) hazards_data: Vec<SharableHazard>,
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, PartialEq, Debug)]
@@ -40,13 +47,24 @@ pub struct SharableCreature {
     pub(crate) game: GameSystem,
 }
 
+#[derive(Serialize, Deserialize, Clone, ToSchema, Debug, PartialEq, Eq)]
+pub struct SharableHazard {
+    pub(crate) id: u64,
+    pub(crate) qty: u64,
+    pub(crate) game: GameSystem,
+}
+
 impl Base64Encode for ShareableShop {}
+
+impl Base64Encode for LegacyShareableEncounter {}
 
 impl Base64Encode for ShareableEncounter {}
 
 impl Base64Encode for ShareableNpcList {}
 
 impl Base64Decode for ShareableShop {}
+
+impl Base64Decode for LegacyShareableEncounter {}
 
 impl Base64Decode for ShareableEncounter {}
 
@@ -69,14 +87,35 @@ mod tests {
         }
     }
 
-    fn get_test_shareable_encounter(n_items: u64) -> ShareableEncounter {
-        ShareableEncounter {
+    fn get_test_legacy_shareable_encounter(n_items: u64) -> LegacyShareableEncounter {
+        LegacyShareableEncounter {
             encounter_name: "Osi".to_string(),
             creatures_data: (0..=n_items)
                 .map(|n| SharableCreature {
                     id: n,
                     qty: 1,
                     variant: CreatureVariant::Base,
+                    game: GameSystem::default(),
+                })
+                .collect(),
+        }
+    }
+
+    fn get_test_shareable_encounter(n_creatures: u64, n_hazards: u64) -> ShareableEncounter {
+        ShareableEncounter {
+            encounter_name: "Osi".to_string(),
+            creatures_data: (0..=n_creatures)
+                .map(|n| SharableCreature {
+                    id: n,
+                    qty: 1,
+                    variant: CreatureVariant::Base,
+                    game: GameSystem::default(),
+                })
+                .collect(),
+            hazards_data: (0..=n_hazards)
+                .map(|n| SharableHazard {
+                    id: n,
+                    qty: 1,
                     game: GameSystem::default(),
                 })
                 .collect(),
@@ -123,8 +162,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_encounter_encode_w_one_item() {
-        let encounter = get_test_shareable_encounter(1);
+    async fn test_legacy_encounter_encode_w_one_item() {
+        let encounter = get_test_legacy_shareable_encounter(1);
         assert_eq!(
             "KLUv_QBYaQAAA09zaQIAAQIAAQECAA==",
             encounter.encode().await.unwrap()
@@ -132,10 +171,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_encounter_decode_w_one_item() {
-        let encounter = get_test_shareable_encounter(1);
+    async fn test_encounter_encode_w_one_item() {
+        let encounter = get_test_shareable_encounter(1, 1);
         assert_eq!(
-            ShareableEncounter::decode("KLUv_QBYaQAAA09zaQIAAQIAAQECAA==".to_string())
+            "KLUv_QBYoQAAA09zaQIAAQIAAQECAAIAAQABAQA=",
+            encounter.encode().await.unwrap()
+        )
+    }
+
+    #[tokio::test]
+    async fn test_legacy_encounter_decode_w_one_item() {
+        let encounter = get_test_legacy_shareable_encounter(1);
+        assert_eq!(
+            LegacyShareableEncounter::decode("KLUv_QBYaQAAA09zaQIAAQIAAQECAA==".to_string())
                 .await
                 .unwrap(),
             encounter
@@ -143,8 +191,19 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_encounter_encode_w_20_items() {
-        let encounter = get_test_shareable_encounter(20);
+    async fn test_encounter_decode_w_one_item() {
+        let encounter = get_test_shareable_encounter(1, 1);
+        assert_eq!(
+            ShareableEncounter::decode("KLUv_QBYoQAAA09zaQIAAQIAAQECAAIAAQABAQA=".to_string())
+                .await
+                .unwrap(),
+            encounter
+        )
+    }
+
+    #[tokio::test]
+    async fn test_legacy_encounter_encode_w_20_items() {
+        let encounter = get_test_legacy_shareable_encounter(20);
         assert_eq!(
             "KLUv_QBY7QEAkkUOFJA7a_c7fXd3vbZt23YTEREhMqUUbaJFtIfW0BZaQjtoBW2gBbRNy7RLq7RJi7RHe9pb2xSMxuIEAA==",
             encounter.encode().await.unwrap()
@@ -152,15 +211,38 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_encounter_decode_w_20_items() {
-        let encounter = get_test_shareable_encounter(20);
+    async fn test_encounter_encode_w_20_items() {
+        let encounter = get_test_shareable_encounter(20, 20);
         assert_eq!(
-            ShareableEncounter::decode(
+            "KLUv_QBYxQIAkgkVFYBlhgMrE5vADMwMp6enpydt7y1TCv64440zvrjiiSN-uOGFEz644IEvV558vgu5H7fjbtyMe3Er7sSNuA-34S7chHtwC-7AvdzKndxz7xYCBKIUAA==",
+            encounter.encode().await.unwrap()
+        )
+    }
+
+    #[tokio::test]
+    async fn test_legacy_encounter_decode_w_20_items() {
+        let encounter = get_test_legacy_shareable_encounter(20);
+        assert_eq!(
+            LegacyShareableEncounter::decode(
                 "KLUv_QBY7QEAkkUOFJA7a_c7fXd3vbZt23YTEREhMqUUbaJFtIfW0BZaQjtoBW2gBbRNy7RLq7RJi7RHe9pb2xSMxuIEAA=="
                     .to_string()
             )
             .await
             .unwrap(),
+            encounter
+        )
+    }
+
+    #[tokio::test]
+    async fn test_encounter_decode_w_20_items() {
+        let encounter = get_test_shareable_encounter(20, 20);
+        assert_eq!(
+            ShareableEncounter::decode(
+                "KLUv_QBYxQIAkgkVFYBlhgMrE5vADMwMp6enpydt7y1TCv64440zvrjiiSN-uOGFEz644IEvV558vgu5H7fjbtyMe3Er7sSNuA-34S7chHtwC-7AvdzKndxz7xYCBKIUAA=="
+                    .to_string()
+            )
+                .await
+                .unwrap(),
             encounter
         )
     }
