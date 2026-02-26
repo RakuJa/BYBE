@@ -84,12 +84,16 @@ fn get_hazard_encounter_lvl_and_exp_map(
     }
 }
 
+fn average_level(levels: &[i64]) -> f64 {
+    levels.iter().sum::<i64>() as f64 / levels.len() as f64
+}
+
 pub fn calculate_encounter_exp(
     party_levels: &[i64],
     creature_encounter_params: &Option<CreatureEncounterParams>,
     hazard_encounter_params: &Option<HazardEncounterParams>,
 ) -> i64 {
-    let party_avg = party_levels.iter().sum::<i64>() as f64 / party_levels.len() as f64;
+    let party_avg = average_level(party_levels);
 
     let cr_exp = creature_encounter_params.as_ref().map_or(0, |params| {
         calculate_creature_encounter_exp(
@@ -176,50 +180,23 @@ pub fn calculate_encounter_scaling_difficulty(
     party_size: usize,
 ) -> HashMap<EncounterChallengeEnum, i64> {
     // Given the party size, it scales and calculates the threshold for the various difficulty levels
-    let mut diff_scaled_exp_map = HashMap::new();
-    for curr_diff in EncounterChallengeEnum::iter() {
-        diff_scaled_exp_map.insert(
-            curr_diff,
-            scale_difficulty_exp(curr_diff, i64::try_from(party_size).unwrap_or(i64::MAX))
-                .lower_bound,
-        );
-    }
-    diff_scaled_exp_map
+    EncounterChallengeEnum::iter()
+        .map(|diff| {
+            let exp = scale_difficulty_exp(diff, i64::try_from(party_size).unwrap_or(i64::MAX))
+                .lower_bound;
+            (diff, exp)
+        })
+        .collect()
 }
 
 pub fn calculate_encounter_difficulty(
     encounter_exp: i64,
     scaled_exp_levels: &HashMap<EncounterChallengeEnum, i64>,
 ) -> EncounterChallengeEnum {
-    // This method is ugly, it's 1:1 from python and as such needs refactor
-    if &encounter_exp < scaled_exp_levels.get(&EncounterChallengeEnum::Low).unwrap() {
-        return EncounterChallengeEnum::Trivial;
-    } else if &encounter_exp
-        < scaled_exp_levels
-            .get(&EncounterChallengeEnum::Moderate)
-            .unwrap()
-    {
-        return EncounterChallengeEnum::Low;
-    } else if &encounter_exp
-        < scaled_exp_levels
-            .get(&EncounterChallengeEnum::Severe)
-            .unwrap()
-    {
-        return EncounterChallengeEnum::Moderate;
-    } else if &encounter_exp
-        < scaled_exp_levels
-            .get(&EncounterChallengeEnum::Extreme)
-            .unwrap()
-    {
-        return EncounterChallengeEnum::Severe;
-    } else if &encounter_exp
-        < scaled_exp_levels
-            .get(&EncounterChallengeEnum::Impossible)
-            .unwrap()
-    {
-        return EncounterChallengeEnum::Extreme;
-    }
-    EncounterChallengeEnum::Impossible
+    EncounterChallengeEnum::iter()
+        .rev()
+        .find(|diff| encounter_exp >= *scaled_exp_levels.get(diff).expect("Creature encounter exp map should contain all possible encounter challenges as key"))
+        .unwrap_or(EncounterChallengeEnum::Trivial)
 }
 
 /// Calculates all possible enemy level combinations for an encounter of a given difficulty.
@@ -239,7 +216,7 @@ pub fn calculate_lvl_combination_for_creature_encounter(
     party_levels: &[i64],
     is_pwl_on: bool,
 ) -> HashSet<Vec<i64>> {
-    let party_avg: f64 = party_levels.iter().sum::<i64>() as f64 / party_levels.len() as f64;
+    let party_avg = average_level(party_levels);
     calculate_lvl_combinations_for_given_exp(
         exp_range,
         party_avg.floor() as i64,
@@ -264,7 +241,7 @@ pub fn calculate_lvl_combination_for_hazard_encounter(
     hazard_levels: &[i64],
     hazard_complexity: HazardComplexityEnum,
 ) -> HashSet<Vec<(HazardComplexityEnum, i64)>> {
-    let party_avg: f64 = hazard_levels.iter().sum::<i64>() as f64 / hazard_levels.len() as f64;
+    let party_avg = average_level(hazard_levels);
     calculate_hazard_lvl_combinations_for_given_exp(
         exp_range,
         party_avg.floor() as i64,
@@ -280,15 +257,12 @@ pub fn filter_combinations_outside_range<T>(
 where
     T: Eq + Hash + Debug,
 {
-    let mut lower = i64::from(lower_bound.unwrap_or(0));
-    let mut upper = i64::from(upper_bound.unwrap_or(0));
-    if lower != 0 && upper == 0 {
-        upper = lower;
-    } else if lower == 0 && upper != 0 {
-        lower = upper;
-    } else if lower == 0 && upper == 0 {
-        return combinations;
-    }
+    let (lower, upper) = match (lower_bound, upper_bound) {
+        (None, None) | (Some(0), Some(0)) => return combinations,
+        (Some(l), None) => (l as i64, l as i64),
+        (None, Some(u)) => (u as i64, u as i64),
+        (Some(l), Some(u)) => (l as i64, u as i64),
+    };
     combinations
         .into_iter()
         .filter(|curr_combo| {
@@ -506,8 +480,8 @@ fn find_combinations(candidates: &[i64], target_range: ExpRange) -> Vec<Vec<i64>
         }
     }
 
-    let mut result = Vec::new(); // List to store all combinations
-    let mut path = Vec::new(); // Sort the candidates list for optimization
+    let mut result = Vec::new();
+    let mut path = Vec::new();
     // Start the backtracking from the first index
     backtrack(
         candidates,
