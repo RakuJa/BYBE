@@ -3,10 +3,9 @@ use crate::models::encounter_structs::{
     AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, RandomCreatureData,
     RandomEncounterData, RandomHazardData,
 };
+use crate::models::response_data::{EncounterInfoResponse, RandomEncounterGeneratorResponse};
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::services::encounter_handler::encounter_calculator;
-use crate::services::encounter_handler::encounter_calculator::EncounterInfoResponse;
-use crate::services::encounter_handler::encounter_calculator::RandomEncounterGeneratorResponse;
 use crate::services::encounter_service;
 use actix_web::{Responder, Result, post, web};
 use utoipa::OpenApi;

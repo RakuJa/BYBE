@@ -4,6 +4,7 @@ use crate::models::creature::creature_component::creature_extra::CreatureExtraDa
 use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature::creature_struct::Creature;
+use crate::models::encounter_structs::EncounterChallengeEnum;
 use crate::models::hazard::hazard_struct::Hazard;
 use crate::models::item::armor_struct::ArmorData;
 use crate::models::item::item_struct::Item;
@@ -14,6 +15,9 @@ use crate::services::url_calculator::next_url;
 use crate::traits::response::listing_response::ListingResponse;
 use crate::traits::url::paginated_request_ext::PaginatedRequestExt;
 use serde::{Deserialize, Serialize};
+#[allow(unused_imports)] // it's used for Schema
+use serde_json::json;
+use std::collections::BTreeMap;
 use utoipa::{IntoParams, ToSchema};
 
 #[derive(Serialize, Deserialize, IntoParams, Default, Eq, PartialEq, Hash, Clone)]
@@ -209,4 +213,27 @@ where
         }
         Err(_) => R::default(),
     }
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct EncounterInfoResponse {
+    #[schema(minimum = 0, example = 40)]
+    pub(crate) experience: i64,
+    pub(crate) challenge: EncounterChallengeEnum,
+    #[schema(example = json!({EncounterChallengeEnum::Trivial: 40, EncounterChallengeEnum::Low: 60, EncounterChallengeEnum::Moderate: 80, EncounterChallengeEnum::Severe: 120, EncounterChallengeEnum::Extreme: 160, EncounterChallengeEnum::Impossible: 320}))]
+    pub(crate) encounter_exp_levels: BTreeMap<EncounterChallengeEnum, i64>,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct EncounterContent {
+    pub(crate) creatures: Option<Vec<ResponseCreature>>,
+    pub(crate) hazards: Option<Vec<ResponseHazard>>,
+}
+
+#[derive(Serialize, Deserialize, ToSchema)]
+pub struct RandomEncounterGeneratorResponse {
+    pub(crate) results: EncounterContent,
+    pub(crate) count: usize,
+    pub(crate) encounter_info: EncounterInfoResponse,
+    pub(crate) game: GameSystem,
 }

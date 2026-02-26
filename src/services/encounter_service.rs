@@ -6,11 +6,13 @@ use crate::models::encounter_structs::{
     RandomHazardData,
 };
 use crate::models::hazard::hazard_listing_struct::{HazardFilterQuery, HazardTableFieldsFilter};
-use crate::models::response_data::{ResponseCreature, ResponseHazard};
+use crate::models::response_data::{
+    EncounterContent, EncounterInfoResponse, RandomEncounterGeneratorResponse, ResponseCreature,
+    ResponseHazard,
+};
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::services::bestiary_service::get_filtered_creatures;
 use crate::services::encounter_handler::encounter_calculator::{
-    EncounterContent, EncounterInfoResponse, RandomEncounterGeneratorResponse,
     choose_random_combination, get_creature_lvl_combinations, get_encounter_info,
     get_hazard_lvl_combinations, get_scaled_exp,
 };
