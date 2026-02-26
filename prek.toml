@@ -1,0 +1,36 @@
+[[repos]]
+repo = "https://github.com/est31/cargo-udeps"
+rev = "v0.1.60"
+hooks = [
+    {id = "udeps"}
+]
+
+[[repos]]
+repo = "https://github.com/crate-ci/typos"
+rev = "v1.38.1"
+hooks = [
+    {id = "typos", args = ["--config=typos.toml"], pass_filenames = false}
+]
+
+[[repos]]
+repo = "local"
+hooks = [
+    {id = "format", name = "format code", entry = "cargo fmt --all", language = "system", pass_filenames = false},
+    {id = "clippy", name = "run linter", entry = "cargo clippy", language = "system", pass_filenames = false},
+    {id = "unittest", name = "run unit test", entry = "cargo test", language = "system", pass_filenames = false},
+]
+
+[[repos]]
+repo = "builtin"
+hooks = [
+    { id = "trailing-whitespace" },
+    { id = "detect-private-key"},
+    { id = "check-case-conflict"},
+    { id = "check-symlinks"},
+    { id = "check-yaml" },
+    { id = "check-json"},
+    { id = "check-toml" },
+    { id = "end-of-file-fixer" },
+    { id = "mixed-line-ending" },
+    { id = "no-commit-to-branch", args = ["--branch=master"]}
+]

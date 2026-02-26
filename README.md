@@ -108,11 +108,12 @@ If you like this tool, consider supporting me:
 Also consider supporting [TheAsel](https://github.com/TheAsel), the frontend developer. Thank you!
 
 ## Coding guide
-1. Install pre-commit
+1. Install prek
+Check out the official installation [guide](https://github.com/j178/prek?tab=readme-ov-file#installation)
 ```bash
-sudo pacman -S pre-commit
+cargo install --locked prek
 ```
-2. Enable pre-commit
+2. Enable prek run before each commit
 ```bash
-pre-commit install
+prek install
 ```

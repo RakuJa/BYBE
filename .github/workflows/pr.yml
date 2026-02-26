@@ -12,24 +12,21 @@ jobs:
     permissions:
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #6.0.2
       - uses: dtolnay/rust-toolchain@nightly
         with:
           components: rustfmt
-      - uses: mbrobbel/rustfmt-check@master
+      - uses: mbrobbel/rustfmt-check@9a22c8ce35fa788e7db3bfb4c814ad1c13b4d5be #0.20.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           mode: review
-  build_and_test:
+  prek:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions-rs/toolchain@v1
-        with:
-          toolchain: stable
-          override: true
-      - uses: davidB/rust-cargo-make@v1
-      - uses: actions/checkout@v1
-      - name: Run cargo build and cargo test executing setup if needed
-        run: cargo make build-and-test
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd #6.0.2
+      - uses: davidB/rust-cargo-make@d8952235ddd22b65d7c6b9194d4dbd58c3ffc48a #1.14.0
+      - name: Executes prebuild (download db, prepare data) if needed
+        run: cargo make prebuild
+      - uses: j178/prek-action@0bb87d7f00b0c99306c8bcb8b8beba1eb581c037 #1.1.1
         env:
           DATABASE_URL: "sqlite://data/database.db"
