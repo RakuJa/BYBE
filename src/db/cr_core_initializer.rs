@@ -1,6 +1,6 @@
 use crate::db::data_providers::creature_fetcher::{
-    fetch_creature_combat_data, fetch_creature_extra_data, fetch_creature_scales,
-    fetch_creature_spellcaster_data, fetch_creature_traits,
+    fetch_all_creature_traits, fetch_creature_combat_data, fetch_creature_extra_data,
+    fetch_creature_scales, fetch_creature_spellcaster_data,
 };
 use crate::models::creature::creature_component::creature_core::EssentialData;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
@@ -13,16 +13,17 @@ use crate::models::shared::status_enum::Status;
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Sqlite, Transaction};
+use std::collections::BTreeMap;
 use tracing::warn;
 
 pub async fn update_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()> {
     warn!("Handler for startup, Should only be used once for each gamesystem");
     let scales = fetch_creature_scales(conn).await?;
+    let all_traits = fetch_all_creature_traits(conn, gs).await?;
     let mut tx: Transaction<Sqlite> = conn.begin().await?;
     for cr in get_creatures_raw_essential_data(&mut tx, gs, 0, -1).await? {
-        let traits = fetch_creature_traits(conn, gs, cr.id).await?;
+        let traits = all_traits.get(&cr.id).cloned().unwrap_or_default();
         let alignment = AlignmentEnum::from((&traits, cr.remaster));
-        update_alignment_column_value(&mut tx, gs, alignment.to_string(), cr.id).await?;
         let essential_data = EssentialData {
             id: cr.id,
             aon_id: cr.aon_id,
@@ -40,9 +41,11 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) ->
             focus_points: cr.n_of_focus_points,
             status: cr.status,
         };
-        let extra_data = fetch_creature_extra_data(conn, gs, essential_data.id).await?;
-        let combat_data = fetch_creature_combat_data(conn, gs, essential_data.id).await?;
-        let spellcaster_data = fetch_creature_spellcaster_data(conn, gs, essential_data.id).await?;
+        let (extra_data, combat_data, spellcaster_data) = tokio::try_join!(
+            fetch_creature_extra_data(conn, gs, essential_data.id),
+            fetch_creature_combat_data(conn, gs, essential_data.id),
+            fetch_creature_spellcaster_data(conn, gs, essential_data.id),
+        )?;
         let roles = CreatureRoleEnum::from_creature_with_given_scales(
             &essential_data,
             &extra_data,
@@ -51,174 +54,55 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) ->
             &scales,
         );
 
-        for (curr_role, curr_percentage) in roles {
-            update_role_column_value(&mut tx, gs, curr_role, curr_percentage, essential_data.id)
-                .await?;
-        }
+        update_core_columns(
+            &mut tx,
+            gs,
+            &roles,
+            essential_data.alignment.to_string(),
+            essential_data.id,
+        )
+        .await?;
     }
     tx.commit().await?;
     Ok(())
 }
 
-async fn update_role_column_value_sf2e(
-    conn: &mut Transaction<'_, Sqlite>,
-    role: CreatureRoleEnum,
-    value: i64,
-    creature_id: i64,
-) -> Result<()> {
-    let x = match role {
-        CreatureRoleEnum::Brute => {
-            sqlx::query!(
-                "UPDATE sf_creature_core SET brute_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::MagicalStriker => {
-            sqlx::query!(
-                "UPDATE sf_creature_core SET magical_striker_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::SkillParagon => {
-            sqlx::query!(
-                "UPDATE sf_creature_core SET skill_paragon_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::Skirmisher => {
-            sqlx::query!(
-                "UPDATE sf_creature_core SET skirmisher_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::Sniper => {
-            sqlx::query!(
-                "UPDATE sf_creature_core SET sniper_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::Soldier => {
-            sqlx::query!(
-                "UPDATE sf_creature_core SET soldier_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::Spellcaster => {
-            sqlx::query!(
-                "UPDATE sf_creature_core SET spellcaster_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-    }
-    .execute(&mut **conn)
-    .await?;
-    if x.rows_affected() < 1 {
-        bail!("Error encountered with creature id: {creature_id}. Could not update role: {role}")
-    }
-    Ok(())
-}
-
-async fn update_role_column_value_pf2e(
-    conn: &mut Transaction<'_, Sqlite>,
-    role: CreatureRoleEnum,
-    value: i64,
-    creature_id: i64,
-) -> Result<()> {
-    let x = match role {
-        CreatureRoleEnum::Brute => {
-            sqlx::query!(
-                "UPDATE pf_creature_core SET brute_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::MagicalStriker => {
-            sqlx::query!(
-                "UPDATE pf_creature_core SET magical_striker_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::SkillParagon => {
-            sqlx::query!(
-                "UPDATE pf_creature_core SET skill_paragon_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::Skirmisher => {
-            sqlx::query!(
-                "UPDATE pf_creature_core SET skirmisher_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::Sniper => {
-            sqlx::query!(
-                "UPDATE pf_creature_core SET sniper_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::Soldier => {
-            sqlx::query!(
-                "UPDATE pf_creature_core SET soldier_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-        CreatureRoleEnum::Spellcaster => {
-            sqlx::query!(
-                "UPDATE pf_creature_core SET spellcaster_percentage = ? WHERE id = ?",
-                value,
-                creature_id
-            )
-        }
-    }
-    .execute(&mut **conn)
-    .await?;
-    if x.rows_affected() < 1 {
-        bail!("Error encountered with creature id: {creature_id}. Could not update role: {role}")
-    }
-    Ok(())
-}
-
-async fn update_role_column_value(
+async fn update_core_columns(
     conn: &mut Transaction<'_, Sqlite>,
     gs: &GameSystem,
-    role: CreatureRoleEnum,
-    value: i64,
-    creature_id: i64,
-) -> Result<()> {
-    match gs {
-        GameSystem::Pathfinder => {
-            update_role_column_value_pf2e(conn, role, value, creature_id).await?;
-        }
-        GameSystem::Starfinder => {
-            update_role_column_value_sf2e(conn, role, value, creature_id).await?;
-        }
-    }
-    Ok(())
-}
-
-async fn update_alignment_column_value(
-    conn: &mut Transaction<'_, Sqlite>,
-    gs: &GameSystem,
+    roles: &BTreeMap<CreatureRoleEnum, i64>,
     alignment: String,
     creature_id: i64,
 ) -> Result<()> {
+    let brute = find_role(roles, CreatureRoleEnum::Brute);
+    let magical_striker = find_role(roles, CreatureRoleEnum::MagicalStriker);
+    let skill_paragon = find_role(roles, CreatureRoleEnum::SkillParagon);
+    let skirmisher = find_role(roles, CreatureRoleEnum::Skirmisher);
+    let sniper = find_role(roles, CreatureRoleEnum::Sniper);
+    let soldier = find_role(roles, CreatureRoleEnum::Soldier);
+    let spellcaster = find_role(roles, CreatureRoleEnum::Spellcaster);
+
     let x = match gs {
         GameSystem::Pathfinder => {
             sqlx::query!(
-                "UPDATE pf_creature_core SET alignment = ? WHERE id = ?",
+                "UPDATE pf_creature_core
+             SET alignment                  = ?,
+                 brute_percentage           = ?,
+                 magical_striker_percentage = ?,
+                 skill_paragon_percentage   = ?,
+                 skirmisher_percentage      = ?,
+                 sniper_percentage          = ?,
+                 soldier_percentage         = ?,
+                 spellcaster_percentage     = ?
+             WHERE id = ?",
                 alignment,
+                brute,
+                magical_striker,
+                skill_paragon,
+                skirmisher,
+                sniper,
+                soldier,
+                spellcaster,
                 creature_id
             )
             .execute(&mut **conn)
@@ -226,20 +110,39 @@ async fn update_alignment_column_value(
         }
         GameSystem::Starfinder => {
             sqlx::query!(
-                "UPDATE sf_creature_core SET alignment = ? WHERE id = ?",
+                "UPDATE sf_creature_core
+             SET alignment                  = ?,
+                 brute_percentage           = ?,
+                 magical_striker_percentage = ?,
+                 skill_paragon_percentage   = ?,
+                 skirmisher_percentage      = ?,
+                 sniper_percentage          = ?,
+                 soldier_percentage         = ?,
+                 spellcaster_percentage     = ?
+             WHERE id = ?",
                 alignment,
+                brute,
+                magical_striker,
+                skill_paragon,
+                skirmisher,
+                sniper,
+                soldier,
+                spellcaster,
                 creature_id
             )
             .execute(&mut **conn)
             .await?
         }
     };
+
     if x.rows_affected() < 1 {
-        bail!(
-            "Error encountered with creature id: {creature_id}. Could not update alignment: {alignment}"
-        )
+        bail!("Could not update core columns for creature id: {creature_id}");
     }
     Ok(())
+}
+
+fn find_role(roles: &BTreeMap<CreatureRoleEnum, i64>, target: CreatureRoleEnum) -> i64 {
+    roles.get(&target).copied().unwrap_or(0)
 }
 
 async fn get_creatures_raw_essential_data(
