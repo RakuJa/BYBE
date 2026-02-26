@@ -10,6 +10,9 @@ use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::ShieldData;
 use crate::models::item::weapon_struct::WeaponData;
 use crate::models::shared::game_system_enum::GameSystem;
+use crate::services::url_calculator::next_url;
+use crate::traits::response::listing_response::ListingResponse;
+use crate::traits::url::paginated_request_ext::PaginatedRequestExt;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
@@ -19,6 +22,14 @@ pub struct CreatureResponseDataModifiers {
     pub extra_data: Option<bool>,
     pub combat_data: Option<bool>,
     pub spellcasting_data: Option<bool>,
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Default)]
+pub struct HazardListingResponse {
+    results: Option<Vec<ResponseHazard>>,
+    count: usize,
+    total: usize,
+    next: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, PartialEq, Eq, Debug)]
@@ -36,6 +47,14 @@ impl From<(Hazard, GameSystem)> for ResponseHazard {
             game: game_system,
         }
     }
+}
+
+#[derive(Serialize, Deserialize, ToSchema, Default)]
+pub struct BestiaryResponse {
+    results: Option<Vec<ResponseCreature>>,
+    count: usize,
+    total: usize,
+    next: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Hash, PartialEq, Eq, Debug)]
@@ -115,5 +134,79 @@ impl ShopListingResponse {
             game: game_system,
             next: None,
         }
+    }
+}
+
+impl ListingResponse for ShopListingResponse {
+    type Item = ResponseItem;
+
+    fn from_results(
+        results: Vec<Self::Item>,
+        count: usize,
+        next: Option<String>,
+        total: usize,
+    ) -> Self {
+        Self {
+            results: Some(results),
+            count,
+            next,
+            total,
+            game: GameSystem::Starfinder,
+        }
+    }
+}
+
+impl ListingResponse for BestiaryResponse {
+    type Item = Creature;
+
+    fn from_results(
+        results: Vec<Self::Item>,
+        count: usize,
+        next: Option<String>,
+        total: usize,
+    ) -> Self {
+        Self {
+            results: Some(results.into_iter().map(ResponseCreature::from).collect()),
+            count,
+            next,
+            total,
+        }
+    }
+}
+
+impl ListingResponse for HazardListingResponse {
+    type Item = ResponseHazard;
+
+    fn from_results(
+        results: Vec<Self::Item>,
+        count: usize,
+        next: Option<String>,
+        total: usize,
+    ) -> Self {
+        Self {
+            results: Some(results),
+            count,
+            next,
+            total,
+        }
+    }
+}
+
+pub fn convert_result_to_response<P, R>(
+    pagination: &P,
+    result: anyhow::Result<(u32, Vec<R::Item>)>,
+) -> R
+where
+    P: PaginatedRequestExt,
+    R: ListingResponse,
+{
+    match result {
+        Ok((total, items)) => {
+            let count = items.len();
+            let next = (count >= pagination.paginated_request().page_size.unsigned_abs() as usize)
+                .then(|| next_url(pagination, count as u32));
+            R::from_results(items, count, next, total as usize)
+        }
+        Err(_) => R::default(),
     }
 }

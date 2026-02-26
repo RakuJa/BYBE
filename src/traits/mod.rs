@@ -6,4 +6,6 @@ pub mod job_enum;
 pub mod name_system;
 pub mod origin;
 pub mod random_enum;
+pub mod response;
 pub mod template_enum;
+pub mod url;

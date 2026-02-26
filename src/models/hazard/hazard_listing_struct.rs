@@ -2,6 +2,8 @@ use crate::models::hazard::hazard_field_filter::HazardComplexityEnum;
 use crate::models::routers_validator_structs::{OrderEnum, PaginatedRequest};
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
+use crate::traits::url::has_sort_fields::HasSortFields;
+use crate::traits::url::paginated_request_ext::PaginatedRequestExt;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
@@ -90,6 +92,29 @@ pub struct HazardListingSortData {
     // Optional here for swagger, kinda bad but w/e
     pub sort_by: Option<HazardSortEnum>,
     pub order_by: Option<OrderEnum>,
+}
+
+impl HasSortFields for HazardListingSortData {
+    type SortBy = HazardSortEnum;
+    fn sort_by_field(&self) -> &Option<Self::SortBy> {
+        &self.sort_by
+    }
+    fn order_by_field(&self) -> &Option<OrderEnum> {
+        &self.order_by
+    }
+}
+
+impl PaginatedRequestExt for HazardListingPaginatedRequest {
+    type Sort = HazardListingSortData;
+    fn base_path() -> &'static str {
+        "hazard/list"
+    }
+    fn sort_data(&self) -> &Self::Sort {
+        &self.hazard_sort_data
+    }
+    fn paginated_request(&self) -> &PaginatedRequest {
+        &self.paginated_request
+    }
 }
 
 #[derive(Serialize, Deserialize, IntoParams, Eq, PartialEq, Hash)]

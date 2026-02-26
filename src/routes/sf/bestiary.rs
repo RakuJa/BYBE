@@ -2,13 +2,12 @@ use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::item::shield_struct::Shield;
-use crate::models::response_data::CreatureResponseDataModifiers;
 use crate::models::response_data::ResponseCreature;
+use crate::models::response_data::{BestiaryResponse, CreatureResponseDataModifiers};
 use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
-use crate::services::bestiary_service::BestiaryResponse;
 
 use crate::models::creature::creature_component::creature_combat::CreatureCombatData;
 use crate::models::creature::creature_component::creature_combat::SavingThrows;
