@@ -130,10 +130,12 @@ pub async fn start(
     } else {
         dotenv().ok();
     }
+    let _guard; // to let it live for all the application, otherwise it won't write to file
     match init_log_resp {
         InitializeLogResponsibility::Personal => {
             let file_appender = rolling::daily("./logs", "bybe.log");
-            let (file_writer, _guard) = non_blocking(file_appender);
+            let (file_writer, guard) = non_blocking(file_appender);
+            _guard = guard;
 
             tracing_subscriber::registry()
                 .with(
@@ -235,6 +237,6 @@ pub async fn start(
             }))
     })
     .workers(service_workers)
-    .bind((get_service_ip(), get_service_port()))?;
+    .bind((service_ip, service_port))?;
     server.run().await
 }
