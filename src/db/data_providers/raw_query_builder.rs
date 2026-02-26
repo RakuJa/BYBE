@@ -4,7 +4,7 @@ use crate::models::hazard::hazard_listing_struct::{HazardFilterQuery, HazardTabl
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::shop_structs::{ItemTableFieldsFilter, ShopFilterQuery};
 use crate::models::shared::game_system_enum::GameSystem;
-use log::debug;
+use tracing::debug;
 
 pub fn prepare_filtered_get_items(gs: &GameSystem, shop_filter_query: &ShopFilterQuery) -> String {
     let equipment_query = prepare_item_subquery(

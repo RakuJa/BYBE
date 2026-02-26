@@ -19,8 +19,8 @@ use crate::services::encounter_handler::encounter_calculator::{
 use crate::services::hazard_service::get_filtered_hazards;
 use anyhow::{bail, ensure};
 use itertools::Itertools;
-use log::warn;
 use std::collections::{BTreeMap, HashSet};
+use tracing::warn;
 
 #[derive(Debug)]
 struct RandomCreatureGeneratorResponse {

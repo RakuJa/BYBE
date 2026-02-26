@@ -17,6 +17,11 @@ use dotenvy::{dotenv, from_path};
 use sqlx::{Pool, Sqlite, sqlite::SqlitePoolOptions};
 use std::env;
 use std::num::NonZero;
+use tracing::info;
+use tracing_appender::{non_blocking, rolling};
+use tracing_subscriber::layer::SubscriberExt;
+use tracing_subscriber::util::SubscriberInitExt;
+use tracing_subscriber::{EnvFilter, Layer, fmt};
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -127,7 +132,21 @@ pub async fn start(
     }
     match init_log_resp {
         InitializeLogResponsibility::Personal => {
-            env_logger::init_from_env(env_logger::Env::new().default_filter_or("info"));
+            let file_appender = rolling::daily("./logs", "bybe.log");
+            let (file_writer, _guard) = non_blocking(file_appender);
+
+            tracing_subscriber::registry()
+                .with(
+                    fmt::layer()
+                        .with_writer(file_writer)
+                        .with_filter(EnvFilter::new("warn")),
+                )
+                .with(
+                    fmt::layer()
+                        .with_writer(std::io::stdout)
+                        .with_filter(EnvFilter::new("info")),
+                )
+                .init();
         }
         InitializeLogResponsibility::Delegated => {} // do nothing, someone else has already initialized them
     }
@@ -139,7 +158,7 @@ pub async fn start(
     let startup_state: StartupState = get_service_startup_state();
     let service_workers = get_service_workers();
 
-    log::info!("Starting DB connection");
+    info!("Starting DB connection");
 
     // establish connection to database
     let pool = SqlitePoolOptions::new()
@@ -149,12 +168,12 @@ pub async fn start(
         .expect("Error building connection pool");
     match startup_state {
         StartupState::Clean => {
-            log::info!("Starting DB PF2E Table cleanup & creation of update CORE tables");
+            info!("Starting DB PF2E Table cleanup & creation of update CORE tables");
             db::cr_core_initializer::update_creature_core_table(&pool, &GameSystem::Pathfinder)
                 .await
                 .expect("Could not initialize correctly core creature table.. Startup failed");
 
-            log::info!("Starting DB SF2E Table cleanup & creation of update CORE tables");
+            info!("Starting DB SF2E Table cleanup & creation of update CORE tables");
             db::cr_core_initializer::update_creature_core_table(&pool, &GameSystem::Starfinder)
                 .await
                 .expect("Could not initialize correctly core creature table.. Startup failed");
@@ -162,7 +181,7 @@ pub async fn start(
         StartupState::Persistent => {}
     }
 
-    log::info!(
+    info!(
         "starting HTTP server at http://{}:{}",
         service_ip.as_str(),
         service_port

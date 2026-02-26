@@ -11,9 +11,9 @@ use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use crate::models::shared::status_enum::Status;
 use anyhow::{Result, bail};
-use log::warn;
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, Pool, Sqlite, Transaction};
+use tracing::warn;
 
 pub async fn update_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()> {
     warn!("Handler for startup, Should only be used once for each gamesystem");

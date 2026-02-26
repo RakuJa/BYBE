@@ -28,6 +28,7 @@ use crate::traits::origin::culture::Culture;
 use crate::traits::origin::has_valid_genders::HasValidGenders;
 use crate::traits::random_enum::RandomEnum;
 use cached::proc_macro::cached;
+use tracing::error;
 
 pub fn generate_random_npc<C, NF, J>(
     app_state: &AppState,
@@ -235,11 +236,11 @@ pub fn generate_random_nickname(nickname_path: &str) -> Option<String> {
                 _ => format!("The {adj} {noun}"),
             })
         } else {
-            log::error!("Cannot generate nickname, empty json?");
+            error!("Cannot generate nickname, empty json?");
             None
         }
     } else {
-        log::error!("Cannot generate nickname, missing json?");
+        error!("Cannot generate nickname, missing json?");
         None
     }
 }

@@ -11,9 +11,9 @@ use crate::models::item::weapon_struct::{Weapon, WeaponData};
 use crate::models::response_data::ResponseItem;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
-use log::debug;
 use nanorand::{Rng, WyRand};
 use sqlx::{Pool, Sqlite, query_as};
+use tracing::debug;
 
 pub async fn fetch_item_by_id(
     conn: &Pool<Sqlite>,

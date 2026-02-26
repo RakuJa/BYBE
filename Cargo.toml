@@ -77,8 +77,9 @@ regex = "1.12"
 
 dotenvy = "0.15"
 
-env_logger = "0.11"
-log = "0.4"
+tracing = "0.1.44"
+tracing-subscriber = { version = "0.3.22", features = ["fmt", "env-filter"] }
+tracing-appender = "0.2.4"
 futures = "0.3"
 
 
