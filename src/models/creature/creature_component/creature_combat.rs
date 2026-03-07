@@ -9,7 +9,7 @@ use serde_json::json;
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct SavingThrows {
     #[schema(example = 0)]
     pub fortitude: i64,
@@ -22,7 +22,7 @@ pub struct SavingThrows {
     pub will_detail: Option<String>,
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct CreatureCombatData {
     pub weapons: Vec<Weapon>,
     pub armors: Vec<Armor>,

@@ -4,7 +4,7 @@ use sqlx::sqlite::SqliteRow;
 use sqlx::{Error, FromRow, Row};
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct Shield {
     pub item_core: Item,
     pub shield_data: ShieldData,

@@ -1,13 +1,14 @@
 use crate::AppState;
 use crate::db::data_providers::shop_fetcher;
 use crate::models::item::armor_struct::Armor;
+use crate::models::item::item_field_filter::ItemFieldFilters;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::Shield;
+use crate::models::item::shop_structs::{ItemSortEnum, ShopFilterQuery, ShopPaginatedRequest};
 use crate::models::item::weapon_struct::Weapon;
 use crate::models::response_data::ResponseItem;
-use crate::models::routers_validator_structs::{ItemFieldFilters, OrderEnum};
+use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::models::shop_structs::{ItemSortEnum, ShopFilterQuery, ShopPaginatedRequest};
 use anyhow::Result;
 use cached::proc_macro::cached;
 use itertools::Itertools;

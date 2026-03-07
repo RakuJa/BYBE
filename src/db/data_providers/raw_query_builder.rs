@@ -1,8 +1,9 @@
 use crate::models::bestiary_structs::{BestiaryFilterQuery, CreatureTableFieldsFilter};
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
+use crate::models::hazard::hazard_listing_struct::{HazardFilterQuery, HazardTableFieldsFilter};
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
+use crate::models::item::shop_structs::{ItemTableFieldsFilter, ShopFilterQuery};
 use crate::models::shared::game_system_enum::GameSystem;
-use crate::models::shop_structs::{ItemTableFieldsFilter, ShopFilterQuery};
 use log::debug;
 
 pub fn prepare_filtered_get_items(gs: &GameSystem, shop_filter_query: &ShopFilterQuery) -> String {
@@ -89,7 +90,42 @@ pub fn prepare_filtered_get_creatures_core(
     query
 }
 
-/// Prepares a 'bounded OR statement' aka checks if all columns values are in the bound given, ex
+pub fn prepare_filtered_get_hazards(
+    gs: &GameSystem,
+    bestiary_filter_query: &HazardFilterQuery,
+) -> String {
+    let initial_statement = format!("SELECT id FROM {gs}_hazard_table");
+    let trait_query_tmp = prepare_trait_filter_statement(
+        &prepare_hazard_trait_filter(gs, bestiary_filter_query.trait_whitelist_filter.iter()),
+        &prepare_hazard_trait_filter(gs, bestiary_filter_query.trait_blacklist_filter.iter()),
+    );
+    let trait_query = if trait_query_tmp.is_empty() {
+        String::new()
+    } else {
+        format!("AND {trait_query_tmp}")
+    };
+    let creature_fields_filter_query =
+        prepare_hazard_filter_statement(&bestiary_filter_query.hazard_table_fields_filter);
+    let where_query =
+        format!("{initial_statement} WHERE {creature_fields_filter_query} {trait_query}");
+    let query = format!(
+        "
+    WITH HazardRankedByLevel AS (
+        SELECT *, ROW_NUMBER() OVER (PARTITION BY level ORDER BY RANDOM()) AS rn
+        FROM {gs}_hazard_table hz WHERE hz.id IN ({where_query})
+    )
+    SELECT * FROM HazardRankedByLevel WHERE id IN (
+        SELECT id FROM HazardRankedByLevel WHERE rn>1 ORDER BY RANDOM() LIMIT 20
+    )
+    UNION ALL
+    SELECT * FROM HazardRankedByLevel WHERE rn=1
+    "
+    );
+    debug!("{query}");
+    query
+}
+
+/// Prepares a 'bounded AND statement' aka checks if all columns values are in the bound given, ex
 /// ```SQL
 /// (brute_percentage >= 0 AND brute_percentage <= 0) AND (sniper_percentage >= 0 ...) ...
 /// ```
@@ -106,9 +142,46 @@ where
         .join(" AND ")
 }
 
-/// Prepares a 'bounded statement' aka (x>=lb AND x<=ub)
+/// Prepares an inclusive 'bounded statement' aka (x>=lb AND x<=ub)
 fn prepare_bounded_check(column: &str, lower_bound: i64, upper_bound: i64) -> String {
     format!("({column} >= {lower_bound} AND {column} <= {upper_bound})")
+}
+
+/// Prepares a 'bounded statement' with regard to the optional parameters
+///
+/// # Arguments
+///
+/// * `min` - Optional minimum bound (inclusive). If `Some`, adds a `>= min` condition.
+/// * `max` - Optional maximum bound (inclusive). If `Some`, adds a `<= max` condition.
+/// * `column` - The db column name
+///
+/// # Returns
+///
+/// A `String` containing the filter condition:
+/// - Both bounds: `"column >= min AND column <= max"`
+/// - Min only: `"column >= min"`
+/// - Max only: `"column <= max"`
+/// - Neither: `""`
+///
+/// # Examples
+///
+/// ```Rust
+/// assert_eq!(prepare_bounded_check_with_optional_limiters("column", Some(1), Some(10)), "column >= 1 AND column <= 10");
+/// assert_eq!(prepare_bounded_check_with_optional_limiters("column", Some(1), None), "column >= 1");
+/// assert_eq!(prepare_bounded_check_with_optional_limiters("column", None, Some(10)), "column <= 10");
+/// assert_eq!(prepare_bounded_check_with_optional_limiters("column",None, None), "");
+/// ```
+fn prepare_bounded_check_with_optional_limiters(
+    column: &str,
+    min: Option<i64>,
+    max: Option<i64>,
+) -> String {
+    match (min, max) {
+        (Some(min), Some(max)) => format!("{} >= {} AND {} <= {}", column, min, column, max),
+        (Some(min), None) => format!("{} >= {}", column, min),
+        (None, Some(max)) => format!("{} <= {}", column, max),
+        (None, None) => String::new(),
+    }
 }
 
 /// Prepares a query that gets all the ids linked with a given list of traits, example
@@ -315,6 +388,58 @@ fn prepare_creature_filter_statement(
     }
 }
 
+fn prepare_hazard_filter_statement(hazard_filter_vec: &HazardTableFieldsFilter) -> String {
+    let remaster_query = prepare_in_statement_for_generic_type(
+        "remaster",
+        hazard_filter_vec.supported_version.iter(),
+    );
+
+    let filters_query = vec![
+        prepare_case_insensitive_in_statement("source", hazard_filter_vec.source_filter.iter()),
+        prepare_case_insensitive_in_statement("size", hazard_filter_vec.size_filter.iter()),
+        prepare_case_insensitive_in_statement("rarity", hazard_filter_vec.rarity_filter.iter()),
+        prepare_bounded_check_with_optional_limiters(
+            "ac",
+            hazard_filter_vec.min_ac,
+            hazard_filter_vec.max_ac,
+        ),
+        prepare_bounded_check_with_optional_limiters(
+            "hardness",
+            hazard_filter_vec.min_hardness,
+            hazard_filter_vec.max_hardness,
+        ),
+        prepare_bounded_check_with_optional_limiters(
+            "hp",
+            hazard_filter_vec.min_hp,
+            hazard_filter_vec.max_hp,
+        ),
+        prepare_bounded_check_with_optional_limiters(
+            "fortitude",
+            hazard_filter_vec.min_fortitude,
+            hazard_filter_vec.max_fortitude,
+        ),
+        prepare_bounded_check_with_optional_limiters(
+            "reflex",
+            hazard_filter_vec.min_reflex,
+            hazard_filter_vec.max_reflex,
+        ),
+        prepare_bounded_check_with_optional_limiters(
+            "will",
+            hazard_filter_vec.min_will,
+            hazard_filter_vec.max_will,
+        ),
+    ]
+    .into_iter()
+    .filter(|query| !query.is_empty())
+    .collect::<Vec<String>>()
+    .join(" AND ");
+    if filters_query.is_empty() {
+        remaster_query
+    } else {
+        format!("{remaster_query} AND {filters_query}")
+    }
+}
+
 /// Prepares an 'in' statement, with the following logic
 /// ```SQL
 /// id NOT IN (bl_id1, bl_id2, bl_idn) AND id IN (wl_id1, wl_id2, wl_idn)
@@ -376,7 +501,7 @@ where
     I: Iterator<Item = S>,
     S: ToString,
 {
-    prepare_trait_filter(gs, "item_id", "TRAIT_ITEM_ASSOCIATION_TABLE", column_values)
+    prepare_trait_filter(gs, "item_id", "trait_item_association_table", column_values)
 }
 
 /// Prepares a query that gets all the ids linked with a given list of traits, example
@@ -396,6 +521,27 @@ where
         gs,
         "creature_id",
         "trait_creature_association_table",
+        column_values,
+    )
+}
+
+/// Prepares a query that gets all the ids linked with a given list of traits, example
+/// ```SQL
+/// SELECT tcat.hazard_id
+/// FROM TRAIT_HAZARD_ASSOCIATION_TABLE tcat
+/// RIGHT JOIN
+/// (SELECT * FROM TRAIT_TABLE WHERE name IN ('good')) tt
+/// ON tcat.trait_id = tt.name GROUP BY tcat.hazard_id
+///```
+fn prepare_hazard_trait_filter<I, S>(gs: &GameSystem, column_values: I) -> String
+where
+    I: Iterator<Item = S>,
+    S: ToString,
+{
+    prepare_trait_filter(
+        gs,
+        "hazard_id",
+        "trait_hazard_association_table",
         column_values,
     )
 }

@@ -105,10 +105,12 @@ fn init_docs(openapi: utoipa::openapi::OpenApi) -> utoipa::openapi::OpenApi {
         .nest("/pf", pf::encounter::init_docs())
         .nest("/pf", pf::shop::init_docs())
         .nest("/pf", pf::npc::init_docs())
+        .nest("/pf", pf::hazard::init_docs())
         .nest("/sf", sf::bestiary::init_docs())
         .nest("/sf", sf::encounter::init_docs())
         .nest("/sf", sf::shop::init_docs())
         .nest("/sf", sf::npc::init_docs())
+        .nest("/sf", sf::hazard::init_docs())
 }
 
 #[actix_web::main]
@@ -190,14 +192,16 @@ pub async fn start(
                     .configure(pf::bestiary::init_endpoints)
                     .configure(pf::encounter::init_endpoints)
                     .configure(pf::shop::init_endpoints)
-                    .configure(pf::npc::init_endpoints),
+                    .configure(pf::npc::init_endpoints)
+                    .configure(pf::hazard::init_endpoints),
             )
             .service(
                 web::scope("/sf")
                     .configure(sf::bestiary::init_endpoints)
                     .configure(sf::encounter::init_endpoints)
                     .configure(sf::shop::init_endpoints)
-                    .configure(sf::npc::init_endpoints),
+                    .configure(sf::npc::init_endpoints)
+                    .configure(sf::hazard::init_endpoints),
             )
             .configure(health::init_endpoints)
             .configure(shareable::init_endpoints)

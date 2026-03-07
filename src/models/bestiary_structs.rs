@@ -1,9 +1,11 @@
-use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::routers_validator_structs::{OrderEnum, PaginatedRequest};
+use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
+use crate::traits::url::has_sort_fields::HasSortFields;
+use crate::traits::url::paginated_request_ext::PaginatedRequestExt;
 use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
@@ -47,6 +49,29 @@ pub struct BestiarySortData {
 pub struct BestiaryPaginatedRequest {
     pub paginated_request: PaginatedRequest,
     pub bestiary_sort_data: BestiarySortData,
+}
+
+impl HasSortFields for BestiarySortData {
+    type SortBy = CreatureSortEnum;
+    fn sort_by_field(&self) -> &Option<Self::SortBy> {
+        &self.sort_by
+    }
+    fn order_by_field(&self) -> &Option<OrderEnum> {
+        &self.order_by
+    }
+}
+
+impl PaginatedRequestExt for BestiaryPaginatedRequest {
+    type Sort = BestiarySortData;
+    fn base_path() -> &'static str {
+        "bestiary/list"
+    }
+    fn sort_data(&self) -> &Self::Sort {
+        &self.bestiary_sort_data
+    }
+    fn paginated_request(&self) -> &PaginatedRequest {
+        &self.paginated_request
+    }
 }
 
 #[derive(Clone)]
