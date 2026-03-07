@@ -64,23 +64,23 @@ impl Hazard {
     }
 
     fn check_creature_pass_lb_filters(&self, filters: &HazardFieldFilters) -> bool {
-        filters.max_ac_filter.is_none_or(|m| self.essential.ac >= m)
+        filters.min_ac_filter.is_none_or(|m| self.essential.ac >= m)
             && filters
-                .max_hardness_filter
+                .min_hardness_filter
                 .is_none_or(|m| self.essential.hardness >= m)
-            && filters.max_hp_filter.is_none_or(|m| self.essential.hp >= m)
+            && filters.min_hp_filter.is_none_or(|m| self.essential.hp >= m)
             && filters
-                .max_level_filter
+                .min_level_filter
                 .is_none_or(|m| self.essential.level >= m)
             && filters
-                .max_fortitude_filter
-                .is_none_or(|m| self.essential.fortitude.is_some_and(|x| x <= m))
+                .min_fortitude_filter
+                .is_none_or(|m| self.essential.fortitude.is_some_and(|x| x >= m))
             && filters
-                .max_reflex_filter
-                .is_none_or(|m| self.essential.reflex.is_some_and(|x| x <= m))
+                .min_reflex_filter
+                .is_none_or(|m| self.essential.reflex.is_some_and(|x| x >= m))
             && filters
-                .max_will_filter
-                .is_none_or(|m| self.essential.will.is_some_and(|x| x <= m))
+                .min_will_filter
+                .is_none_or(|m| self.essential.will.is_some_and(|x| x >= m))
     }
 
     fn check_creature_pass_equality_filters(&self, filters: &HazardFieldFilters) -> bool {
