@@ -16,11 +16,11 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/hazard")
             .service(pf_get_hazard_listing)
-            .service(pf_get_hazard)
-            .service(pf_get_traits_list)
-            .service(pf_get_sources_list)
-            .service(pf_get_rarities_list)
-            .service(pf_get_sizes_list),
+            .service(pf_get_hazard_traits_list)
+            .service(pf_get_hazard_sources_list)
+            .service(pf_get_hazard_rarities_list)
+            .service(pf_get_hazard_sizes_list)
+            .service(pf_get_hazard), // last one, to avoid wildcard matching on source,traits, etc
     );
 }
 
@@ -29,10 +29,10 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
     #[openapi(
         paths(
             pf_get_hazard_listing,
-            pf_get_traits_list,
-            pf_get_sources_list,
-            pf_get_rarities_list,
-            pf_get_sizes_list,
+            pf_get_hazard_traits_list,
+            pf_get_hazard_sources_list,
+            pf_get_hazard_rarities_list,
+            pf_get_hazard_sizes_list,
             pf_get_hazard,
         ),
         components(schemas(HazardFieldFilters, HazardListingSortData, HazardListingResponse,))
@@ -91,7 +91,9 @@ pub async fn pf_get_hazard_listing(
     ),
 )]
 #[get("/traits")]
-pub async fn pf_get_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn pf_get_hazard_traits_list(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         hazard_service::get_traits_list(&data, &GameSystem::Pathfinder).await,
     ))
@@ -110,10 +112,14 @@ pub async fn pf_get_traits_list(data: web::Data<AppState>) -> actix_web::Result<
     ),
 )]
 #[get("/sources")]
-pub async fn pf_get_sources_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(
-        hazard_service::get_sources_list(&data, &GameSystem::Pathfinder).await,
-    ))
+pub async fn pf_get_hazard_sources_list(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
+    let result = hazard_service::get_sources_list(&data, &GameSystem::Pathfinder).await;
+
+    println!("sources result: {:?}", result);
+
+    Ok(web::Json(result))
 }
 
 #[utoipa::path(
@@ -129,7 +135,9 @@ pub async fn pf_get_sources_list(data: web::Data<AppState>) -> actix_web::Result
     ),
 )]
 #[get("/rarities")]
-pub async fn pf_get_rarities_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn pf_get_hazard_rarities_list(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         hazard_service::get_rarities_list(&data, &GameSystem::Pathfinder).await,
     ))
@@ -148,7 +156,9 @@ pub async fn pf_get_rarities_list(data: web::Data<AppState>) -> actix_web::Resul
     ),
 )]
 #[get("/sizes")]
-pub async fn pf_get_sizes_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn pf_get_hazard_sizes_list(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         hazard_service::get_sizes_list(&data, &GameSystem::Pathfinder).await,
     ))

@@ -15,12 +15,12 @@ use utoipa::OpenApi;
 pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
     cfg.service(
         web::scope("/hazard")
-            .service(pf_get_hazard_listing)
-            .service(pf_get_hazard)
-            .service(pf_get_traits_list)
-            .service(pf_get_sources_list)
-            .service(pf_get_rarities_list)
-            .service(pf_get_sizes_list),
+            .service(sf_get_hazard_listing)
+            .service(sf_get_hazard_traits_list)
+            .service(sf_get_hazard_sources_list)
+            .service(sf_get_hazard_rarities_list)
+            .service(sf_get_hazard_sizes_list)
+            .service(sf_get_hazard), // last one, to avoid wildcard matching on source,traits, etc
     );
 }
 
@@ -28,12 +28,12 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
     #[derive(OpenApi)]
     #[openapi(
         paths(
-            pf_get_hazard_listing,
-            pf_get_traits_list,
-            pf_get_sources_list,
-            pf_get_rarities_list,
-            pf_get_sizes_list,
-            pf_get_hazard,
+            sf_get_hazard_listing,
+            sf_get_hazard_traits_list,
+            sf_get_hazard_sources_list,
+            sf_get_hazard_rarities_list,
+            sf_get_hazard_sizes_list,
+            sf_get_hazard,
         ),
         components(schemas(HazardFieldFilters, HazardListingSortData, HazardListingResponse,))
     )]
@@ -44,7 +44,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
 #[utoipa::path(
     post,
     path = "/hazard/list",
-    tags = ["pf", "hazard"],
+    tags = ["sf", "hazard"],
     request_body(
         content = HazardFieldFilters,
         content_type = "application/json"
@@ -58,7 +58,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
     ),
 )]
 #[post("/list")]
-pub async fn pf_get_hazard_listing(
+pub async fn sf_get_hazard_listing(
     data: web::Data<AppState>,
     web::Json(body): web::Json<HazardFieldFilters>,
     pagination: Query<PaginatedRequest>,
@@ -81,7 +81,7 @@ pub async fn pf_get_hazard_listing(
 #[utoipa::path(
     get,
     path = "/hazard/traits",
-    tags = ["pf", "hazard"],
+    tags = ["sf", "hazard"],
     params(
 
     ),
@@ -91,7 +91,9 @@ pub async fn pf_get_hazard_listing(
     ),
 )]
 #[get("/traits")]
-pub async fn pf_get_traits_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn sf_get_hazard_traits_list(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         hazard_service::get_traits_list(&data, &GameSystem::Starfinder).await,
     ))
@@ -100,7 +102,7 @@ pub async fn pf_get_traits_list(data: web::Data<AppState>) -> actix_web::Result<
 #[utoipa::path(
     get,
     path = "/hazard/sources",
-    tags = ["pf", "hazard"],
+    tags = ["sf", "hazard"],
     params(
 
     ),
@@ -110,16 +112,20 @@ pub async fn pf_get_traits_list(data: web::Data<AppState>) -> actix_web::Result<
     ),
 )]
 #[get("/sources")]
-pub async fn pf_get_sources_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
-    Ok(web::Json(
-        hazard_service::get_sources_list(&data, &GameSystem::Starfinder).await,
-    ))
+pub async fn sf_get_hazard_sources_list(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
+    let result = hazard_service::get_sources_list(&data, &GameSystem::Starfinder).await;
+
+    println!("sources result: {:?}", result);
+
+    Ok(web::Json(result))
 }
 
 #[utoipa::path(
     get,
     path = "/hazard/rarities",
-    tags = ["pf", "hazard"],
+    tags = ["sf", "hazard"],
     params(
 
     ),
@@ -129,7 +135,9 @@ pub async fn pf_get_sources_list(data: web::Data<AppState>) -> actix_web::Result
     ),
 )]
 #[get("/rarities")]
-pub async fn pf_get_rarities_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn sf_get_hazard_rarities_list(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         hazard_service::get_rarities_list(&data, &GameSystem::Starfinder).await,
     ))
@@ -138,7 +146,7 @@ pub async fn pf_get_rarities_list(data: web::Data<AppState>) -> actix_web::Resul
 #[utoipa::path(
     get,
     path = "/hazard/sizes",
-    tags = ["pf", "hazard"],
+    tags = ["sf", "hazard"],
     params(
 
     ),
@@ -148,7 +156,9 @@ pub async fn pf_get_rarities_list(data: web::Data<AppState>) -> actix_web::Resul
     ),
 )]
 #[get("/sizes")]
-pub async fn pf_get_sizes_list(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+pub async fn sf_get_hazard_sizes_list(
+    data: web::Data<AppState>,
+) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
         hazard_service::get_sizes_list(&data, &GameSystem::Starfinder).await,
     ))
@@ -157,7 +167,7 @@ pub async fn pf_get_sizes_list(data: web::Data<AppState>) -> actix_web::Result<i
 #[utoipa::path(
     get,
     path = "/hazard/{hazard_id}",
-    tags = ["pf", "hazard"],
+    tags = ["sf", "hazard"],
     params(
         ("hazard_id" = String, Path, description = "id of the hazard to fetch"),
     ),
@@ -167,7 +177,7 @@ pub async fn pf_get_sizes_list(data: web::Data<AppState>) -> actix_web::Result<i
     ),
 )]
 #[get("/{hazard_id}")]
-pub async fn pf_get_hazard(
+pub async fn sf_get_hazard(
     data: web::Data<AppState>,
     hazard_id: web::Path<String>,
 ) -> actix_web::Result<impl Responder> {
