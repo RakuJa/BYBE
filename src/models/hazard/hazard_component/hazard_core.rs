@@ -16,6 +16,8 @@ pub struct HazardEssentialData {
     pub hardness: i64,
     pub has_health: bool,
     pub hp: i64,
+    pub stealth: i64,
+    pub stealth_detail: String,
 
     // Details
     pub description: String,
@@ -46,6 +48,8 @@ impl<'r> FromRow<'r, SqliteRow> for HazardEssentialData {
             hardness: row.try_get("hardness")?,
             has_health: row.try_get("has_health")?,
             hp: row.try_get("hp")?,
+            stealth: row.try_get("stealth")?,
+            stealth_detail: row.try_get("stealth_detail")?,
             description: row.try_get("description")?,
             disable_description: row.try_get("disable_description")?,
             reset_description: row.try_get("reset_description")?,
