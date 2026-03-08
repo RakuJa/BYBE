@@ -275,15 +275,19 @@ pub fn is_soldier(
 
     score += wp_distance.unwrap_or(MISSING_FIELD_DISTANCE);
     if !cr_extra.actions.iter().any(|x| {
-        x.category.is_some()
-            && x.category.clone().unwrap().as_str().to_uppercase() == "OFFENSIVE"
-            && x.action_type.as_str().to_uppercase() == "ACTION"
+        x.core_action.category.as_ref().is_some_and(|c| {
+            c.as_str().to_uppercase() == "OFFENSIVE"
+                && x.core_action.action_type.as_str().to_uppercase() == "ACTION"
+        })
     }) {
         score += MISSING_FIELD_DISTANCE;
     } else if !cr_extra.actions.iter().any(|curr_act| {
-        curr_act.name.to_uppercase() == "ATTACK OF OPPORTUNITY"
-            || (curr_act.slug.is_none()
-                || curr_act.slug.clone().unwrap().to_uppercase() == "ATTACK-OF-OPPORTUNITY")
+        curr_act.core_action.name.to_uppercase() == "ATTACK OF OPPORTUNITY"
+            || curr_act
+                .core_action
+                .slug
+                .as_ref()
+                .is_none_or(|s| s.to_uppercase() == "ATTACK-OF-OPPORTUNITY")
     }) {
         score += 3;
     }
@@ -374,9 +378,10 @@ fn is_skill_paragon(
         .actions
         .iter()
         .filter(|x| {
-            x.category.is_some()
-                && x.category.clone().unwrap().as_str().to_uppercase() == "OFFENSIVE"
-                && x.action_type.as_str().to_uppercase() == "ACTION"
+            x.core_action.category.as_ref().is_some_and(|c| {
+                c.as_str().to_uppercase() == "OFFENSIVE"
+                    && x.core_action.action_type.as_str().to_uppercase() == "ACTION"
+            })
         })
         .count()
         < 2

@@ -1,6 +1,6 @@
 use crate::models::hazard::hazard_component::hazard_core::HazardEssentialData;
 use crate::models::hazard::hazard_field_filter::{HazardComplexityEnum, HazardFieldFilters};
-use crate::models::shared::action::HazardAction;
+use crate::models::shared::action::Action;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::traits::has_complexity::HasComplexity;
@@ -14,7 +14,7 @@ use utoipa::ToSchema;
 pub struct Hazard {
     pub essential: HazardEssentialData,
     pub traits: Vec<String>,
-    pub actions: Vec<HazardAction>,
+    pub actions: Vec<Action>,
     pub game_system: GameSystem,
 }
 

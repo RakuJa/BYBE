@@ -5,7 +5,7 @@ use crate::models::hazard::hazard_listing_struct::{
 };
 use crate::models::response_data::{HazardListingResponse, ResponseHazard};
 use crate::models::routers_validator_structs::PaginatedRequest;
-use crate::models::shared::action::HazardAction;
+use crate::models::shared::action::Action;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::services::hazard_service;
 use crate::services::sanitizer::sanitize_id;
@@ -40,7 +40,7 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
             HazardFieldFilters,
             HazardListingSortData,
             HazardListingResponse,
-            HazardAction
+            Action
         ))
     )]
     struct ApiDoc;

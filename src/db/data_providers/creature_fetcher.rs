@@ -1,6 +1,6 @@
 use crate::db::data_providers::generic_fetcher::{
-    fetch_armor_runes, fetch_armor_traits, fetch_item_traits, fetch_shield_traits,
-    fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
+    fetch_action_traits, fetch_armor_runes, fetch_armor_traits, fetch_item_traits,
+    fetch_shield_traits, fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
 };
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_creatures_core;
 use crate::models::bestiary_structs::BestiaryFilterQuery;
@@ -42,7 +42,7 @@ use crate::models::scales_struct::skill_scales::SkillScales;
 use crate::models::scales_struct::spell_dc_and_atk_scales::SpellDcAndAtkScales;
 use crate::models::scales_struct::strike_bonus_scales::StrikeBonusScales;
 use crate::models::scales_struct::strike_dmg_scales::StrikeDmgScales;
-use crate::models::shared::action::Action;
+use crate::models::shared::action::{Action, CoreAction};
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
@@ -714,10 +714,10 @@ async fn fetch_creature_actions(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Action>> {
-    Ok(match gs {
+    let core_actions = match gs {
         GameSystem::Pathfinder => {
             sqlx::query_as!(
-                Action,
+                CoreAction,
                 "SELECT a.* FROM pf_action_table AS a
                 JOIN pf_creature_action_association_table AS ca ON ca.action_id = a.id
                 WHERE ca.creature_id == ($1)",
@@ -728,7 +728,7 @@ async fn fetch_creature_actions(
         }
         GameSystem::Starfinder => {
             sqlx::query_as!(
-                Action,
+                CoreAction,
                 "SELECT a.* FROM sf_action_table AS a
                 JOIN sf_creature_action_association_table AS ca ON ca.action_id = a.id
                 WHERE ca.creature_id == ($1)",
@@ -737,7 +737,16 @@ async fn fetch_creature_actions(
             .fetch_all(conn)
             .await?
         }
-    })
+    };
+    let mut res: Vec<Action> = Vec::with_capacity(core_actions.len());
+    for action in core_actions {
+        let action_id = action.id;
+        res.push(Action {
+            core_action: action,
+            traits: fetch_action_traits(conn, gs, action_id).await?,
+        });
+    }
+    Ok(res)
 }
 
 async fn fetch_creature_skills(
