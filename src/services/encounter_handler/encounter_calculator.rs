@@ -1,4 +1,3 @@
-use crate::db::bestiary_proxy::order_list_by_level;
 use crate::models::encounter_structs::{
     AdventureGroupEnum, EncounterChallengeEnum, EncounterParams, ExpRange,
 };
@@ -7,11 +6,13 @@ use crate::models::response_data::EncounterInfoResponse;
 use crate::services::encounter_handler::difficulty_utilities::scale_difficulty_exp;
 use crate::services::encounter_handler::encounter_math;
 use crate::services::encounter_handler::encounter_math::calculate_encounter_scaling_difficulty;
+use crate::traits::has_complexity::HasComplexity;
 use crate::traits::has_level::HasLevel;
-use anyhow::{Result, ensure};
+use anyhow::{Context, Result, ensure};
 use counter::Counter;
 use nanorand::{Rng, WyRand};
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+use std::hash::Hash;
 
 pub fn get_encounter_info(enc_params: &EncounterParams) -> EncounterInfoResponse {
     let enc_exp = encounter_math::calculate_encounter_exp(
@@ -30,51 +31,104 @@ pub fn get_encounter_info(enc_params: &EncounterParams) -> EncounterInfoResponse
     }
 }
 
+fn order_list_by_key<T, K, F>(elements: &[T], key_fn: F) -> HashMap<K, Vec<T>>
+where
+    T: Clone,
+    K: Eq + Hash,
+    F: Fn(&T) -> K,
+{
+    let mut map: HashMap<K, Vec<T>> = HashMap::new();
+    for el in elements {
+        map.entry(key_fn(el)).or_default().push(el.clone());
+    }
+    map
+}
+
+fn choose_random_from_combinations<K>(
+    available_keys: &HashSet<K>,
+    lvl_combinations: HashSet<Vec<K>>,
+) -> Result<Vec<K>>
+where
+    K: Eq + Hash + Clone,
+{
+    let existing: Vec<_> = lvl_combinations
+        .into_iter()
+        .filter(|combo| !combo.is_empty() && combo.iter().all(|k| available_keys.contains(k)))
+        .collect();
+
+    ensure!(
+        !existing.is_empty(),
+        "No valid level combinations to randomly choose from"
+    );
+
+    let mut rng = WyRand::new();
+    Ok(existing[rng.generate_range(..existing.len())].clone())
+}
+
+fn fill_combination_generic<T, K>(
+    elements: &[T],
+    random_combo: &[K],
+    key_fn: impl Fn(&T) -> K,
+) -> Result<Vec<T>>
+where
+    T: Clone,
+    K: Eq + Hash + Clone,
+{
+    let by_key = order_list_by_key(elements, key_fn);
+    let key_count = random_combo.iter().collect::<Counter<_>>();
+    let mut rng = WyRand::new();
+    let mut result: Vec<T> = Vec::new();
+
+    for (key, required_count) in key_count {
+        let pool = by_key
+            .get(key)
+            .filter(|v| !v.is_empty())
+            .with_context(|| "No elements for the chosen level")?;
+
+        // Elements are cycled (with repetition) if the pool is smaller than required_count.
+        let mut filled: Vec<_> = pool.iter().cycle().take(required_count).cloned().collect();
+        rng.shuffle(&mut filled);
+        result.extend(filled);
+    }
+
+    Ok(result)
+}
+
+fn choose_random_combination_generic<T, K>(
+    elements: &[T],
+    lvl_combinations: HashSet<Vec<K>>,
+    key_fn: impl Fn(&T) -> K,
+) -> Result<Vec<T>>
+where
+    T: Clone,
+    K: Eq + Hash + Clone,
+{
+    let by_key = order_list_by_key(elements, &key_fn);
+    let available_keys: HashSet<K> = by_key.keys().cloned().collect();
+    let random_combo = choose_random_from_combinations(&available_keys, lvl_combinations)?;
+    fill_combination_generic(elements, &random_combo, key_fn)
+}
+
 pub fn choose_random_combination<T>(
-    elements_used_to_filter_lvl_combinations: &[T],
+    elements: &[T],
     lvl_combinations: HashSet<Vec<i64>>,
 ) -> Result<Vec<T>>
 where
     T: HasLevel + Clone,
 {
-    let items_ordered_by_level = order_list_by_level(elements_used_to_filter_lvl_combinations);
-    let list_of_levels = items_ordered_by_level.keys().copied().collect::<Vec<_>>();
-    let existing_levels: Vec<_> = lvl_combinations
-        .into_iter()
-        .filter(|combo| !combo.is_empty() && combo.iter().all(|lvl| list_of_levels.contains(lvl)))
-        .collect();
-    let tmp = existing_levels;
-    ensure!(
-        !tmp.is_empty(),
-        "No valid level combinations to randomly choose from"
-    );
-    let mut rng = WyRand::new();
+    choose_random_combination_generic(elements, lvl_combinations, |el| el.level())
+}
 
-    // do not remove ensure. the random picker will panic if tmp is empty
-    let random_combo = &tmp[rng.generate_range(..tmp.len())];
-    let level_count = random_combo.iter().collect::<Counter<_>>();
-    // Now, having chosen the combo, we may have only x filtered creature with level y but
-    // x+1 instances of level y. We need to create a vector with duplicates to fill it up to
-    // the number of instances of the required level
-
-    let mut result_vec: Vec<T> = Vec::new();
-    for (level, required_count) in level_count {
-        let curr_lvl_values = items_ordered_by_level.get(level).unwrap();
-        ensure!(
-            !curr_lvl_values.is_empty(),
-            "No elements for the chosen level"
-        );
-        let mut filled: Vec<_> = curr_lvl_values
-            .iter()
-            .cycle()
-            .take(required_count)
-            .cloned()
-            .collect();
-        rng.shuffle(&mut filled);
-        result_vec.extend(filled.into_iter().take(required_count));
-    }
-
-    Ok(result_vec)
+pub fn choose_hazard_random_combination<T>(
+    elements: &[T],
+    lvl_combinations: HashSet<Vec<(HazardComplexityEnum, i64)>>,
+) -> Result<Vec<T>>
+where
+    T: HasLevel + HasComplexity + Clone,
+{
+    choose_random_combination_generic(elements, lvl_combinations, |el| {
+        (el.complexity(), el.level())
+    })
 }
 
 pub const fn get_scaled_exp(base_difficulty: EncounterChallengeEnum, party_size: i64) -> ExpRange {

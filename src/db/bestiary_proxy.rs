@@ -1,5 +1,4 @@
 use crate::models::creature::creature_struct::Creature;
-use std::collections::HashMap;
 
 use crate::AppState;
 use crate::db::data_providers::creature_fetcher::fetch_traits_associated_with_creatures;
@@ -18,7 +17,6 @@ use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
-use crate::traits::has_level::HasLevel;
 use anyhow::Result;
 use cached::proc_macro::cached;
 use itertools::Itertools;
@@ -311,17 +309,6 @@ async fn get_list(
         };
     }
     vec![]
-}
-
-pub fn order_list_by_level<T: HasLevel + Clone>(elements: &[T]) -> HashMap<i64, Vec<T>> {
-    let mut ordered_by_level: HashMap<i64, Vec<T>> = HashMap::new();
-    for el in elements {
-        ordered_by_level
-            .entry(el.level())
-            .or_default()
-            .push(el.clone());
-    }
-    ordered_by_level
 }
 
 /// Used to prepare the filters for db communication.

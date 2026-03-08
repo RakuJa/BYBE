@@ -3,6 +3,7 @@ use crate::models::hazard::hazard_field_filter::{HazardComplexityEnum, HazardFie
 use crate::models::shared::action::Action;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
+use crate::traits::has_complexity::HasComplexity;
 use crate::traits::has_level::HasLevel;
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqliteRow;
@@ -34,7 +35,11 @@ impl HasLevel for Hazard {
         self.essential.level
     }
 }
-
+impl HasComplexity for Hazard {
+    fn complexity(&self) -> HazardComplexityEnum {
+        self.essential.complexity
+    }
+}
 impl Hazard {
     pub fn is_passing_filters(&self, filters: &HazardFieldFilters) -> bool {
         self.check_creature_pass_equality_filters(filters)

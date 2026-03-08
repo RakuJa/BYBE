@@ -13,13 +13,13 @@ use crate::models::response_data::{
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::services::bestiary_service::get_filtered_creatures;
 use crate::services::encounter_handler::encounter_calculator::{
-    choose_random_combination, get_creature_lvl_combinations, get_encounter_info,
-    get_hazard_lvl_combinations, get_scaled_exp,
+    choose_hazard_random_combination, choose_random_combination, get_creature_lvl_combinations,
+    get_encounter_info, get_hazard_lvl_combinations, get_scaled_exp,
 };
 use crate::services::hazard_service::get_filtered_hazards;
 use anyhow::{bail, ensure};
 use itertools::Itertools;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use tracing::warn;
 
 #[derive(Debug)]
@@ -208,13 +208,9 @@ async fn calculate_random_hazard_encounter(
     )
     .await?;
 
-    let filtered_levels: HashSet<Vec<i64>> = filtered_lvl_combinations
-        .into_iter()
-        .map(|combo| combo.into_iter().map(|c| c.1).collect())
-        .collect();
-
     ensure!(!filtered_hazards.is_empty(), "No hazards have been fetched");
-    let chosen_encounter = choose_random_combination(&filtered_hazards, filtered_levels)?;
+    let chosen_encounter =
+        choose_hazard_random_combination(&filtered_hazards, filtered_lvl_combinations)?;
 
     Ok(RandomHazardGeneratorResponse {
         count: chosen_encounter.len(),

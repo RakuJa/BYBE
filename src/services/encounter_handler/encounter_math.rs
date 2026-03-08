@@ -373,7 +373,6 @@ fn calculate_hazard_lvl_combinations_for_given_exp(
 
     let exp_values: Vec<i64> = entries.iter().map(|(_, _, exp)| *exp).collect();
 
-    // find_combinations returns combinations of values from exp_values.
     // We need index-based combinations to correctly resolve collisions like Simple(4) == Complex(-1) == 30xp
     find_combinations_by_index(&exp_values, experience_range)
         .iter()
@@ -549,7 +548,7 @@ mod tests {
 
     #[test]
     fn test_combinations_sum_within_range() {
-        let range = make_range(10, 20);
+        let range = make_range(40, 80);
         let result =
             calculate_hazard_lvl_combinations_for_given_exp(range.clone(), 5, &get_test_map());
         // For every combination, re-derive its total XP and assert it falls within range
