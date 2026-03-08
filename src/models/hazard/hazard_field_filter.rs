@@ -81,5 +81,10 @@ pub struct HazardFieldFilters {
     #[schema(minimum = 0, example = 100)]
     pub max_reflex_filter: Option<i64>,
 
+    #[schema(minimum = 0, example = 0)]
+    pub min_stealth_filter: Option<i64>,
+    #[schema(minimum = 0, example = 100)]
+    pub max_stealth_filter: Option<i64>,
+
     pub game_system_version: Option<GameSystemVersionEnum>,
 }
