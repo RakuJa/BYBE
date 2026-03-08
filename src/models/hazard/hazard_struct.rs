@@ -97,9 +97,11 @@ impl Hazard {
                 .as_ref()
                 .is_none_or(|x| x.contains(&self.essential.size))
             && match filters.complexity_filter.unwrap_or_default() {
-                HazardComplexityEnum::Simple => self.essential.kind == HazardComplexityEnum::Simple,
+                HazardComplexityEnum::Simple => {
+                    self.essential.complexity == HazardComplexityEnum::Simple
+                }
                 HazardComplexityEnum::Complex => {
-                    self.essential.kind == HazardComplexityEnum::Complex
+                    self.essential.complexity == HazardComplexityEnum::Complex
                 }
                 HazardComplexityEnum::Any => true,
             }

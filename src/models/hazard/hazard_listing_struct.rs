@@ -67,8 +67,8 @@ pub enum HazardSortEnum {
     Hardness,
     #[serde(alias = "hp", alias = "HP")]
     Hp,
-    #[serde(alias = "kind", alias = "KIND")]
-    Kind,
+    #[serde(alias = "complexity", alias = "COMPLEXITY")]
+    Complexity,
     #[serde(alias = "level", alias = "LEVEL")]
     Level,
     #[serde(alias = "trait", alias = "TRAIT")]

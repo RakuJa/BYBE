@@ -308,7 +308,7 @@ async fn calculate_random_encounter(
                     .unwrap_or_default()
                     .iter()
                     .map(|x| HazardEncounterElement {
-                        complexity: x.core_hazard.essential.kind,
+                        complexity: x.core_hazard.essential.complexity,
                         level: x.core_hazard.essential.level,
                     })
                     .collect(),
