@@ -19,3 +19,9 @@ pub struct Action {
     pub slug: Option<String>,
     pub rarity: RarityEnum,
 }
+
+#[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq, Debug, ToSchema)]
+pub struct HazardAction {
+    pub core_action: Action,
+    pub traits: Vec<String>,
+}

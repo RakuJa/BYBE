@@ -201,3 +201,19 @@ pub async fn fetch_armor_runes(
     };
     Ok(query.fetch_all(conn).await?)
 }
+
+pub async fn fetch_action_traits(
+    conn: &Pool<Sqlite>,
+    gs: &GameSystem,
+    action_id: i64,
+) -> Result<Vec<String>> {
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "
+        SELECT
+            tt.name
+        FROM {gs}_trait_action_association_table tcat
+            LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name WHERE action_id == ($1) GROUP BY tt.name",
+    ))).bind(action_id)
+        .fetch_all(conn)
+        .await?)
+}

@@ -1,8 +1,9 @@
+use crate::db::data_providers::generic_fetcher::fetch_action_traits;
 use crate::db::data_providers::raw_query_builder::prepare_filtered_get_hazards;
 use crate::models::hazard::hazard_listing_struct::HazardFilterQuery;
 use crate::models::hazard::hazard_struct::Hazard;
 use crate::models::response_data::ResponseHazard;
-use crate::models::shared::action::Action;
+use crate::models::shared::action::{Action, HazardAction};
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
@@ -12,8 +13,8 @@ async fn fetch_hazard_actions(
     conn: &Pool<Sqlite>,
     gs: &GameSystem,
     hazard_id: i64,
-) -> Result<Vec<Action>> {
-    Ok(match gs {
+) -> Result<Vec<HazardAction>> {
+    let core_actions = match gs {
         GameSystem::Pathfinder => {
             sqlx::query_as!(
                 Action,
@@ -36,7 +37,17 @@ async fn fetch_hazard_actions(
             .fetch_all(conn)
             .await?
         }
-    })
+    };
+    let mut res: Vec<HazardAction> = Vec::with_capacity(core_actions.len());
+    for action in core_actions {
+        let action_id = action.id;
+        res.push(HazardAction {
+            core_action: action,
+            traits: fetch_action_traits(conn, gs, action_id).await?,
+        });
+    }
+
+    Ok(res)
 }
 
 async fn update_hazards_core_with_traits(
