@@ -109,6 +109,11 @@ pub async fn get_paginated_hazards(
                 .essential
                 .will
                 .cmp(&b.core_hazard.essential.will),
+            HazardSortEnum::Stealth => a
+                .core_hazard
+                .essential
+                .stealth
+                .cmp(&b.core_hazard.essential.stealth),
         };
         match pagination
             .hazard_sort_data

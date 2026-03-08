@@ -46,6 +46,11 @@ pub struct HazardTableFieldsFilter {
     pub min_fortitude: Option<i64>,
     #[schema(example = 5)]
     pub max_fortitude: Option<i64>,
+
+    #[schema(example = 0)]
+    pub min_stealth: Option<i64>,
+    #[schema(example = 5)]
+    pub max_stealth: Option<i64>,
 }
 
 pub struct HazardFilterQuery {
@@ -85,6 +90,8 @@ pub enum HazardSortEnum {
     Reflex,
     #[serde(alias = "will", alias = "WILL")]
     Will,
+    #[serde(alias = "stealth", alias = "STEALTH")]
+    Stealth,
 }
 
 #[derive(Serialize, Deserialize, IntoParams, ToSchema, Eq, PartialEq, Hash, Default)]

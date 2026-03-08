@@ -51,6 +51,8 @@ pub struct RandomEncounterData {
     pub hazard_percentage: Option<u8>,
     pub creature_data: Option<RandomCreatureData>,
     pub hazard_data: Option<RandomHazardData>,
+    pub challenge: Option<EncounterChallengeEnum>,
+    pub adventure_group: Option<AdventureGroupEnum>,
 }
 
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
@@ -67,8 +69,6 @@ pub struct RandomCreatureData {
     pub attack_list: Option<HashMap<String, bool>>,
     pub role_lower_threshold: Option<u8>,
     pub role_upper_threshold: Option<u8>,
-    pub challenge: Option<EncounterChallengeEnum>,
-    pub adventure_group: Option<AdventureGroupEnum>,
     #[schema(minimum = 1, maximum = 30, example = 1)]
     pub min_creatures: Option<u8>,
     #[schema(minimum = 1, maximum = 30, example = 5)]
@@ -128,7 +128,12 @@ pub struct RandomHazardData {
     #[schema(minimum = 1, maximum = 30, example = 5)]
     pub max_hazards: Option<u8>,
 
-    pub(crate) hazard_complexity: Option<HazardComplexityEnum>,
+    #[schema(example = 0)]
+    pub min_stealth: Option<i64>,
+    #[schema(example = 5)]
+    pub max_stealth: Option<i64>,
+
+    pub complexity_filter: Option<HazardComplexityEnum>,
 
     pub game_system_version: Option<GameSystemVersionEnum>,
 }
