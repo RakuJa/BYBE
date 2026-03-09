@@ -61,12 +61,7 @@ pub async fn get_paginated_items(
             ItemSortEnum::Rarity => a.core_item.rarity.cmp(&b.core_item.rarity),
             ItemSortEnum::Source => a.core_item.source.cmp(&b.core_item.source),
         };
-        match pagination
-            .shop_sort_data
-            .order_by
-            .clone()
-            .unwrap_or_default()
-        {
+        match pagination.shop_sort_data.order_by.unwrap_or_default() {
             OrderEnum::Ascending => cmp,
             OrderEnum::Descending => cmp.reverse(),
         }

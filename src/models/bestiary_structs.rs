@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
 
-#[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display)]
+#[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display, Copy)]
 pub enum CreatureSortEnum {
     #[serde(alias = "id", alias = "ID")]
     Id,
