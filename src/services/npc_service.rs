@@ -81,7 +81,7 @@ where
             RandomNameData {
                 name_max_length: npc_req_data.name_max_length,
                 max_n_of_names: Some(1),
-                gender: Some(gender.clone()),
+                gender: Some(gender),
                 origin: name_origin,
             },
             &app_state.name_json_path,
@@ -204,7 +204,7 @@ where
     let gender = data
         .gender
         .unwrap_or_else(|| name_origin.get_random_gender());
-    let chain = name_origin.get_name_builder(name_path).get(&(key.clone(), gender.clone())).unwrap_or_else(|| {
+    let chain = name_origin.get_name_builder(name_path).get(&(key.clone(), gender)).unwrap_or_else(|| {
         panic!(
             "Could not fetch the initializer for the given Key (Location/Ancestry) {key} and Gender {gender}"
         )

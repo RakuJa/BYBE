@@ -133,7 +133,9 @@ mod schemas {
         pub n_of_shields: i64,
     }
 
-    #[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display)]
+    #[derive(
+        Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display, Copy,
+    )]
     pub enum ItemSortEnum {
         #[serde(alias = "id", alias = "ID")]
         Id,

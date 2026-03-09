@@ -47,12 +47,7 @@ pub async fn get_paginated_items(
     let total_item_count = filtered_list.len();
 
     filtered_list.sort_by(|a, b| {
-        let cmp = match pagination
-            .shop_sort_data
-            .sort_by
-            .clone()
-            .unwrap_or_default()
-        {
+        let cmp = match pagination.shop_sort_data.sort_by.unwrap_or_default() {
             ItemSortEnum::Id => a.core_item.id.cmp(&b.core_item.id),
             ItemSortEnum::Name => a.core_item.name.cmp(&b.core_item.name),
             ItemSortEnum::Level => a.core_item.level.cmp(&b.core_item.level),

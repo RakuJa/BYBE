@@ -20,6 +20,7 @@ use utoipa::ToSchema;
     Hash,
     Display,
     Debug,
+    Copy,
 )]
 pub enum Gender {
     Male,
