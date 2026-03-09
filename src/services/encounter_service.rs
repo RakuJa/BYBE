@@ -20,6 +20,7 @@ use crate::services::hazard_service::get_filtered_hazards;
 use anyhow::{bail, ensure};
 use itertools::Itertools;
 use std::collections::BTreeMap;
+use tracing::log::info;
 use tracing::warn;
 
 #[derive(Debug)]
@@ -283,11 +284,11 @@ async fn calculate_random_encounter(
     );
 
     let (creatures, cr_count) = creature_result
-        .inspect_err(|e| println!("Failed to calculate create encounter: {e}"))
+        .inspect_err(|e| info!("Failed to calculate create encounter: {e}"))
         .map_or((None, 0), |e| (e.results, e.count));
 
     let (hazards, hz_count) = hazard_result
-        .inspect_err(|e| println!("Failed to calculate hazard encounter: {e}"))
+        .inspect_err(|e| info!("Failed to calculate hazard encounter: {e}"))
         .map_or((None, 0), |e| (e.results, e.count));
 
     if creatures.is_none() && hazards.is_none() {

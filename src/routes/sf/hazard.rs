@@ -121,11 +121,9 @@ pub async fn sf_get_hazard_traits_list(
 pub async fn sf_get_hazard_sources_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
-    let result = hazard_service::get_sources_list(&data, &GameSystem::Starfinder).await;
-
-    println!("sources result: {:?}", result);
-
-    Ok(web::Json(result))
+    Ok(web::Json(
+        hazard_service::get_sources_list(&data, &GameSystem::Starfinder).await,
+    ))
 }
 
 #[utoipa::path(
