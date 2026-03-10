@@ -66,6 +66,9 @@ impl Hazard {
             && filters
                 .max_will_filter
                 .is_none_or(|m| self.essential.will.is_none_or(|x| x <= m))
+            && filters
+                .max_stealth_filter
+                .is_none_or(|m| self.essential.stealth <= m)
     }
 
     fn check_creature_pass_lb_filters(&self, filters: &HazardFieldFilters) -> bool {
@@ -86,6 +89,9 @@ impl Hazard {
             && filters
                 .min_will_filter
                 .is_none_or(|m| self.essential.will.is_some_and(|x| x >= m))
+            && filters
+                .min_stealth_filter
+                .is_none_or(|m| self.essential.stealth >= m)
     }
 
     fn check_creature_pass_equality_filters(&self, filters: &HazardFieldFilters) -> bool {
