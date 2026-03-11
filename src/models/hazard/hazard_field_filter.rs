@@ -35,7 +35,7 @@ impl From<bool> for HazardComplexityEnum {
     }
 }
 
-#[derive(Serialize, Deserialize, IntoParams, ToSchema)]
+#[derive(Serialize, Deserialize, IntoParams, ToSchema, Default)]
 pub struct HazardFieldFilters {
     pub name_filter: Option<String>,
     pub source_filter: Option<Vec<String>>,

@@ -10,7 +10,7 @@ use serde_json::json;
 use std::collections::BTreeMap;
 use utoipa::{IntoParams, ToSchema};
 
-#[derive(Serialize, Deserialize, IntoParams, ToSchema)]
+#[derive(Serialize, Deserialize, IntoParams, ToSchema, Default)]
 pub struct CreatureFieldFilters {
     pub name_filter: Option<String>,
     pub source_filter: Option<Vec<String>>,

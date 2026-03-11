@@ -9,6 +9,7 @@ use crate::models::hazard::hazard_struct::{Hazard, HazardRanges};
 use crate::models::response_data::ResponseHazard;
 use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::game_system_enum::GameSystem;
+use crate::traits::filterable::Filterable;
 use anyhow::Result;
 use cached::proc_macro::cached;
 

@@ -3,6 +3,7 @@ use crate::models::hazard::hazard_field_filter::{HazardComplexityEnum, HazardFie
 use crate::models::shared::action::Action;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
+use crate::traits::filterable::Filterable;
 use crate::traits::has_complexity::HasComplexity;
 use crate::traits::has_level::HasLevel;
 use serde::{Deserialize, Serialize};
@@ -84,15 +85,9 @@ impl HasComplexity for Hazard {
         self.essential.complexity
     }
 }
-impl Hazard {
-    pub fn is_passing_filters(&self, filters: &HazardFieldFilters) -> bool {
-        self.check_creature_pass_equality_filters(filters)
-            && self.check_creature_pass_ub_filters(filters)
-            && self.check_creature_pass_lb_filters(filters)
-            && self.check_creature_pass_string_filters(filters)
-    }
-
-    fn check_creature_pass_ub_filters(&self, filters: &HazardFieldFilters) -> bool {
+impl Filterable for Hazard {
+    type FilterImpl = HazardFieldFilters;
+    fn does_it_pass_ub_filters(&self, filters: &Self::FilterImpl) -> bool {
         filters.max_ac_filter.is_none_or(|m| self.essential.ac <= m)
             && filters
                 .max_hardness_filter
@@ -115,7 +110,7 @@ impl Hazard {
                 .is_none_or(|m| self.essential.stealth <= m)
     }
 
-    fn check_creature_pass_lb_filters(&self, filters: &HazardFieldFilters) -> bool {
+    fn does_it_pass_lb_filters(&self, filters: &Self::FilterImpl) -> bool {
         filters.min_ac_filter.is_none_or(|m| self.essential.ac >= m)
             && filters
                 .min_hardness_filter
@@ -126,19 +121,44 @@ impl Hazard {
                 .is_none_or(|m| self.essential.level >= m)
             && filters
                 .min_fortitude_filter
-                .is_none_or(|m| self.essential.fortitude.is_some_and(|x| x >= m))
+                .is_none_or(|m| self.essential.fortitude.is_none_or(|x| x >= m))
             && filters
                 .min_reflex_filter
-                .is_none_or(|m| self.essential.reflex.is_some_and(|x| x >= m))
+                .is_none_or(|m| self.essential.reflex.is_none_or(|x| x >= m))
             && filters
                 .min_will_filter
-                .is_none_or(|m| self.essential.will.is_some_and(|x| x >= m))
+                .is_none_or(|m| self.essential.will.is_none_or(|x| x >= m))
             && filters
                 .min_stealth_filter
                 .is_none_or(|m| self.essential.stealth >= m)
     }
 
-    fn check_creature_pass_equality_filters(&self, filters: &HazardFieldFilters) -> bool {
+    fn does_it_pass_string_filters(&self, filters: &Self::FilterImpl) -> bool {
+        filters.name_filter.as_ref().is_none_or(|name| {
+            self.essential
+                .name
+                .to_lowercase()
+                .contains(name.to_lowercase().as_str())
+        }) && filters.trait_whitelist_filter.as_ref().is_none_or(|x| {
+            x.iter().any(|filter_trait| {
+                self.traits.iter().any(|cr_trait| {
+                    cr_trait
+                        .to_lowercase()
+                        .contains(filter_trait.to_lowercase().as_str())
+                })
+            })
+        }) && !filters.trait_blacklist_filter.as_ref().is_some_and(|x| {
+            x.iter().any(|filter_trait| {
+                self.traits.iter().any(|cr_trait| {
+                    cr_trait
+                        .to_lowercase()
+                        .eq(filter_trait.to_lowercase().as_str())
+                })
+            })
+        })
+    }
+
+    fn does_it_pass_equality_filters(&self, filters: &Self::FilterImpl) -> bool {
         filters
             .rarity_filter
             .as_ref()
@@ -165,31 +185,6 @@ impl Hazard {
                 GameSystemVersionEnum::Remaster => self.essential.remaster,
                 GameSystemVersionEnum::Any => true,
             }
-    }
-
-    fn check_creature_pass_string_filters(&self, filters: &HazardFieldFilters) -> bool {
-        filters.name_filter.as_ref().is_none_or(|name| {
-            self.essential
-                .name
-                .to_lowercase()
-                .contains(name.to_lowercase().as_str())
-        }) && filters.trait_whitelist_filter.as_ref().is_none_or(|x| {
-            x.iter().any(|filter_trait| {
-                self.traits.iter().any(|cr_trait| {
-                    cr_trait
-                        .to_lowercase()
-                        .contains(filter_trait.to_lowercase().as_str())
-                })
-            })
-        }) && !filters.trait_blacklist_filter.as_ref().is_some_and(|x| {
-            x.iter().any(|filter_trait| {
-                self.traits.iter().any(|cr_trait| {
-                    cr_trait
-                        .to_lowercase()
-                        .eq(filter_trait.to_lowercase().as_str())
-                })
-            })
-        })
     }
 }
 

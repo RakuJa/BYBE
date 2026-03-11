@@ -8,6 +8,7 @@ use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
+use crate::traits::filterable::Filterable;
 use crate::traits::has_level::HasLevel;
 use serde::{Deserialize, Serialize};
 
@@ -107,14 +108,12 @@ impl Creature {
             game_system,
         }
     }
-    pub fn is_passing_filters(&self, filters: &CreatureFieldFilters) -> bool {
-        self.check_creature_pass_equality_filters(filters)
-            && self.check_creature_pass_ub_filters(filters)
-            && self.check_creature_pass_lb_filters(filters)
-            && self.check_creature_pass_string_filters(filters)
-    }
+}
 
-    fn check_creature_pass_ub_filters(&self, filters: &CreatureFieldFilters) -> bool {
+impl Filterable for Creature {
+    type FilterImpl = CreatureFieldFilters;
+
+    fn does_it_pass_ub_filters(&self, filters: &Self::FilterImpl) -> bool {
         filters
             .max_hp_filter
             .is_none_or(|max_hp| self.core_data.essential.hp <= max_hp)
@@ -123,7 +122,7 @@ impl Creature {
                 .is_none_or(|max_lvl| self.variant_data.level <= max_lvl)
     }
 
-    fn check_creature_pass_lb_filters(&self, filters: &CreatureFieldFilters) -> bool {
+    fn does_it_pass_lb_filters(&self, filters: &Self::FilterImpl) -> bool {
         filters
             .min_hp_filter
             .is_none_or(|min_hp| self.core_data.essential.hp >= min_hp)
@@ -132,7 +131,41 @@ impl Creature {
                 .is_none_or(|min_lvl| self.variant_data.level >= min_lvl)
     }
 
-    fn check_creature_pass_equality_filters(&self, filters: &CreatureFieldFilters) -> bool {
+    fn does_it_pass_string_filters(&self, filters: &Self::FilterImpl) -> bool {
+        filters.name_filter.as_ref().is_none_or(|name| {
+            self.core_data
+                .essential
+                .name
+                .to_lowercase()
+                .contains(name.to_lowercase().as_str())
+        }) && filters.family_filter.as_ref().is_none_or(|x| {
+            x.iter().any(|fam| {
+                self.core_data
+                    .essential
+                    .family
+                    .to_lowercase()
+                    .contains(fam.to_lowercase().as_str())
+            })
+        }) && filters.trait_whitelist_filter.as_ref().is_none_or(|x| {
+            x.iter().any(|filter_trait| {
+                self.core_data.traits.iter().any(|cr_trait| {
+                    cr_trait
+                        .to_lowercase()
+                        .contains(filter_trait.to_lowercase().as_str())
+                })
+            })
+        }) && !filters.trait_blacklist_filter.as_ref().is_some_and(|x| {
+            x.iter().any(|filter_trait| {
+                self.core_data.traits.iter().any(|cr_trait| {
+                    cr_trait
+                        .to_lowercase()
+                        .eq(filter_trait.to_lowercase().as_str())
+                })
+            })
+        })
+    }
+
+    fn does_it_pass_equality_filters(&self, filters: &Self::FilterImpl) -> bool {
         filters
             .rarity_filter
             .as_ref()
@@ -217,39 +250,5 @@ impl Creature {
                 GameSystemVersionEnum::Remaster => self.core_data.essential.remaster,
                 GameSystemVersionEnum::Any => true,
             }
-    }
-
-    fn check_creature_pass_string_filters(&self, filters: &CreatureFieldFilters) -> bool {
-        filters.name_filter.as_ref().is_none_or(|name| {
-            self.core_data
-                .essential
-                .name
-                .to_lowercase()
-                .contains(name.to_lowercase().as_str())
-        }) && filters.family_filter.as_ref().is_none_or(|x| {
-            x.iter().any(|fam| {
-                self.core_data
-                    .essential
-                    .family
-                    .to_lowercase()
-                    .contains(fam.to_lowercase().as_str())
-            })
-        }) && filters.trait_whitelist_filter.as_ref().is_none_or(|x| {
-            x.iter().any(|filter_trait| {
-                self.core_data.traits.iter().any(|cr_trait| {
-                    cr_trait
-                        .to_lowercase()
-                        .contains(filter_trait.to_lowercase().as_str())
-                })
-            })
-        }) && !filters.trait_blacklist_filter.as_ref().is_some_and(|x| {
-            x.iter().any(|filter_trait| {
-                self.core_data.traits.iter().any(|cr_trait| {
-                    cr_trait
-                        .to_lowercase()
-                        .eq(filter_trait.to_lowercase().as_str())
-                })
-            })
-        })
     }
 }

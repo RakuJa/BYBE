@@ -5,7 +5,7 @@ use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
 use utoipa::{IntoParams, ToSchema};
 
-#[derive(Serialize, Deserialize, IntoParams, ToSchema)]
+#[derive(Serialize, Deserialize, IntoParams, ToSchema, Default)]
 pub struct ItemFieldFilters {
     pub name_filter: Option<String>,
     pub category_filter: Option<Vec<String>>,

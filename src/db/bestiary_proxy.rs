@@ -16,6 +16,7 @@ use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
+use crate::traits::filterable::Filterable;
 use anyhow::Result;
 use cached::proc_macro::cached;
 use itertools::Itertools;

@@ -5,6 +5,7 @@ use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use crate::models::shared::status_enum::Status;
+use crate::traits::filterable::Filterable;
 use ordered_float::OrderedFloat;
 use ordered_float_to_schema::ordered_float_to_schema;
 use serde::{Deserialize, Serialize};
@@ -90,15 +91,10 @@ impl<'r> FromRow<'r, SqliteRow> for Item {
     }
 }
 
-impl Item {
-    pub fn is_passing_filters(&self, filters: &ItemFieldFilters) -> bool {
-        self.check_item_pass_equality_filters(filters)
-            && self.check_item_pass_lb_filters(filters)
-            && self.check_item_pass_ub_filters(filters)
-            && self.check_item_pass_string_filters(filters)
-    }
+impl Filterable for Item {
+    type FilterImpl = ItemFieldFilters;
 
-    fn check_item_pass_ub_filters(&self, filters: &ItemFieldFilters) -> bool {
+    fn does_it_pass_ub_filters(&self, filters: &Self::FilterImpl) -> bool {
         filters
             .max_bulk_filter
             .is_none_or(|max_bulk| self.bulk <= OrderedFloat(max_bulk))
@@ -118,7 +114,7 @@ impl Item {
             })
     }
 
-    fn check_item_pass_lb_filters(&self, filters: &ItemFieldFilters) -> bool {
+    fn does_it_pass_lb_filters(&self, filters: &Self::FilterImpl) -> bool {
         filters
             .min_bulk_filter
             .is_none_or(|min_bulk| self.bulk >= OrderedFloat(min_bulk))
@@ -138,27 +134,7 @@ impl Item {
             })
     }
 
-    fn check_item_pass_equality_filters(&self, filters: &ItemFieldFilters) -> bool {
-        filters
-            .rarity_filter
-            .as_ref()
-            .is_none_or(|x| x.contains(&self.rarity))
-            && filters
-                .size_filter
-                .as_ref()
-                .is_none_or(|x| x.contains(&self.size))
-            && filters
-                .type_filter
-                .as_ref()
-                .is_none_or(|x| x.contains(&self.item_type))
-            && match filters.game_system_version.unwrap_or_default() {
-                GameSystemVersionEnum::Legacy => !self.remaster,
-                GameSystemVersionEnum::Remaster => self.remaster,
-                GameSystemVersionEnum::Any => true,
-            }
-    }
-
-    fn check_item_pass_string_filters(&self, filters: &ItemFieldFilters) -> bool {
+    fn does_it_pass_string_filters(&self, filters: &Self::FilterImpl) -> bool {
         filters.name_filter.as_ref().is_none_or(|name| {
             self.name
                 .to_lowercase()
@@ -194,5 +170,25 @@ impl Item {
                 })
             })
         })
+    }
+
+    fn does_it_pass_equality_filters(&self, filters: &Self::FilterImpl) -> bool {
+        filters
+            .rarity_filter
+            .as_ref()
+            .is_none_or(|x| x.contains(&self.rarity))
+            && filters
+                .size_filter
+                .as_ref()
+                .is_none_or(|x| x.contains(&self.size))
+            && filters
+                .type_filter
+                .as_ref()
+                .is_none_or(|x| x.contains(&self.item_type))
+            && match filters.game_system_version.unwrap_or_default() {
+                GameSystemVersionEnum::Legacy => !self.remaster,
+                GameSystemVersionEnum::Remaster => self.remaster,
+                GameSystemVersionEnum::Any => true,
+            }
     }
 }
