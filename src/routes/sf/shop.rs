@@ -218,7 +218,7 @@ pub async fn sf_get_templates_data() -> actix_web::Result<impl Responder> {
 
 #[utoipa::path(
     get,
-    path = "/shop/ranges/",
+    path = "/shop/ranges",
     tags = ["sf", "shop"],
     params(),
     responses(

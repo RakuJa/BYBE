@@ -30,18 +30,18 @@ pub struct ShopRanges {
 impl Default for ShopRanges {
     fn default() -> Self {
         Self {
-            min_bulk: f64::MIN,
-            max_bulk: f64::MAX,
-            min_quantity: i64::MIN,
-            max_quantity: i64::MAX,
-            min_hp: i64::MIN,
-            max_hp: i64::MAX,
-            min_level: i64::MIN,
-            max_level: i64::MAX,
-            min_price: i64::MIN,
-            max_price: i64::MAX,
-            min_number_of_uses: 0,
-            max_number_of_uses: 0,
+            min_bulk: f64::MAX,
+            max_bulk: f64::MIN,
+            min_quantity: i64::MAX,
+            max_quantity: i64::MIN,
+            min_hp: i64::MAX,
+            max_hp: i64::MIN,
+            min_level: i64::MAX,
+            max_level: i64::MIN,
+            min_price: i64::MAX,
+            max_price: i64::MIN,
+            min_number_of_uses: i64::MAX,
+            max_number_of_uses: i64::MIN,
         }
     }
 }

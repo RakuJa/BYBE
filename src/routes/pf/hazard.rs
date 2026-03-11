@@ -196,7 +196,7 @@ pub async fn pf_get_hazard(
 
 #[utoipa::path(
     get,
-    path = "/hazard/ranges/",
+    path = "/hazard/ranges",
     tags = ["pf", "hazard"],
     params(),
     responses(

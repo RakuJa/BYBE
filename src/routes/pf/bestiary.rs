@@ -397,7 +397,7 @@ pub async fn pf_get_weak_creature(
 
 #[utoipa::path(
     get,
-    path = "/bestiary/ranges/",
+    path = "/bestiary/ranges",
     tags = ["pf", "bestiary"],
     params(),
     responses(

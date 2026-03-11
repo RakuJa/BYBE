@@ -23,12 +23,12 @@ pub struct BestiaryRanges {
 impl Default for BestiaryRanges {
     fn default() -> Self {
         Self {
-            min_hp: i64::MIN,
-            max_hp: i64::MAX,
-            min_level: i64::MIN,
-            max_level: i64::MAX,
-            min_focus_points: i64::MIN,
-            max_focus_points: i64::MAX,
+            min_hp: i64::MAX,
+            max_hp: i64::MIN,
+            min_level: i64::MAX,
+            max_level: i64::MIN,
+            min_focus_points: i64::MAX,
+            max_focus_points: i64::MIN,
         }
     }
 }
