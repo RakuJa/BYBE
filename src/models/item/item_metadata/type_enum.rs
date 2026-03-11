@@ -23,11 +23,11 @@ pub enum ItemTypeEnum {
 }
 
 impl ItemTypeEnum {
-    pub fn to_db_main_table_name(&self, gs: &GameSystem) -> String {
+    pub fn to_db_main_table_name(&self, gs: GameSystem) -> String {
         format!("{gs}_{}_table", self.to_db_table_name())
     }
 
-    pub fn to_db_association_table_name(&self, gs: &GameSystem) -> String {
+    pub fn to_db_association_table_name(&self, gs: GameSystem) -> String {
         format!(
             "{gs}_{}_creature_association_table",
             self.to_db_table_name()

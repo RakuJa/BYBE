@@ -6,7 +6,7 @@ use crate::models::hazard::hazard_field_filter::HazardFieldFilters;
 use crate::models::hazard::hazard_listing_struct::{
     HazardFilterQuery, HazardListingPaginatedRequest,
 };
-use crate::models::hazard::hazard_struct::Hazard;
+use crate::models::hazard::hazard_struct::{Hazard, HazardRanges};
 use crate::models::response_data::{
     HazardListingResponse, ResponseHazard, convert_result_to_response,
 };
@@ -17,7 +17,7 @@ use std::collections::HashMap;
 pub async fn get_hazard(
     app_state: &AppState,
     id: i64,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> HashMap<String, Option<ResponseHazard>> {
     hashmap! {
         String::from("results") =>
@@ -29,7 +29,7 @@ pub async fn get_hazard_listing(
     app_state: &AppState,
     field_filter: &HazardFieldFilters,
     pagination: &HazardListingPaginatedRequest,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> HazardListingResponse {
     convert_result_to_response(
         pagination,
@@ -37,26 +37,30 @@ pub async fn get_hazard_listing(
     )
 }
 
-pub async fn get_traits_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_traits_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     hazard_proxy::get_all_traits(app_state, gs).await
 }
 
-pub async fn get_sources_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_sources_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     hazard_proxy::get_all_sources(app_state, gs).await
 }
 
-pub async fn get_rarities_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_rarities_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     hazard_proxy::get_all_rarities(app_state, gs).await
 }
 
-pub async fn get_sizes_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_sizes_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     hazard_proxy::get_all_sizes(app_state, gs).await
 }
 
 pub async fn get_filtered_hazards(
     app_state: &AppState,
     filters: &HazardFilterQuery,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> Result<Vec<Hazard>> {
     get_hazards_passing_all_filters(app_state, gs, filters).await
+}
+
+pub async fn get_hazard_ranges(app_state: &AppState, gs: GameSystem) -> Option<HazardRanges> {
+    hazard_proxy::get_hazard_ranges(app_state, gs).await.ok()
 }

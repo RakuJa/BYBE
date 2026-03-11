@@ -5,9 +5,9 @@ use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::ShieldData;
-use crate::models::item::shop_structs::PfShopTemplateEnum;
 use crate::models::item::shop_structs::ShopTemplateData;
 use crate::models::item::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
+use crate::models::item::shop_structs::{PfShopTemplateEnum, ShopRanges};
 use crate::models::item::shop_structs::{RandomShopData, ShopSortData};
 use crate::models::item::weapon_struct::DamageData;
 use crate::models::item::weapon_struct::WeaponData;
@@ -28,6 +28,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
             .service(pf_get_items_traits_list)
             .service(pf_get_templates_data)
             .service(pf_get_items_sources_list)
+            .service(pf_get_shop_ranges)
             .service(pf_get_random_shop_listing),
     );
 }
@@ -41,7 +42,8 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
             pf_get_random_shop_listing,
             pf_get_items_traits_list,
             pf_get_templates_data,
-            pf_get_items_sources_list
+            pf_get_items_sources_list,
+            pf_get_shop_ranges,
         ),
         components(schemas(
             ResponseItem,
@@ -58,7 +60,8 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
             WeaponData,
             ArmorData,
             ShieldData,
-            WeaponTypeEnum
+            WeaponTypeEnum,
+            ShopRanges,
         ))
     )]
     struct ApiDoc;
@@ -97,7 +100,7 @@ pub async fn pf_get_shop_listing(
                 paginated_request: pagination.0,
                 shop_sort_data: sort_data.0,
             },
-            &GameSystem::Pathfinder,
+            GameSystem::Pathfinder,
         )
         .await,
     ))
@@ -125,7 +128,7 @@ pub async fn pf_get_random_shop_listing(
     web::Json(body): web::Json<RandomShopData<PfShopTemplateEnum>>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shop_service::generate_random_shop_listing(&data, &body, &GameSystem::Pathfinder).await,
+        shop_service::generate_random_shop_listing(&data, &body, GameSystem::Pathfinder).await,
     ))
 }
 
@@ -147,7 +150,7 @@ pub async fn pf_get_item(
     item_id: web::Path<String>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shop_service::get_item(&data, sanitize_id(&item_id)?, &GameSystem::Pathfinder).await,
+        shop_service::get_item(&data, sanitize_id(&item_id)?, GameSystem::Pathfinder).await,
     ))
 }
 
@@ -168,7 +171,7 @@ pub async fn pf_get_items_sources_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shop_service::get_sources_list(&data, &GameSystem::Pathfinder).await,
+        shop_service::get_sources_list(&data, GameSystem::Pathfinder).await,
     ))
 }
 
@@ -189,7 +192,7 @@ pub async fn pf_get_items_traits_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shop_service::get_traits_list(&data, &GameSystem::Pathfinder).await,
+        shop_service::get_traits_list(&data, GameSystem::Pathfinder).await,
     ))
 }
 
@@ -208,6 +211,23 @@ pub async fn pf_get_items_traits_list(
 #[get("/templates_data")]
 pub async fn pf_get_templates_data() -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_shop_templates_data(
-        &GameSystem::Pathfinder,
+        GameSystem::Pathfinder,
     )))
+}
+
+#[utoipa::path(
+    get,
+    path = "/shop/ranges/",
+    tags = ["pf", "shop"],
+    params(),
+    responses(
+        (status=200, description = "Successful Response", body = ShopRanges),
+        (status=400, description = "Bad request.")
+    ),
+)]
+#[get("/ranges")]
+pub async fn pf_get_shop_ranges(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+    Ok(web::Json(
+        shop_service::get_shop_ranges(&data, GameSystem::Pathfinder).await,
+    ))
 }

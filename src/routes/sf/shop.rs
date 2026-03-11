@@ -5,10 +5,10 @@ use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::ShieldData;
-use crate::models::item::shop_structs::SfShopTemplateEnum;
 use crate::models::item::shop_structs::ShopTemplateData;
 use crate::models::item::shop_structs::{ItemSortEnum, ShopPaginatedRequest};
 use crate::models::item::shop_structs::{RandomShopData, ShopSortData};
+use crate::models::item::shop_structs::{SfShopTemplateEnum, ShopRanges};
 use crate::models::item::weapon_struct::DamageData;
 use crate::models::item::weapon_struct::WeaponData;
 use crate::models::response_data::ResponseItem;
@@ -29,6 +29,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
             .service(sf_get_items_traits_list)
             .service(sf_get_templates_data)
             .service(sf_get_items_sources_list)
+            .service(sf_get_shop_ranges)
             .service(sf_get_random_shop_listing),
     );
 }
@@ -42,7 +43,8 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
             sf_get_random_shop_listing,
             sf_get_items_traits_list,
             sf_get_templates_data,
-            sf_get_items_sources_list
+            sf_get_items_sources_list,
+            sf_get_shop_ranges
         ),
         components(schemas(
             ResponseItem,
@@ -59,7 +61,8 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
             WeaponData,
             ArmorData,
             ShieldData,
-            WeaponTypeEnum
+            WeaponTypeEnum,
+            ShopRanges
         ))
     )]
     struct ApiDoc;
@@ -98,7 +101,7 @@ pub async fn sf_get_shop_listing(
                 paginated_request: pagination.0,
                 shop_sort_data: sort_data.0,
             },
-            &GameSystem::Starfinder,
+            GameSystem::Starfinder,
         )
         .await,
     ))
@@ -126,7 +129,7 @@ pub async fn sf_get_random_shop_listing(
     web::Json(body): web::Json<RandomShopData<SfShopTemplateEnum>>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shop_service::generate_random_shop_listing(&data, &body, &GameSystem::Starfinder).await,
+        shop_service::generate_random_shop_listing(&data, &body, GameSystem::Starfinder).await,
     ))
 }
 
@@ -148,7 +151,7 @@ pub async fn sf_get_item(
     item_id: web::Path<String>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shop_service::get_item(&data, sanitize_id(&item_id)?, &GameSystem::Starfinder).await,
+        shop_service::get_item(&data, sanitize_id(&item_id)?, GameSystem::Starfinder).await,
     ))
 }
 
@@ -169,7 +172,7 @@ pub async fn sf_get_items_sources_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shop_service::get_sources_list(&data, &GameSystem::Starfinder).await,
+        shop_service::get_sources_list(&data, GameSystem::Starfinder).await,
     ))
 }
 
@@ -190,7 +193,7 @@ pub async fn sf_get_items_traits_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        shop_service::get_traits_list(&data, &GameSystem::Starfinder).await,
+        shop_service::get_traits_list(&data, GameSystem::Starfinder).await,
     ))
 }
 
@@ -209,6 +212,23 @@ pub async fn sf_get_items_traits_list(
 #[get("/templates_data")]
 pub async fn sf_get_templates_data() -> actix_web::Result<impl Responder> {
     Ok(web::Json(shop_service::get_shop_templates_data(
-        &GameSystem::Starfinder,
+        GameSystem::Starfinder,
     )))
+}
+
+#[utoipa::path(
+    get,
+    path = "/shop/ranges/",
+    tags = ["sf", "shop"],
+    params(),
+    responses(
+        (status=200, description = "Successful Response", body = ShopRanges),
+        (status=400, description = "Bad request.")
+    ),
+)]
+#[get("/ranges")]
+pub async fn sf_get_shop_ranges(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+    Ok(web::Json(
+        shop_service::get_shop_ranges(&data, GameSystem::Starfinder).await,
+    ))
 }

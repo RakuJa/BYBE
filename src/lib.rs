@@ -171,12 +171,12 @@ pub async fn start(
     match startup_state {
         StartupState::Clean => {
             info!("Starting DB PF2E Table cleanup & creation of update CORE tables");
-            db::cr_core_initializer::update_creature_core_table(&pool, &GameSystem::Pathfinder)
+            db::cr_core_initializer::update_creature_core_table(&pool, GameSystem::Pathfinder)
                 .await
                 .expect("Could not initialize correctly core creature table.. Startup failed");
 
             info!("Starting DB SF2E Table cleanup & creation of update CORE tables");
-            db::cr_core_initializer::update_creature_core_table(&pool, &GameSystem::Starfinder)
+            db::cr_core_initializer::update_creature_core_table(&pool, GameSystem::Starfinder)
                 .await
                 .expect("Could not initialize correctly core creature table.. Startup failed");
         }
@@ -202,7 +202,7 @@ pub async fn start(
                     // Cache header
                     .add(CacheControl(vec![
                         CacheDirective::Private,
-                        CacheDirective::MaxAge(86400u32),
+                        CacheDirective::MaxAge(u32::MAX),
                     ]))
                     // Do not infer mime type header
                     .add(("X-Content-Type-Options", "nosniff")),

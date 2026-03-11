@@ -4,7 +4,9 @@ use crate::models::item::armor_struct::Armor;
 use crate::models::item::item_field_filter::ItemFieldFilters;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::Shield;
-use crate::models::item::shop_structs::{ItemSortEnum, ShopFilterQuery, ShopPaginatedRequest};
+use crate::models::item::shop_structs::{
+    ItemSortEnum, ShopFilterQuery, ShopPaginatedRequest, ShopRanges,
+};
 use crate::models::item::weapon_struct::Weapon;
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::OrderEnum;
@@ -13,11 +15,7 @@ use anyhow::Result;
 use cached::proc_macro::cached;
 use itertools::Itertools;
 
-pub async fn get_item_by_id(
-    app_state: &AppState,
-    gs: &GameSystem,
-    id: i64,
-) -> Option<ResponseItem> {
+pub async fn get_item_by_id(app_state: &AppState, gs: GameSystem, id: i64) -> Option<ResponseItem> {
     shop_fetcher::fetch_item_by_id(&app_state.conn, gs, id)
         .await
         .ok()
@@ -25,7 +23,7 @@ pub async fn get_item_by_id(
 
 pub async fn get_filtered_items(
     app_state: &AppState,
-    gs: &GameSystem,
+    gs: GameSystem,
     filters: &ShopFilterQuery,
 ) -> Result<Vec<Item>> {
     shop_fetcher::fetch_items_with_filters(&app_state.conn, gs, filters).await
@@ -33,7 +31,7 @@ pub async fn get_filtered_items(
 
 pub async fn get_paginated_items(
     app_state: &AppState,
-    gs: &GameSystem,
+    gs: GameSystem,
     filters: &ItemFieldFilters,
     pagination: &ShopPaginatedRequest,
 ) -> Result<(u32, Vec<ResponseItem>)> {
@@ -77,28 +75,28 @@ pub async fn get_paginated_items(
 }
 
 /// Gets all the items from the DB.
-async fn get_all_items_from_db(app_state: &AppState, gs: &GameSystem) -> Result<Vec<Item>> {
+async fn get_all_items_from_db(app_state: &AppState, gs: GameSystem) -> Result<Vec<Item>> {
     shop_fetcher::fetch_items(&app_state.conn, gs, 0, -1).await
 }
 
 /// Gets all the weapons from the DB.
-async fn get_all_weapons_from_db(app_state: &AppState, gs: &GameSystem) -> Result<Vec<Weapon>> {
+async fn get_all_weapons_from_db(app_state: &AppState, gs: GameSystem) -> Result<Vec<Weapon>> {
     shop_fetcher::fetch_weapons(&app_state.conn, gs, 0, -1).await
 }
 
 /// Gets all the armors from the DB.
-async fn get_all_armors_from_db(app_state: &AppState, gs: &GameSystem) -> Result<Vec<Armor>> {
+async fn get_all_armors_from_db(app_state: &AppState, gs: GameSystem) -> Result<Vec<Armor>> {
     shop_fetcher::fetch_armors(&app_state.conn, gs, 0, -1).await
 }
 
 /// Gets all the shields from the DB.
-async fn get_all_shields_from_db(app_state: &AppState, gs: &GameSystem) -> Result<Vec<Shield>> {
+async fn get_all_shields_from_db(app_state: &AppState, gs: GameSystem) -> Result<Vec<Shield>> {
     shop_fetcher::fetch_shields(&app_state.conn, gs, 0, -1).await
 }
 
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
-async fn get_list(app_state: &AppState, gs: &GameSystem) -> Vec<ResponseItem> {
+async fn get_list(app_state: &AppState, gs: GameSystem) -> Vec<ResponseItem> {
     let mut response_vec = Vec::new();
     for el in get_all_items_from_db(app_state, gs).await.unwrap_or(vec![]) {
         response_vec.push(ResponseItem {
@@ -106,7 +104,7 @@ async fn get_list(app_state: &AppState, gs: &GameSystem) -> Vec<ResponseItem> {
             weapon_data: None,
             armor_data: None,
             shield_data: None,
-            game: *gs,
+            game: gs,
         });
     }
     for el in get_all_weapons_from_db(app_state, gs)
@@ -118,7 +116,7 @@ async fn get_list(app_state: &AppState, gs: &GameSystem) -> Vec<ResponseItem> {
             weapon_data: Some(el.weapon_data),
             armor_data: None,
             shield_data: None,
-            game: *gs,
+            game: gs,
         });
     }
     for el in get_all_armors_from_db(app_state, gs)
@@ -130,7 +128,7 @@ async fn get_list(app_state: &AppState, gs: &GameSystem) -> Vec<ResponseItem> {
             weapon_data: None,
             armor_data: Some(el.armor_data),
             shield_data: None,
-            game: *gs,
+            game: gs,
         });
     }
     for el in get_all_shields_from_db(app_state, gs).await.unwrap() {
@@ -139,15 +137,39 @@ async fn get_list(app_state: &AppState, gs: &GameSystem) -> Vec<ResponseItem> {
             weapon_data: None,
             armor_data: None,
             shield_data: Some(el.shield_data),
-            game: *gs,
+            game: gs,
         });
     }
     response_vec
 }
 
+pub async fn get_shop_ranges(app_state: &AppState, gs: GameSystem) -> Result<ShopRanges> {
+    Ok(get_list(app_state, gs)
+        .await
+        .iter()
+        .fold(ShopRanges::default(), |mut acc, x| {
+            let e = &x.core_item;
+            acc.min_hp = acc.min_hp.min(e.hp);
+            acc.max_hp = acc.max_hp.max(e.hp);
+            acc.min_level = acc.min_level.min(e.level);
+            acc.max_level = acc.max_level.max(e.level);
+            acc.min_price = acc.min_price.min(e.price);
+            acc.max_price = acc.max_price.max(e.price);
+            acc.min_bulk = acc.min_bulk.min(e.bulk.into());
+            acc.max_bulk = acc.max_bulk.max(e.bulk.into());
+            acc.min_quantity = acc.min_quantity.min(e.quantity);
+            acc.max_quantity = acc.max_quantity.max(e.quantity);
+            if let Some(uses) = e.number_of_uses {
+                acc.min_number_of_uses = acc.min_number_of_uses.min(uses);
+                acc.max_number_of_uses = acc.max_number_of_uses.max(uses);
+            }
+            acc
+        }))
+}
+
 /// Gets all the runtime sources. It will cache the result
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
-pub async fn get_all_sources(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_all_sources(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     get_all_items_from_db(app_state, gs).await.map_or_else(
         |_| vec![],
         |v| {
@@ -163,7 +185,7 @@ pub async fn get_all_sources(app_state: &AppState, gs: &GameSystem) -> Vec<Strin
 
 /// Gets all the runtime traits. It will cache the result
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
-pub async fn get_all_traits(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_all_traits(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     match (
         get_all_items_from_db(app_state, gs).await,
         get_all_weapons_from_db(app_state, gs).await,

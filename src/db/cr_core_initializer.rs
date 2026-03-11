@@ -16,7 +16,7 @@ use sqlx::{FromRow, Pool, Sqlite, Transaction};
 use std::collections::BTreeMap;
 use tracing::warn;
 
-pub async fn update_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) -> Result<()> {
+pub async fn update_creature_core_table(conn: &Pool<Sqlite>, gs: GameSystem) -> Result<()> {
     warn!("Handler for startup, Should only be used once for each gamesystem");
     let scales = fetch_creature_scales(conn).await?;
     let all_traits = fetch_all_creature_traits(conn, gs).await?;
@@ -69,7 +69,7 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>, gs: &GameSystem) ->
 
 async fn update_core_columns(
     conn: &mut Transaction<'_, Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     roles: &BTreeMap<CreatureRoleEnum, i64>,
     alignment: String,
     creature_id: i64,
@@ -147,7 +147,7 @@ fn find_role(roles: &BTreeMap<CreatureRoleEnum, i64>, target: CreatureRoleEnum) 
 
 async fn get_creatures_raw_essential_data(
     conn: &mut Transaction<'_, Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<RawEssentialData>> {

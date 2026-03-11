@@ -10,6 +10,50 @@ use sqlx::sqlite::SqliteRow;
 use sqlx::{Error, FromRow};
 use utoipa::ToSchema;
 
+#[derive(Serialize, Deserialize, ToSchema, Eq, PartialEq, Hash, Clone, Copy)]
+pub struct HazardRanges {
+    pub min_ac: i64,
+    pub max_ac: i64,
+    pub min_hardness: i64,
+    pub max_hardness: i64,
+    pub min_hp: i64,
+    pub max_hp: i64,
+    pub min_stealth: i64,
+    pub max_stealth: i64,
+    pub min_level: i64,
+    pub max_level: i64,
+
+    pub min_will: i64,
+    pub max_will: i64,
+    pub min_reflex: i64,
+    pub max_reflex: i64,
+    pub min_fortitude: i64,
+    pub max_fortitude: i64,
+}
+
+impl Default for HazardRanges {
+    fn default() -> Self {
+        Self {
+            min_ac: i64::MIN,
+            max_ac: i64::MAX,
+            min_hardness: i64::MIN,
+            max_hardness: i64::MAX,
+            min_hp: i64::MIN,
+            max_hp: i64::MAX,
+            min_stealth: i64::MIN,
+            max_stealth: i64::MAX,
+            min_level: i64::MIN,
+            max_level: i64::MAX,
+            min_will: 0,
+            max_will: 0,
+            min_reflex: 0,
+            max_reflex: 0,
+            min_fortitude: 0,
+            max_fortitude: 0,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq, Debug, ToSchema)]
 pub struct Hazard {
     pub essential: HazardEssentialData,

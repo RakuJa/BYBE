@@ -84,6 +84,6 @@ pub async fn sf_get_generated_random_encounter(
     web::Json(body): web::Json<RandomEncounterData>,
 ) -> Result<impl Responder> {
     Ok(web::Json(
-        encounter_service::generate_random_encounter(&data, body, &GameSystem::Starfinder).await,
+        encounter_service::generate_random_encounter(&data, body, GameSystem::Starfinder).await,
     ))
 }

@@ -120,14 +120,14 @@ pub fn get_random_culture<T: Culture>(filter: Option<Vec<T>>) -> T {
     T::filtered_random(&filter.unwrap_or_default())
 }
 
-pub fn get_jobs_list(game_system: &GameSystem) -> Vec<String> {
+pub fn get_jobs_list(game_system: GameSystem) -> Vec<String> {
     match game_system {
         GameSystem::Pathfinder => PfJob::iter().map(|x| x.to_string()).collect(),
         GameSystem::Starfinder => SfJob::iter().map(|x| x.to_string()).collect(),
     }
 }
 
-pub fn get_classes_list(game_system: &GameSystem) -> Vec<String> {
+pub fn get_classes_list(game_system: GameSystem) -> Vec<String> {
     match game_system {
         GameSystem::Pathfinder => PfClass::iter().map(|x| x.to_string()).collect(),
         GameSystem::Starfinder => SfClass::iter().map(|x| x.to_string()).collect(),

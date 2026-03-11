@@ -10,6 +10,29 @@ use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
 
+#[derive(Serialize, Deserialize, ToSchema, Eq, PartialEq, Hash, Clone, Copy)]
+pub struct BestiaryRanges {
+    pub min_hp: i64,
+    pub max_hp: i64,
+    pub min_level: i64,
+    pub max_level: i64,
+    pub min_focus_points: i64,
+    pub max_focus_points: i64,
+}
+
+impl Default for BestiaryRanges {
+    fn default() -> Self {
+        Self {
+            min_hp: i64::MIN,
+            max_hp: i64::MAX,
+            min_level: i64::MIN,
+            max_level: i64::MAX,
+            min_focus_points: i64::MIN,
+            max_focus_points: i64::MAX,
+        }
+    }
+}
+
 #[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display, Copy)]
 pub enum CreatureSortEnum {
     #[serde(alias = "id", alias = "ID")]
