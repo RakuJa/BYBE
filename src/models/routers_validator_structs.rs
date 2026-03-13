@@ -5,7 +5,7 @@ use serde_json::json;
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
 
-#[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display)]
+#[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display, Copy)]
 pub enum OrderEnum {
     #[default]
     #[serde(alias = "ascending", alias = "ASCENDING")]

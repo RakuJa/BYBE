@@ -67,12 +67,7 @@ pub async fn get_paginated_creatures(
     let total_creature_count = filtered_list.len();
 
     filtered_list.sort_by(|a, b| {
-        let cmp = match pagination
-            .bestiary_sort_data
-            .sort_by
-            .clone()
-            .unwrap_or_default()
-        {
+        let cmp = match pagination.bestiary_sort_data.sort_by.unwrap_or_default() {
             CreatureSortEnum::Id => a.core_data.essential.id.cmp(&b.core_data.essential.id),
             CreatureSortEnum::Name => a.core_data.essential.name.cmp(&b.core_data.essential.name),
             CreatureSortEnum::Level => a
@@ -132,12 +127,7 @@ pub async fn get_paginated_creatures(
                     )
             }
         };
-        match pagination
-            .bestiary_sort_data
-            .order_by
-            .clone()
-            .unwrap_or_default()
-        {
+        match pagination.bestiary_sort_data.order_by.unwrap_or_default() {
             OrderEnum::Ascending => cmp,
             OrderEnum::Descending => cmp.reverse(),
         }

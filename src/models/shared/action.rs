@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
-pub struct Action {
+pub struct CoreAction {
     pub id: i64,
     pub name: String,
     pub action_type: String,
@@ -21,7 +21,7 @@ pub struct Action {
 }
 
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq, Debug, ToSchema)]
-pub struct HazardAction {
-    pub core_action: Action,
+pub struct Action {
+    pub core_action: CoreAction,
     pub traits: Vec<String>,
 }

@@ -115,12 +115,7 @@ pub async fn get_paginated_hazards(
                 .stealth
                 .cmp(&b.core_hazard.essential.stealth),
         };
-        match pagination
-            .hazard_sort_data
-            .order_by
-            .clone()
-            .unwrap_or_default()
-        {
+        match pagination.hazard_sort_data.order_by.unwrap_or_default() {
             OrderEnum::Ascending => cmp,
             OrderEnum::Descending => cmp.reverse(),
         }

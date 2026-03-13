@@ -549,8 +549,7 @@ mod tests {
     #[test]
     fn test_combinations_sum_within_range() {
         let range = make_range(40, 80);
-        let result =
-            calculate_hazard_lvl_combinations_for_given_exp(range.clone(), 5, &get_test_map());
+        let result = calculate_hazard_lvl_combinations_for_given_exp(range, 5, &get_test_map());
         // For every combination, re-derive its total XP and assert it falls within range
         let map = get_test_map();
         for combo in &result {

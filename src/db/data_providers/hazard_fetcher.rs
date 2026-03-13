@@ -3,7 +3,7 @@ use crate::db::data_providers::raw_query_builder::prepare_filtered_get_hazards;
 use crate::models::hazard::hazard_listing_struct::HazardFilterQuery;
 use crate::models::hazard::hazard_struct::Hazard;
 use crate::models::response_data::ResponseHazard;
-use crate::models::shared::action::{Action, HazardAction};
+use crate::models::shared::action::{Action, CoreAction};
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
@@ -13,11 +13,11 @@ async fn fetch_hazard_actions(
     conn: &Pool<Sqlite>,
     gs: &GameSystem,
     hazard_id: i64,
-) -> Result<Vec<HazardAction>> {
+) -> Result<Vec<Action>> {
     let core_actions = match gs {
         GameSystem::Pathfinder => {
             sqlx::query_as!(
-                Action,
+                CoreAction,
                 "SELECT a.* FROM pf_action_table AS a
                 JOIN pf_action_hazard_association_table AS ca ON ca.action_id = a.id
                 WHERE ca.hazard_id == ($1)",
@@ -28,7 +28,7 @@ async fn fetch_hazard_actions(
         }
         GameSystem::Starfinder => {
             sqlx::query_as!(
-                Action,
+                CoreAction,
                 "SELECT a.* FROM sf_action_table AS a
                 JOIN sf_action_hazard_association_table AS ca ON ca.action_id = a.id
                 WHERE ca.hazard_id == ($1)",
@@ -38,10 +38,10 @@ async fn fetch_hazard_actions(
             .await?
         }
     };
-    let mut res: Vec<HazardAction> = Vec::with_capacity(core_actions.len());
+    let mut res: Vec<Action> = Vec::with_capacity(core_actions.len());
     for action in core_actions {
         let action_id = action.id;
-        res.push(HazardAction {
+        res.push(Action {
             core_action: action,
             traits: fetch_action_traits(conn, gs, action_id).await?,
         });

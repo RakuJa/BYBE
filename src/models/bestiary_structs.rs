@@ -10,7 +10,7 @@ use serde::{Deserialize, Serialize};
 use strum::Display;
 use utoipa::{IntoParams, ToSchema};
 
-#[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display)]
+#[derive(Serialize, Deserialize, ToSchema, Default, Eq, PartialEq, Hash, Clone, Display, Copy)]
 pub enum CreatureSortEnum {
     #[serde(alias = "id", alias = "ID")]
     Id,
@@ -39,7 +39,9 @@ pub enum CreatureSortEnum {
     Role,
 }
 
-#[derive(Serialize, Deserialize, IntoParams, ToSchema, Eq, PartialEq, Hash, Default)]
+#[derive(
+    Serialize, Deserialize, IntoParams, ToSchema, Eq, PartialEq, Hash, Default, Copy, Clone,
+)]
 pub struct BestiarySortData {
     pub sort_by: Option<CreatureSortEnum>,
     pub order_by: Option<OrderEnum>,
