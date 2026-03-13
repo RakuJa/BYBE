@@ -62,14 +62,14 @@ impl NameOriginFilter for PfNameOriginFilter {
 
     type CultureType = PfCulture;
 
-    fn get_ancestries(&self) -> Option<Vec<Self::AncestryType>> {
+    fn get_ancestries_filter(&self) -> Option<Vec<Self::AncestryType>> {
         match self {
             Self::FromAncestry(ancestries) => Some(ancestries.clone().unwrap_or_default()),
             _ => None,
         }
     }
 
-    fn get_cultures(&self) -> Option<Vec<Self::CultureType>> {
+    fn get_cultures_filter(&self) -> Option<Vec<Self::CultureType>> {
         match self {
             Self::FromCulture(cultures) => Some(cultures.clone().unwrap_or_default()),
             _ => None,
@@ -147,13 +147,13 @@ impl NameOriginFilter for SfNameOriginFilter {
 
     type CultureType = SfCulture;
 
-    fn get_ancestries(&self) -> Option<Vec<Self::AncestryType>> {
+    fn get_ancestries_filter(&self) -> Option<Vec<Self::AncestryType>> {
         match self {
             Self::FromAncestry(ancestries) => Some(ancestries.clone().unwrap_or_default()),
         }
     }
 
-    fn get_cultures(&self) -> Option<Vec<Self::CultureType>> {
+    fn get_cultures_filter(&self) -> Option<Vec<Self::CultureType>> {
         None
     }
 

@@ -17,15 +17,21 @@ pub trait NameOriginFilter: RandomEnum + Filter + Into<GameSystem> + Clone {
     type CultureType: Culture + Display + ToString + Debug;
 
     fn ancestries_have_at_least_one_valid_gender(&self, g_filter: Vec<Gender>) -> bool {
-        self.get_ancestries().is_none_or(|a_list| {
-            a_list
-                .iter()
-                .any(|x| x.has_at_least_one_gender_in_common(g_filter.clone()))
+        self.get_ancestries_filter().is_none_or(|a_list| {
+            a_list.is_empty()
+                || a_list
+                    .iter()
+                    .any(|x| x.has_at_least_one_gender_in_common(g_filter.clone()))
         })
     }
-    fn get_ancestries(&self) -> Option<Vec<Self::AncestryType>>;
 
-    fn get_cultures(&self) -> Option<Vec<Self::CultureType>>;
+    fn get_all_ancestries(&self) -> Vec<Self::AncestryType> {
+        Self::AncestryType::get_all_ancestries()
+    }
+
+    fn get_ancestries_filter(&self) -> Option<Vec<Self::AncestryType>>;
+
+    fn get_cultures_filter(&self) -> Option<Vec<Self::CultureType>>;
 
     fn to_name_origin(
         &self,

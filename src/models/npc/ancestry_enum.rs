@@ -85,7 +85,11 @@ pub enum PfAncestry {
     */
 }
 
-impl Ancestry for PfAncestry {}
+impl Ancestry for PfAncestry {
+    fn get_all_ancestries() -> Vec<Self> {
+        Self::iter().collect()
+    }
+}
 
 impl RandomEnum for PfAncestry {
     fn from_repr(value: usize) -> Option<Self> {
@@ -197,4 +201,8 @@ impl AverageNameLength for SfAncestry {
     }
 }
 
-impl Ancestry for SfAncestry {}
+impl Ancestry for SfAncestry {
+    fn get_all_ancestries() -> Vec<Self> {
+        Self::iter().collect()
+    }
+}
