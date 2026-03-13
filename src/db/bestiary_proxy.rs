@@ -4,9 +4,8 @@ use crate::AppState;
 use crate::db::data_providers::creature_fetcher::fetch_traits_associated_with_creatures;
 use crate::db::data_providers::{creature_fetcher, generic_fetcher};
 use crate::models::bestiary_structs::{
-    BestiaryFilterQuery, BestiaryPaginatedRequest, CreatureSortEnum,
+    BestiaryFilterQuery, BestiaryPaginatedRequest, BestiaryRanges, CreatureSortEnum,
 };
-use crate::models::creature::creature_component::creature_core::CreatureCoreData;
 use crate::models::creature::creature_field_filter::CreatureFieldFilters;
 use crate::models::creature::creature_filter_enum::{CreatureFilter, FieldsUniqueValuesStruct};
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
@@ -17,6 +16,7 @@ use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
+use crate::traits::filterable::Filterable;
 use anyhow::Result;
 use cached::proc_macro::cached;
 use itertools::Itertools;
@@ -24,7 +24,7 @@ use strum::IntoEnumIterator;
 
 pub async fn get_creature_by_id(
     app_state: &AppState,
-    gs: &GameSystem,
+    gs: GameSystem,
     id: i64,
     variant: CreatureVariant,
     response_data_mods: &CreatureResponseDataModifiers,
@@ -36,7 +36,7 @@ pub async fn get_creature_by_id(
 
 pub async fn get_weak_creature_by_id(
     app_state: &AppState,
-    gs: &GameSystem,
+    gs: GameSystem,
     id: i64,
     optional_data: &CreatureResponseDataModifiers,
 ) -> Option<Creature> {
@@ -44,7 +44,7 @@ pub async fn get_weak_creature_by_id(
 }
 pub async fn get_elite_creature_by_id(
     app_state: &AppState,
-    gs: &GameSystem,
+    gs: GameSystem,
     id: i64,
     optional_data: &CreatureResponseDataModifiers,
 ) -> Option<Creature> {
@@ -53,11 +53,11 @@ pub async fn get_elite_creature_by_id(
 
 pub async fn get_paginated_creatures(
     app_state: &AppState,
-    gs: &GameSystem,
+    gs: GameSystem,
     filters: &CreatureFieldFilters,
     pagination: &BestiaryPaginatedRequest,
 ) -> Result<(u32, Vec<Creature>)> {
-    let list = get_list(app_state, gs, CreatureVariant::Base).await;
+    let list = get_list(app_state, gs).await;
 
     let mut filtered_list: Vec<Creature> = list
         .into_iter()
@@ -148,7 +148,7 @@ pub async fn get_paginated_creatures(
 
 pub async fn get_creatures_passing_all_filters(
     app_state: &AppState,
-    gs: &GameSystem,
+    gs: GameSystem,
     filters: &BestiaryFilterQuery,
     fetch_weak: bool,
     fetch_elite: bool,
@@ -183,24 +183,24 @@ pub async fn get_creatures_passing_all_filters(
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
                 CreatureVariant::Weak,
-                *gs,
+                gs,
             ));
         }
         if fetch_elite && level_vec.contains(&(core.essential.base_level + 1)) {
             creature_vec.push(Creature::from_core_with_variant(
                 core.clone(),
                 CreatureVariant::Elite,
-                *gs,
+                gs,
             ));
         }
-        creature_vec.push(Creature::from_core(core, *gs));
+        creature_vec.push(Creature::from_core(core, gs));
     }
     Ok(creature_vec)
 }
 
 pub async fn get_all_possible_values_of_filter(
     app_state: &AppState,
-    gs: &GameSystem,
+    gs: GameSystem,
     field: CreatureFilter,
 ) -> Vec<String> {
     let runtime_fields_values = get_all_keys(app_state, gs).await;
@@ -227,7 +227,7 @@ pub async fn get_all_possible_values_of_filter(
 
 /// Gets all the runtime keys (each table column unique values). It will cache the result
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
-async fn get_all_keys(app_state: &AppState, gs: &GameSystem) -> FieldsUniqueValuesStruct {
+async fn get_all_keys(app_state: &AppState, gs: GameSystem) -> FieldsUniqueValuesStruct {
     FieldsUniqueValuesStruct {
         list_of_levels: generic_fetcher::fetch_unique_values_of_field(
             &app_state.conn,
@@ -270,35 +270,35 @@ async fn get_all_keys(app_state: &AppState, gs: &GameSystem) -> FieldsUniqueValu
     }
 }
 
-/// Gets all the creature core data from the DB. It will not fetch data outside of variant and core.
-async fn get_all_creatures_from_db(
-    app_state: &AppState,
-    gs: &GameSystem,
-) -> Result<Vec<CreatureCoreData>> {
-    creature_fetcher::fetch_creatures_core_data(&app_state.conn, gs, 0, -1).await
-}
-
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec
 /// It will cache result
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
-async fn get_list(
-    app_state: &AppState,
-    gs: &GameSystem,
-    variant: CreatureVariant,
-) -> Vec<Creature> {
-    if let Ok(creatures) = get_all_creatures_from_db(app_state, gs).await {
-        return match variant {
-            CreatureVariant::Base => creatures
+async fn get_list(app_state: &AppState, gs: GameSystem) -> Vec<Creature> {
+    creature_fetcher::fetch_creatures_core_data(&app_state.conn, gs, 0, -1)
+        .await
+        .map(|creatures| {
+            creatures
                 .into_iter()
-                .map(|x| Creature::from_core(x, *gs))
-                .collect(),
-            _ => creatures
-                .into_iter()
-                .map(|cr| Creature::from_core_with_variant(cr, variant, *gs))
-                .collect(),
-        };
-    }
-    vec![]
+                .map(|x| Creature::from_core(x, gs))
+                .collect()
+        })
+        .unwrap_or_default()
+}
+
+pub async fn get_bestiary_ranges(app_state: &AppState, gs: GameSystem) -> Result<BestiaryRanges> {
+    Ok(get_list(app_state, gs)
+        .await
+        .iter()
+        .fold(BestiaryRanges::default(), |mut acc, x| {
+            let e = &x.core_data.essential;
+            acc.min_hp = acc.min_hp.min(e.hp);
+            acc.max_hp = acc.max_hp.max(e.hp);
+            acc.min_level = acc.min_level.min(e.base_level);
+            acc.max_level = acc.max_level.max(e.base_level);
+            acc.min_focus_points = acc.min_focus_points.min(e.focus_points);
+            acc.max_focus_points = acc.max_focus_points.max(e.focus_points);
+            acc
+        }))
 }
 
 /// Used to prepare the filters for db communication.

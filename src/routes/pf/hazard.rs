@@ -3,6 +3,7 @@ use crate::models::hazard::hazard_field_filter::HazardFieldFilters;
 use crate::models::hazard::hazard_listing_struct::{
     HazardListingPaginatedRequest, HazardListingSortData,
 };
+use crate::models::hazard::hazard_struct::HazardRanges;
 use crate::models::response_data::{HazardListingResponse, ResponseHazard};
 use crate::models::routers_validator_structs::PaginatedRequest;
 use crate::models::shared::action::Action;
@@ -21,6 +22,7 @@ pub fn init_endpoints(cfg: &mut web::ServiceConfig) {
             .service(pf_get_hazard_sources_list)
             .service(pf_get_hazard_rarities_list)
             .service(pf_get_hazard_sizes_list)
+            .service(pf_get_hazard_ranges)
             .service(pf_get_hazard), // last one, to avoid wildcard matching on source,traits, etc
     );
 }
@@ -34,13 +36,15 @@ pub fn init_docs() -> utoipa::openapi::OpenApi {
             pf_get_hazard_sources_list,
             pf_get_hazard_rarities_list,
             pf_get_hazard_sizes_list,
+            pf_get_hazard_ranges,
             pf_get_hazard,
         ),
         components(schemas(
             HazardFieldFilters,
             HazardListingSortData,
             HazardListingResponse,
-            Action
+            Action,
+            HazardRanges,
         ))
     )]
     struct ApiDoc;
@@ -78,7 +82,7 @@ pub async fn pf_get_hazard_listing(
                 paginated_request: pagination.0,
                 hazard_sort_data: sort_data.0,
             },
-            &GameSystem::Pathfinder,
+            GameSystem::Pathfinder,
         )
         .await,
     ))
@@ -101,7 +105,7 @@ pub async fn pf_get_hazard_traits_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        hazard_service::get_traits_list(&data, &GameSystem::Pathfinder).await,
+        hazard_service::get_traits_list(&data, GameSystem::Pathfinder).await,
     ))
 }
 
@@ -122,7 +126,7 @@ pub async fn pf_get_hazard_sources_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        hazard_service::get_sources_list(&data, &GameSystem::Pathfinder).await,
+        hazard_service::get_sources_list(&data, GameSystem::Pathfinder).await,
     ))
 }
 
@@ -143,7 +147,7 @@ pub async fn pf_get_hazard_rarities_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        hazard_service::get_rarities_list(&data, &GameSystem::Pathfinder).await,
+        hazard_service::get_rarities_list(&data, GameSystem::Pathfinder).await,
     ))
 }
 
@@ -164,7 +168,7 @@ pub async fn pf_get_hazard_sizes_list(
     data: web::Data<AppState>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        hazard_service::get_sizes_list(&data, &GameSystem::Pathfinder).await,
+        hazard_service::get_sizes_list(&data, GameSystem::Pathfinder).await,
     ))
 }
 
@@ -186,6 +190,23 @@ pub async fn pf_get_hazard(
     hazard_id: web::Path<String>,
 ) -> actix_web::Result<impl Responder> {
     Ok(web::Json(
-        hazard_service::get_hazard(&data, sanitize_id(&hazard_id)?, &GameSystem::Pathfinder).await,
+        hazard_service::get_hazard(&data, sanitize_id(&hazard_id)?, GameSystem::Pathfinder).await,
+    ))
+}
+
+#[utoipa::path(
+    get,
+    path = "/hazard/ranges",
+    tags = ["pf", "hazard"],
+    params(),
+    responses(
+        (status=200, description = "Successful Response", body = HazardRanges),
+        (status=400, description = "Bad request.")
+    ),
+)]
+#[get("/ranges")]
+pub async fn pf_get_hazard_ranges(data: web::Data<AppState>) -> actix_web::Result<impl Responder> {
+    Ok(web::Json(
+        hazard_service::get_hazard_ranges(&data, GameSystem::Pathfinder).await,
     ))
 }

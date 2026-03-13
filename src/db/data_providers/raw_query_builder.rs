@@ -6,7 +6,7 @@ use crate::models::item::shop_structs::{ItemTableFieldsFilter, ShopFilterQuery};
 use crate::models::shared::game_system_enum::GameSystem;
 use tracing::debug;
 
-pub fn prepare_filtered_get_items(gs: &GameSystem, shop_filter_query: &ShopFilterQuery) -> String {
+pub fn prepare_filtered_get_items(gs: GameSystem, shop_filter_query: &ShopFilterQuery) -> String {
     let equipment_query = prepare_item_subquery(
         gs,
         &ItemTypeEnum::Equipment,
@@ -55,7 +55,7 @@ pub fn prepare_filtered_get_items(gs: &GameSystem, shop_filter_query: &ShopFilte
     query
 }
 pub fn prepare_filtered_get_creatures_core(
-    gs: &GameSystem,
+    gs: GameSystem,
     bestiary_filter_query: &BestiaryFilterQuery,
 ) -> String {
     let initial_statement = format!("SELECT id FROM {gs}_creature_core");
@@ -91,7 +91,7 @@ pub fn prepare_filtered_get_creatures_core(
 }
 
 pub fn prepare_filtered_get_hazards(
-    gs: &GameSystem,
+    gs: GameSystem,
     bestiary_filter_query: &HazardFilterQuery,
 ) -> String {
     let initial_statement = format!("SELECT id FROM {gs}_hazard_table");
@@ -193,7 +193,7 @@ fn prepare_bounded_check_with_optional_limiters(
 /// ON tcat.trait_id = tt.name GROUP BY tcat.creature_id
 ///```
 fn prepare_trait_filter<I, S>(
-    gs: &GameSystem,
+    gs: GameSystem,
     id_column: &str,
     association_table_name: &str,
     column_values: I,
@@ -268,7 +268,7 @@ where
 }
 
 fn prepare_item_subquery<I, S>(
-    gs: &GameSystem,
+    gs: GameSystem,
     item_type: &ItemTypeEnum,
     n_of_item: i64,
     shop_filter_vectors: &ItemTableFieldsFilter,
@@ -466,7 +466,7 @@ where
     }
 }
 
-fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum, gs: &GameSystem) -> String {
+fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum, gs: GameSystem) -> String {
     let (item_id_field, type_query) = match item_type {
         ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => {
             ("id", format!("AND UPPER(item_type) = UPPER('{item_type}')"))
@@ -501,7 +501,7 @@ fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum, gs: &GameSy
 /// (SELECT * FROM TRAIT_TABLE WHERE name IN ('good')) tt
 /// ON tcat.trait_id = tt.name GROUP BY tcat.item_id
 ///```
-fn prepare_item_trait_filter<I, S>(gs: &GameSystem, column_values: I) -> String
+fn prepare_item_trait_filter<I, S>(gs: GameSystem, column_values: I) -> String
 where
     I: Iterator<Item = S>,
     S: ToString,
@@ -517,7 +517,7 @@ where
 /// (SELECT * FROM TRAIT_TABLE WHERE name IN ('good')) tt
 /// ON tcat.trait_id = tt.name GROUP BY tcat.creature_id
 ///```
-fn prepare_creature_trait_filter<I, S>(gs: &GameSystem, column_values: I) -> String
+fn prepare_creature_trait_filter<I, S>(gs: GameSystem, column_values: I) -> String
 where
     I: Iterator<Item = S>,
     S: ToString,
@@ -538,7 +538,7 @@ where
 /// (SELECT * FROM TRAIT_TABLE WHERE name IN ('good')) tt
 /// ON tcat.trait_id = tt.name GROUP BY tcat.hazard_id
 ///```
-fn prepare_hazard_trait_filter<I, S>(gs: &GameSystem, column_values: I) -> String
+fn prepare_hazard_trait_filter<I, S>(gs: GameSystem, column_values: I) -> String
 where
     I: Iterator<Item = S>,
     S: ToString,

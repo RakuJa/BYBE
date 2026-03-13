@@ -18,7 +18,7 @@ pub async fn fetch_unique_values_of_field(
 
 pub async fn fetch_item_traits(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     item_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
@@ -46,7 +46,7 @@ pub async fn fetch_item_traits(
 
 pub async fn fetch_weapon_traits(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     weapon_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
@@ -74,7 +74,7 @@ pub async fn fetch_weapon_traits(
 
 pub async fn fetch_shield_traits(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     shield_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
@@ -103,7 +103,7 @@ pub async fn fetch_shield_traits(
 
 pub async fn fetch_armor_traits(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     armor_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
@@ -131,7 +131,7 @@ pub async fn fetch_armor_traits(
 
 pub async fn fetch_weapon_runes(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     wp_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
@@ -160,7 +160,7 @@ pub async fn fetch_weapon_runes(
 
 pub async fn fetch_weapon_damage_data(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     wp_id: i64,
 ) -> Result<Vec<DamageData>> {
     Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -176,7 +176,7 @@ pub async fn fetch_weapon_damage_data(
 
 pub async fn fetch_armor_runes(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     wp_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
@@ -204,7 +204,7 @@ pub async fn fetch_armor_runes(
 
 pub async fn fetch_action_traits(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     action_id: i64,
 ) -> Result<Vec<String>> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(

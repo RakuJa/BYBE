@@ -407,7 +407,7 @@ pub async fn pf_get_npc_genders_list() -> actix_web::Result<impl Responder> {
 #[get("/jobs")]
 pub async fn pf_get_npc_jobs_list() -> actix_web::Result<impl Responder> {
     Ok(web::Json(npc_service::get_jobs_list(
-        &GameSystem::Pathfinder,
+        GameSystem::Pathfinder,
     )))
 }
 
@@ -426,6 +426,6 @@ pub async fn pf_get_npc_jobs_list() -> actix_web::Result<impl Responder> {
 #[get("/classes")]
 pub async fn pf_get_npc_classes_list() -> actix_web::Result<impl Responder> {
     Ok(web::Json(npc_service::get_classes_list(
-        &GameSystem::Pathfinder,
+        GameSystem::Pathfinder,
     )))
 }

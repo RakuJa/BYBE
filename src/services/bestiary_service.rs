@@ -1,7 +1,9 @@
 use crate::AppState;
 use crate::db::bestiary_proxy;
 use crate::db::bestiary_proxy::get_creatures_passing_all_filters;
-use crate::models::bestiary_structs::{BestiaryFilterQuery, BestiaryPaginatedRequest};
+use crate::models::bestiary_structs::{
+    BestiaryFilterQuery, BestiaryPaginatedRequest, BestiaryRanges,
+};
 use crate::models::creature::creature_field_filter::CreatureFieldFilters;
 use crate::models::creature::creature_filter_enum::CreatureFilter;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
@@ -18,7 +20,7 @@ pub async fn get_creature(
     app_state: &AppState,
     id: i64,
     response_data_mods: &CreatureResponseDataModifiers,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> HashMap<String, Option<ResponseCreature>> {
     hashmap! {
         String::from("results") =>
@@ -30,7 +32,7 @@ pub async fn get_elite_creature(
     app_state: &AppState,
     id: i64,
     response_data_mods: &CreatureResponseDataModifiers,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> HashMap<String, Option<ResponseCreature>> {
     hashmap! {
         String::from("results") =>
@@ -42,7 +44,7 @@ pub async fn get_weak_creature(
     app_state: &AppState,
     id: i64,
     response_data_mods: &CreatureResponseDataModifiers,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> HashMap<String, Option<ResponseCreature>> {
     hashmap! {
         String::from("results") =>
@@ -54,7 +56,7 @@ pub async fn get_bestiary_listing(
     app_state: &AppState,
     field_filter: &CreatureFieldFilters,
     pagination: &BestiaryPaginatedRequest,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> BestiaryResponse {
     convert_result_to_response(
         pagination,
@@ -62,32 +64,32 @@ pub async fn get_bestiary_listing(
     )
 }
 
-pub async fn get_families_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_families_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(app_state, gs, CreatureFilter::Family).await
 }
 
-pub async fn get_traits_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_traits_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(app_state, gs, CreatureFilter::Traits).await
 }
 
-pub async fn get_sources_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_sources_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(app_state, gs, CreatureFilter::Sources).await
 }
 
-pub async fn get_rarities_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_rarities_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(app_state, gs, CreatureFilter::Rarity).await
 }
 
-pub async fn get_sizes_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_sizes_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(app_state, gs, CreatureFilter::Size).await
 }
 
-pub async fn get_alignments_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_alignments_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(app_state, gs, CreatureFilter::Alignment)
         .await
 }
 
-pub async fn get_creature_types_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_creature_types_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     bestiary_proxy::get_all_possible_values_of_filter(app_state, gs, CreatureFilter::CreatureTypes)
         .await
 }
@@ -101,7 +103,13 @@ pub async fn get_filtered_creatures(
     filters: &BestiaryFilterQuery,
     allow_weak: bool,
     allow_elite: bool,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> Result<Vec<Creature>> {
     get_creatures_passing_all_filters(app_state, gs, filters, allow_weak, allow_elite).await
+}
+
+pub async fn get_bestiary_ranges(app_state: &AppState, gs: GameSystem) -> Option<BestiaryRanges> {
+    bestiary_proxy::get_bestiary_ranges(app_state, gs)
+        .await
+        .ok()
 }

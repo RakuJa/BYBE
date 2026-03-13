@@ -38,7 +38,7 @@ struct RandomHazardGeneratorResponse {
 pub async fn generate_random_encounter(
     app_state: &AppState,
     enc_data: RandomEncounterData,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> RandomEncounterGeneratorResponse {
     let encounter_data = calculate_random_encounter(app_state, enc_data, gs).await;
     encounter_data.unwrap_or_else(|error| {
@@ -54,7 +54,7 @@ pub async fn generate_random_encounter(
                 challenge: EncounterChallengeEnum::default(),
                 encounter_exp_levels: BTreeMap::default(),
             },
-            game: *gs,
+            game: gs,
         }
     })
 }
@@ -65,7 +65,7 @@ async fn calculate_random_creature_encounter(
     party_levels: &[i64],
     exp_range: ExpRange,
     adventure_group: Option<AdventureGroupEnum>,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> anyhow::Result<RandomCreatureGeneratorResponse> {
     let is_pwl_on = enc_data.is_pwl_on;
 
@@ -155,7 +155,7 @@ async fn calculate_random_hazard_encounter(
     enc_data: RandomHazardData,
     party_levels: &[i64],
     exp_range: ExpRange,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> anyhow::Result<RandomHazardGeneratorResponse> {
     let filtered_lvl_combinations = get_hazard_lvl_combinations(
         party_levels,
@@ -218,7 +218,7 @@ async fn calculate_random_hazard_encounter(
         results: Some(
             chosen_encounter
                 .into_iter()
-                .map(|x| ResponseHazard::from((x, *gs)))
+                .map(|x| ResponseHazard::from((x, gs)))
                 .collect(),
         ),
     })
@@ -232,7 +232,7 @@ async fn calculate_random_hazard_encounter(
 async fn calculate_random_encounter(
     app_state: &AppState,
     enc_data: RandomEncounterData,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> anyhow::Result<RandomEncounterGeneratorResponse> {
     let cr_encounter_data = enc_data
         .creature_data
@@ -320,7 +320,7 @@ async fn calculate_random_encounter(
                     .collect(),
             }),
         }),
-        game: *gs,
+        game: gs,
         results: EncounterContent { creatures, hazards },
     })
 }

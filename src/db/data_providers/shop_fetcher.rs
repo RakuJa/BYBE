@@ -17,7 +17,7 @@ use tracing::debug;
 
 pub async fn fetch_item_by_id(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     item_id: i64,
 ) -> Result<ResponseItem> {
     let mut item: Item = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -28,34 +28,34 @@ pub async fn fetch_item_by_id(
     .await?;
     item.traits = fetch_item_traits(conn, gs, item_id).await?;
     Ok(match item.item_type {
-        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => ResponseItem::from((item, *gs)),
+        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => ResponseItem::from((item, gs)),
         ItemTypeEnum::Weapon => ResponseItem {
             core_item: item,
             weapon_data: fetch_weapon_data_by_item_id(conn, gs, item_id).await.ok(),
             armor_data: None,
             shield_data: None,
-            game: *gs,
+            game: gs,
         },
         ItemTypeEnum::Armor => ResponseItem {
             core_item: item,
             weapon_data: None,
             armor_data: fetch_armor_data_by_item_id(conn, gs, item_id).await.ok(),
             shield_data: None,
-            game: *gs,
+            game: gs,
         },
         ItemTypeEnum::Shield => ResponseItem {
             core_item: item,
             weapon_data: None,
             armor_data: None,
             shield_data: fetch_shield_data_by_item_id(conn, gs, item_id).await.ok(),
-            game: *gs,
+            game: gs,
         },
     })
 }
 
 async fn fetch_weapon_by_item_id(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     item_id: i64,
 ) -> Result<Weapon> {
     let mut weapon: Weapon = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -81,7 +81,7 @@ async fn fetch_weapon_by_item_id(
 
 async fn fetch_armor_by_item_id(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     item_id: i64,
 ) -> Result<Armor> {
     let mut armor: Armor = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -104,7 +104,7 @@ async fn fetch_armor_by_item_id(
 
 async fn fetch_shield_by_item_id(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     item_id: i64,
 ) -> Result<Shield> {
     let mut shield: Shield = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -125,7 +125,7 @@ async fn fetch_shield_by_item_id(
 
 async fn fetch_weapon_data_by_item_id(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     item_id: i64,
 ) -> Result<WeaponData> {
     Ok(fetch_weapon_by_item_id(conn, gs, item_id)
@@ -135,7 +135,7 @@ async fn fetch_weapon_data_by_item_id(
 
 async fn fetch_armor_data_by_item_id(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     item_id: i64,
 ) -> Result<ArmorData> {
     Ok(fetch_armor_by_item_id(conn, gs, item_id).await?.armor_data)
@@ -143,7 +143,7 @@ async fn fetch_armor_data_by_item_id(
 
 async fn fetch_shield_data_by_item_id(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     item_id: i64,
 ) -> Result<ShieldData> {
     Ok(fetch_shield_by_item_id(conn, gs, item_id)
@@ -153,7 +153,7 @@ async fn fetch_shield_data_by_item_id(
 
 pub async fn fetch_items(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<Item>> {
@@ -174,7 +174,7 @@ pub async fn fetch_items(
 
 pub async fn fetch_weapons(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<Weapon>> {
@@ -206,7 +206,7 @@ pub async fn fetch_weapons(
 
 pub async fn fetch_armors(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<Armor>> {
@@ -236,7 +236,7 @@ pub async fn fetch_armors(
 
 pub async fn fetch_shields(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<Shield>> {
@@ -264,7 +264,7 @@ pub async fn fetch_shields(
 
 async fn update_items_with_traits(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     mut items: Vec<Item>,
 ) -> Vec<Item> {
     for item in &mut items {
@@ -275,7 +275,7 @@ async fn update_items_with_traits(
 
 pub async fn fetch_items_with_filters(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     filters: &ShopFilterQuery,
 ) -> Result<Vec<Item>> {
     let items: Vec<Item> = query_as(sqlx::AssertSqlSafe(prepare_filtered_get_items(gs, filters)))

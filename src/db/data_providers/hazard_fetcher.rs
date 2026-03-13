@@ -11,7 +11,7 @@ use sqlx::{Pool, Sqlite};
 
 async fn fetch_hazard_actions(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     hazard_id: i64,
 ) -> Result<Vec<Action>> {
     let core_actions = match gs {
@@ -52,7 +52,7 @@ async fn fetch_hazard_actions(
 
 async fn update_hazards_core_with_traits(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     mut hazard: Vec<Hazard>,
 ) -> Vec<Hazard> {
     for core in &mut hazard {
@@ -69,7 +69,7 @@ async fn update_hazards_core_with_traits(
 
 pub async fn fetch_traits_associated_with_hazards(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> Result<Vec<String>> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
         "
@@ -88,7 +88,7 @@ pub async fn fetch_traits_associated_with_hazards(
 
 pub async fn fetch_hazard_traits(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     hazard_id: i64,
 ) -> Result<Vec<String>> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
@@ -102,7 +102,7 @@ pub async fn fetch_hazard_traits(
 
 pub async fn fetch_hazard_by_id(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     id: i64,
 ) -> Result<ResponseHazard> {
     let mut core_hazard: Hazard = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -116,13 +116,13 @@ pub async fn fetch_hazard_by_id(
 
     Ok(ResponseHazard {
         core_hazard,
-        game: *gs,
+        game: gs,
     })
 }
 
 pub async fn fetch_hazard_core_data_with_filters(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     hazard_filter_query: &HazardFilterQuery,
 ) -> Result<Vec<Hazard>> {
     let query = prepare_filtered_get_hazards(gs, hazard_filter_query);
@@ -135,7 +135,7 @@ pub async fn fetch_hazard_core_data_with_filters(
 /// Gets all the hazard it can find with the given pagination as boundaries for the search.
 pub async fn fetch_hazards_data(
     conn: &Pool<Sqlite>,
-    gs: &GameSystem,
+    gs: GameSystem,
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<Hazard>> {

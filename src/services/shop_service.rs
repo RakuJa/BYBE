@@ -3,7 +3,7 @@ use crate::db::shop_proxy;
 use crate::models::item::item_field_filter::ItemFieldFilters;
 use crate::models::item::shop_structs::{
     ItemTableFieldsFilter, PfShopTemplateEnum, RandomShopData, SfShopTemplateEnum, ShopFilterQuery,
-    ShopPaginatedRequest, ShopTemplateData,
+    ShopPaginatedRequest, ShopRanges, ShopTemplateData,
 };
 use crate::models::response_data::{ResponseItem, ShopListingResponse, convert_result_to_response};
 use crate::models::routers_validator_structs::Dice;
@@ -17,7 +17,7 @@ use strum::IntoEnumIterator;
 pub async fn get_item(
     app_state: &AppState,
     id: i64,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> HashMap<String, Option<ResponseItem>> {
     hashmap! {
         String::from("results") =>
@@ -25,15 +25,15 @@ pub async fn get_item(
     }
 }
 
-pub async fn get_sources_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_sources_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     shop_proxy::get_all_sources(app_state, gs).await
 }
 
-pub async fn get_traits_list(app_state: &AppState, gs: &GameSystem) -> Vec<String> {
+pub async fn get_traits_list(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     shop_proxy::get_all_traits(app_state, gs).await
 }
 
-pub fn get_shop_templates_data(gs: &GameSystem) -> Vec<ShopTemplateData> {
+pub fn get_shop_templates_data(gs: GameSystem) -> Vec<ShopTemplateData> {
     match gs {
         GameSystem::Pathfinder => PfShopTemplateEnum::iter().map(Into::into).collect(),
         GameSystem::Starfinder => SfShopTemplateEnum::iter().map(Into::into).collect(),
@@ -44,7 +44,7 @@ pub async fn get_shop_listing(
     app_state: &AppState,
     field_filter: &ItemFieldFilters,
     pagination: &ShopPaginatedRequest,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> ShopListingResponse {
     convert_result_to_response(
         pagination,
@@ -52,10 +52,14 @@ pub async fn get_shop_listing(
     )
 }
 
+pub async fn get_shop_ranges(app_state: &AppState, gs: GameSystem) -> Option<ShopRanges> {
+    shop_proxy::get_shop_ranges(app_state, gs).await.ok()
+}
+
 pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(
     app_state: &AppState,
     shop_data: &RandomShopData<T>,
-    gs: &GameSystem,
+    gs: GameSystem,
 ) -> ShopListingResponse {
     let (type_filter, rarity_filter) = shop_data.shop_template.clone().map_or_else(
         || {
@@ -77,7 +81,7 @@ pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(
     let n_of_equippables = shop_data.equippable_dices.iter().map(Dice::roll).sum();
     // The request is correct, but will result in an empty list.
     if n_of_consumables == 0 && n_of_equippables == 0 {
-        return ShopListingResponse::default_with_system(*gs);
+        return ShopListingResponse::default_with_system(gs);
     }
 
     let equipment_percentage = shop_data.equipment_percentage;
@@ -138,25 +142,25 @@ pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(
         )
         .await)
             .map_or_else(
-                |_| ShopListingResponse::default_with_system(*gs),
+                |_| ShopListingResponse::default_with_system(gs),
                 |result| {
                     let n_of_items = result.len();
                     ShopListingResponse {
                         results: Some(
                             result
                                 .into_iter()
-                                .map(|x| ResponseItem::from((x, *gs)))
+                                .map(|x| ResponseItem::from((x, gs)))
                                 .collect(),
                         ),
                         count: n_of_items,
                         next: None,
                         total: n_of_items,
-                        game: *gs,
+                        game: gs,
                     }
                 },
             )
     } else {
-        ShopListingResponse::default_with_system(*gs)
+        ShopListingResponse::default_with_system(gs)
     }
 }
 
