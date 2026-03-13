@@ -45,16 +45,16 @@ where
             let ancestry_filter = if ancestries.is_empty()
                 && let Some(g_list) = npc_req_data.gender_filter.clone()
             {
-                let all_ancestries = npc_req_data.name_origin_filter.get_all_ancestries();
-                all_ancestries
-                    .iter()
+                npc_req_data
+                    .name_origin_filter
+                    .get_all_ancestries()
+                    .into_iter()
                     .filter(|x| {
                         let curr_ancestry_valid_genders = x.get_valid_genders();
                         g_list
                             .iter()
                             .any(|g| curr_ancestry_valid_genders.contains(g))
                     })
-                    .cloned()
                     .collect::<Vec<_>>()
             } else {
                 ancestries
@@ -64,11 +64,12 @@ where
             let valid_genders = random_ancestry.get_valid_genders();
 
             let gender = if let Some(g_filter) = &npc_req_data.gender_filter.as_ref() {
-                let filtered: Vec<_> = valid_genders
-                    .into_iter()
-                    .filter(|g| g_filter.contains(g))
-                    .collect();
-                get_random_gender(Some(filtered))?
+                get_random_gender(Some(
+                    valid_genders
+                        .into_iter()
+                        .filter(|g| g_filter.contains(g))
+                        .collect(),
+                ))?
             } else {
                 Gender::filtered_random(&valid_genders)
             };
