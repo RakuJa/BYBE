@@ -1,7 +1,7 @@
 use crate::AppState;
 use crate::models::bestiary_structs::{BestiaryFilterQuery, CreatureTableFieldsFilter};
 use crate::models::encounter_structs::{
-    CreatureEncounterParams, EncounterChallengeEnum, EncounterParams, ExpRange,
+    AdventureGroupEnum, CreatureEncounterParams, EncounterChallengeEnum, EncounterParams, ExpRange,
     HazardEncounterElement, HazardEncounterParams, RandomCreatureData, RandomEncounterData,
     RandomHazardData,
 };
@@ -13,13 +13,13 @@ use crate::models::response_data::{
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::services::bestiary_service::get_filtered_creatures;
 use crate::services::encounter_handler::encounter_calculator::{
-    choose_random_combination, get_creature_lvl_combinations, get_encounter_info,
-    get_hazard_lvl_combinations, get_scaled_exp,
+    choose_hazard_random_combination, choose_random_combination, get_creature_lvl_combinations,
+    get_encounter_info, get_hazard_lvl_combinations, get_scaled_exp,
 };
 use crate::services::hazard_service::get_filtered_hazards;
 use anyhow::{bail, ensure};
 use itertools::Itertools;
-use std::collections::{BTreeMap, HashSet};
+use std::collections::BTreeMap;
 use tracing::warn;
 
 #[derive(Debug)]
@@ -63,6 +63,7 @@ async fn calculate_random_creature_encounter(
     enc_data: RandomCreatureData,
     party_levels: &[i64],
     exp_range: ExpRange,
+    adventure_group: Option<AdventureGroupEnum>,
     gs: &GameSystem,
 ) -> anyhow::Result<RandomCreatureGeneratorResponse> {
     let is_pwl_on = enc_data.is_pwl_on;
@@ -73,7 +74,7 @@ async fn calculate_random_creature_encounter(
         is_pwl_on,
         enc_data.min_creatures,
         enc_data.max_creatures,
-        enc_data.adventure_group,
+        adventure_group,
     );
     let list_of_unique_levels = filtered_lvl_combinations
         .clone()
@@ -158,7 +159,7 @@ async fn calculate_random_hazard_encounter(
     let filtered_lvl_combinations = get_hazard_lvl_combinations(
         party_levels,
         exp_range,
-        enc_data.hazard_complexity.unwrap_or_default(),
+        enc_data.complexity_filter.unwrap_or_default(),
         enc_data.min_hazards,
         enc_data.max_hazards,
     );
@@ -197,6 +198,8 @@ async fn calculate_random_hazard_encounter(
                 max_reflex: enc_data.max_reflex,
                 min_fortitude: enc_data.min_fortitude,
                 max_fortitude: enc_data.max_fortitude,
+                min_stealth: enc_data.min_stealth,
+                max_stealth: enc_data.max_stealth,
             },
             trait_whitelist_filter: enc_data.trait_whitelist_filter.unwrap_or_default(),
             trait_blacklist_filter: enc_data.trait_blacklist_filter.unwrap_or_default(),
@@ -205,13 +208,9 @@ async fn calculate_random_hazard_encounter(
     )
     .await?;
 
-    let filtered_levels: HashSet<Vec<i64>> = filtered_lvl_combinations
-        .into_iter()
-        .map(|combo| combo.into_iter().map(|c| c.1).collect())
-        .collect();
-
     ensure!(!filtered_hazards.is_empty(), "No hazards have been fetched");
-    let chosen_encounter = choose_random_combination(&filtered_hazards, filtered_levels)?;
+    let chosen_encounter =
+        choose_hazard_random_combination(&filtered_hazards, filtered_lvl_combinations)?;
 
     Ok(RandomHazardGeneratorResponse {
         count: chosen_encounter.len(),
@@ -244,12 +243,18 @@ async fn calculate_random_encounter(
     let is_pwl_on = cr_encounter_data.is_pwl_on;
 
     let party_len = i64::try_from(enc_data.party_levels.len()).unwrap_or(i64::MAX);
-    let cr_percentage = enc_data.creature_percentage.unwrap_or(100) as i64;
-    let hz_percentage = enc_data
-        .hazard_percentage
-        .unwrap_or(100 - cr_percentage as u8) as i64;
+    let adventure_group = enc_data.adventure_group;
+    let (cr_percentage, hz_percentage) = if adventure_group.is_none() {
+        let cr_p = enc_data.creature_percentage.unwrap_or(100) as i64;
+        (
+            cr_p,
+            enc_data.hazard_percentage.unwrap_or(100 - cr_p as u8) as i64,
+        )
+    } else {
+        (100, 0)
+    };
 
-    let challenge = cr_encounter_data
+    let challenge = enc_data
         .challenge
         .unwrap_or_else(EncounterChallengeEnum::rand);
     let exp_range = get_scaled_exp(challenge, party_len);
@@ -258,14 +263,14 @@ async fn calculate_random_encounter(
         lower_bound: exp_range.lower_bound * pct / 100,
         upper_bound: exp_range.upper_bound * pct / 100,
     };
-    println!("creature exp range: {:?}", scale(cr_percentage));
-    println!("hazard exp range: {:?}", scale(hz_percentage));
+
     let (creature_result, hazard_result) = tokio::join!(
         calculate_random_creature_encounter(
             app_state,
             cr_encounter_data,
             &enc_data.party_levels,
             scale(cr_percentage),
+            adventure_group,
             gs
         ),
         calculate_random_hazard_encounter(
@@ -308,7 +313,7 @@ async fn calculate_random_encounter(
                     .unwrap_or_default()
                     .iter()
                     .map(|x| HazardEncounterElement {
-                        complexity: x.core_hazard.essential.kind,
+                        complexity: x.core_hazard.essential.complexity,
                         level: x.core_hazard.essential.level,
                     })
                     .collect(),

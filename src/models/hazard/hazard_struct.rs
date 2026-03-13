@@ -1,8 +1,9 @@
 use crate::models::hazard::hazard_component::hazard_core::HazardEssentialData;
 use crate::models::hazard::hazard_field_filter::{HazardComplexityEnum, HazardFieldFilters};
-use crate::models::shared::action::Action;
+use crate::models::shared::action::HazardAction;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
+use crate::traits::has_complexity::HasComplexity;
 use crate::traits::has_level::HasLevel;
 use serde::{Deserialize, Serialize};
 use sqlx::sqlite::SqliteRow;
@@ -13,7 +14,7 @@ use utoipa::ToSchema;
 pub struct Hazard {
     pub essential: HazardEssentialData,
     pub traits: Vec<String>,
-    pub actions: Vec<Action>,
+    pub actions: Vec<HazardAction>,
     pub game_system: GameSystem,
 }
 
@@ -34,7 +35,11 @@ impl HasLevel for Hazard {
         self.essential.level
     }
 }
-
+impl HasComplexity for Hazard {
+    fn complexity(&self) -> HazardComplexityEnum {
+        self.essential.complexity
+    }
+}
 impl Hazard {
     pub fn is_passing_filters(&self, filters: &HazardFieldFilters) -> bool {
         self.check_creature_pass_equality_filters(filters)
@@ -97,9 +102,11 @@ impl Hazard {
                 .as_ref()
                 .is_none_or(|x| x.contains(&self.essential.size))
             && match filters.complexity_filter.unwrap_or_default() {
-                HazardComplexityEnum::Simple => self.essential.kind == HazardComplexityEnum::Simple,
+                HazardComplexityEnum::Simple => {
+                    self.essential.complexity == HazardComplexityEnum::Simple
+                }
                 HazardComplexityEnum::Complex => {
-                    self.essential.kind == HazardComplexityEnum::Complex
+                    self.essential.complexity == HazardComplexityEnum::Complex
                 }
                 HazardComplexityEnum::Any => true,
             }

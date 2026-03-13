@@ -68,11 +68,11 @@ pub async fn get_paginated_hazards(
                 .hardness
                 .cmp(&b.core_hazard.essential.hardness),
             HazardSortEnum::Hp => a.core_hazard.essential.hp.cmp(&b.core_hazard.essential.hp),
-            HazardSortEnum::Kind => a
+            HazardSortEnum::Complexity => a
                 .core_hazard
                 .essential
-                .kind
-                .cmp(&b.core_hazard.essential.kind),
+                .complexity
+                .cmp(&b.core_hazard.essential.complexity),
             HazardSortEnum::Level => a
                 .core_hazard
                 .essential
@@ -109,6 +109,11 @@ pub async fn get_paginated_hazards(
                 .essential
                 .will
                 .cmp(&b.core_hazard.essential.will),
+            HazardSortEnum::Stealth => a
+                .core_hazard
+                .essential
+                .stealth
+                .cmp(&b.core_hazard.essential.stealth),
         };
         match pagination
             .hazard_sort_data

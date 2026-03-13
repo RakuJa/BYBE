@@ -428,6 +428,11 @@ fn prepare_hazard_filter_statement(hazard_filter_vec: &HazardTableFieldsFilter) 
             hazard_filter_vec.min_will,
             hazard_filter_vec.max_will,
         ),
+        prepare_bounded_check_with_optional_limiters(
+            "stealth",
+            hazard_filter_vec.min_stealth,
+            hazard_filter_vec.max_stealth,
+        ),
     ]
     .into_iter()
     .filter(|query| !query.is_empty())
