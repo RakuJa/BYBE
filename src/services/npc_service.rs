@@ -41,8 +41,26 @@ where
 {
     let game_system = &npc_req_data.name_origin_filter.clone().into();
     let (gender, ancestry, culture, name_origin) =
-        if let Some(ancestries) = npc_req_data.name_origin_filter.get_ancestries() {
-            let random_ancestry = get_random_ancestry(Some(ancestries));
+        if let Some(ancestries) = npc_req_data.name_origin_filter.get_ancestries_filter() {
+            let ancestry_filter = if ancestries.is_empty()
+                && let Some(g_list) = npc_req_data.gender_filter.clone()
+            {
+                let all_ancestries = npc_req_data.name_origin_filter.get_all_ancestries();
+                all_ancestries
+                    .iter()
+                    .filter(|x| {
+                        let curr_ancestry_valid_genders = x.get_valid_genders();
+                        g_list
+                            .iter()
+                            .any(|g| curr_ancestry_valid_genders.contains(g))
+                    })
+                    .cloned()
+                    .collect::<Vec<_>>()
+            } else {
+                ancestries
+            };
+
+            let random_ancestry = get_random_ancestry(Some(ancestry_filter));
             let valid_genders = random_ancestry.get_valid_genders();
 
             let gender = if let Some(g_filter) = &npc_req_data.gender_filter.as_ref() {
@@ -63,7 +81,7 @@ where
                     .name_origin_filter
                     .to_name_origin(None, Some(random_ancestry))?,
             )
-        } else if let Some(cultures) = &npc_req_data.name_origin_filter.get_cultures() {
+        } else if let Some(cultures) = &npc_req_data.name_origin_filter.get_cultures_filter() {
             let random_culture = get_random_culture(Some(cultures.to_vec()));
             (
                 Gender::random(),

@@ -7,4 +7,5 @@ use std::fmt::Display;
 pub trait Ancestry:
     ContextSize + HasValidGenders + Clone + Default + RandomEnum + AverageNameLength + Display
 {
+    fn get_all_ancestries() -> Vec<Self>;
 }
