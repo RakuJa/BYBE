@@ -1,9 +1,11 @@
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
-use crate::models::pf_version_enum::GameSystemVersionEnum;
 use crate::models::routers_validator_structs::{Dice, OrderEnum, PaginatedRequest};
+use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use crate::traits::template_enum::{GenericTemplate, ItemTemplate};
+use crate::traits::url::has_sort_fields::HasSortFields;
+use crate::traits::url::paginated_request_ext::PaginatedRequestExt;
 pub use schemas::*;
 use serde::{Deserialize, Serialize};
 use strum::{Display, EnumIter};
@@ -161,6 +163,29 @@ mod schemas {
     pub struct ShopPaginatedRequest {
         pub paginated_request: PaginatedRequest,
         pub shop_sort_data: ShopSortData,
+    }
+}
+
+impl HasSortFields for ShopSortData {
+    type SortBy = ItemSortEnum;
+    fn sort_by_field(&self) -> &Option<Self::SortBy> {
+        &self.sort_by
+    }
+    fn order_by_field(&self) -> &Option<OrderEnum> {
+        &self.order_by
+    }
+}
+
+impl PaginatedRequestExt for ShopPaginatedRequest {
+    type Sort = ShopSortData;
+    fn base_path() -> &'static str {
+        "shop/list"
+    }
+    fn sort_data(&self) -> &Self::Sort {
+        &self.shop_sort_data
+    }
+    fn paginated_request(&self) -> &PaginatedRequest {
+        &self.paginated_request
     }
 }
 

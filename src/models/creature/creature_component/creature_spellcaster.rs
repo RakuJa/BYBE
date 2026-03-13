@@ -3,7 +3,7 @@ use crate::models::creature::items::spellcaster_entry::{SpellcasterData, Spellca
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct CreatureSpellcasterData {
     pub spellcaster_entries: Vec<SpellcasterEntry>,
 }

@@ -17,6 +17,7 @@ use utoipa::ToSchema;
     Default,
     Type,
     EnumIter,
+    Debug,
 )]
 pub enum CreatureTypeEnum {
     #[default]

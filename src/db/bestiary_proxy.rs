@@ -8,15 +8,17 @@ use crate::models::bestiary_structs::{
     BestiaryFilterQuery, BestiaryPaginatedRequest, CreatureSortEnum,
 };
 use crate::models::creature::creature_component::creature_core::CreatureCoreData;
+use crate::models::creature::creature_field_filter::CreatureFieldFilters;
 use crate::models::creature::creature_filter_enum::{CreatureFilter, FieldsUniqueValuesStruct};
-use crate::models::creature::creature_metadata::alignment_enum::AlignmentEnum;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
-use crate::models::pf_version_enum::GameSystemVersionEnum;
-use crate::models::response_data::ResponseDataModifiers;
-use crate::models::routers_validator_structs::{CreatureFieldFilters, OrderEnum};
+use crate::models::response_data::CreatureResponseDataModifiers;
+use crate::models::routers_validator_structs::OrderEnum;
+use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::game_system_enum::GameSystem;
+use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
+use crate::traits::has_level::HasLevel;
 use anyhow::Result;
 use cached::proc_macro::cached;
 use itertools::Itertools;
@@ -27,7 +29,7 @@ pub async fn get_creature_by_id(
     gs: &GameSystem,
     id: i64,
     variant: CreatureVariant,
-    response_data_mods: &ResponseDataModifiers,
+    response_data_mods: &CreatureResponseDataModifiers,
 ) -> Option<Creature> {
     creature_fetcher::fetch_creature_by_id(&app_state.conn, gs, variant, response_data_mods, id)
         .await
@@ -38,7 +40,7 @@ pub async fn get_weak_creature_by_id(
     app_state: &AppState,
     gs: &GameSystem,
     id: i64,
-    optional_data: &ResponseDataModifiers,
+    optional_data: &CreatureResponseDataModifiers,
 ) -> Option<Creature> {
     get_creature_by_id(app_state, gs, id, CreatureVariant::Weak, optional_data).await
 }
@@ -46,7 +48,7 @@ pub async fn get_elite_creature_by_id(
     app_state: &AppState,
     gs: &GameSystem,
     id: i64,
-    optional_data: &ResponseDataModifiers,
+    optional_data: &CreatureResponseDataModifiers,
 ) -> Option<Creature> {
     get_creature_by_id(app_state, gs, id, CreatureVariant::Elite, optional_data).await
 }
@@ -311,14 +313,13 @@ async fn get_list(
     vec![]
 }
 
-pub fn order_list_by_level(creature_list: &[Creature]) -> HashMap<i64, Vec<Creature>> {
-    let mut ordered_by_level = HashMap::new();
-
-    for creature in creature_list {
+pub fn order_list_by_level<T: HasLevel + Clone>(elements: &[T]) -> HashMap<i64, Vec<T>> {
+    let mut ordered_by_level: HashMap<i64, Vec<T>> = HashMap::new();
+    for el in elements {
         ordered_by_level
-            .entry(creature.variant_data.level)
-            .or_insert_with(Vec::new)
-            .push(creature.clone());
+            .entry(el.level())
+            .or_default()
+            .push(el.clone());
     }
     ordered_by_level
 }

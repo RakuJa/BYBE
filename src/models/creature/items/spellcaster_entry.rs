@@ -2,7 +2,7 @@ use crate::models::creature::items::spell::Spell;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct SpellcasterData {
     pub id: i64,
     pub spellcasting_name: String,
@@ -16,7 +16,7 @@ pub struct SpellcasterData {
     pub heighten_level: i64,
 }
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct SpellcasterEntry {
     pub spellcaster_data: SpellcasterData,
     pub spells: Vec<Spell>,
