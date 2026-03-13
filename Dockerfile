@@ -38,6 +38,7 @@ ENV DATABASE_URL="sqlite:///app/data/database.db"
 ENV SERVICE_STARTUP_STATE="Clean"
 ENV NAMES_PATH="/app/data/names.json"
 ENV NICKNAMES_PATH="/app/data/nicknames.json"
+ENV BACKEND_URL="https://api.bybe.com"
 
 # Expose the port that your Actix-Web application will listen on
 EXPOSE 25566

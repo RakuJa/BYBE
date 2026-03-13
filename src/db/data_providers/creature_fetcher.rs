@@ -48,6 +48,7 @@ use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
 use futures::future::join_all;
 use sqlx::{Pool, Sqlite};
+use std::collections::HashMap;
 
 async fn fetch_creature_immunities(
     conn: &Pool<Sqlite>,
@@ -432,6 +433,25 @@ pub async fn fetch_creature_traits(
     .bind(creature_id)
     .fetch_all(conn)
     .await?)
+}
+
+pub async fn fetch_all_creature_traits(
+    conn: &Pool<Sqlite>,
+    gs: &GameSystem,
+) -> Result<HashMap<i64, Vec<String>>> {
+    let rows: Vec<(i64, String)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT a.creature_id, t.name
+         FROM {gs}_trait_creature_association_table a
+         JOIN {gs}_trait_table t ON t.name = a.trait_id"
+    )))
+    .fetch_all(conn)
+    .await?;
+
+    let mut map: HashMap<i64, Vec<String>> = HashMap::new();
+    for (creature_id, trait_name) in rows {
+        map.entry(creature_id).or_default().push(trait_name);
+    }
+    Ok(map)
 }
 
 async fn fetch_creature_weapons(
@@ -947,49 +967,57 @@ pub async fn fetch_creature_extra_data(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<CreatureExtraData> {
-    let items = fetch_creature_items(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let actions = fetch_creature_actions(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let skills = fetch_creature_skills(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let languages = fetch_creature_languages(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let senses = fetch_creature_senses(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let speeds = fetch_creature_speeds(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let ability_scores = fetch_creature_ability_scores(conn, gs, creature_id).await?;
-    let hp_detail = fetch_creature_hp_detail(conn, gs, creature_id).await?;
-    let ac_detail = fetch_creature_ac_detail(conn, gs, creature_id).await?;
-    let language_detail = fetch_creature_language_detail(conn, gs, creature_id).await?;
-    let perception = fetch_creature_perception(conn, gs, creature_id).await?;
-    let has_vision = fetch_creature_vision(conn, gs, creature_id).await?;
-    let perception_detail = fetch_creature_perception_detail(conn, gs, creature_id).await?;
-
-    Ok(CreatureExtraData {
+    let (
+        items,
         actions,
         skills,
-        items,
-        languages: languages.iter().map(|x| x.name.clone()).collect(),
+        languages,
         senses,
-        speeds: speeds
-            .iter()
-            .map(|x| (x.name.clone(), x.value as i16))
-            .collect(),
+        speeds,
         ability_scores,
         hp_detail,
         ac_detail,
         language_detail,
         perception,
-        perception_detail,
         has_vision,
+        perception_detail,
+    ) = tokio::join!(
+        fetch_creature_items(conn, gs, creature_id),
+        fetch_creature_actions(conn, gs, creature_id),
+        fetch_creature_skills(conn, gs, creature_id),
+        fetch_creature_languages(conn, gs, creature_id),
+        fetch_creature_senses(conn, gs, creature_id),
+        fetch_creature_speeds(conn, gs, creature_id),
+        fetch_creature_ability_scores(conn, gs, creature_id),
+        fetch_creature_hp_detail(conn, gs, creature_id),
+        fetch_creature_ac_detail(conn, gs, creature_id),
+        fetch_creature_language_detail(conn, gs, creature_id),
+        fetch_creature_perception(conn, gs, creature_id),
+        fetch_creature_vision(conn, gs, creature_id),
+        fetch_creature_perception_detail(conn, gs, creature_id),
+    );
+    Ok(CreatureExtraData {
+        actions: actions.unwrap_or_default(),
+        skills: skills.unwrap_or_default(),
+        items: items.unwrap_or_default(),
+        languages: languages
+            .unwrap_or_default()
+            .iter()
+            .map(|x| x.name.clone())
+            .collect(),
+        senses: senses.unwrap_or_default(),
+        speeds: speeds
+            .unwrap_or_default()
+            .iter()
+            .map(|x| (x.name.clone(), x.value as i16))
+            .collect(),
+        ability_scores: ability_scores?,
+        hp_detail: hp_detail?,
+        ac_detail: ac_detail?,
+        language_detail: language_detail?,
+        perception: perception?,
+        perception_detail: perception_detail?,
+        has_vision: has_vision?,
     })
 }
 
@@ -998,38 +1026,30 @@ pub async fn fetch_creature_combat_data(
     gs: &GameSystem,
     creature_id: i64,
 ) -> Result<CreatureCombatData> {
-    let weapons = fetch_creature_weapons(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let armors = fetch_creature_armors(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let shields = fetch_creature_shields(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let resistances = fetch_creature_resistances(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let immunities = fetch_creature_immunities(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let weaknesses = fetch_creature_weaknesses(conn, gs, creature_id)
-        .await
-        .unwrap_or_default();
-    let saving_throws = fetch_creature_saving_throws(conn, gs, creature_id).await?;
-    let creature_ac = fetch_creature_ac(conn, gs, creature_id).await?;
+    let (weapons, armors, shields, resistances, immunities, weaknesses, saving_throws, creature_ac) = tokio::join!(
+        fetch_creature_weapons(conn, gs, creature_id),
+        fetch_creature_armors(conn, gs, creature_id),
+        fetch_creature_shields(conn, gs, creature_id),
+        fetch_creature_resistances(conn, gs, creature_id),
+        fetch_creature_immunities(conn, gs, creature_id),
+        fetch_creature_weaknesses(conn, gs, creature_id),
+        fetch_creature_saving_throws(conn, gs, creature_id),
+        fetch_creature_ac(conn, gs, creature_id),
+    );
+
     Ok(CreatureCombatData {
-        weapons,
-        armors,
-        shields,
-        resistances,
-        immunities,
+        weapons: weapons.unwrap_or_default(),
+        armors: armors.unwrap_or_default(),
+        shields: shields.unwrap_or_default(),
+        resistances: resistances.unwrap_or_default(),
+        immunities: immunities.unwrap_or_default(),
         weaknesses: weaknesses
+            .unwrap_or_default()
             .iter()
             .map(|x| (x.name.clone(), i16::try_from(x.value).unwrap_or(0)))
             .collect(),
-        saving_throws,
-        ac: creature_ac,
+        saving_throws: saving_throws?,
+        ac: creature_ac?,
     })
 }
 
