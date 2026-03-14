@@ -55,7 +55,7 @@ pub struct RandomEncounterData {
     pub adventure_group: Option<AdventureGroupEnum>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Serialize, Deserialize, ToSchema, Clone, Default)]
 pub struct RandomCreatureData {
     pub source_filter: Option<Vec<String>>,
     pub trait_whitelist_filter: Option<Vec<String>>,
@@ -80,7 +80,7 @@ pub struct RandomCreatureData {
     pub game_system_version: Option<GameSystemVersionEnum>,
 }
 
-#[derive(Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Serialize, Deserialize, ToSchema, Clone, Default)]
 pub struct RandomHazardData {
     pub source_filter: Option<Vec<String>>,
     pub trait_whitelist_filter: Option<Vec<String>>,

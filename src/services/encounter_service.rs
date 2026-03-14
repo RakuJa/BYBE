@@ -234,12 +234,8 @@ async fn calculate_random_encounter(
     enc_data: RandomEncounterData,
     gs: GameSystem,
 ) -> anyhow::Result<RandomEncounterGeneratorResponse> {
-    let cr_encounter_data = enc_data
-        .creature_data
-        .ok_or_else(|| anyhow::anyhow!("creature_data is required"))?;
-    let hz_encounter_data = enc_data
-        .hazard_data
-        .ok_or_else(|| anyhow::anyhow!("hazard_data is required"))?;
+    let cr_encounter_data = enc_data.creature_data.unwrap_or_default();
+    let hz_encounter_data = enc_data.hazard_data.unwrap_or_default();
 
     let is_pwl_on = cr_encounter_data.is_pwl_on;
 
