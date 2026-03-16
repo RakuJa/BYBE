@@ -17,7 +17,7 @@ hooks = [
 [[repos]]
 repo = "builtin"
 hooks = [
-    { id = "trailing-whitespace" },
+    { id = "trailing-whitespace", exclude = "CHANGELOG.md" },
     { id = "detect-private-key"},
     { id = "check-case-conflict"},
     { id = "check-symlinks"},
