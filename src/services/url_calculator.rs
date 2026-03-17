@@ -4,7 +4,7 @@ use std::env;
 
 #[cached]
 fn get_website_url() -> String {
-    env::var("BACKEND_URL").expect("Error fetching backend URL")
+    env::var("BACKEND_URL").unwrap_or("http://api.bybe.app".to_string())
 }
 
 pub fn next_url<T: PaginatedRequestExt>(pagination: &T, next_cursor: u32) -> String {
