@@ -932,11 +932,14 @@ pub async fn fetch_creatures_core_data(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<CreatureCoreData>> {
+    let pagination = if page_size < 0 {
+        format!("LIMIT ALL OFFSET {cursor}")
+    } else {
+        format!("LIMIT {page_size} OFFSET {cursor}")
+    };
     let cr_core: Vec<CreatureCoreData> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT * FROM {gs}_creature_core WHERE status = 'valid' ORDER BY name LIMIT $2 OFFSET $1"
+        "SELECT * FROM {gs}_creature_core WHERE status = 'valid' ORDER BY name {pagination}"
     )))
-    .bind(cursor)
-    .bind(page_size)
     .fetch_all(conn)
     .await?;
     Ok(update_creatures_core_with_traits(conn, gs, cr_core).await)

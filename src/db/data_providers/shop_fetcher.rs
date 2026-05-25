@@ -157,16 +157,19 @@ pub async fn fetch_items(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Item>> {
+    let pagination = if page_size < 0 {
+        format!("LIMIT ALL OFFSET {cursor}")
+    } else {
+        format!("LIMIT {page_size} OFFSET {cursor}")
+    };
     let items: Vec<Item> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT * FROM {gs}_item_table
         WHERE is_derived = False AND status = 'valid'
             AND UPPER(item_type) = 'EQUIPMENT' OR UPPER(item_type) = 'CONSUMABLE'
         GROUP BY id
-        ORDER BY name LIMIT $2 OFFSET $1"
+        ORDER BY name {pagination}"
     )))
-    .bind(cursor)
-    .bind(page_size)
     .fetch_all(conn)
     .await?;
     Ok(update_items_with_traits(conn, gs, items).await)
@@ -178,6 +181,11 @@ pub async fn fetch_weapons(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Weapon>> {
+    let pagination = if page_size < 0 {
+        format!("LIMIT ALL OFFSET {cursor}")
+    } else {
+        format!("LIMIT {page_size} OFFSET {cursor}")
+    };
     let x: Vec<Weapon> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
@@ -187,11 +195,9 @@ pub async fn fetch_weapons(
         LEFT JOIN {gs}_item_table it ON wt.base_item_id = it.id
         WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
-        ORDER BY name LIMIT $2 OFFSET $1
+        ORDER BY name {pagination}
     "
     )))
-    .bind(cursor)
-    .bind(page_size)
     .fetch_all(conn)
     .await?;
     let mut result_vec = Vec::new();
@@ -210,6 +216,11 @@ pub async fn fetch_armors(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Armor>> {
+    let pagination = if page_size < 0 {
+        format!("LIMIT ALL OFFSET {cursor}")
+    } else {
+        format!("LIMIT {page_size} OFFSET {cursor}")
+    };
     let x: Vec<Armor> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
@@ -218,11 +229,9 @@ pub async fn fetch_armors(
         LEFT JOIN {gs}_item_table it ON at.base_item_id = it.id
         WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
-        ORDER BY name LIMIT $2 OFFSET $1
+        ORDER BY name {pagination}
     "
     )))
-    .bind(cursor)
-    .bind(page_size)
     .fetch_all(conn)
     .await?;
     let mut result_vec = Vec::new();
@@ -240,6 +249,11 @@ pub async fn fetch_shields(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Shield>> {
+    let pagination = if page_size < 0 {
+        format!("LIMIT ALL OFFSET {cursor}")
+    } else {
+        format!("LIMIT {page_size} OFFSET {cursor}")
+    };
     let x: Vec<Shield> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty, it.*
@@ -247,11 +261,9 @@ pub async fn fetch_shields(
         LEFT JOIN {gs}_item_table it ON st.base_item_id = it.id
         WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
-        ORDER BY name LIMIT $2 OFFSET $1
+        ORDER BY name {pagination}
     "
     )))
-    .bind(cursor)
-    .bind(page_size)
     .fetch_all(conn)
     .await?;
     let mut result_vec = Vec::new();

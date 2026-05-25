@@ -151,32 +151,19 @@ async fn get_creatures_raw_essential_data(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<RawEssentialData>> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, RawEssentialData>(
-                "SELECT
-                id, aon_id, name, hp, level, size, family, rarity,
-                license, remaster, source, cr_type, n_of_focus_points, status
-                FROM pf_creature_table ORDER BY name LIMIT $2 OFFSET $1",
-            )
-            .bind(cursor)
-            .bind(page_size)
-            .fetch_all(&mut **conn)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, RawEssentialData>(
-                "SELECT
-                id, aon_id, name, hp, level, size, family, rarity,
-                license, remaster, source, cr_type, n_of_focus_points, status
-                FROM sf_creature_table ORDER BY name LIMIT $2 OFFSET $1",
-            )
-            .bind(cursor)
-            .bind(page_size)
-            .fetch_all(&mut **conn)
-            .await?
-        }
-    })
+    let pagination = if page_size < 0 {
+        format!("LIMIT ALL OFFSET {cursor}")
+    } else {
+        format!("LIMIT {page_size} OFFSET {cursor}")
+    };
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT
+        id, aon_id, name, hp, level, size, family, rarity,
+        license, remaster, source, cr_type, n_of_focus_points, status
+        FROM {gs}_creature_table ORDER BY name {pagination}"
+    )))
+    .fetch_all(&mut **conn)
+    .await?)
 }
 
 #[derive(Serialize, Deserialize, FromRow, Clone)]
