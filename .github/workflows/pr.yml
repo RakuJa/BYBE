@@ -29,9 +29,4 @@ jobs:
           components: rust-src, rustfmt, clippy
       - name: Install cargo-udeps
         run: cargo install cargo-udeps --locked
-      - uses: davidB/rust-cargo-make@d8952235ddd22b65d7c6b9194d4dbd58c3ffc48a #1.14.0
-      - name: Executes prebuild (download db, prepare data) if needed
-        run: cargo make prebuild
-      - uses: j178/prek-action@0bb87d7f00b0c99306c8bcb8b8beba1eb581c037 #1.1.1
-        env:
-          DATABASE_URL: "sqlite://data/database.db"
+      - uses: j178/prek-action@bdca6f102f98e2b4c7029491a53dfd366469e33d #2.0.4
