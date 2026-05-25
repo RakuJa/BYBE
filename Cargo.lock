@@ -529,7 +529,6 @@ dependencies = [
  "base64ct",
  "cached",
  "counter",
- "dotenvy",
  "futures",
  "itertools",
  "maplit",
