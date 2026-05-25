@@ -25,14 +25,14 @@ pub async fn fetch_item_traits(
         GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                  FROM pf_trait_table INTERSECT
-                 SELECT trait_id FROM pf_trait_item_association_table WHERE item_id == ($1)
+                 SELECT trait_id FROM pf_trait_item_association_table WHERE item_id = $1
                  ORDER BY name",
         )
         .bind(item_id),
         GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                  FROM sf_trait_table INTERSECT
-                 SELECT trait_id FROM sf_trait_item_association_table WHERE item_id == ($1)
+                 SELECT trait_id FROM sf_trait_item_association_table WHERE item_id = $1
                  ORDER BY name",
         )
         .bind(item_id),
@@ -49,14 +49,14 @@ pub async fn fetch_weapon_traits(
         GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                  FROM pf_trait_table INTERSECT
-                 SELECT trait_id FROM pf_trait_weapon_association_table WHERE weapon_id == ($1)
+                 SELECT trait_id FROM pf_trait_weapon_association_table WHERE weapon_id = $1
                  ORDER BY name",
         )
         .bind(weapon_id),
         GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                  FROM sf_trait_table INTERSECT
-                 SELECT trait_id FROM sf_trait_weapon_association_table WHERE weapon_id == ($1)
+                 SELECT trait_id FROM sf_trait_weapon_association_table WHERE weapon_id = $1
                  ORDER BY name",
         )
         .bind(weapon_id),
@@ -73,14 +73,14 @@ pub async fn fetch_shield_traits(
         GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                  FROM pf_trait_table INTERSECT
-                 SELECT trait_id FROM pf_trait_shield_association_table WHERE shield_id == ($1)
+                 SELECT trait_id FROM pf_trait_shield_association_table WHERE shield_id = $1
                  ORDER BY name",
         )
         .bind(shield_id),
         GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                  FROM sf_trait_table INTERSECT
-                 SELECT trait_id FROM sf_trait_shield_association_table WHERE shield_id == ($1)
+                 SELECT trait_id FROM sf_trait_shield_association_table WHERE shield_id = $1
                  ORDER BY name",
         )
         .bind(shield_id),
@@ -98,14 +98,14 @@ pub async fn fetch_armor_traits(
         GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                  FROM pf_trait_table INTERSECT
-                 SELECT trait_id FROM pf_trait_armor_association_table WHERE armor_id == ($1)
+                 SELECT trait_id FROM pf_trait_armor_association_table WHERE armor_id = $1
                  ORDER BY name",
         )
         .bind(armor_id),
         GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                  FROM sf_trait_table INTERSECT
-                 SELECT trait_id FROM sf_trait_armor_association_table WHERE armor_id == ($1)
+                 SELECT trait_id FROM sf_trait_armor_association_table WHERE armor_id = $1
                  ORDER BY name",
         )
         .bind(armor_id),
@@ -122,14 +122,14 @@ pub async fn fetch_weapon_runes(
         GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                  FROM pf_rune_table INTERSECT
-                 SELECT rune_id FROM pf_rune_weapon_association_table WHERE weapon_id == ($1)
+                 SELECT rune_id FROM pf_rune_weapon_association_table WHERE weapon_id = $1
                  ORDER BY name",
         )
         .bind(wp_id),
         GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                  FROM sf_rune_table INTERSECT
-                 SELECT rune_id FROM sf_rune_weapon_association_table WHERE weapon_id == ($1)
+                 SELECT rune_id FROM sf_rune_weapon_association_table WHERE weapon_id = $1
                  ORDER BY name",
         )
         .bind(wp_id),
@@ -146,8 +146,8 @@ pub async fn fetch_weapon_damage_data(
     Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT id, bonus_dmg, dmg_type, number_of_dice, die_size
              FROM {gs}_weapon_damage_table dm RIGHT JOIN (
-             SELECT id AS wp_id FROM {gs}_weapon_table WHERE wp_id == ($1)
-             ) ON wp_id == dm.weapon_id",
+             SELECT id AS wp_id FROM {gs}_weapon_table WHERE id = $1
+             ) wt ON wt.wp_id = dm.weapon_id",
     )))
     .bind(wp_id)
     .fetch_all(conn)
@@ -163,14 +163,14 @@ pub async fn fetch_armor_runes(
         GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                  FROM pf_rune_table INTERSECT
-                 SELECT rune_id FROM pf_rune_armor_association_table WHERE armor_id == ($1)
+                 SELECT rune_id FROM pf_rune_armor_association_table WHERE armor_id = $1
                  ORDER BY name",
         )
         .bind(wp_id),
         GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
                 FROM sf_rune_table INTERSECT
-                SELECT rune_id FROM sf_rune_armor_association_table WHERE armor_id == ($1)
+                SELECT rune_id FROM sf_rune_armor_association_table WHERE armor_id = $1
                 ORDER BY name",
         )
         .bind(wp_id),
@@ -188,7 +188,7 @@ pub async fn fetch_action_traits(
         SELECT
             tt.name
         FROM {gs}_trait_action_association_table tcat
-            LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name WHERE action_id == ($1) GROUP BY tt.name",
+            LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name WHERE action_id = $1 GROUP BY tt.name",
     ))).bind(action_id)
         .fetch_all(conn)
         .await?)

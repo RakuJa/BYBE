@@ -19,7 +19,7 @@ async fn fetch_hazard_actions(
             sqlx::query_as::<_, CoreAction>(
                 "SELECT a.* FROM pf_action_table AS a
                 JOIN pf_action_hazard_association_table AS ca ON ca.action_id = a.id
-                WHERE ca.hazard_id == ($1)",
+                WHERE ca.hazard_id = $1",
             )
             .bind(hazard_id)
             .fetch_all(conn)
@@ -29,7 +29,7 @@ async fn fetch_hazard_actions(
             sqlx::query_as::<_, CoreAction>(
                 "SELECT a.* FROM sf_action_table AS a
                 JOIN sf_action_hazard_association_table AS ca ON ca.action_id = a.id
-                WHERE ca.hazard_id == ($1)",
+                WHERE ca.hazard_id = $1",
             )
             .bind(hazard_id)
             .fetch_all(conn)
@@ -91,7 +91,7 @@ pub async fn fetch_hazard_traits(
 ) -> Result<Vec<String>> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
         "SELECT name FROM {gs}_trait_table INTERSECT SELECT trait_id
-             FROM {gs}_trait_hazard_association_table WHERE hazard_id == ($1)"
+             FROM {gs}_trait_hazard_association_table WHERE hazard_id = $1"
     )))
     .bind(hazard_id)
     .fetch_all(conn)
@@ -104,7 +104,7 @@ pub async fn fetch_hazard_by_id(
     id: i64,
 ) -> Result<ResponseHazard> {
     let mut core_hazard: Hazard = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT * FROM {gs}_hazard_table WHERE id = ? ORDER BY name LIMIT 1"
+        "SELECT * FROM {gs}_hazard_table WHERE id = $1 ORDER BY name LIMIT 1"
     )))
     .bind(id)
     .fetch_one(conn)
@@ -138,7 +138,7 @@ pub async fn fetch_hazards_data(
     page_size: i16,
 ) -> Result<Vec<Hazard>> {
     let cr_core: Vec<Hazard> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT * FROM {gs}_hazard_table ORDER BY name LIMIT ?,?"
+        "SELECT * FROM {gs}_hazard_table ORDER BY name LIMIT $2 OFFSET $1"
     )))
     .bind(cursor)
     .bind(page_size)

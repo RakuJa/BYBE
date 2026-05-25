@@ -21,7 +21,7 @@ pub async fn fetch_item_by_id(
     item_id: i64,
 ) -> Result<ResponseItem> {
     let mut item: Item = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT * FROM {gs}_item_table WHERE status = 'valid' AND id = ? ORDER BY name LIMIT 1"
+        "SELECT * FROM {gs}_item_table WHERE status = 'valid' AND id = $1 ORDER BY name LIMIT 1"
     )))
     .bind(item_id)
     .fetch_one(conn)
@@ -161,9 +161,9 @@ pub async fn fetch_items(
         "
         SELECT * FROM {gs}_item_table
         WHERE is_derived = False AND status = 'valid'
-            AND UPPER(item_type) == 'EQUIPMENT' OR UPPER(item_type) == 'CONSUMABLE'
+            AND UPPER(item_type) = 'EQUIPMENT' OR UPPER(item_type) = 'CONSUMABLE'
         GROUP BY id
-        ORDER BY name LIMIT ?,?"
+        ORDER BY name LIMIT $2 OFFSET $1"
     )))
     .bind(cursor)
     .bind(page_size)
@@ -187,7 +187,7 @@ pub async fn fetch_weapons(
         LEFT JOIN {gs}_item_table it ON wt.base_item_id = it.id
         WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
-        ORDER BY name LIMIT ?,?
+        ORDER BY name LIMIT $2 OFFSET $1
     "
     )))
     .bind(cursor)
@@ -218,7 +218,7 @@ pub async fn fetch_armors(
         LEFT JOIN {gs}_item_table it ON at.base_item_id = it.id
         WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
-        ORDER BY name LIMIT ?,?
+        ORDER BY name LIMIT $2 OFFSET $1
     "
     )))
     .bind(cursor)
@@ -247,7 +247,7 @@ pub async fn fetch_shields(
         LEFT JOIN {gs}_item_table it ON st.base_item_id = it.id
         WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
-        ORDER BY name LIMIT ?,?
+        ORDER BY name LIMIT $2 OFFSET $1
     "
     )))
     .bind(cursor)

@@ -86,15 +86,15 @@ async fn update_core_columns(
         GameSystem::Pathfinder => {
             sqlx::query(
                 "UPDATE pf_creature_core
-             SET alignment                  = ?,
-                 brute_percentage           = ?,
-                 magical_striker_percentage = ?,
-                 skill_paragon_percentage   = ?,
-                 skirmisher_percentage      = ?,
-                 sniper_percentage          = ?,
-                 soldier_percentage         = ?,
-                 spellcaster_percentage     = ?
-             WHERE id = ?",
+             SET alignment                  = $1,
+                 brute_percentage           = $2,
+                 magical_striker_percentage = $3,
+                 skill_paragon_percentage   = $4,
+                 skirmisher_percentage      = $5,
+                 sniper_percentage          = $6,
+                 soldier_percentage         = $7,
+                 spellcaster_percentage     = $8
+             WHERE id = $9",
             )
             .bind(alignment)
             .bind(brute)
@@ -111,15 +111,15 @@ async fn update_core_columns(
         GameSystem::Starfinder => {
             sqlx::query(
                 "UPDATE sf_creature_core
-             SET alignment                  = ?,
-                 brute_percentage           = ?,
-                 magical_striker_percentage = ?,
-                 skill_paragon_percentage   = ?,
-                 skirmisher_percentage      = ?,
-                 sniper_percentage          = ?,
-                 soldier_percentage         = ?,
-                 spellcaster_percentage     = ?
-             WHERE id = ?",
+             SET alignment                  = $1,
+                 brute_percentage           = $2,
+                 magical_striker_percentage = $3,
+                 skill_paragon_percentage   = $4,
+                 skirmisher_percentage      = $5,
+                 sniper_percentage          = $6,
+                 soldier_percentage         = $7,
+                 spellcaster_percentage     = $8
+             WHERE id = $9",
             )
             .bind(alignment)
             .bind(brute)
@@ -157,7 +157,7 @@ async fn get_creatures_raw_essential_data(
                 "SELECT
                 id, aon_id, name, hp, level, size, family, rarity,
                 license, remaster, source, cr_type, n_of_focus_points, status
-                FROM pf_creature_table ORDER BY name LIMIT ?,?",
+                FROM pf_creature_table ORDER BY name LIMIT $2 OFFSET $1",
             )
             .bind(cursor)
             .bind(page_size)
@@ -169,7 +169,7 @@ async fn get_creatures_raw_essential_data(
                 "SELECT
                 id, aon_id, name, hp, level, size, family, rarity,
                 license, remaster, source, cr_type, n_of_focus_points, status
-                FROM sf_creature_table ORDER BY name LIMIT ?,?",
+                FROM sf_creature_table ORDER BY name LIMIT $2 OFFSET $1",
             )
             .bind(cursor)
             .bind(page_size)
