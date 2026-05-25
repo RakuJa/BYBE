@@ -1,4 +1,5 @@
-#[derive(Default, Eq, PartialEq, Clone)]
+use sqlx::FromRow;
+#[derive(Default, Eq, PartialEq, Clone, FromRow)]
 pub struct StrikeBonusScales {
     pub id: i64,
     pub level: i64,

@@ -84,7 +84,7 @@ async fn update_core_columns(
 
     let x = match gs {
         GameSystem::Pathfinder => {
-            sqlx::query!(
+            sqlx::query(
                 "UPDATE pf_creature_core
              SET alignment                  = ?,
                  brute_percentage           = ?,
@@ -95,21 +95,21 @@ async fn update_core_columns(
                  soldier_percentage         = ?,
                  spellcaster_percentage     = ?
              WHERE id = ?",
-                alignment,
-                brute,
-                magical_striker,
-                skill_paragon,
-                skirmisher,
-                sniper,
-                soldier,
-                spellcaster,
-                creature_id
             )
+            .bind(alignment)
+            .bind(brute)
+            .bind(magical_striker)
+            .bind(skill_paragon)
+            .bind(skirmisher)
+            .bind(sniper)
+            .bind(soldier)
+            .bind(spellcaster)
+            .bind(creature_id)
             .execute(&mut **conn)
             .await?
         }
         GameSystem::Starfinder => {
-            sqlx::query!(
+            sqlx::query(
                 "UPDATE sf_creature_core
              SET alignment                  = ?,
                  brute_percentage           = ?,
@@ -120,16 +120,16 @@ async fn update_core_columns(
                  soldier_percentage         = ?,
                  spellcaster_percentage     = ?
              WHERE id = ?",
-                alignment,
-                brute,
-                magical_striker,
-                skill_paragon,
-                skirmisher,
-                sniper,
-                soldier,
-                spellcaster,
-                creature_id
             )
+            .bind(alignment)
+            .bind(brute)
+            .bind(magical_striker)
+            .bind(skill_paragon)
+            .bind(skirmisher)
+            .bind(sniper)
+            .bind(soldier)
+            .bind(spellcaster)
+            .bind(creature_id)
             .execute(&mut **conn)
             .await?
         }
@@ -153,28 +153,26 @@ async fn get_creatures_raw_essential_data(
 ) -> Result<Vec<RawEssentialData>> {
     Ok(match gs {
         GameSystem::Pathfinder => {
-            sqlx::query_as!(
-                RawEssentialData,
+            sqlx::query_as::<_, RawEssentialData>(
                 "SELECT
                 id, aon_id, name, hp, level, size, family, rarity,
                 license, remaster, source, cr_type, n_of_focus_points, status
                 FROM pf_creature_table ORDER BY name LIMIT ?,?",
-                cursor,
-                page_size
             )
+            .bind(cursor)
+            .bind(page_size)
             .fetch_all(&mut **conn)
             .await?
         }
         GameSystem::Starfinder => {
-            sqlx::query_as!(
-                RawEssentialData,
+            sqlx::query_as::<_, RawEssentialData>(
                 "SELECT
                 id, aon_id, name, hp, level, size, family, rarity,
                 license, remaster, source, cr_type, n_of_focus_points, status
                 FROM sf_creature_table ORDER BY name LIMIT ?,?",
-                cursor,
-                page_size
             )
+            .bind(cursor)
+            .bind(page_size)
             .fetch_all(&mut **conn)
             .await?
         }

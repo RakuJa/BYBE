@@ -6,10 +6,11 @@ use crate::models::shared::action::Action;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)] // it's actually used in the example schema
 use serde_json::json;
+use sqlx::FromRow;
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
+#[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug, FromRow)]
 pub struct AbilityScores {
     #[schema(example = 0)]
     pub charisma: i64,

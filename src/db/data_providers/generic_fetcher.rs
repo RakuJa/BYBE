@@ -22,24 +22,20 @@ pub async fn fetch_item_traits(
     item_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                  FROM pf_trait_table INTERSECT
                  SELECT trait_id FROM pf_trait_item_association_table WHERE item_id == ($1)
                  ORDER BY name",
-                item_id
-            )
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        )
+        .bind(item_id),
+        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                  FROM sf_trait_table INTERSECT
                  SELECT trait_id FROM sf_trait_item_association_table WHERE item_id == ($1)
                  ORDER BY name",
-                item_id
-            )
-        }
+        )
+        .bind(item_id),
     };
     Ok(query.fetch_all(conn).await?)
 }
@@ -50,24 +46,20 @@ pub async fn fetch_weapon_traits(
     weapon_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                  FROM pf_trait_table INTERSECT
                  SELECT trait_id FROM pf_trait_weapon_association_table WHERE weapon_id == ($1)
                  ORDER BY name",
-                weapon_id
-            )
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        )
+        .bind(weapon_id),
+        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                  FROM sf_trait_table INTERSECT
                  SELECT trait_id FROM sf_trait_weapon_association_table WHERE weapon_id == ($1)
                  ORDER BY name",
-                weapon_id
-            )
-        }
+        )
+        .bind(weapon_id),
     };
     Ok(query.fetch_all(conn).await?)
 }
@@ -78,24 +70,20 @@ pub async fn fetch_shield_traits(
     shield_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                  FROM pf_trait_table INTERSECT
                  SELECT trait_id FROM pf_trait_shield_association_table WHERE shield_id == ($1)
                  ORDER BY name",
-                shield_id
-            )
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        )
+        .bind(shield_id),
+        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                  FROM sf_trait_table INTERSECT
                  SELECT trait_id FROM sf_trait_shield_association_table WHERE shield_id == ($1)
                  ORDER BY name",
-                shield_id
-            )
-        }
+        )
+        .bind(shield_id),
     };
 
     Ok(query.fetch_all(conn).await?)
@@ -107,24 +95,20 @@ pub async fn fetch_armor_traits(
     armor_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                  FROM pf_trait_table INTERSECT
                  SELECT trait_id FROM pf_trait_armor_association_table WHERE armor_id == ($1)
                  ORDER BY name",
-                armor_id
-            )
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        )
+        .bind(armor_id),
+        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                  FROM sf_trait_table INTERSECT
                  SELECT trait_id FROM sf_trait_armor_association_table WHERE armor_id == ($1)
                  ORDER BY name",
-                armor_id
-            )
-        }
+        )
+        .bind(armor_id),
     };
     Ok(query.fetch_all(conn).await?)
 }
@@ -135,24 +119,20 @@ pub async fn fetch_weapon_runes(
     wp_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                  FROM pf_rune_table INTERSECT
                  SELECT rune_id FROM pf_rune_weapon_association_table WHERE weapon_id == ($1)
                  ORDER BY name",
-                wp_id
-            )
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        )
+        .bind(wp_id),
+        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                  FROM sf_rune_table INTERSECT
                  SELECT rune_id FROM sf_rune_weapon_association_table WHERE weapon_id == ($1)
                  ORDER BY name",
-                wp_id
-            )
-        }
+        )
+        .bind(wp_id),
     };
 
     Ok(query.fetch_all(conn).await?)
@@ -180,24 +160,20 @@ pub async fn fetch_armor_runes(
     wp_id: i64,
 ) -> Result<Vec<String>> {
     let query = match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                  FROM pf_rune_table INTERSECT
                  SELECT rune_id FROM pf_rune_armor_association_table WHERE armor_id == ($1)
                  ORDER BY name",
-                wp_id
-            )
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_scalar!(
-                "SELECT name
+        )
+        .bind(wp_id),
+        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
+            "SELECT name
                 FROM sf_rune_table INTERSECT
                 SELECT rune_id FROM sf_rune_armor_association_table WHERE armor_id == ($1)
                 ORDER BY name",
-                wp_id
-            )
-        }
+        )
+        .bind(wp_id),
     };
     Ok(query.fetch_all(conn).await?)
 }

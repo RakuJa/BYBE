@@ -16,24 +16,22 @@ async fn fetch_hazard_actions(
 ) -> Result<Vec<Action>> {
     let core_actions = match gs {
         GameSystem::Pathfinder => {
-            sqlx::query_as!(
-                CoreAction,
+            sqlx::query_as::<_, CoreAction>(
                 "SELECT a.* FROM pf_action_table AS a
                 JOIN pf_action_hazard_association_table AS ca ON ca.action_id = a.id
                 WHERE ca.hazard_id == ($1)",
-                hazard_id
             )
+            .bind(hazard_id)
             .fetch_all(conn)
             .await?
         }
         GameSystem::Starfinder => {
-            sqlx::query_as!(
-                CoreAction,
+            sqlx::query_as::<_, CoreAction>(
                 "SELECT a.* FROM sf_action_table AS a
                 JOIN sf_action_hazard_association_table AS ca ON ca.action_id = a.id
                 WHERE ca.hazard_id == ($1)",
-                hazard_id
             )
+            .bind(hazard_id)
             .fetch_all(conn)
             .await?
         }
