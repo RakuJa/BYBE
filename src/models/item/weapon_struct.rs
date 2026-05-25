@@ -2,7 +2,7 @@ use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::routers_validator_structs::Dice;
 use serde::{Deserialize, Serialize};
-use sqlx::sqlite::SqliteRow;
+use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
 use std::str::FromStr;
 use utoipa::ToSchema;
@@ -32,8 +32,8 @@ pub struct WeaponData {
     pub splash_dmg: Option<i64>,
 }
 
-impl<'r> FromRow<'r, SqliteRow> for Weapon {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for Weapon {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let item_core = Item::from_row(row)?;
         let wp_type = WeaponTypeEnum::from_str(row.try_get("weapon_type")?);
         Ok(Self {
@@ -76,8 +76,8 @@ pub struct DamageData {
     pub dice: Option<Dice>,
 }
 
-impl<'r> FromRow<'r, SqliteRow> for DamageData {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for DamageData {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         Ok(Self {
             id: row.try_get("id")?,
             bonus_dmg: row.try_get("bonus_dmg")?,

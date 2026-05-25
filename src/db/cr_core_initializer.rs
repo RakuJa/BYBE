@@ -12,15 +12,15 @@ use crate::models::shared::size_enum::SizeEnum;
 use crate::models::shared::status_enum::Status;
 use anyhow::{Result, bail};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, Pool, Sqlite, Transaction};
+use sqlx::{FromRow, Pool, Postgres, Transaction};
 use std::collections::BTreeMap;
 use tracing::warn;
 
-pub async fn update_creature_core_table(conn: &Pool<Sqlite>, gs: GameSystem) -> Result<()> {
+pub async fn update_creature_core_table(conn: &Pool<Postgres>, gs: GameSystem) -> Result<()> {
     warn!("Handler for startup, Should only be used once for each gamesystem");
     let scales = fetch_creature_scales(conn).await?;
     let all_traits = fetch_all_creature_traits(conn, gs).await?;
-    let mut tx: Transaction<Sqlite> = conn.begin().await?;
+    let mut tx: Transaction<Postgres> = conn.begin().await?;
     for cr in get_creatures_raw_essential_data(&mut tx, gs, 0, -1).await? {
         let traits = all_traits.get(&cr.id).cloned().unwrap_or_default();
         let alignment = AlignmentEnum::from((&traits, cr.remaster));
@@ -68,7 +68,7 @@ pub async fn update_creature_core_table(conn: &Pool<Sqlite>, gs: GameSystem) -> 
 }
 
 async fn update_core_columns(
-    conn: &mut Transaction<'_, Sqlite>,
+    conn: &mut Transaction<'_, Postgres>,
     gs: GameSystem,
     roles: &BTreeMap<CreatureRoleEnum, i64>,
     alignment: String,
@@ -146,9 +146,9 @@ fn find_role(roles: &BTreeMap<CreatureRoleEnum, i64>, target: CreatureRoleEnum) 
 }
 
 async fn get_creatures_raw_essential_data(
-    conn: &mut Transaction<'_, Sqlite>,
+    conn: &mut Transaction<'_, Postgres>,
     gs: GameSystem,
-    cursor: u32,
+    cursor: i64,
     page_size: i16,
 ) -> Result<Vec<RawEssentialData>> {
     Ok(match gs {

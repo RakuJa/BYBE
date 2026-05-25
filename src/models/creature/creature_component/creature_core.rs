@@ -6,7 +6,7 @@ use crate::models::shared::status_enum::Status;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)]
 use serde_json::json;
-use sqlx::sqlite::SqliteRow;
+use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
@@ -48,8 +48,8 @@ pub struct DerivedData {
     pub role_data: BTreeMap<String, i64>,
 }
 
-impl<'r> FromRow<'r, SqliteRow> for EssentialData {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for EssentialData {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let rarity: String = row.try_get("rarity")?;
         let size: String = row.try_get("size")?;
         let alignment: String = row.try_get("alignment")?;
@@ -74,8 +74,8 @@ impl<'r> FromRow<'r, SqliteRow> for EssentialData {
     }
 }
 
-impl<'r> FromRow<'r, SqliteRow> for DerivedData {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for DerivedData {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let mut attack_list = BTreeMap::new();
         attack_list.insert(String::from("melee"), row.try_get("is_melee")?);
         attack_list.insert(String::from("ranged"), row.try_get("is_ranged")?);
@@ -109,8 +109,8 @@ impl<'r> FromRow<'r, SqliteRow> for DerivedData {
     }
 }
 
-impl<'r> FromRow<'r, SqliteRow> for CreatureCoreData {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for CreatureCoreData {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         Ok(Self {
             essential: EssentialData::from_row(row)?,
             derived: DerivedData::from_row(row)?,

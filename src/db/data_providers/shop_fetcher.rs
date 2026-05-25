@@ -12,11 +12,11 @@ use crate::models::response_data::ResponseItem;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
 use nanorand::{Rng, WyRand};
-use sqlx::{Pool, Sqlite, query_as};
+use sqlx::{Pool, Postgres, query_as};
 use tracing::debug;
 
 pub async fn fetch_item_by_id(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     item_id: i64,
 ) -> Result<ResponseItem> {
@@ -54,7 +54,7 @@ pub async fn fetch_item_by_id(
 }
 
 async fn fetch_weapon_by_item_id(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     item_id: i64,
 ) -> Result<Weapon> {
@@ -80,7 +80,7 @@ async fn fetch_weapon_by_item_id(
 }
 
 async fn fetch_armor_by_item_id(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     item_id: i64,
 ) -> Result<Armor> {
@@ -103,7 +103,7 @@ async fn fetch_armor_by_item_id(
 }
 
 async fn fetch_shield_by_item_id(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     item_id: i64,
 ) -> Result<Shield> {
@@ -124,7 +124,7 @@ async fn fetch_shield_by_item_id(
 }
 
 async fn fetch_weapon_data_by_item_id(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     item_id: i64,
 ) -> Result<WeaponData> {
@@ -134,7 +134,7 @@ async fn fetch_weapon_data_by_item_id(
 }
 
 async fn fetch_armor_data_by_item_id(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     item_id: i64,
 ) -> Result<ArmorData> {
@@ -142,7 +142,7 @@ async fn fetch_armor_data_by_item_id(
 }
 
 async fn fetch_shield_data_by_item_id(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     item_id: i64,
 ) -> Result<ShieldData> {
@@ -152,9 +152,9 @@ async fn fetch_shield_data_by_item_id(
 }
 
 pub async fn fetch_items(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
-    cursor: u32,
+    cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Item>> {
     let items: Vec<Item> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -173,9 +173,9 @@ pub async fn fetch_items(
 }
 
 pub async fn fetch_weapons(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
-    cursor: u32,
+    cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Weapon>> {
     let x: Vec<Weapon> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -205,9 +205,9 @@ pub async fn fetch_weapons(
 }
 
 pub async fn fetch_armors(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
-    cursor: u32,
+    cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Armor>> {
     let x: Vec<Armor> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -235,9 +235,9 @@ pub async fn fetch_armors(
 }
 
 pub async fn fetch_shields(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
-    cursor: u32,
+    cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Shield>> {
     let x: Vec<Shield> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -263,7 +263,7 @@ pub async fn fetch_shields(
 }
 
 async fn update_items_with_traits(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     mut items: Vec<Item>,
 ) -> Vec<Item> {
@@ -274,7 +274,7 @@ async fn update_items_with_traits(
 }
 
 pub async fn fetch_items_with_filters(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     filters: &ShopFilterQuery,
 ) -> Result<Vec<Item>> {

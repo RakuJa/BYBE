@@ -2,7 +2,7 @@ use crate::models::hazard::hazard_field_filter::HazardComplexityEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use serde::{Deserialize, Serialize};
-use sqlx::sqlite::SqliteRow;
+use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
 use utoipa::ToSchema;
 
@@ -37,8 +37,8 @@ pub struct HazardEssentialData {
     pub size: SizeEnum,
 }
 
-impl<'r> FromRow<'r, SqliteRow> for HazardEssentialData {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for HazardEssentialData {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let rarity: String = row.try_get("rarity")?;
         let size: String = row.try_get("size")?;
         let is_complex: bool = row.try_get("is_complex")?;

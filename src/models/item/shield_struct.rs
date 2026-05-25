@@ -1,6 +1,6 @@
 use crate::models::item::item_struct::Item;
 use serde::{Deserialize, Serialize};
-use sqlx::sqlite::SqliteRow;
+use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
 use utoipa::ToSchema;
 
@@ -21,8 +21,8 @@ pub struct ShieldData {
     pub speed_penalty: i64,
 }
 
-impl<'r> FromRow<'r, SqliteRow> for Shield {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for Shield {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let item_core = Item::from_row(row)?;
         Ok(Self {
             item_core,

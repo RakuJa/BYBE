@@ -1,6 +1,6 @@
 use crate::models::item::item_struct::Item;
 use serde::{Deserialize, Serialize};
-use sqlx::sqlite::SqliteRow;
+use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
 use utoipa::ToSchema;
 
@@ -30,8 +30,8 @@ pub struct ArmorData {
     pub strength_required: Option<i64>,
 }
 
-impl<'r> FromRow<'r, SqliteRow> for Armor {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for Armor {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let item_core = Item::from_row(row)?;
         Ok(Self {
             item_core,

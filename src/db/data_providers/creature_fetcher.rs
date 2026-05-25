@@ -47,11 +47,11 @@ use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
 use futures::future::join_all;
-use sqlx::{Pool, Sqlite};
+use sqlx::{Pool, Postgres};
 use std::collections::HashMap;
 
 async fn fetch_creature_immunities(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Option<String>>> {
@@ -71,7 +71,7 @@ async fn fetch_creature_immunities(
 }
 
 async fn fetch_creature_languages(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<RawLanguage>> {
@@ -98,7 +98,7 @@ async fn fetch_creature_languages(
 }
 
 async fn fetch_creature_resistances(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Resistance>> {
@@ -121,7 +121,7 @@ async fn fetch_creature_resistances(
 }
 
 async fn fetch_creature_resistances_core(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<CoreResistanceData>> {
@@ -146,7 +146,7 @@ async fn fetch_creature_resistances_core(
 }
 
 async fn fetch_creature_resistances_vs(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     res_id: i64,
 ) -> Result<(Vec<String>, Vec<String>)> {
@@ -179,7 +179,7 @@ async fn fetch_creature_resistances_vs(
 }
 
 async fn fetch_creature_senses(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Sense>> {
@@ -206,7 +206,7 @@ async fn fetch_creature_senses(
 }
 
 async fn fetch_creature_speeds(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<RawSpeed>> {
@@ -231,7 +231,7 @@ async fn fetch_creature_speeds(
 }
 
 async fn fetch_creature_weaknesses(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<RawWeakness>> {
@@ -256,7 +256,7 @@ async fn fetch_creature_weaknesses(
 }
 
 async fn fetch_creature_saving_throws(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<SavingThrows> {
@@ -283,7 +283,7 @@ async fn fetch_creature_saving_throws(
 }
 
 async fn fetch_creature_ability_scores(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<AbilityScores> {
@@ -309,7 +309,7 @@ async fn fetch_creature_ability_scores(
     })
 }
 
-async fn fetch_creature_ac(conn: &Pool<Sqlite>, gs: GameSystem, creature_id: i64) -> Result<i8> {
+async fn fetch_creature_ac(conn: &Pool<Postgres>, gs: GameSystem, creature_id: i64) -> Result<i8> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
         "SELECT ac FROM {gs}_creature_table WHERE id = $1"
     )))
@@ -319,7 +319,7 @@ async fn fetch_creature_ac(conn: &Pool<Sqlite>, gs: GameSystem, creature_id: i64
 }
 
 async fn fetch_creature_ac_detail(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
@@ -332,7 +332,7 @@ async fn fetch_creature_ac_detail(
 }
 
 async fn fetch_creature_hp_detail(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
@@ -345,7 +345,7 @@ async fn fetch_creature_hp_detail(
 }
 
 async fn fetch_creature_language_detail(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
@@ -358,7 +358,7 @@ async fn fetch_creature_language_detail(
 }
 
 async fn fetch_creature_perception(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<i8> {
@@ -371,7 +371,7 @@ async fn fetch_creature_perception(
 }
 
 async fn fetch_creature_vision(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<bool> {
@@ -384,7 +384,7 @@ async fn fetch_creature_vision(
 }
 
 async fn fetch_creature_perception_detail(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
@@ -397,7 +397,7 @@ async fn fetch_creature_perception_detail(
 }
 
 pub async fn fetch_creature_traits(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<String>> {
@@ -411,7 +411,7 @@ pub async fn fetch_creature_traits(
 }
 
 pub async fn fetch_all_creature_traits(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
 ) -> Result<HashMap<i64, Vec<String>>> {
     let rows: Vec<(i64, String)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -430,7 +430,7 @@ pub async fn fetch_all_creature_traits(
 }
 
 async fn fetch_creature_weapons(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Weapon>> {
@@ -469,7 +469,7 @@ async fn fetch_creature_weapons(
 }
 
 async fn fetch_creature_armors(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Armor>> {
@@ -504,7 +504,7 @@ async fn fetch_creature_armors(
 }
 
 async fn fetch_creature_shields(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Shield>> {
@@ -536,7 +536,7 @@ async fn fetch_creature_shields(
 }
 
 async fn fetch_creature_items(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Item>> {
@@ -564,7 +564,7 @@ async fn fetch_creature_items(
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_item_quantity(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
     item_id: i64,
@@ -595,7 +595,7 @@ async fn fetch_item_quantity(
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_weapon_quantity(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
     weapon_id: i64,
@@ -626,7 +626,7 @@ async fn fetch_weapon_quantity(
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_shield_quantity(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
     shield_id: i64,
@@ -657,7 +657,7 @@ async fn fetch_shield_quantity(
 /// It needs to be fetched from the association table.
 /// It defaults to 1 if error are found
 async fn fetch_armor_quantity(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
     armor_id: i64,
@@ -685,7 +685,7 @@ async fn fetch_armor_quantity(
 }
 
 async fn fetch_creature_actions(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Action>> {
@@ -723,7 +723,7 @@ async fn fetch_creature_actions(
 }
 
 async fn fetch_creature_skills(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Skill>> {
@@ -748,7 +748,7 @@ async fn fetch_creature_skills(
 }
 
 pub async fn fetch_creature_spells(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
     spellcaster_entry_id: i64,
@@ -776,7 +776,7 @@ pub async fn fetch_creature_spells(
 }
 
 async fn fetch_creature_spellcaster_entries(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<SpellcasterEntry>> {
@@ -818,7 +818,7 @@ async fn fetch_creature_spellcaster_entries(
 }
 
 async fn fetch_creature_core_data(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<CreatureCoreData> {
@@ -839,7 +839,7 @@ async fn fetch_creature_core_data(
 }
 
 async fn update_creatures_core_with_traits(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     mut creature_core_data: Vec<CreatureCoreData>,
 ) -> Vec<CreatureCoreData> {
@@ -856,7 +856,7 @@ async fn update_creatures_core_with_traits(
 }
 
 pub async fn fetch_traits_associated_with_creatures(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
 ) -> Result<Vec<String>> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
@@ -875,7 +875,7 @@ pub async fn fetch_traits_associated_with_creatures(
 }
 
 pub async fn fetch_creature_by_id(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     variant: CreatureVariant,
     response_data_mods: &CreatureResponseDataModifiers,
@@ -917,7 +917,7 @@ pub async fn fetch_creature_by_id(
 }
 
 pub async fn fetch_creatures_core_data_with_filters(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     bestiary_filter_query: &BestiaryFilterQuery,
 ) -> Result<Vec<CreatureCoreData>> {
@@ -931,9 +931,9 @@ pub async fn fetch_creatures_core_data_with_filters(
 /// Gets all the creatures core it can find with the given pagination as boundaries
 /// for the search.
 pub async fn fetch_creatures_core_data(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
-    cursor: u32,
+    cursor: i64,
     page_size: i16,
 ) -> Result<Vec<CreatureCoreData>> {
     let cr_core: Vec<CreatureCoreData> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -947,7 +947,7 @@ pub async fn fetch_creatures_core_data(
 }
 
 pub async fn fetch_creature_extra_data(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<CreatureExtraData> {
@@ -1006,7 +1006,7 @@ pub async fn fetch_creature_extra_data(
 }
 
 pub async fn fetch_creature_combat_data(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<CreatureCombatData> {
@@ -1043,7 +1043,7 @@ pub async fn fetch_creature_combat_data(
 }
 
 pub async fn fetch_creature_spellcaster_data(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<CreatureSpellcasterData> {
@@ -1052,7 +1052,7 @@ pub async fn fetch_creature_spellcaster_data(
     })
 }
 
-pub async fn fetch_creature_scales(conn: &Pool<Sqlite>) -> Result<CreatureScales> {
+pub async fn fetch_creature_scales(conn: &Pool<Postgres>) -> Result<CreatureScales> {
     Ok(CreatureScales {
         ability_scales: sqlx::query_as::<_, AbilityScales>("SELECT * FROM ability_scales_table")
             .fetch_all(conn)

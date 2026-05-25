@@ -6,11 +6,11 @@ pub mod models;
 pub mod services;
 pub mod traits;
 
-use sqlx::{Pool, Sqlite};
+use sqlx::{Pool, Postgres};
 
 #[derive(Clone)]
 pub struct AppState {
-    pub conn: Pool<Sqlite>,
+    pub conn: Pool<Postgres>,
     pub name_json_path: String,
     pub nick_json_path: String,
 }

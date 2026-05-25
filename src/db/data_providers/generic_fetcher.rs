@@ -1,10 +1,10 @@
 use crate::models::item::weapon_struct::DamageData;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
-use sqlx::{Pool, Sqlite};
+use sqlx::{Pool, Postgres};
 
 pub async fn fetch_unique_values_of_field(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     table: &str,
     field: &str,
 ) -> Result<Vec<String>> {
@@ -17,7 +17,7 @@ pub async fn fetch_unique_values_of_field(
 }
 
 pub async fn fetch_item_traits(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     item_id: i64,
 ) -> Result<Vec<String>> {
@@ -41,7 +41,7 @@ pub async fn fetch_item_traits(
 }
 
 pub async fn fetch_weapon_traits(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     weapon_id: i64,
 ) -> Result<Vec<String>> {
@@ -65,7 +65,7 @@ pub async fn fetch_weapon_traits(
 }
 
 pub async fn fetch_shield_traits(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     shield_id: i64,
 ) -> Result<Vec<String>> {
@@ -90,7 +90,7 @@ pub async fn fetch_shield_traits(
 }
 
 pub async fn fetch_armor_traits(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     armor_id: i64,
 ) -> Result<Vec<String>> {
@@ -114,7 +114,7 @@ pub async fn fetch_armor_traits(
 }
 
 pub async fn fetch_weapon_runes(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     wp_id: i64,
 ) -> Result<Vec<String>> {
@@ -139,7 +139,7 @@ pub async fn fetch_weapon_runes(
 }
 
 pub async fn fetch_weapon_damage_data(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     wp_id: i64,
 ) -> Result<Vec<DamageData>> {
@@ -155,7 +155,7 @@ pub async fn fetch_weapon_damage_data(
 }
 
 pub async fn fetch_armor_runes(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     wp_id: i64,
 ) -> Result<Vec<String>> {
@@ -179,7 +179,7 @@ pub async fn fetch_armor_runes(
 }
 
 pub async fn fetch_action_traits(
-    conn: &Pool<Sqlite>,
+    conn: &Pool<Postgres>,
     gs: GameSystem,
     action_id: i64,
 ) -> Result<Vec<String>> {
