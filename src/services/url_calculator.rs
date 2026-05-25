@@ -1,10 +1,9 @@
 use crate::traits::url::paginated_request_ext::PaginatedRequestExt;
-use cached::proc_macro::cached;
+use cached::cached;
 use std::env;
-
 #[cached]
 fn get_website_url() -> String {
-    env::var("BACKEND_URL").unwrap_or("http://api.bybe.app".to_string())
+    env::var("BACKEND_URL").unwrap_or_else(|_| "http://api.bybe.app".to_string())
 }
 
 pub fn next_url<T: PaginatedRequestExt>(pagination: &T, next_cursor: u32) -> String {

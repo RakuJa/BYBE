@@ -54,7 +54,7 @@ async fn fetch_creature_immunities(
     conn: &Pool<Sqlite>,
     gs: GameSystem,
     creature_id: i64,
-) -> Result<Vec<String>> {
+) -> Result<Vec<Option<String>>> {
     let query = match gs {
         GameSystem::Pathfinder => {
             sqlx::query_scalar!(
@@ -1012,7 +1012,7 @@ pub async fn fetch_creature_extra_data(
         languages: languages
             .unwrap_or_default()
             .iter()
-            .map(|x| x.name.clone())
+            .filter_map(|x| x.name.clone())
             .collect(),
         senses: senses.unwrap_or_default(),
         speeds: speeds
@@ -1051,7 +1051,12 @@ pub async fn fetch_creature_combat_data(
         armors: armors.unwrap_or_default(),
         shields: shields.unwrap_or_default(),
         resistances: resistances.unwrap_or_default(),
-        immunities: immunities.unwrap_or_default(),
+        immunities: immunities
+            .unwrap_or_default()
+            .iter()
+            .flatten()
+            .cloned()
+            .collect(),
         weaknesses: weaknesses
             .unwrap_or_default()
             .iter()

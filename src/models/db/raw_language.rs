@@ -3,5 +3,5 @@ use sqlx::FromRow;
 
 #[derive(Serialize, Deserialize, FromRow)]
 pub struct RawLanguage {
-    pub name: String,
+    pub name: Option<String>,
 }
