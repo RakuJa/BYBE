@@ -13,16 +13,22 @@ use utoipa::ToSchema;
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug, FromRow)]
 pub struct AbilityScores {
     #[schema(example = 0)]
+    #[sqlx(try_from = "i32")]
     pub charisma: i64,
     #[schema(example = 0)]
+    #[sqlx(try_from = "i32")]
     pub constitution: i64,
     #[schema(example = 0)]
+    #[sqlx(try_from = "i32")]
     pub dexterity: i64,
     #[schema(example = 0)]
+    #[sqlx(try_from = "i32")]
     pub intelligence: i64,
     #[schema(example = 0)]
+    #[sqlx(try_from = "i32")]
     pub strength: i64,
     #[schema(example = 0)]
+    #[sqlx(try_from = "i32")]
     pub wisdom: i64,
 }
 
@@ -40,7 +46,7 @@ pub struct CreatureExtraData {
     pub ac_detail: Option<String>,
     pub language_detail: Option<String>,
     #[schema(example = 0)]
-    pub perception: i8,
+    pub perception: i32,
     pub perception_detail: Option<String>,
     pub has_vision: bool,
 }
@@ -49,7 +55,7 @@ impl CreatureExtraData {
     fn add_mod_to_perception_and_skill_mods(self, modifier: i64) -> Self {
         let mut ex_data = self;
         // we should never have a pwl much greater than perception (pwl=lvl)
-        ex_data.perception = (i64::from(ex_data.perception) + modifier) as i8;
+        ex_data.perception = (i64::from(ex_data.perception) + modifier) as i32;
 
         ex_data.skills = ex_data
             .skills

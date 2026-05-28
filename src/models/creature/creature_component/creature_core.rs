@@ -56,10 +56,14 @@ impl<'r> FromRow<'r, PgRow> for EssentialData {
         let status_str: String = row.try_get("status").unwrap_or_default();
         Ok(Self {
             id: row.try_get("id")?,
-            aon_id: row.try_get("aon_id").ok(),
+            aon_id: row
+                .try_get::<Option<i32>, _>("aon_id")
+                .ok()
+                .flatten()
+                .map(|v| v as i64),
             name: row.try_get("name")?,
-            hp: row.try_get("hp")?,
-            base_level: row.try_get("level")?,
+            hp: row.try_get::<i32, _>("hp")? as i64,
+            base_level: row.try_get::<i32, _>("level")? as i64,
             size: SizeEnum::from(size),
             family: row.try_get("family").unwrap_or_else(|_| String::from("-")),
             rarity: RarityEnum::from(rarity),
@@ -68,7 +72,7 @@ impl<'r> FromRow<'r, PgRow> for EssentialData {
             source: row.try_get("source")?,
             cr_type: CreatureTypeEnum::from(row.try_get("cr_type").ok()),
             alignment: AlignmentEnum::from(alignment),
-            focus_points: row.try_get("focus_points")?,
+            focus_points: row.try_get::<i32, _>("focus_points")? as i64,
             status: status_str.into(),
         })
     }

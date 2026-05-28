@@ -13,10 +13,13 @@ use utoipa::ToSchema;
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug, FromRow)]
 pub struct SavingThrows {
     #[schema(example = 0)]
+    #[sqlx(try_from = "i32")]
     pub fortitude: i64,
     #[schema(example = 0)]
+    #[sqlx(try_from = "i32")]
     pub reflex: i64,
     #[schema(example = 0)]
+    #[sqlx(try_from = "i32")]
     pub will: i64,
     pub fortitude_detail: Option<String>,
     pub reflex_detail: Option<String>,
@@ -35,7 +38,7 @@ pub struct CreatureCombatData {
     pub weaknesses: BTreeMap<String, i16>,
     pub saving_throws: SavingThrows,
     #[schema(example = 10)]
-    pub ac: i8,
+    pub ac: i32,
 }
 
 impl CreatureCombatData {
@@ -50,7 +53,7 @@ impl CreatureCombatData {
                 wp
             })
             .collect();
-        com_data.ac = (i64::from(com_data.ac) + modifier) as i8;
+        com_data.ac = (i64::from(com_data.ac) + modifier) as i32;
         com_data.saving_throws.fortitude += modifier;
         com_data.saving_throws.reflex += modifier;
         com_data.saving_throws.will += modifier;

@@ -6,6 +6,6 @@ use utoipa::ToSchema;
 pub struct Sense {
     pub id: i64,
     pub name: String,
-    pub range: Option<i64>,
+    pub range: Option<i32>,
     pub acuity: Option<String>,
 }

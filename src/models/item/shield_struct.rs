@@ -28,9 +28,9 @@ impl<'r> FromRow<'r, PgRow> for Shield {
             item_core,
             shield_data: ShieldData {
                 id: row.try_get("shield_id")?,
-                bonus_ac: row.try_get("bonus_ac")?,
-                n_of_reinforcing_runes: row.try_get("n_of_reinforcing_runes")?,
-                speed_penalty: row.try_get("speed_penalty")?,
+                bonus_ac: row.try_get::<i32, _>("bonus_ac")? as i64,
+                n_of_reinforcing_runes: row.try_get::<i32, _>("n_of_reinforcing_runes")? as i64,
+                speed_penalty: row.try_get::<i32, _>("speed_penalty")? as i64,
             },
         })
     }

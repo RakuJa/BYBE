@@ -1,10 +1,10 @@
 use crate::models::item::weapon_struct::DamageData;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
-use sqlx::{Pool, Postgres};
+use sqlx::PgPool;
 
 pub async fn fetch_unique_values_of_field(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     table: &str,
     field: &str,
 ) -> Result<Vec<String>> {
@@ -12,15 +12,11 @@ pub async fn fetch_unique_values_of_field(
         "SELECT CAST(t1.{field} AS TEXT) FROM ((SELECT DISTINCT ({field}) FROM {table})) t1"
     );
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(query))
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?)
 }
 
-pub async fn fetch_item_traits(
-    conn: &Pool<Postgres>,
-    gs: GameSystem,
-    item_id: i64,
-) -> Result<Vec<String>> {
+pub async fn fetch_item_traits(pool: &PgPool, gs: GameSystem, item_id: i64) -> Result<Vec<String>> {
     let query = match gs {
         GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
@@ -37,11 +33,11 @@ pub async fn fetch_item_traits(
         )
         .bind(item_id),
     };
-    Ok(query.fetch_all(conn).await?)
+    Ok(query.fetch_all(pool).await?)
 }
 
 pub async fn fetch_weapon_traits(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     weapon_id: i64,
 ) -> Result<Vec<String>> {
@@ -61,11 +57,11 @@ pub async fn fetch_weapon_traits(
         )
         .bind(weapon_id),
     };
-    Ok(query.fetch_all(conn).await?)
+    Ok(query.fetch_all(pool).await?)
 }
 
 pub async fn fetch_shield_traits(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     shield_id: i64,
 ) -> Result<Vec<String>> {
@@ -86,11 +82,11 @@ pub async fn fetch_shield_traits(
         .bind(shield_id),
     };
 
-    Ok(query.fetch_all(conn).await?)
+    Ok(query.fetch_all(pool).await?)
 }
 
 pub async fn fetch_armor_traits(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     armor_id: i64,
 ) -> Result<Vec<String>> {
@@ -110,14 +106,10 @@ pub async fn fetch_armor_traits(
         )
         .bind(armor_id),
     };
-    Ok(query.fetch_all(conn).await?)
+    Ok(query.fetch_all(pool).await?)
 }
 
-pub async fn fetch_weapon_runes(
-    conn: &Pool<Postgres>,
-    gs: GameSystem,
-    wp_id: i64,
-) -> Result<Vec<String>> {
+pub async fn fetch_weapon_runes(pool: &PgPool, gs: GameSystem, wp_id: i64) -> Result<Vec<String>> {
     let query = match gs {
         GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
@@ -135,11 +127,11 @@ pub async fn fetch_weapon_runes(
         .bind(wp_id),
     };
 
-    Ok(query.fetch_all(conn).await?)
+    Ok(query.fetch_all(pool).await?)
 }
 
 pub async fn fetch_weapon_damage_data(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     wp_id: i64,
 ) -> Result<Vec<DamageData>> {
@@ -150,15 +142,11 @@ pub async fn fetch_weapon_damage_data(
              ) wt ON wt.wp_id = dm.weapon_id",
     )))
     .bind(wp_id)
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?)
 }
 
-pub async fn fetch_armor_runes(
-    conn: &Pool<Postgres>,
-    gs: GameSystem,
-    wp_id: i64,
-) -> Result<Vec<String>> {
+pub async fn fetch_armor_runes(pool: &PgPool, gs: GameSystem, wp_id: i64) -> Result<Vec<String>> {
     let query = match gs {
         GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
             "SELECT name
@@ -175,11 +163,11 @@ pub async fn fetch_armor_runes(
         )
         .bind(wp_id),
     };
-    Ok(query.fetch_all(conn).await?)
+    Ok(query.fetch_all(pool).await?)
 }
 
 pub async fn fetch_action_traits(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     action_id: i64,
 ) -> Result<Vec<String>> {
@@ -190,6 +178,6 @@ pub async fn fetch_action_traits(
         FROM {gs}_trait_action_association_table tcat
             LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name WHERE action_id = $1 GROUP BY tt.name",
     ))).bind(action_id)
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?)
 }

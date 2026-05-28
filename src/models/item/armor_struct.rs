@@ -37,14 +37,18 @@ impl<'r> FromRow<'r, PgRow> for Armor {
             item_core,
             armor_data: ArmorData {
                 id: row.try_get("armor_id")?,
-                ac_bonus: row.try_get("bonus_ac")?,
-                check_penalty: row.try_get("check_penalty")?,
-                dex_cap: row.try_get("dex_cap")?,
-                n_of_potency_runes: row.try_get("n_of_potency_runes")?,
+                ac_bonus: row.try_get::<i32, _>("bonus_ac")? as i64,
+                check_penalty: row.try_get::<i32, _>("check_penalty")? as i64,
+                dex_cap: row.try_get::<i32, _>("dex_cap")? as i64,
+                n_of_potency_runes: row.try_get::<i32, _>("n_of_potency_runes")? as i64,
                 property_runes: vec![],
-                n_of_resilient_runes: row.try_get("n_of_resilient_runes")?,
-                speed_penalty: row.try_get("speed_penalty")?,
-                strength_required: row.try_get("strength_required").ok(),
+                n_of_resilient_runes: row.try_get::<i32, _>("n_of_resilient_runes")? as i64,
+                speed_penalty: row.try_get::<i32, _>("speed_penalty")? as i64,
+                strength_required: row
+                    .try_get::<Option<i32>, _>("strength_required")
+                    .ok()
+                    .flatten()
+                    .map(|v| v as i64),
             },
         })
     }

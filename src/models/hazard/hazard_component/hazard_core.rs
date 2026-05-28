@@ -45,11 +45,11 @@ impl<'r> FromRow<'r, PgRow> for HazardEssentialData {
         Ok(Self {
             id: row.try_get("id")?,
             name: row.try_get("name")?,
-            ac: row.try_get("ac")?,
-            hardness: row.try_get("hardness")?,
+            ac: row.try_get::<i32, _>("ac")? as i64,
+            hardness: row.try_get::<i32, _>("hardness")? as i64,
             has_health: row.try_get("has_health")?,
-            hp: row.try_get("hp")?,
-            stealth: row.try_get("stealth")?,
+            hp: row.try_get::<i32, _>("hp")? as i64,
+            stealth: row.try_get::<i32, _>("stealth")? as i64,
             stealth_detail: row.try_get("stealth_detail")?,
             description: row.try_get("description")?,
             disable_description: row.try_get("disable_description")?,
@@ -61,10 +61,22 @@ impl<'r> FromRow<'r, PgRow> for HazardEssentialData {
             license: row.try_get("license")?,
             remaster: row.try_get("remaster")?,
             source: row.try_get("source")?,
-            will: row.try_get("will")?,
-            reflex: row.try_get("reflex")?,
-            level: row.try_get("level")?,
-            fortitude: row.try_get("fortitude")?,
+            will: row
+                .try_get::<Option<i32>, _>("will")
+                .ok()
+                .flatten()
+                .map(|v| v as i64),
+            reflex: row
+                .try_get::<Option<i32>, _>("reflex")
+                .ok()
+                .flatten()
+                .map(|v| v as i64),
+            level: row.try_get::<i32, _>("level")? as i64,
+            fortitude: row
+                .try_get::<Option<i32>, _>("fortitude")
+                .ok()
+                .flatten()
+                .map(|v| v as i64),
         })
     }
 }

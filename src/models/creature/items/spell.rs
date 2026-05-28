@@ -8,7 +8,7 @@ pub struct Spell {
     pub name: String,
     pub area_type: Option<String>,
     #[schema(example = 5)]
-    pub area_value: Option<i64>,
+    pub area_value: Option<i32>,
     pub counteraction: bool,
 
     pub saving_throw_is_basic: Option<bool>,
@@ -17,6 +17,7 @@ pub struct Spell {
 
     pub duration: Option<String>,
     #[schema(example = 1)]
+    #[sqlx(try_from = "i32")]
     pub level: i64,
     pub range: String,
     pub target: String,
@@ -27,6 +28,7 @@ pub struct Spell {
     pub source: String,
     pub rarity: String, // use rarityenum
 
+    #[sqlx(try_from = "i32")]
     pub slot: i64,
     pub creature_id: i64,
     pub spellcasting_entry_id: i64,

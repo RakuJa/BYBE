@@ -1,7 +1,6 @@
 use sqlx::FromRow;
 #[derive(Default, Eq, PartialEq, Clone, FromRow)]
 pub struct StrikeDmgScales {
-    pub id: i64,
     pub level: i64,
     pub extreme: String,
     pub high: String,

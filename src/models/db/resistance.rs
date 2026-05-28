@@ -13,5 +13,6 @@ pub struct Resistance {
 pub struct CoreResistanceData {
     pub id: i64,
     pub name: String,
+    #[sqlx(try_from = "i32")]
     pub value: i64,
 }

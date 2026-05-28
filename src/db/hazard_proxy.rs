@@ -18,7 +18,7 @@ pub async fn get_hazard_by_id(
     gs: GameSystem,
     id: i64,
 ) -> Option<ResponseHazard> {
-    hazard_fetcher::fetch_hazard_by_id(&app_state.conn, gs, id)
+    hazard_fetcher::fetch_hazard_by_id(&app_state.pool, gs, id)
         .await
         .ok()
 }
@@ -28,7 +28,7 @@ pub async fn get_hazards_passing_all_filters(
     gs: GameSystem,
     filters: &HazardFilterQuery,
 ) -> Result<Vec<Hazard>> {
-    hazard_fetcher::fetch_hazard_core_data_with_filters(&app_state.conn, gs, filters).await
+    hazard_fetcher::fetch_hazard_core_data_with_filters(&app_state.pool, gs, filters).await
 }
 
 pub async fn get_paginated_hazards(
@@ -139,7 +139,7 @@ pub async fn get_paginated_hazards(
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 async fn get_list(app_state: &AppState, gs: GameSystem) -> Vec<Hazard> {
-    hazard_fetcher::fetch_hazards_data(&app_state.conn, gs, 0, -1)
+    hazard_fetcher::fetch_hazards_data(&app_state.pool, gs, 0, -1)
         .await
         .unwrap_or_default()
 }
@@ -148,7 +148,7 @@ async fn get_list(app_state: &AppState, gs: GameSystem) -> Vec<Hazard> {
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 pub async fn get_all_sources(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     generic_fetcher::fetch_unique_values_of_field(
-        &app_state.conn,
+        &app_state.pool,
         format!("{gs}_hazard_table").as_str(),
         "source",
     )
@@ -160,7 +160,7 @@ pub async fn get_all_sources(app_state: &AppState, gs: GameSystem) -> Vec<String
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 pub async fn get_all_rarities(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     generic_fetcher::fetch_unique_values_of_field(
-        &app_state.conn,
+        &app_state.pool,
         format!("{gs}_hazard_table").as_str(),
         "rarity",
     )
@@ -172,7 +172,7 @@ pub async fn get_all_rarities(app_state: &AppState, gs: GameSystem) -> Vec<Strin
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 pub async fn get_all_sizes(app_state: &AppState, gs: GameSystem) -> Vec<String> {
     generic_fetcher::fetch_unique_values_of_field(
-        &app_state.conn,
+        &app_state.pool,
         format!("{gs}_hazard_table").as_str(),
         "size",
     )
@@ -183,7 +183,7 @@ pub async fn get_all_sizes(app_state: &AppState, gs: GameSystem) -> Vec<String> 
 /// Gets all the runtime traits. It will cache the result
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 pub async fn get_all_traits(app_state: &AppState, gs: GameSystem) -> Vec<String> {
-    fetch_traits_associated_with_hazards(&app_state.conn, gs)
+    fetch_traits_associated_with_hazards(&app_state.pool, gs)
         .await
         .unwrap_or_default()
 }

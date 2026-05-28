@@ -47,11 +47,11 @@ use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
 use futures::future::join_all;
-use sqlx::{Pool, Postgres};
+use sqlx::PgPool;
 use std::collections::HashMap;
 
 async fn fetch_creature_immunities(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Option<String>>> {
@@ -67,11 +67,11 @@ async fn fetch_creature_immunities(
         )
         .bind(creature_id),
     };
-    Ok(query.fetch_all(conn).await?)
+    Ok(query.fetch_all(pool).await?)
 }
 
 async fn fetch_creature_languages(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<RawLanguage>> {
@@ -82,7 +82,7 @@ async fn fetch_creature_languages(
                  FROM pf_language_creature_association_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
         GameSystem::Starfinder => {
@@ -91,23 +91,23 @@ async fn fetch_creature_languages(
                  FROM sf_language_creature_association_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
     })
 }
 
 async fn fetch_creature_resistances(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Resistance>> {
     Ok(join_all(
-        fetch_creature_resistances_core(conn, gs, creature_id)
+        fetch_creature_resistances_core(pool, gs, creature_id)
             .await?
             .iter()
             .map(async |x| {
-                let (double_vs, exception_vs) = fetch_creature_resistances_vs(conn, gs, x.id)
+                let (double_vs, exception_vs) = fetch_creature_resistances_vs(pool, gs, x.id)
                     .await
                     .unwrap_or_default();
                 Resistance {
@@ -121,7 +121,7 @@ async fn fetch_creature_resistances(
 }
 
 async fn fetch_creature_resistances_core(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<CoreResistanceData>> {
@@ -131,7 +131,7 @@ async fn fetch_creature_resistances_core(
                 "SELECT id, name, value FROM pf_resistance_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
         GameSystem::Starfinder => {
@@ -139,14 +139,14 @@ async fn fetch_creature_resistances_core(
                 "SELECT id, name, value FROM sf_resistance_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
     })
 }
 
 async fn fetch_creature_resistances_vs(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     res_id: i64,
 ) -> Result<(Vec<String>, Vec<String>)> {
@@ -161,7 +161,7 @@ async fn fetch_creature_resistances_vs(
             )
             .bind(res_id),
         }
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?,
         match gs {
             GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
@@ -173,13 +173,13 @@ async fn fetch_creature_resistances_vs(
             )
             .bind(res_id),
         }
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?,
     ))
 }
 
 async fn fetch_creature_senses(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Sense>> {
@@ -190,7 +190,7 @@ async fn fetch_creature_senses(
                  FROM pf_sense_creature_association_table WHERE creature_id = $1)",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
         GameSystem::Starfinder => {
@@ -199,14 +199,14 @@ async fn fetch_creature_senses(
                  FROM sf_sense_creature_association_table WHERE creature_id = $1)",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
     })
 }
 
 async fn fetch_creature_speeds(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<RawSpeed>> {
@@ -216,7 +216,7 @@ async fn fetch_creature_speeds(
                 "SELECT name, value FROM pf_speed_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
         GameSystem::Starfinder => {
@@ -224,14 +224,14 @@ async fn fetch_creature_speeds(
                 "SELECT name, value FROM sf_speed_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
     })
 }
 
 async fn fetch_creature_weaknesses(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<RawWeakness>> {
@@ -241,7 +241,7 @@ async fn fetch_creature_weaknesses(
                 "SELECT name, value FROM pf_weakness_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
         GameSystem::Starfinder => {
@@ -249,14 +249,14 @@ async fn fetch_creature_weaknesses(
                 "SELECT name, value FROM sf_weakness_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
     })
 }
 
 async fn fetch_creature_saving_throws(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<SavingThrows> {
@@ -267,7 +267,7 @@ async fn fetch_creature_saving_throws(
                  FROM pf_creature_table WHERE id = $1",
             )
             .bind(creature_id)
-            .fetch_one(conn)
+            .fetch_one(pool)
             .await?
         }
         GameSystem::Starfinder => {
@@ -276,14 +276,14 @@ async fn fetch_creature_saving_throws(
                  FROM sf_creature_table WHERE id = $1",
             )
             .bind(creature_id)
-            .fetch_one(conn)
+            .fetch_one(pool)
             .await?
         }
     })
 }
 
 async fn fetch_creature_ability_scores(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<AbilityScores> {
@@ -294,7 +294,7 @@ async fn fetch_creature_ability_scores(
                  FROM pf_creature_table WHERE id = $1",
             )
             .bind(creature_id)
-            .fetch_one(conn)
+            .fetch_one(pool)
             .await?
         }
         GameSystem::Starfinder => {
@@ -303,23 +303,23 @@ async fn fetch_creature_ability_scores(
                  FROM sf_creature_table WHERE id = $1",
             )
             .bind(creature_id)
-            .fetch_one(conn)
+            .fetch_one(pool)
             .await?
         }
     })
 }
 
-async fn fetch_creature_ac(conn: &Pool<Postgres>, gs: GameSystem, creature_id: i64) -> Result<i8> {
+async fn fetch_creature_ac(pool: &PgPool, gs: GameSystem, creature_id: i64) -> Result<i32> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
         "SELECT ac FROM {gs}_creature_table WHERE id = $1"
     )))
     .bind(creature_id)
-    .fetch_one(conn)
+    .fetch_one(pool)
     .await?)
 }
 
 async fn fetch_creature_ac_detail(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
@@ -327,12 +327,12 @@ async fn fetch_creature_ac_detail(
         "SELECT ac_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
     )))
     .bind(creature_id)
-    .fetch_optional(conn)
+    .fetch_optional(pool)
     .await?)
 }
 
 async fn fetch_creature_hp_detail(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
@@ -340,12 +340,12 @@ async fn fetch_creature_hp_detail(
         "SELECT hp_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
     )))
     .bind(creature_id)
-    .fetch_optional(conn)
+    .fetch_optional(pool)
     .await?)
 }
 
 async fn fetch_creature_language_detail(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
@@ -353,38 +353,30 @@ async fn fetch_creature_language_detail(
         "SELECT language_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
     )))
     .bind(creature_id)
-    .fetch_optional(conn)
+    .fetch_optional(pool)
     .await?)
 }
 
-async fn fetch_creature_perception(
-    conn: &Pool<Postgres>,
-    gs: GameSystem,
-    creature_id: i64,
-) -> Result<i8> {
+async fn fetch_creature_perception(pool: &PgPool, gs: GameSystem, creature_id: i64) -> Result<i32> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
         "SELECT perception FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
     )))
     .bind(creature_id)
-    .fetch_one(conn)
+    .fetch_one(pool)
     .await?)
 }
 
-async fn fetch_creature_vision(
-    conn: &Pool<Postgres>,
-    gs: GameSystem,
-    creature_id: i64,
-) -> Result<bool> {
+async fn fetch_creature_vision(pool: &PgPool, gs: GameSystem, creature_id: i64) -> Result<bool> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
         "SELECT vision FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
     )))
     .bind(creature_id)
-    .fetch_one(conn)
+    .fetch_one(pool)
     .await?)
 }
 
 async fn fetch_creature_perception_detail(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Option<String>> {
@@ -392,12 +384,12 @@ async fn fetch_creature_perception_detail(
         "SELECT perception_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
     )))
     .bind(creature_id)
-    .fetch_optional(conn)
+    .fetch_optional(pool)
     .await?)
 }
 
 pub async fn fetch_creature_traits(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<String>> {
@@ -406,12 +398,12 @@ pub async fn fetch_creature_traits(
              FROM {gs}_trait_creature_association_table WHERE creature_id = $1"
     )))
     .bind(creature_id)
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?)
 }
 
 pub async fn fetch_all_creature_traits(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
 ) -> Result<HashMap<i64, Vec<String>>> {
     let rows: Vec<(i64, String)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
@@ -419,7 +411,7 @@ pub async fn fetch_all_creature_traits(
          FROM {gs}_trait_creature_association_table a
          JOIN {gs}_trait_table t ON t.name = a.trait_id"
     )))
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?;
 
     let mut map: HashMap<i64, Vec<String>> = HashMap::new();
@@ -430,7 +422,7 @@ pub async fn fetch_all_creature_traits(
 }
 
 async fn fetch_creature_weapons(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Weapon>> {
@@ -448,19 +440,20 @@ async fn fetch_creature_weapons(
         "
     )))
     .bind(creature_id)
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?;
     let mut result_vec = Vec::new();
     for mut el in weapons {
-        el.item_core.traits = fetch_weapon_traits(conn, gs, el.weapon_data.id)
+        el.item_core.traits = fetch_weapon_traits(pool, gs, el.weapon_data.id)
             .await
             .unwrap_or(vec![]);
-        el.item_core.quantity =
-            fetch_weapon_quantity(conn, gs, creature_id, el.weapon_data.id).await;
-        el.weapon_data.property_runes = fetch_weapon_runes(conn, gs, el.weapon_data.id)
+        el.item_core.quantity = fetch_weapon_quantity(pool, gs, creature_id, el.weapon_data.id)
+            .await
+            .unwrap_or(1);
+        el.weapon_data.property_runes = fetch_weapon_runes(pool, gs, el.weapon_data.id)
             .await
             .unwrap_or(vec![]);
-        el.weapon_data.damage_data = fetch_weapon_damage_data(conn, gs, el.weapon_data.id)
+        el.weapon_data.damage_data = fetch_weapon_damage_data(pool, gs, el.weapon_data.id)
             .await
             .unwrap_or(vec![]);
         result_vec.push(el);
@@ -469,7 +462,7 @@ async fn fetch_creature_weapons(
 }
 
 async fn fetch_creature_armors(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Armor>> {
@@ -487,15 +480,17 @@ async fn fetch_creature_armors(
         "
     )))
     .bind(creature_id)
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?;
     let mut result_vec = Vec::new();
     for mut el in armors {
-        el.item_core.traits = fetch_armor_traits(conn, gs, el.armor_data.id)
+        el.item_core.traits = fetch_armor_traits(pool, gs, el.armor_data.id)
             .await
             .unwrap_or(vec![]);
-        el.item_core.quantity = fetch_armor_quantity(conn, gs, creature_id, el.armor_data.id).await;
-        el.armor_data.property_runes = fetch_armor_runes(conn, gs, el.armor_data.id)
+        el.item_core.quantity = fetch_armor_quantity(pool, gs, creature_id, el.armor_data.id)
+            .await
+            .unwrap_or(1);
+        el.armor_data.property_runes = fetch_armor_runes(pool, gs, el.armor_data.id)
             .await
             .unwrap_or(vec![]);
         result_vec.push(el);
@@ -504,7 +499,7 @@ async fn fetch_creature_armors(
 }
 
 async fn fetch_creature_shields(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Shield>> {
@@ -521,22 +516,23 @@ async fn fetch_creature_shields(
         ",
     )))
     .bind(creature_id)
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?;
     let mut result_vec = Vec::new();
     for mut el in shields {
-        el.item_core.traits = fetch_shield_traits(conn, gs, el.shield_data.id)
+        el.item_core.traits = fetch_shield_traits(pool, gs, el.shield_data.id)
             .await
             .unwrap_or(vec![]);
-        el.item_core.quantity =
-            fetch_shield_quantity(conn, gs, creature_id, el.shield_data.id).await;
+        el.item_core.quantity = fetch_shield_quantity(pool, gs, creature_id, el.shield_data.id)
+            .await
+            .unwrap_or(1);
         result_vec.push(el);
     }
     Ok(result_vec)
 }
 
 async fn fetch_creature_items(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Item>> {
@@ -550,142 +546,149 @@ async fn fetch_creature_items(
             "
     )))
     .bind(creature_id)
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?;
     let mut result_vec = Vec::new();
     for mut el in items {
-        el.traits = fetch_item_traits(conn, gs, el.id).await.unwrap_or(vec![]);
-        el.quantity = fetch_item_quantity(conn, gs, creature_id, el.id).await;
+        el.traits = fetch_item_traits(pool, gs, el.id).await.unwrap_or(vec![]);
+        el.quantity = fetch_item_quantity(pool, gs, creature_id, el.id)
+            .await
+            .unwrap_or(1);
         result_vec.push(el);
     }
     Ok(result_vec)
 }
+
 /// Quantities are present ONLY for creature's item.
 /// It needs to be fetched from the association table.
-/// It defaults to 1 if error are found
 async fn fetch_item_quantity(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
     item_id: i64,
-) -> i64 {
-    match gs {
-        GameSystem::Pathfinder => sqlx::query_scalar::<_, i64>(
-            "SELECT quantity FROM pf_item_creature_association_table WHERE
+) -> Result<i64> {
+    Ok(match gs {
+        GameSystem::Pathfinder => {
+            sqlx::query_scalar::<_, i64>(
+                "SELECT quantity FROM pf_item_creature_association_table WHERE
                 creature_id = $1 AND item_id = $2",
-        )
-        .bind(creature_id)
-        .bind(item_id)
-        .fetch_one(conn)
-        .await
-        .unwrap_or(1),
-        GameSystem::Starfinder => sqlx::query_scalar::<_, i64>(
-            "SELECT quantity FROM sf_item_creature_association_table WHERE
+            )
+            .bind(creature_id)
+            .bind(item_id)
+            .fetch_one(pool)
+            .await?
+        }
+        GameSystem::Starfinder => {
+            sqlx::query_scalar::<_, i64>(
+                "SELECT quantity FROM sf_item_creature_association_table WHERE
                 creature_id = $1 AND item_id = $2",
-        )
-        .bind(creature_id)
-        .bind(item_id)
-        .fetch_one(conn)
-        .await
-        .unwrap_or(1),
-    }
+            )
+            .bind(creature_id)
+            .bind(item_id)
+            .fetch_one(pool)
+            .await?
+        }
+    })
 }
 
 /// Quantities are present ONLY for creature's weapons.
 /// It needs to be fetched from the association table.
-/// It defaults to 1 if error are found
 async fn fetch_weapon_quantity(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
     weapon_id: i64,
-) -> i64 {
-    match gs {
-        GameSystem::Pathfinder => sqlx::query_scalar::<_, i64>(
-            "SELECT quantity FROM pf_weapon_creature_association_table WHERE
+) -> Result<i64> {
+    Ok(match gs {
+        GameSystem::Pathfinder => {
+            sqlx::query_scalar::<_, i64>(
+                "SELECT quantity FROM pf_weapon_creature_association_table WHERE
                 creature_id = $1 AND weapon_id = $2",
-        )
-        .bind(creature_id)
-        .bind(weapon_id)
-        .fetch_one(conn)
-        .await
-        .unwrap_or(1),
-        GameSystem::Starfinder => sqlx::query_scalar::<_, i64>(
-            "SELECT quantity FROM sf_weapon_creature_association_table WHERE
+            )
+            .bind(creature_id)
+            .bind(weapon_id)
+            .fetch_one(pool)
+            .await?
+        }
+        GameSystem::Starfinder => {
+            sqlx::query_scalar::<_, i64>(
+                "SELECT quantity FROM sf_weapon_creature_association_table WHERE
                 creature_id = $1 AND weapon_id = $2",
-        )
-        .bind(creature_id)
-        .bind(weapon_id)
-        .fetch_one(conn)
-        .await
-        .unwrap_or(1),
-    }
+            )
+            .bind(creature_id)
+            .bind(weapon_id)
+            .fetch_one(pool)
+            .await?
+        }
+    })
 }
 
 /// Quantities are present ONLY for creature's shields.
 /// It needs to be fetched from the association table.
-/// It defaults to 1 if error are found
 async fn fetch_shield_quantity(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
     shield_id: i64,
-) -> i64 {
-    match gs {
-        GameSystem::Pathfinder => sqlx::query_scalar::<_, i64>(
-            "SELECT quantity FROM pf_shield_creature_association_table WHERE
+) -> Result<i64> {
+    Ok(match gs {
+        GameSystem::Pathfinder => {
+            sqlx::query_scalar::<_, i64>(
+                "SELECT quantity FROM pf_shield_creature_association_table WHERE
                 creature_id = $1 AND shield_id = $2",
-        )
-        .bind(creature_id)
-        .bind(shield_id)
-        .fetch_one(conn)
-        .await
-        .unwrap_or(1),
-        GameSystem::Starfinder => sqlx::query_scalar::<_, i64>(
-            "SELECT quantity FROM sf_shield_creature_association_table WHERE
+            )
+            .bind(creature_id)
+            .bind(shield_id)
+            .fetch_one(pool)
+            .await?
+        }
+        GameSystem::Starfinder => {
+            sqlx::query_scalar::<_, i64>(
+                "SELECT quantity FROM sf_shield_creature_association_table WHERE
                 creature_id = $1 AND shield_id = $2",
-        )
-        .bind(creature_id)
-        .bind(shield_id)
-        .fetch_one(conn)
-        .await
-        .unwrap_or(1),
-    }
+            )
+            .bind(creature_id)
+            .bind(shield_id)
+            .fetch_one(pool)
+            .await?
+        }
+    })
 }
 
 /// Quantities are present ONLY for creature's armors.
 /// It needs to be fetched from the association table.
-/// It defaults to 1 if error are found
 async fn fetch_armor_quantity(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
     armor_id: i64,
-) -> i64 {
-    match gs {
-        GameSystem::Pathfinder => sqlx::query_scalar::<_, i64>(
-            "SELECT quantity FROM pf_armor_creature_association_table WHERE
+) -> Result<i64> {
+    Ok(match gs {
+        GameSystem::Pathfinder => {
+            sqlx::query_scalar::<_, i64>(
+                "SELECT quantity FROM pf_armor_creature_association_table WHERE
                 creature_id = $1 AND armor_id = $2",
-        )
-        .bind(creature_id)
-        .bind(armor_id)
-        .fetch_one(conn)
-        .await
-        .unwrap_or(1),
-        GameSystem::Starfinder => sqlx::query_scalar::<_, i64>(
-            "SELECT quantity FROM sf_armor_creature_association_table WHERE
+            )
+            .bind(creature_id)
+            .bind(armor_id)
+            .fetch_one(pool)
+            .await?
+        }
+        GameSystem::Starfinder => {
+            sqlx::query_scalar::<_, i64>(
+                "SELECT quantity FROM sf_armor_creature_association_table WHERE
                 creature_id = $1 AND armor_id = $2",
-        )
-        .bind(creature_id)
-        .bind(armor_id)
-        .fetch_one(conn)
-        .await
-        .unwrap_or(1),
-    }
+            )
+            .bind(creature_id)
+            .bind(armor_id)
+            .fetch_one(pool)
+            .await?
+        }
+    })
 }
 
 async fn fetch_creature_actions(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Action>> {
@@ -697,7 +700,7 @@ async fn fetch_creature_actions(
                 WHERE ca.creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
         GameSystem::Starfinder => {
@@ -707,7 +710,7 @@ async fn fetch_creature_actions(
                 WHERE ca.creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
     };
@@ -716,14 +719,14 @@ async fn fetch_creature_actions(
         let action_id = action.id;
         res.push(Action {
             core_action: action,
-            traits: fetch_action_traits(conn, gs, action_id).await?,
+            traits: fetch_action_traits(pool, gs, action_id).await?,
         });
     }
     Ok(res)
 }
 
 async fn fetch_creature_skills(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Skill>> {
@@ -733,7 +736,7 @@ async fn fetch_creature_skills(
                 "SELECT name, description, modifier, proficiency FROM pf_skill_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
         GameSystem::Starfinder => {
@@ -741,14 +744,14 @@ async fn fetch_creature_skills(
                 "SELECT name, description, modifier, proficiency FROM sf_skill_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
     })
 }
 
 pub async fn fetch_creature_spells(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
     spellcaster_entry_id: i64,
@@ -759,20 +762,20 @@ pub async fn fetch_creature_spells(
         )
         .bind(creature_id)
         .bind(spellcaster_entry_id)
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?,
         GameSystem::Starfinder => sqlx::query_as::<_, Spell>(
             "SELECT * FROM sf_spell_table WHERE creature_id = $1 AND spellcasting_entry_id = $2",
         )
         .bind(creature_id)
         .bind(spellcaster_entry_id)
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?,
     })
 }
 
 async fn fetch_creature_spellcaster_entries(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<SpellcasterEntry>> {
@@ -786,7 +789,7 @@ async fn fetch_creature_spellcaster_entries(
                 FROM pf_spellcasting_entry_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
         GameSystem::Starfinder => {
@@ -797,7 +800,7 @@ async fn fetch_creature_spellcaster_entries(
                 FROM sf_spellcasting_entry_table WHERE creature_id = $1",
             )
             .bind(creature_id)
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
         }
     };
@@ -805,7 +808,7 @@ async fn fetch_creature_spellcaster_entries(
         let sce_id = sce.id;
         result.push(SpellcasterEntry {
             spellcaster_data: sce,
-            spells: fetch_creature_spells(conn, gs, creature_id, sce_id)
+            spells: fetch_creature_spells(pool, gs, creature_id, sce_id)
                 .await
                 .unwrap_or_default(),
         });
@@ -814,7 +817,7 @@ async fn fetch_creature_spellcaster_entries(
 }
 
 async fn fetch_creature_core_data(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<CreatureCoreData> {
@@ -822,9 +825,9 @@ async fn fetch_creature_core_data(
         "SELECT * FROM {gs}_creature_core WHERE id = $1 AND status = 'valid' ORDER BY name LIMIT 1"
     )))
     .bind(creature_id)
-    .fetch_one(conn)
+    .fetch_one(pool)
     .await?;
-    cr_core.traits = fetch_creature_traits(conn, gs, creature_id)
+    cr_core.traits = fetch_creature_traits(pool, gs, creature_id)
         .await
         .unwrap_or_default()
         .iter()
@@ -835,12 +838,12 @@ async fn fetch_creature_core_data(
 }
 
 async fn update_creatures_core_with_traits(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     mut creature_core_data: Vec<CreatureCoreData>,
 ) -> Vec<CreatureCoreData> {
     for core in &mut creature_core_data {
-        core.traits = fetch_creature_traits(conn, gs, core.essential.id)
+        core.traits = fetch_creature_traits(pool, gs, core.essential.id)
             .await
             .unwrap_or_default()
             .iter()
@@ -852,7 +855,7 @@ async fn update_creatures_core_with_traits(
 }
 
 pub async fn fetch_traits_associated_with_creatures(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
 ) -> Result<Vec<String>> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
@@ -862,7 +865,7 @@ pub async fn fetch_traits_associated_with_creatures(
         FROM {gs}_trait_creature_association_table tcat
             LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name GROUP BY tt.name",
     )))
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?
     .iter()
     .filter(|x: &&String| !ALIGNMENT_TRAITS.contains(&&*x.to_uppercase()))
@@ -871,13 +874,13 @@ pub async fn fetch_traits_associated_with_creatures(
 }
 
 pub async fn fetch_creature_by_id(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     variant: CreatureVariant,
     response_data_mods: &CreatureResponseDataModifiers,
     id: i64,
 ) -> Result<Creature> {
-    let core_data = fetch_creature_core_data(conn, gs, id).await?;
+    let core_data = fetch_creature_core_data(pool, gs, id).await?;
     let level = core_data.essential.base_level;
     let archive_link = core_data.derived.archive_link.clone();
     let cr = Creature {
@@ -888,17 +891,17 @@ pub async fn fetch_creature_by_id(
             archive_link,
         },
         extra_data: if response_data_mods.extra_data.is_some_and(|x| x) {
-            Some(fetch_creature_extra_data(conn, gs, id).await?)
+            Some(fetch_creature_extra_data(pool, gs, id).await?)
         } else {
             None
         },
         combat_data: if response_data_mods.combat_data.is_some_and(|x| x) {
-            Some(fetch_creature_combat_data(conn, gs, id).await?)
+            Some(fetch_creature_combat_data(pool, gs, id).await?)
         } else {
             None
         },
         spellcaster_data: if response_data_mods.spellcasting_data.is_some_and(|x| x) {
-            Some(fetch_creature_spellcaster_data(conn, gs, id).await?)
+            Some(fetch_creature_spellcaster_data(pool, gs, id).await?)
         } else {
             None
         },
@@ -913,21 +916,21 @@ pub async fn fetch_creature_by_id(
 }
 
 pub async fn fetch_creatures_core_data_with_filters(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     bestiary_filter_query: &BestiaryFilterQuery,
 ) -> Result<Vec<CreatureCoreData>> {
     let query = prepare_filtered_get_creatures_core(gs, bestiary_filter_query);
     let core_data: Vec<CreatureCoreData> = sqlx::query_as(sqlx::AssertSqlSafe(query))
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?;
-    Ok(update_creatures_core_with_traits(conn, gs, core_data).await)
+    Ok(update_creatures_core_with_traits(pool, gs, core_data).await)
 }
 
 /// Gets all the creatures core it can find with the given pagination as boundaries
 /// for the search.
 pub async fn fetch_creatures_core_data(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     cursor: i64,
     page_size: i16,
@@ -940,45 +943,29 @@ pub async fn fetch_creatures_core_data(
     let cr_core: Vec<CreatureCoreData> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT * FROM {gs}_creature_core WHERE status = 'valid' ORDER BY name {pagination}"
     )))
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?;
-    Ok(update_creatures_core_with_traits(conn, gs, cr_core).await)
+    Ok(update_creatures_core_with_traits(pool, gs, cr_core).await)
 }
 
 pub async fn fetch_creature_extra_data(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<CreatureExtraData> {
-    let (
-        items,
-        actions,
-        skills,
-        languages,
-        senses,
-        speeds,
-        ability_scores,
-        hp_detail,
-        ac_detail,
-        language_detail,
-        perception,
-        has_vision,
-        perception_detail,
-    ) = tokio::join!(
-        fetch_creature_items(conn, gs, creature_id),
-        fetch_creature_actions(conn, gs, creature_id),
-        fetch_creature_skills(conn, gs, creature_id),
-        fetch_creature_languages(conn, gs, creature_id),
-        fetch_creature_senses(conn, gs, creature_id),
-        fetch_creature_speeds(conn, gs, creature_id),
-        fetch_creature_ability_scores(conn, gs, creature_id),
-        fetch_creature_hp_detail(conn, gs, creature_id),
-        fetch_creature_ac_detail(conn, gs, creature_id),
-        fetch_creature_language_detail(conn, gs, creature_id),
-        fetch_creature_perception(conn, gs, creature_id),
-        fetch_creature_vision(conn, gs, creature_id),
-        fetch_creature_perception_detail(conn, gs, creature_id),
-    );
+    let items = fetch_creature_items(pool, gs, creature_id).await;
+    let actions = fetch_creature_actions(pool, gs, creature_id).await;
+    let skills = fetch_creature_skills(pool, gs, creature_id).await;
+    let languages = fetch_creature_languages(pool, gs, creature_id).await;
+    let senses = fetch_creature_senses(pool, gs, creature_id).await;
+    let speeds = fetch_creature_speeds(pool, gs, creature_id).await;
+    let ability_scores = fetch_creature_ability_scores(pool, gs, creature_id).await;
+    let hp_detail = fetch_creature_hp_detail(pool, gs, creature_id).await;
+    let ac_detail = fetch_creature_ac_detail(pool, gs, creature_id).await;
+    let language_detail = fetch_creature_language_detail(pool, gs, creature_id).await;
+    let perception = fetch_creature_perception(pool, gs, creature_id).await;
+    let has_vision = fetch_creature_vision(pool, gs, creature_id).await;
+    let perception_detail = fetch_creature_perception_detail(pool, gs, creature_id).await;
     Ok(CreatureExtraData {
         actions: actions.unwrap_or_default(),
         skills: skills.unwrap_or_default(),
@@ -1005,20 +992,18 @@ pub async fn fetch_creature_extra_data(
 }
 
 pub async fn fetch_creature_combat_data(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<CreatureCombatData> {
-    let (weapons, armors, shields, resistances, immunities, weaknesses, saving_throws, creature_ac) = tokio::join!(
-        fetch_creature_weapons(conn, gs, creature_id),
-        fetch_creature_armors(conn, gs, creature_id),
-        fetch_creature_shields(conn, gs, creature_id),
-        fetch_creature_resistances(conn, gs, creature_id),
-        fetch_creature_immunities(conn, gs, creature_id),
-        fetch_creature_weaknesses(conn, gs, creature_id),
-        fetch_creature_saving_throws(conn, gs, creature_id),
-        fetch_creature_ac(conn, gs, creature_id),
-    );
+    let weapons = fetch_creature_weapons(pool, gs, creature_id).await;
+    let armors = fetch_creature_armors(pool, gs, creature_id).await;
+    let shields = fetch_creature_shields(pool, gs, creature_id).await;
+    let resistances = fetch_creature_resistances(pool, gs, creature_id).await;
+    let immunities = fetch_creature_immunities(pool, gs, creature_id).await;
+    let weaknesses = fetch_creature_weaknesses(pool, gs, creature_id).await;
+    let saving_throws = fetch_creature_saving_throws(pool, gs, creature_id).await;
+    let creature_ac = fetch_creature_ac(pool, gs, creature_id).await;
 
     Ok(CreatureCombatData {
         weapons: weapons.unwrap_or_default(),
@@ -1042,25 +1027,25 @@ pub async fn fetch_creature_combat_data(
 }
 
 pub async fn fetch_creature_spellcaster_data(
-    conn: &Pool<Postgres>,
+    pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<CreatureSpellcasterData> {
     Ok(CreatureSpellcasterData {
-        spellcaster_entries: fetch_creature_spellcaster_entries(conn, gs, creature_id).await?,
+        spellcaster_entries: fetch_creature_spellcaster_entries(pool, gs, creature_id).await?,
     })
 }
 
-pub async fn fetch_creature_scales(conn: &Pool<Postgres>) -> Result<CreatureScales> {
+pub async fn fetch_creature_scales(pool: &PgPool) -> Result<CreatureScales> {
     Ok(CreatureScales {
         ability_scales: sqlx::query_as::<_, AbilityScales>("SELECT * FROM ability_scales_table")
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
             .into_iter()
             .map(|n| (n.level, n))
             .collect(),
         ac_scales: sqlx::query_as::<_, AcScales>("SELECT * FROM ac_scales_table")
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
             .into_iter()
             .map(|n| (n.level, n))
@@ -1068,19 +1053,19 @@ pub async fn fetch_creature_scales(conn: &Pool<Postgres>) -> Result<CreatureScal
         area_dmg_scales: sqlx::query_as::<_, AreaDmgScales>(
             "SELECT * FROM area_damage_scales_table",
         )
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?
         .into_iter()
         .map(|n| (n.level, n))
         .collect(),
         hp_scales: sqlx::query_as::<_, HpScales>("SELECT * FROM hp_scales_table")
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
             .into_iter()
             .map(|n| (n.level, n))
             .collect(),
         item_scales: sqlx::query_as::<_, ItemScales>("SELECT * FROM item_scales_table")
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
             .into_iter()
             .map(|n| (n.cr_level.clone(), n))
@@ -1088,13 +1073,13 @@ pub async fn fetch_creature_scales(conn: &Pool<Postgres>) -> Result<CreatureScal
         perception_scales: sqlx::query_as::<_, PerceptionScales>(
             "SELECT * FROM PERCEPTION_SCALES_TABLE",
         )
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?
         .into_iter()
         .map(|n| (n.level, n))
         .collect(),
         res_weak_scales: sqlx::query_as::<_, ResWeakScales>("SELECT * FROM res_weak_scales_table")
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
             .into_iter()
             .map(|n| (n.level, n))
@@ -1102,13 +1087,13 @@ pub async fn fetch_creature_scales(conn: &Pool<Postgres>) -> Result<CreatureScal
         saving_throw_scales: sqlx::query_as::<_, SavingThrowScales>(
             "SELECT * FROM SAVING_THROW_SCALES_TABLE",
         )
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?
         .into_iter()
         .map(|n| (n.level, n))
         .collect(),
         skill_scales: sqlx::query_as::<_, SkillScales>("SELECT * FROM skill_scales_table")
-            .fetch_all(conn)
+            .fetch_all(pool)
             .await?
             .into_iter()
             .map(|n| (n.level, n))
@@ -1116,7 +1101,7 @@ pub async fn fetch_creature_scales(conn: &Pool<Postgres>) -> Result<CreatureScal
         spell_dc_and_atk_scales: sqlx::query_as::<_, SpellDcAndAtkScales>(
             "SELECT * FROM spell_dc_and_attack_scales_table",
         )
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?
         .into_iter()
         .map(|n| (n.level, n))
@@ -1124,7 +1109,7 @@ pub async fn fetch_creature_scales(conn: &Pool<Postgres>) -> Result<CreatureScal
         strike_bonus_scales: sqlx::query_as::<_, StrikeBonusScales>(
             "SELECT * FROM strike_bonus_scales_table",
         )
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?
         .into_iter()
         .map(|n| (n.level, n))
@@ -1132,7 +1117,7 @@ pub async fn fetch_creature_scales(conn: &Pool<Postgres>) -> Result<CreatureScal
         strike_dmg_scales: sqlx::query_as::<_, StrikeDmgScales>(
             "SELECT * FROM strike_damage_scales_table",
         )
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?
         .into_iter()
         .map(|n| (n.level, n))

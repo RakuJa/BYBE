@@ -9,7 +9,7 @@ pub struct CoreAction {
     pub name: String,
     pub action_type: String,
     #[schema(example = 1)]
-    pub n_of_actions: Option<i64>,
+    pub n_of_actions: Option<i32>,
     pub category: Option<String>,
     pub description: String,
 
@@ -18,6 +18,7 @@ pub struct CoreAction {
     pub source: String,
 
     pub slug: Option<String>,
+    #[sqlx(try_from = "String")]
     pub rarity: RarityEnum,
 }
 
