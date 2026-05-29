@@ -2,7 +2,9 @@ use crate::db::data_providers::generic_fetcher::{
     fetch_action_traits, fetch_armor_runes, fetch_armor_traits, fetch_item_traits,
     fetch_shield_traits, fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
 };
-use crate::db::data_providers::raw_query_builder::prepare_filtered_get_creatures_core;
+use crate::db::data_providers::raw_query_builder::{
+    format_pagination_clause, prepare_filtered_get_creatures_core,
+};
 use crate::models::bestiary_structs::BestiaryFilterQuery;
 use crate::models::creature::creature_component::creature_combat::{
     CreatureCombatData, SavingThrows,
@@ -55,19 +57,13 @@ async fn fetch_creature_immunities(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Option<String>>> {
-    let query = match gs {
-        GameSystem::Pathfinder => sqlx::query_scalar::<_, Option<String>>(
-            "SELECT name FROM pf_immunity_table INTERSECT SELECT immunity_id
-         FROM pf_immunity_creature_association_table WHERE creature_id = $1",
-        )
-        .bind(creature_id),
-        GameSystem::Starfinder => sqlx::query_scalar::<_, Option<String>>(
-            "SELECT name FROM sf_immunity_table INTERSECT SELECT immunity_id
-         FROM sf_immunity_creature_association_table WHERE creature_id = $1",
-        )
-        .bind(creature_id),
-    };
-    Ok(query.fetch_all(pool).await?)
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT name FROM {gs}_immunity_table INTERSECT SELECT immunity_id
+         FROM {gs}_immunity_creature_association_table WHERE creature_id = $1"
+    )))
+    .bind(creature_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 async fn fetch_creature_languages(
@@ -75,26 +71,13 @@ async fn fetch_creature_languages(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<RawLanguage>> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, RawLanguage>(
-                "SELECT * FROM pf_language_table INTERSECT SELECT language_id
-                 FROM pf_language_creature_association_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, RawLanguage>(
-                "SELECT * FROM sf_language_table INTERSECT SELECT language_id
-                 FROM sf_language_creature_association_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT * FROM {gs}_language_table INTERSECT SELECT language_id
+         FROM {gs}_language_creature_association_table WHERE creature_id = $1"
+    )))
+    .bind(creature_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 async fn fetch_creature_resistances(
@@ -125,24 +108,12 @@ async fn fetch_creature_resistances_core(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<CoreResistanceData>> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, CoreResistanceData>(
-                "SELECT id, name, value FROM pf_resistance_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, CoreResistanceData>(
-                "SELECT id, name, value FROM sf_resistance_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT id, name, value FROM {gs}_resistance_table WHERE creature_id = $1"
+    )))
+    .bind(creature_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 async fn fetch_creature_resistances_vs(
@@ -151,28 +122,16 @@ async fn fetch_creature_resistances_vs(
     res_id: i64,
 ) -> Result<(Vec<String>, Vec<String>)> {
     Ok((
-        match gs {
-            GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
-                "SELECT vs_name FROM pf_resistance_double_vs_table WHERE resistance_id = $1",
-            )
-            .bind(res_id),
-            GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
-                "SELECT vs_name FROM sf_resistance_double_vs_table WHERE resistance_id = $1",
-            )
-            .bind(res_id),
-        }
+        sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+            "SELECT vs_name FROM {gs}_resistance_double_vs_table WHERE resistance_id = $1"
+        )))
+        .bind(res_id)
         .fetch_all(pool)
         .await?,
-        match gs {
-            GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
-                "SELECT vs_name FROM pf_resistance_exception_vs_table WHERE resistance_id = $1",
-            )
-            .bind(res_id),
-            GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
-                "SELECT vs_name FROM sf_resistance_exception_vs_table WHERE resistance_id = $1",
-            )
-            .bind(res_id),
-        }
+        sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+            "SELECT vs_name FROM {gs}_resistance_exception_vs_table WHERE resistance_id = $1"
+        )))
+        .bind(res_id)
         .fetch_all(pool)
         .await?,
     ))
@@ -183,26 +142,13 @@ async fn fetch_creature_senses(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Sense>> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, Sense>(
-                "SELECT * FROM pf_sense_table WHERE id IN (SELECT sense_id
-                 FROM pf_sense_creature_association_table WHERE creature_id = $1)",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, Sense>(
-                "SELECT * FROM sf_sense_table WHERE id IN (SELECT sense_id
-                 FROM sf_sense_creature_association_table WHERE creature_id = $1)",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT * FROM {gs}_sense_table WHERE id IN (SELECT sense_id
+         FROM {gs}_sense_creature_association_table WHERE creature_id = $1)"
+    )))
+    .bind(creature_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 async fn fetch_creature_speeds(
@@ -210,24 +156,12 @@ async fn fetch_creature_speeds(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<RawSpeed>> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, RawSpeed>(
-                "SELECT name, value FROM pf_speed_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, RawSpeed>(
-                "SELECT name, value FROM sf_speed_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT name, value FROM {gs}_speed_table WHERE creature_id = $1"
+    )))
+    .bind(creature_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 async fn fetch_creature_weaknesses(
@@ -235,24 +169,12 @@ async fn fetch_creature_weaknesses(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<RawWeakness>> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, RawWeakness>(
-                "SELECT name, value FROM pf_weakness_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, RawWeakness>(
-                "SELECT name, value FROM sf_weakness_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT name, value FROM {gs}_weakness_table WHERE creature_id = $1"
+    )))
+    .bind(creature_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 async fn fetch_creature_saving_throws(
@@ -260,26 +182,13 @@ async fn fetch_creature_saving_throws(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<SavingThrows> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, SavingThrows>(
-                "SELECT fortitude, reflex, will, fortitude_detail, reflex_detail, will_detail
-                 FROM pf_creature_table WHERE id = $1",
-            )
-            .bind(creature_id)
-            .fetch_one(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, SavingThrows>(
-                "SELECT fortitude, reflex, will, fortitude_detail, reflex_detail, will_detail
-                 FROM sf_creature_table WHERE id = $1",
-            )
-            .bind(creature_id)
-            .fetch_one(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT fortitude, reflex, will, fortitude_detail, reflex_detail, will_detail
+         FROM {gs}_creature_table WHERE id = $1"
+    )))
+    .bind(creature_id)
+    .fetch_one(pool)
+    .await?)
 }
 
 async fn fetch_creature_ability_scores(
@@ -287,26 +196,13 @@ async fn fetch_creature_ability_scores(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<AbilityScores> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, AbilityScores>(
-                "SELECT charisma, constitution, dexterity, intelligence, strength, wisdom
-                 FROM pf_creature_table WHERE id = $1",
-            )
-            .bind(creature_id)
-            .fetch_one(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, AbilityScores>(
-                "SELECT charisma, constitution, dexterity, intelligence, strength, wisdom
-                 FROM sf_creature_table WHERE id = $1",
-            )
-            .bind(creature_id)
-            .fetch_one(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT charisma, constitution, dexterity, intelligence, strength, wisdom
+         FROM {gs}_creature_table WHERE id = $1"
+    )))
+    .bind(creature_id)
+    .fetch_one(pool)
+    .await?)
 }
 
 async fn fetch_creature_ac(pool: &PgPool, gs: GameSystem, creature_id: i64) -> Result<i32> {
@@ -567,28 +463,14 @@ async fn fetch_item_quantity(
     creature_id: i64,
     item_id: i64,
 ) -> Result<i64> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_scalar::<_, i64>(
-                "SELECT quantity FROM pf_item_creature_association_table WHERE
-                creature_id = $1 AND item_id = $2",
-            )
-            .bind(creature_id)
-            .bind(item_id)
-            .fetch_one(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_scalar::<_, i64>(
-                "SELECT quantity FROM sf_item_creature_association_table WHERE
-                creature_id = $1 AND item_id = $2",
-            )
-            .bind(creature_id)
-            .bind(item_id)
-            .fetch_one(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
+        "SELECT quantity FROM {gs}_item_creature_association_table WHERE
+        creature_id = $1 AND item_id = $2"
+    )))
+    .bind(creature_id)
+    .bind(item_id)
+    .fetch_one(pool)
+    .await?)
 }
 
 /// Quantities are present ONLY for creature's weapons.
@@ -599,28 +481,14 @@ async fn fetch_weapon_quantity(
     creature_id: i64,
     weapon_id: i64,
 ) -> Result<i64> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_scalar::<_, i64>(
-                "SELECT quantity FROM pf_weapon_creature_association_table WHERE
-                creature_id = $1 AND weapon_id = $2",
-            )
-            .bind(creature_id)
-            .bind(weapon_id)
-            .fetch_one(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_scalar::<_, i64>(
-                "SELECT quantity FROM sf_weapon_creature_association_table WHERE
-                creature_id = $1 AND weapon_id = $2",
-            )
-            .bind(creature_id)
-            .bind(weapon_id)
-            .fetch_one(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
+        "SELECT quantity FROM {gs}_weapon_creature_association_table WHERE
+        creature_id = $1 AND weapon_id = $2"
+    )))
+    .bind(creature_id)
+    .bind(weapon_id)
+    .fetch_one(pool)
+    .await?)
 }
 
 /// Quantities are present ONLY for creature's shields.
@@ -631,28 +499,14 @@ async fn fetch_shield_quantity(
     creature_id: i64,
     shield_id: i64,
 ) -> Result<i64> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_scalar::<_, i64>(
-                "SELECT quantity FROM pf_shield_creature_association_table WHERE
-                creature_id = $1 AND shield_id = $2",
-            )
-            .bind(creature_id)
-            .bind(shield_id)
-            .fetch_one(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_scalar::<_, i64>(
-                "SELECT quantity FROM sf_shield_creature_association_table WHERE
-                creature_id = $1 AND shield_id = $2",
-            )
-            .bind(creature_id)
-            .bind(shield_id)
-            .fetch_one(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
+        "SELECT quantity FROM {gs}_shield_creature_association_table WHERE
+        creature_id = $1 AND shield_id = $2"
+    )))
+    .bind(creature_id)
+    .bind(shield_id)
+    .fetch_one(pool)
+    .await?)
 }
 
 /// Quantities are present ONLY for creature's armors.
@@ -663,28 +517,14 @@ async fn fetch_armor_quantity(
     creature_id: i64,
     armor_id: i64,
 ) -> Result<i64> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_scalar::<_, i64>(
-                "SELECT quantity FROM pf_armor_creature_association_table WHERE
-                creature_id = $1 AND armor_id = $2",
-            )
-            .bind(creature_id)
-            .bind(armor_id)
-            .fetch_one(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_scalar::<_, i64>(
-                "SELECT quantity FROM sf_armor_creature_association_table WHERE
-                creature_id = $1 AND armor_id = $2",
-            )
-            .bind(creature_id)
-            .bind(armor_id)
-            .fetch_one(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
+        "SELECT quantity FROM {gs}_armor_creature_association_table WHERE
+        creature_id = $1 AND armor_id = $2"
+    )))
+    .bind(creature_id)
+    .bind(armor_id)
+    .fetch_one(pool)
+    .await?)
 }
 
 async fn fetch_creature_actions(
@@ -692,28 +532,14 @@ async fn fetch_creature_actions(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Action>> {
-    let core_actions = match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, CoreAction>(
-                "SELECT a.* FROM pf_action_table AS a
-                JOIN pf_creature_action_association_table AS ca ON ca.action_id = a.id
-                WHERE ca.creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, CoreAction>(
-                "SELECT a.* FROM sf_action_table AS a
-                JOIN sf_creature_action_association_table AS ca ON ca.action_id = a.id
-                WHERE ca.creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-    };
+    let core_actions: Vec<CoreAction> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT a.* FROM {gs}_action_table AS a
+        JOIN {gs}_creature_action_association_table AS ca ON ca.action_id = a.id
+        WHERE ca.creature_id = $1"
+    )))
+    .bind(creature_id)
+    .fetch_all(pool)
+    .await?;
     let mut res: Vec<Action> = Vec::with_capacity(core_actions.len());
     for action in core_actions {
         let action_id = action.id;
@@ -730,24 +556,12 @@ async fn fetch_creature_skills(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<Skill>> {
-    Ok(match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, Skill>(
-                "SELECT name, description, modifier, proficiency FROM pf_skill_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, Skill>(
-                "SELECT name, description, modifier, proficiency FROM sf_skill_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-    })
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT name, description, modifier, proficiency FROM {gs}_skill_table WHERE creature_id = $1"
+    )))
+    .bind(creature_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 pub async fn fetch_creature_spells(
@@ -756,22 +570,13 @@ pub async fn fetch_creature_spells(
     creature_id: i64,
     spellcaster_entry_id: i64,
 ) -> Result<Vec<Spell>> {
-    Ok(match gs {
-        GameSystem::Pathfinder => sqlx::query_as::<_, Spell>(
-            "SELECT * FROM pf_spell_table WHERE creature_id = $1 AND spellcasting_entry_id = $2",
-        )
-        .bind(creature_id)
-        .bind(spellcaster_entry_id)
-        .fetch_all(pool)
-        .await?,
-        GameSystem::Starfinder => sqlx::query_as::<_, Spell>(
-            "SELECT * FROM sf_spell_table WHERE creature_id = $1 AND spellcasting_entry_id = $2",
-        )
-        .bind(creature_id)
-        .bind(spellcaster_entry_id)
-        .fetch_all(pool)
-        .await?,
-    })
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT * FROM {gs}_spell_table WHERE creature_id = $1 AND spellcasting_entry_id = $2"
+    )))
+    .bind(creature_id)
+    .bind(spellcaster_entry_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 async fn fetch_creature_spellcaster_entries(
@@ -780,30 +585,15 @@ async fn fetch_creature_spellcaster_entries(
     creature_id: i64,
 ) -> Result<Vec<SpellcasterEntry>> {
     let mut result = Vec::new();
-    let data = match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, SpellcasterData>(
-                "SELECT
-                id, spellcasting_name, is_spellcasting_flexible, type_of_spellcaster,
-                spellcasting_dc_mod, spellcasting_atk_mod, spellcasting_tradition, heighten_level
-                FROM pf_spellcasting_entry_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, SpellcasterData>(
-                "SELECT
-                id, spellcasting_name, is_spellcasting_flexible, type_of_spellcaster,
-                spellcasting_dc_mod, spellcasting_atk_mod, spellcasting_tradition, heighten_level
-                FROM sf_spellcasting_entry_table WHERE creature_id = $1",
-            )
-            .bind(creature_id)
-            .fetch_all(pool)
-            .await?
-        }
-    };
+    let data: Vec<SpellcasterData> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT
+        id, spellcasting_name, is_spellcasting_flexible, type_of_spellcaster,
+        spellcasting_dc_mod, spellcasting_atk_mod, spellcasting_tradition, heighten_level
+        FROM {gs}_spellcasting_entry_table WHERE creature_id = $1"
+    )))
+    .bind(creature_id)
+    .fetch_all(pool)
+    .await?;
     for sce in data {
         let sce_id = sce.id;
         result.push(SpellcasterEntry {
@@ -935,11 +725,7 @@ pub async fn fetch_creatures_core_data(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<CreatureCoreData>> {
-    let pagination = if page_size < 0 {
-        format!("LIMIT ALL OFFSET {cursor}")
-    } else {
-        format!("LIMIT {page_size} OFFSET {cursor}")
-    };
+    let pagination = format_pagination_clause(cursor, page_size);
     let cr_core: Vec<CreatureCoreData> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT * FROM {gs}_creature_core WHERE status = 'valid' ORDER BY name {pagination}"
     )))

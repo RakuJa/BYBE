@@ -1,3 +1,4 @@
+use crate::models::db::pg_type_helper::get_i32_as_i64;
 use crate::models::item::item_struct::Item;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
@@ -28,9 +29,9 @@ impl<'r> FromRow<'r, PgRow> for Shield {
             item_core,
             shield_data: ShieldData {
                 id: row.try_get("shield_id")?,
-                bonus_ac: row.try_get::<i32, _>("bonus_ac")? as i64,
-                n_of_reinforcing_runes: row.try_get::<i32, _>("n_of_reinforcing_runes")? as i64,
-                speed_penalty: row.try_get::<i32, _>("speed_penalty")? as i64,
+                bonus_ac: get_i32_as_i64(row, "bonus_ac")?,
+                n_of_reinforcing_runes: get_i32_as_i64(row, "n_of_reinforcing_runes")?,
+                speed_penalty: get_i32_as_i64(row, "speed_penalty")?,
             },
         })
     }

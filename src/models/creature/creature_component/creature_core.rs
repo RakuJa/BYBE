@@ -1,4 +1,5 @@
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::db::pg_type_helper::{get_i32_as_i64, get_opt_i32_as_i64};
 use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
@@ -56,14 +57,10 @@ impl<'r> FromRow<'r, PgRow> for EssentialData {
         let status_str: String = row.try_get("status").unwrap_or_default();
         Ok(Self {
             id: row.try_get("id")?,
-            aon_id: row
-                .try_get::<Option<i32>, _>("aon_id")
-                .ok()
-                .flatten()
-                .map(|v| v as i64),
+            aon_id: get_opt_i32_as_i64(row, "aon_id"),
             name: row.try_get("name")?,
-            hp: row.try_get::<i32, _>("hp")? as i64,
-            base_level: row.try_get::<i32, _>("level")? as i64,
+            hp: get_i32_as_i64(row, "hp")?,
+            base_level: get_i32_as_i64(row, "level")?,
             size: SizeEnum::from(size),
             family: row.try_get("family").unwrap_or_else(|_| String::from("-")),
             rarity: RarityEnum::from(rarity),
@@ -72,7 +69,7 @@ impl<'r> FromRow<'r, PgRow> for EssentialData {
             source: row.try_get("source")?,
             cr_type: CreatureTypeEnum::from(row.try_get("cr_type").ok()),
             alignment: AlignmentEnum::from(alignment),
-            focus_points: row.try_get::<i32, _>("focus_points")? as i64,
+            focus_points: get_i32_as_i64(row, "focus_points")?,
             status: status_str.into(),
         })
     }

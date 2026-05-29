@@ -1,3 +1,4 @@
+use crate::models::db::pg_type_helper::{get_i32_as_i64, get_opt_i32_as_i64};
 use crate::models::item::item_field_filter::ItemFieldFilters;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::ordered_float_to_schema;
@@ -70,10 +71,10 @@ impl<'r> FromRow<'r, PgRow> for Item {
             base_item: row.try_get("base_item")?,
             category: row.try_get("category").ok(),
             description: row.try_get("description")?,
-            hardness: row.try_get::<i32, _>("hardness")? as i64,
-            hp: row.try_get::<i32, _>("hp")? as i64,
-            level: row.try_get::<i32, _>("level")? as i64,
-            price: row.try_get::<i32, _>("price")? as i64,
+            hardness: get_i32_as_i64(row, "hardness")?,
+            hp: get_i32_as_i64(row, "hp")?,
+            level: get_i32_as_i64(row, "level")?,
+            price: get_i32_as_i64(row, "price")?,
             size: SizeEnum::from(size),
             rarity: RarityEnum::from(rarity),
             license: row.try_get("license")?,
@@ -84,11 +85,7 @@ impl<'r> FromRow<'r, PgRow> for Item {
             material_type: row.try_get("material_type").ok(),
             traits: vec![],
             usage: row.try_get("usage")?,
-            number_of_uses: row
-                .try_get::<Option<i32>, _>("number_of_uses")
-                .ok()
-                .flatten()
-                .map(|v| v as i64),
+            number_of_uses: get_opt_i32_as_i64(row, "number_of_uses"),
             group: row.try_get("item_group")?,
             status: status_str.into(),
         })

@@ -1,7 +1,9 @@
 use crate::db::data_providers::generic_fetcher::{
     fetch_armor_runes, fetch_item_traits, fetch_weapon_damage_data, fetch_weapon_runes,
 };
-use crate::db::data_providers::raw_query_builder::prepare_filtered_get_items;
+use crate::db::data_providers::raw_query_builder::{
+    format_pagination_clause, prepare_filtered_get_items,
+};
 use crate::models::item::armor_struct::{Armor, ArmorData};
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_struct::Item;
@@ -141,11 +143,7 @@ pub async fn fetch_items(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Item>> {
-    let pagination = if page_size < 0 {
-        format!("LIMIT ALL OFFSET {cursor}")
-    } else {
-        format!("LIMIT {page_size} OFFSET {cursor}")
-    };
+    let pagination = format_pagination_clause(cursor, page_size);
     let items: Vec<Item> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT * FROM {gs}_item_table
@@ -165,11 +163,7 @@ pub async fn fetch_weapons(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Weapon>> {
-    let pagination = if page_size < 0 {
-        format!("LIMIT ALL OFFSET {cursor}")
-    } else {
-        format!("LIMIT {page_size} OFFSET {cursor}")
-    };
+    let pagination = format_pagination_clause(cursor, page_size);
     let x: Vec<Weapon> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
@@ -200,11 +194,7 @@ pub async fn fetch_armors(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Armor>> {
-    let pagination = if page_size < 0 {
-        format!("LIMIT ALL OFFSET {cursor}")
-    } else {
-        format!("LIMIT {page_size} OFFSET {cursor}")
-    };
+    let pagination = format_pagination_clause(cursor, page_size);
     let x: Vec<Armor> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
@@ -233,11 +223,7 @@ pub async fn fetch_shields(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Shield>> {
-    let pagination = if page_size < 0 {
-        format!("LIMIT ALL OFFSET {cursor}")
-    } else {
-        format!("LIMIT {page_size} OFFSET {cursor}")
-    };
+    let pagination = format_pagination_clause(cursor, page_size);
     let x: Vec<Shield> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty, it.*

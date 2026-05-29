@@ -1,5 +1,7 @@
 use crate::db::data_providers::generic_fetcher::fetch_action_traits;
-use crate::db::data_providers::raw_query_builder::prepare_filtered_get_hazards;
+use crate::db::data_providers::raw_query_builder::{
+    format_pagination_clause, prepare_filtered_get_hazards,
+};
 use crate::models::hazard::hazard_listing_struct::HazardFilterQuery;
 use crate::models::hazard::hazard_struct::Hazard;
 use crate::models::response_data::ResponseHazard;
@@ -14,28 +16,14 @@ async fn fetch_hazard_actions(
     gs: GameSystem,
     hazard_id: i64,
 ) -> Result<Vec<Action>> {
-    let core_actions = match gs {
-        GameSystem::Pathfinder => {
-            sqlx::query_as::<_, CoreAction>(
-                "SELECT a.* FROM pf_action_table AS a
-                JOIN pf_action_hazard_association_table AS ca ON ca.action_id = a.id
-                WHERE ca.hazard_id = $1",
-            )
-            .bind(hazard_id)
-            .fetch_all(pool)
-            .await?
-        }
-        GameSystem::Starfinder => {
-            sqlx::query_as::<_, CoreAction>(
-                "SELECT a.* FROM sf_action_table AS a
-                JOIN sf_action_hazard_association_table AS ca ON ca.action_id = a.id
-                WHERE ca.hazard_id = $1",
-            )
-            .bind(hazard_id)
-            .fetch_all(pool)
-            .await?
-        }
-    };
+    let core_actions: Vec<CoreAction> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT a.* FROM {gs}_action_table AS a
+        JOIN {gs}_action_hazard_association_table AS ca ON ca.action_id = a.id
+        WHERE ca.hazard_id = $1"
+    )))
+    .bind(hazard_id)
+    .fetch_all(pool)
+    .await?;
     let mut res: Vec<Action> = Vec::with_capacity(core_actions.len());
     for action in core_actions {
         let action_id = action.id;
@@ -133,11 +121,7 @@ pub async fn fetch_hazards_data(
     cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Hazard>> {
-    let pagination = if page_size < 0 {
-        format!("LIMIT ALL OFFSET {cursor}")
-    } else {
-        format!("LIMIT {page_size} OFFSET {cursor}")
-    };
+    let pagination = format_pagination_clause(cursor, page_size);
     let cr_core: Vec<Hazard> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT * FROM {gs}_hazard_table ORDER BY name {pagination}"
     )))

@@ -1,3 +1,4 @@
+use crate::models::db::pg_type_helper::{get_i32_as_i64, get_opt_i32_as_i64};
 use crate::models::hazard::hazard_field_filter::HazardComplexityEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
@@ -45,11 +46,11 @@ impl<'r> FromRow<'r, PgRow> for HazardEssentialData {
         Ok(Self {
             id: row.try_get("id")?,
             name: row.try_get("name")?,
-            ac: row.try_get::<i32, _>("ac")? as i64,
-            hardness: row.try_get::<i32, _>("hardness")? as i64,
+            ac: get_i32_as_i64(row, "ac")?,
+            hardness: get_i32_as_i64(row, "hardness")?,
             has_health: row.try_get("has_health")?,
-            hp: row.try_get::<i32, _>("hp")? as i64,
-            stealth: row.try_get::<i32, _>("stealth")? as i64,
+            hp: get_i32_as_i64(row, "hp")?,
+            stealth: get_i32_as_i64(row, "stealth")?,
             stealth_detail: row.try_get("stealth_detail")?,
             description: row.try_get("description")?,
             disable_description: row.try_get("disable_description")?,
@@ -61,22 +62,10 @@ impl<'r> FromRow<'r, PgRow> for HazardEssentialData {
             license: row.try_get("license")?,
             remaster: row.try_get("remaster")?,
             source: row.try_get("source")?,
-            will: row
-                .try_get::<Option<i32>, _>("will")
-                .ok()
-                .flatten()
-                .map(|v| v as i64),
-            reflex: row
-                .try_get::<Option<i32>, _>("reflex")
-                .ok()
-                .flatten()
-                .map(|v| v as i64),
-            level: row.try_get::<i32, _>("level")? as i64,
-            fortitude: row
-                .try_get::<Option<i32>, _>("fortitude")
-                .ok()
-                .flatten()
-                .map(|v| v as i64),
+            will: get_opt_i32_as_i64(row, "will"),
+            reflex: get_opt_i32_as_i64(row, "reflex"),
+            level: get_i32_as_i64(row, "level")?,
+            fortitude: get_opt_i32_as_i64(row, "fortitude"),
         })
     }
 }

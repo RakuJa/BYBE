@@ -17,23 +17,14 @@ pub async fn fetch_unique_values_of_field(
 }
 
 pub async fn fetch_item_traits(pool: &PgPool, gs: GameSystem, item_id: i64) -> Result<Vec<String>> {
-    let query = match gs {
-        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                 FROM pf_trait_table INTERSECT
-                 SELECT trait_id FROM pf_trait_item_association_table WHERE item_id = $1
-                 ORDER BY name",
-        )
-        .bind(item_id),
-        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                 FROM sf_trait_table INTERSECT
-                 SELECT trait_id FROM sf_trait_item_association_table WHERE item_id = $1
-                 ORDER BY name",
-        )
-        .bind(item_id),
-    };
-    Ok(query.fetch_all(pool).await?)
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT name FROM {gs}_trait_table INTERSECT
+         SELECT trait_id FROM {gs}_trait_item_association_table WHERE item_id = $1
+         ORDER BY name"
+    )))
+    .bind(item_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 pub async fn fetch_weapon_traits(
@@ -41,23 +32,14 @@ pub async fn fetch_weapon_traits(
     gs: GameSystem,
     weapon_id: i64,
 ) -> Result<Vec<String>> {
-    let query = match gs {
-        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                 FROM pf_trait_table INTERSECT
-                 SELECT trait_id FROM pf_trait_weapon_association_table WHERE weapon_id = $1
-                 ORDER BY name",
-        )
-        .bind(weapon_id),
-        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                 FROM sf_trait_table INTERSECT
-                 SELECT trait_id FROM sf_trait_weapon_association_table WHERE weapon_id = $1
-                 ORDER BY name",
-        )
-        .bind(weapon_id),
-    };
-    Ok(query.fetch_all(pool).await?)
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT name FROM {gs}_trait_table INTERSECT
+         SELECT trait_id FROM {gs}_trait_weapon_association_table WHERE weapon_id = $1
+         ORDER BY name"
+    )))
+    .bind(weapon_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 pub async fn fetch_shield_traits(
@@ -65,24 +47,14 @@ pub async fn fetch_shield_traits(
     gs: GameSystem,
     shield_id: i64,
 ) -> Result<Vec<String>> {
-    let query = match gs {
-        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                 FROM pf_trait_table INTERSECT
-                 SELECT trait_id FROM pf_trait_shield_association_table WHERE shield_id = $1
-                 ORDER BY name",
-        )
-        .bind(shield_id),
-        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                 FROM sf_trait_table INTERSECT
-                 SELECT trait_id FROM sf_trait_shield_association_table WHERE shield_id = $1
-                 ORDER BY name",
-        )
-        .bind(shield_id),
-    };
-
-    Ok(query.fetch_all(pool).await?)
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT name FROM {gs}_trait_table INTERSECT
+         SELECT trait_id FROM {gs}_trait_shield_association_table WHERE shield_id = $1
+         ORDER BY name"
+    )))
+    .bind(shield_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 pub async fn fetch_armor_traits(
@@ -90,44 +62,25 @@ pub async fn fetch_armor_traits(
     gs: GameSystem,
     armor_id: i64,
 ) -> Result<Vec<String>> {
-    let query = match gs {
-        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                 FROM pf_trait_table INTERSECT
-                 SELECT trait_id FROM pf_trait_armor_association_table WHERE armor_id = $1
-                 ORDER BY name",
-        )
-        .bind(armor_id),
-        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                 FROM sf_trait_table INTERSECT
-                 SELECT trait_id FROM sf_trait_armor_association_table WHERE armor_id = $1
-                 ORDER BY name",
-        )
-        .bind(armor_id),
-    };
-    Ok(query.fetch_all(pool).await?)
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT name FROM {gs}_trait_table INTERSECT
+         SELECT trait_id FROM {gs}_trait_armor_association_table WHERE armor_id = $1
+         ORDER BY name"
+    )))
+    .bind(armor_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 pub async fn fetch_weapon_runes(pool: &PgPool, gs: GameSystem, wp_id: i64) -> Result<Vec<String>> {
-    let query = match gs {
-        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                 FROM pf_rune_table INTERSECT
-                 SELECT rune_id FROM pf_rune_weapon_association_table WHERE weapon_id = $1
-                 ORDER BY name",
-        )
-        .bind(wp_id),
-        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                 FROM sf_rune_table INTERSECT
-                 SELECT rune_id FROM sf_rune_weapon_association_table WHERE weapon_id = $1
-                 ORDER BY name",
-        )
-        .bind(wp_id),
-    };
-
-    Ok(query.fetch_all(pool).await?)
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT name FROM {gs}_rune_table INTERSECT
+         SELECT rune_id FROM {gs}_rune_weapon_association_table WHERE weapon_id = $1
+         ORDER BY name"
+    )))
+    .bind(wp_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 pub async fn fetch_weapon_damage_data(
@@ -147,23 +100,14 @@ pub async fn fetch_weapon_damage_data(
 }
 
 pub async fn fetch_armor_runes(pool: &PgPool, gs: GameSystem, wp_id: i64) -> Result<Vec<String>> {
-    let query = match gs {
-        GameSystem::Pathfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                 FROM pf_rune_table INTERSECT
-                 SELECT rune_id FROM pf_rune_armor_association_table WHERE armor_id = $1
-                 ORDER BY name",
-        )
-        .bind(wp_id),
-        GameSystem::Starfinder => sqlx::query_scalar::<_, String>(
-            "SELECT name
-                FROM sf_rune_table INTERSECT
-                SELECT rune_id FROM sf_rune_armor_association_table WHERE armor_id = $1
-                ORDER BY name",
-        )
-        .bind(wp_id),
-    };
-    Ok(query.fetch_all(pool).await?)
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT name FROM {gs}_rune_table INTERSECT
+         SELECT rune_id FROM {gs}_rune_armor_association_table WHERE armor_id = $1
+         ORDER BY name"
+    )))
+    .bind(wp_id)
+    .fetch_all(pool)
+    .await?)
 }
 
 pub async fn fetch_action_traits(
@@ -172,9 +116,7 @@ pub async fn fetch_action_traits(
     action_id: i64,
 ) -> Result<Vec<String>> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "
-        SELECT
-            tt.name
+        "SELECT tt.name
         FROM {gs}_trait_action_association_table tcat
             LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name WHERE action_id = $1 GROUP BY tt.name",
     ))).bind(action_id)

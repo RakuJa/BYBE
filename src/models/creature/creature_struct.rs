@@ -4,7 +4,6 @@ use crate::models::creature::creature_component::creature_extra::CreatureExtraDa
 use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature::creature_field_filter::CreatureFieldFilters;
-use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
@@ -196,53 +195,13 @@ impl Filterable for Creature {
             && (filters.role_threshold.is_none()
                 || filters.role_filter.as_ref().is_none_or(|cr_role| {
                     let t = filters.role_threshold.unwrap_or(0);
-                    cr_role.iter().any(|role| match role {
-                        CreatureRoleEnum::Brute => {
-                            self.core_data.derived.role_data.get("brute").unwrap_or(&0) >= &t
-                        }
-                        CreatureRoleEnum::MagicalStriker => {
-                            self.core_data
-                                .derived
-                                .role_data
-                                .get("magical_striker")
-                                .unwrap_or(&0)
-                                >= &t
-                        }
-                        CreatureRoleEnum::SkillParagon => {
-                            self.core_data
-                                .derived
-                                .role_data
-                                .get("skill_paragon")
-                                .unwrap_or(&0)
-                                >= &t
-                        }
-                        CreatureRoleEnum::Skirmisher => {
-                            self.core_data
-                                .derived
-                                .role_data
-                                .get("skirmisher")
-                                .unwrap_or(&0)
-                                >= &t
-                        }
-                        CreatureRoleEnum::Sniper => {
-                            self.core_data.derived.role_data.get("sniper").unwrap_or(&0) >= &t
-                        }
-                        CreatureRoleEnum::Soldier => {
-                            self.core_data
-                                .derived
-                                .role_data
-                                .get("soldier")
-                                .unwrap_or(&0)
-                                >= &t
-                        }
-                        CreatureRoleEnum::Spellcaster => {
-                            self.core_data
-                                .derived
-                                .role_data
-                                .get("spellcaster")
-                                .unwrap_or(&0)
-                                >= &t
-                        }
+                    cr_role.iter().any(|role| {
+                        self.core_data
+                            .derived
+                            .role_data
+                            .get(role.to_role_key())
+                            .unwrap_or(&0)
+                            >= &t
                     })
                 }))
             && match filters.game_system_version.unwrap_or_default() {

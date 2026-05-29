@@ -98,49 +98,57 @@ async fn get_all_shields_from_db(app_state: &AppState, gs: GameSystem) -> Result
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 async fn get_list(app_state: &AppState, gs: GameSystem) -> Vec<ResponseItem> {
-    let mut response_vec = Vec::new();
-    for el in get_all_items_from_db(app_state, gs).await.unwrap_or(vec![]) {
-        response_vec.push(ResponseItem {
+    let mut response_vec: Vec<ResponseItem> = get_all_items_from_db(app_state, gs)
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(|el| ResponseItem {
             core_item: el,
             weapon_data: None,
             armor_data: None,
             shield_data: None,
             game: gs,
-        });
-    }
-    for el in get_all_weapons_from_db(app_state, gs)
-        .await
-        .unwrap_or(vec![])
-    {
-        response_vec.push(ResponseItem {
-            core_item: el.item_core,
-            weapon_data: Some(el.weapon_data),
-            armor_data: None,
-            shield_data: None,
-            game: gs,
-        });
-    }
-    for el in get_all_armors_from_db(app_state, gs)
-        .await
-        .unwrap_or(vec![])
-    {
-        response_vec.push(ResponseItem {
-            core_item: el.item_core,
-            weapon_data: None,
-            armor_data: Some(el.armor_data),
-            shield_data: None,
-            game: gs,
-        });
-    }
-    for el in get_all_shields_from_db(app_state, gs).await.unwrap() {
-        response_vec.push(ResponseItem {
-            core_item: el.item_core,
-            weapon_data: None,
-            armor_data: None,
-            shield_data: Some(el.shield_data),
-            game: gs,
-        });
-    }
+        })
+        .collect();
+    response_vec.extend(
+        get_all_weapons_from_db(app_state, gs)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|el| ResponseItem {
+                core_item: el.item_core,
+                weapon_data: Some(el.weapon_data),
+                armor_data: None,
+                shield_data: None,
+                game: gs,
+            }),
+    );
+    response_vec.extend(
+        get_all_armors_from_db(app_state, gs)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|el| ResponseItem {
+                core_item: el.item_core,
+                weapon_data: None,
+                armor_data: Some(el.armor_data),
+                shield_data: None,
+                game: gs,
+            }),
+    );
+    response_vec.extend(
+        get_all_shields_from_db(app_state, gs)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|el| ResponseItem {
+                core_item: el.item_core,
+                weapon_data: None,
+                armor_data: None,
+                shield_data: Some(el.shield_data),
+                game: gs,
+            }),
+    );
     response_vec
 }
 
