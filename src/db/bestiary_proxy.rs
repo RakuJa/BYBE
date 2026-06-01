@@ -1,23 +1,21 @@
-use crate::models::creature::creature_struct::Creature;
-
 use crate::AppState;
 use crate::db::data_providers::creature_fetcher::fetch_traits_associated_with_creatures;
-use crate::db::data_providers::{creature_fetcher, generic_fetcher};
+use crate::db::data_providers::{creature_fetcher, fetch_unique_values_from_db};
 use crate::models::bestiary_structs::{
-    BestiaryFilterQuery, BestiaryPaginatedRequest, BestiaryRanges, CreatureSortEnum,
+    BestiaryFilterQuery, BestiaryPaginatedRequest, BestiaryRanges,
 };
 use crate::models::creature::creature_field_filter::CreatureFieldFilters;
 use crate::models::creature::creature_filter_enum::{CreatureFilter, FieldsUniqueValuesStruct};
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::creature::creature_struct::Creature;
 use crate::models::response_data::CreatureResponseDataModifiers;
-use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
-use crate::traits::filterable::Filterable;
 use anyhow::Result;
+#[cfg(feature = "cache")]
 use cached::cached;
 use itertools::Itertools;
 use strum::IntoEnumIterator;
@@ -42,6 +40,7 @@ pub async fn get_weak_creature_by_id(
 ) -> Option<Creature> {
     get_creature_by_id(app_state, gs, id, CreatureVariant::Weak, optional_data).await
 }
+
 pub async fn get_elite_creature_by_id(
     app_state: &AppState,
     gs: GameSystem,
@@ -57,93 +56,24 @@ pub async fn get_paginated_creatures(
     filters: &CreatureFieldFilters,
     pagination: &BestiaryPaginatedRequest,
 ) -> Result<(u32, Vec<Creature>)> {
-    let list = get_list(app_state, gs).await;
-
-    let mut filtered_list: Vec<Creature> = list
+    let count = creature_fetcher::fetch_creatures_listing_count(&app_state.pool, gs, filters)
+        .await
+        .unwrap_or(0) as u32;
+    let core_data = creature_fetcher::fetch_paginated_creatures(
+        &app_state.pool,
+        gs,
+        filters,
+        pagination.bestiary_sort_data.sort_by.unwrap_or_default(),
+        pagination.bestiary_sort_data.order_by.unwrap_or_default(),
+        pagination.paginated_request.cursor,
+        pagination.paginated_request.page_size,
+    )
+    .await?;
+    let creatures = core_data
         .into_iter()
-        .filter(|x| Creature::is_passing_filters(x, filters))
+        .map(|x| Creature::from_core(x, gs))
         .collect();
-
-    let total_creature_count = filtered_list.len();
-
-    filtered_list.sort_by(|a, b| {
-        let cmp = match pagination.bestiary_sort_data.sort_by.unwrap_or_default() {
-            CreatureSortEnum::Id => a.core_data.essential.id.cmp(&b.core_data.essential.id),
-            CreatureSortEnum::Name => a.core_data.essential.name.cmp(&b.core_data.essential.name),
-            CreatureSortEnum::Level => a
-                .core_data
-                .essential
-                .base_level
-                .cmp(&b.core_data.essential.base_level),
-            CreatureSortEnum::Trait => a
-                .core_data
-                .traits
-                .join(", ")
-                .cmp(&b.core_data.traits.join(", ")),
-            CreatureSortEnum::Size => a.core_data.essential.size.cmp(&b.core_data.essential.size),
-            CreatureSortEnum::Type => a
-                .core_data
-                .essential
-                .cr_type
-                .cmp(&b.core_data.essential.cr_type),
-            CreatureSortEnum::Hp => a.core_data.essential.hp.cmp(&b.core_data.essential.hp),
-            CreatureSortEnum::Rarity => a
-                .core_data
-                .essential
-                .rarity
-                .cmp(&b.core_data.essential.rarity),
-            CreatureSortEnum::Family => a
-                .core_data
-                .essential
-                .family
-                .cmp(&b.core_data.essential.family),
-            CreatureSortEnum::Alignment => a
-                .core_data
-                .essential
-                .alignment
-                .cmp(&b.core_data.essential.alignment),
-            CreatureSortEnum::Attack => a
-                .core_data
-                .derived
-                .attack_data
-                .cmp(&b.core_data.derived.attack_data),
-            CreatureSortEnum::Role => {
-                let threshold = filters.role_threshold.unwrap_or(0);
-                a.core_data
-                    .derived
-                    .role_data
-                    .iter()
-                    .filter(|(_, role_value)| **role_value > threshold)
-                    .map(|(role, _)| role)
-                    .collect::<Vec<_>>()
-                    .cmp(
-                        &b.core_data
-                            .derived
-                            .role_data
-                            .iter()
-                            .filter(|(_, role_affinity)| **role_affinity > threshold)
-                            .map(|(x, _)| x)
-                            .collect::<Vec<_>>(),
-                    )
-            }
-        };
-        match pagination.bestiary_sort_data.order_by.unwrap_or_default() {
-            OrderEnum::Ascending => cmp,
-            OrderEnum::Descending => cmp.reverse(),
-        }
-    });
-    let curr_slice: Vec<Creature> = filtered_list
-        .iter()
-        .skip(pagination.paginated_request.cursor as usize)
-        .take(if pagination.paginated_request.page_size >= 0 {
-            pagination.paginated_request.page_size.unsigned_abs() as usize
-        } else {
-            usize::MAX
-        })
-        .cloned()
-        .collect();
-
-    Ok((total_creature_count as u32, curr_slice))
+    Ok((count, creatures))
 }
 
 pub async fn get_creatures_passing_all_filters(
@@ -225,80 +155,27 @@ pub async fn get_all_possible_values_of_filter(
     x
 }
 
-/// Gets all the runtime keys (each table column unique values). It will cache the result
-#[cached(key = "i64", convert = r##"{ gs.into() }"##)]
+#[cfg_attr(feature = "cache", cached(key = "i64", convert = r##"{ gs.into() }"##))]
 async fn get_all_keys(app_state: &AppState, gs: GameSystem) -> FieldsUniqueValuesStruct {
+    let table = format!("{gs}_creature_core");
     FieldsUniqueValuesStruct {
-        list_of_levels: generic_fetcher::fetch_unique_values_of_field(
-            &app_state.pool,
-            format!("{gs}_creature_core").as_str(),
-            "level",
-        )
-        .await
-        .unwrap_or_default(),
-        list_of_families: generic_fetcher::fetch_unique_values_of_field(
-            &app_state.pool,
-            format!("{gs}_creature_core").as_str(),
-            "family",
-        )
-        .await
-        .unwrap(),
+        list_of_levels: fetch_unique_values_from_db(app_state, table.clone(), "level".into()).await,
+        list_of_families: fetch_unique_values_from_db(app_state, table.clone(), "family".into())
+            .await,
         list_of_traits: fetch_traits_associated_with_creatures(&app_state.pool, gs)
             .await
             .unwrap_or_default(),
-        list_of_sources: generic_fetcher::fetch_unique_values_of_field(
-            &app_state.pool,
-            format!("{gs}_creature_core").as_str(),
-            "source",
-        )
-        .await
-        .unwrap_or_default(),
-        list_of_sizes: generic_fetcher::fetch_unique_values_of_field(
-            &app_state.pool,
-            format!("{gs}_creature_core").as_str(),
-            "size",
-        )
-        .await
-        .unwrap_or_default(),
-        list_of_rarities: generic_fetcher::fetch_unique_values_of_field(
-            &app_state.pool,
-            format!("{gs}_creature_core").as_str(),
-            "rarity",
-        )
-        .await
-        .unwrap_or_default(),
+        list_of_sources: fetch_unique_values_from_db(app_state, table.clone(), "source".into())
+            .await,
+        list_of_sizes: fetch_unique_values_from_db(app_state, table.clone(), "size".into()).await,
+        list_of_rarities: fetch_unique_values_from_db(app_state, table, "rarity".into()).await,
     }
 }
-
-/// Infallible method, it will expose a vector representing the values fetched from db or empty vec
-/// It will cache result
-#[cached(key = "i64", convert = r##"{ gs.into() }"##)]
-async fn get_list(app_state: &AppState, gs: GameSystem) -> Vec<Creature> {
-    creature_fetcher::fetch_creatures_core_data(&app_state.pool, gs, 0, -1)
+#[cfg_attr(feature = "cache", cached(key = "i64", convert = r##"{ gs.into() }"##))]
+pub async fn get_bestiary_ranges(app_state: &AppState, gs: GameSystem) -> Option<BestiaryRanges> {
+    creature_fetcher::fetch_creature_ranges(&app_state.pool, gs)
         .await
-        .map(|creatures| {
-            creatures
-                .into_iter()
-                .map(|x| Creature::from_core(x, gs))
-                .collect()
-        })
-        .unwrap_or_default()
-}
-
-pub async fn get_bestiary_ranges(app_state: &AppState, gs: GameSystem) -> Result<BestiaryRanges> {
-    Ok(get_list(app_state, gs)
-        .await
-        .iter()
-        .fold(BestiaryRanges::default(), |mut acc, x| {
-            let e = &x.core_data.essential;
-            acc.min_hp = acc.min_hp.min(e.hp);
-            acc.max_hp = acc.max_hp.max(e.hp);
-            acc.min_level = acc.min_level.min(e.base_level);
-            acc.max_level = acc.max_level.max(e.base_level);
-            acc.min_focus_points = acc.min_focus_points.min(e.focus_points);
-            acc.max_focus_points = acc.max_focus_points.max(e.focus_points);
-            acc
-        }))
+        .ok()
 }
 
 /// Used to prepare the filters for db communication.

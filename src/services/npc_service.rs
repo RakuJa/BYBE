@@ -1,7 +1,6 @@
 use crate::AppState;
 use crate::models::npc::request_npc_struct::{AncestryData, RandomNameData, RandomNpcData};
 use anyhow::bail;
-use cached::cached;
 use itertools::Itertools;
 use nanorand::Rng;
 use nanorand::WyRand;
@@ -10,7 +9,7 @@ use std::collections::HashMap;
 use std::str::FromStr;
 use strum::IntoEnumIterator;
 
-use crate::db::json_fetcher::get_nickname_data_from_json;
+use crate::db::json_fetcher::{get_names, get_nicknames};
 use crate::models::npc::ancestry_enum::{PfAncestry, SfAncestry};
 use crate::models::npc::class_enum::{PfClass, SfClass};
 use crate::models::npc::culture_enum::PfCulture;
@@ -95,6 +94,7 @@ where
         } else {
             bail!("Illegal state found")
         };
+    let names = get_names(app_state);
     Ok(ResponseNpc {
         name: generate_random_names(
             RandomNameData {
@@ -103,7 +103,7 @@ where
                 gender: Some(gender),
                 origin: name_origin,
             },
-            &app_state.name_json_path,
+            &names,
         )
         .first()
         .unwrap()
@@ -113,7 +113,7 @@ where
         ancestry: ancestry.to_string(),
         culture: culture.to_string(),
         nickname: if npc_req_data.generate_nickname.unwrap_or(false) {
-            generate_random_nickname(&app_state.nick_json_path)
+            generate_random_nickname(&get_nicknames(app_state))
         } else {
             None
         },
@@ -209,7 +209,10 @@ where
     J::filtered_random(&filter).to_string()
 }
 
-pub fn generate_random_names<N>(data: RandomNameData<N>, name_path: &str) -> Vec<String>
+pub fn generate_random_names<N>(
+    data: RandomNameData<N>,
+    names: &crate::models::npc::name_loader_struct::Names,
+) -> Vec<String>
 where
     N: NameOrigin,
 {
@@ -223,7 +226,7 @@ where
     let gender = data
         .gender
         .unwrap_or_else(|| name_origin.get_random_gender());
-    let chain = name_origin.get_name_builder(name_path).get(&(key.clone(), gender)).unwrap_or_else(|| {
+    let chain = name_origin.get_name_builder(names).get(&(key.clone(), gender)).unwrap_or_else(|| {
         panic!(
             "Could not fetch the initializer for the given Key (Location/Ancestry) {key} and Gender {gender}"
         )
@@ -242,29 +245,30 @@ where
         .collect()
 }
 
-pub fn generate_random_nickname(nickname_path: &str) -> Option<String> {
-    if let Ok(data) = get_nickname_data_from_json(nickname_path) {
-        let adj_list = data.terms.adjective;
-        let nouns = data.terms.nouns;
+pub fn generate_random_nickname(
+    data: &crate::models::npc::name_loader_struct::NickNameData,
+) -> Option<String> {
+    let adj_list = &data.terms.adjective;
+    let nouns = &data.terms.nouns;
 
-        if let Some(adj) = adj_list.get(WyRand::new().generate_range(0..adj_list.len()))
-            && let Some(noun) = nouns.get(WyRand::new().generate_range(0..nouns.len()))
-        {
-            Some(match WyRand::new().generate_range(0..2) {
-                0 => format!("{adj} {noun}"),
-                _ => format!("The {adj} {noun}"),
-            })
-        } else {
-            error!("Cannot generate nickname, empty json?");
-            None
-        }
+    if adj_list.is_empty() || nouns.is_empty() {
+        error!("Cannot generate nickname, empty json?");
+        return None;
+    }
+
+    if let Some(adj) = adj_list.get(WyRand::new().generate_range(0..adj_list.len()))
+        && let Some(noun) = nouns.get(WyRand::new().generate_range(0..nouns.len()))
+    {
+        Some(match WyRand::new().generate_range(0..2) {
+            0 => format!("{adj} {noun}"),
+            _ => format!("The {adj} {noun}"),
+        })
     } else {
-        error!("Cannot generate nickname, missing json?");
+        error!("Cannot generate nickname, empty json?");
         None
     }
 }
 
-#[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 pub fn get_ancestry_name_builder(
     ancestry_struct: NamesByAncestryRarity,
     gs: GameSystem,
@@ -300,7 +304,6 @@ pub fn get_ancestry_name_builder(
     chains
 }
 
-#[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 pub fn get_culture_name_builder(
     names_by_culture: Vec<NamesByCulture>,
     gs: GameSystem,

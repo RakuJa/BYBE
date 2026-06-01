@@ -1,7 +1,7 @@
 use crate::models::routers_validator_structs::OrderEnum;
 
 pub trait HasSortFields {
-    type SortBy: Default + ToString;
+    type SortBy: Default + ToString + Clone;
 
     fn sort_by_field(&self) -> &Option<Self::SortBy>;
     fn order_by_field(&self) -> &Option<OrderEnum>;

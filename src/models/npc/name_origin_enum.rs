@@ -1,7 +1,7 @@
-use crate::db::json_fetcher::get_names_from_json;
 use crate::models::npc::ancestry_enum::{PfAncestry, SfAncestry};
 use crate::models::npc::culture_enum::{PfCulture, SfCulture};
 use crate::models::npc::gender_enum::Gender;
+use crate::models::npc::name_loader_struct::Names;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::services::npc_service::{get_ancestry_name_builder, get_culture_name_builder};
 use crate::traits::filter::Filter;
@@ -284,13 +284,13 @@ impl NameOrigin for SfNameOrigin {
 
     fn get_name_builder(
         &self,
-        json_path: &str,
+        names: &Names,
     ) -> HashMap<(String, Gender), HashMap<String, Vec<char>>> {
-        let names = get_names_from_json(json_path).unwrap();
         match self {
-            Self::FromAncestry(_) => {
-                get_ancestry_name_builder(names.sf_names.by_ancestry, GameSystem::Starfinder)
-            }
+            Self::FromAncestry(_) => get_ancestry_name_builder(
+                names.sf_names.by_ancestry.clone(),
+                GameSystem::Starfinder,
+            ),
         }
     }
 }
@@ -404,14 +404,16 @@ impl NameOrigin for PfNameOrigin {
 
     fn get_name_builder(
         &self,
-        json_path: &str,
+        names: &Names,
     ) -> HashMap<(String, Gender), HashMap<String, Vec<char>>> {
-        let names = get_names_from_json(json_path).unwrap();
         match self {
-            Self::FromAncestry(_) => {
-                get_ancestry_name_builder(names.pf_names.by_ancestry, GameSystem::Pathfinder)
+            Self::FromAncestry(_) => get_ancestry_name_builder(
+                names.pf_names.by_ancestry.clone(),
+                GameSystem::Pathfinder,
+            ),
+            _ => {
+                get_culture_name_builder(names.pf_names.by_culture.clone(), GameSystem::Pathfinder)
             }
-            _ => get_culture_name_builder(names.pf_names.by_culture, GameSystem::Pathfinder),
         }
     }
 }

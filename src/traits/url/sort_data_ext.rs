@@ -7,15 +7,9 @@ pub trait SortDataExt {
 
 impl<T: HasSortFields> SortDataExt for T {
     fn sort_by(&self) -> String {
-        self.sort_by_field()
-            .as_ref()
-            .map(ToString::to_string)
-            .unwrap_or_default()
+        self.sort_by_field().clone().unwrap_or_default().to_string()
     }
     fn order_by(&self) -> String {
-        self.order_by_field()
-            .as_ref()
-            .map(ToString::to_string)
-            .unwrap_or_default()
+        self.order_by_field().unwrap_or_default().to_string()
     }
 }
