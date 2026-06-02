@@ -274,14 +274,13 @@ async fn fetch_creature_weapons(
 ) -> Result<Vec<Weapon>> {
     let weapons: Vec<Weapon> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
-        SELECT wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
+        SELECT DISTINCT wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
         wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
         it.*
         FROM {gs}_weapon_creature_association_table ica
         LEFT JOIN {gs}_weapon_table wt ON wt.id = ica.weapon_id
         LEFT JOIN {gs}_item_table it ON it.id = wt.base_item_id
         WHERE ica.creature_id = $1
-        GROUP BY ica.weapon_id
         ORDER BY name
         "
     )))
@@ -317,14 +316,13 @@ async fn fetch_creature_armors(
 ) -> Result<Vec<Armor>> {
     let armors: Vec<Armor> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
-        SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
+        SELECT DISTINCT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
         at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id,
         it.*
         FROM {gs}_armor_creature_association_table aca
         LEFT JOIN {gs}_armor_table at ON at.id = aca.armor_id
         LEFT JOIN {gs}_item_table it ON it.id = at.base_item_id
         WHERE aca.creature_id = $1
-        GROUP BY aca.armor_id
         ORDER BY name
         "
     )))
@@ -357,13 +355,12 @@ async fn fetch_creature_shields(
 ) -> Result<Vec<Shield>> {
     let shields: Vec<Shield> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
-        SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty,
+        SELECT DISTINCT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty,
         it.*
         FROM {gs}_shield_creature_association_table sca
         LEFT JOIN {gs}_shield_table st ON st.id = sca.shield_id
         LEFT JOIN {gs}_item_table it ON it.id = st.base_item_id
         WHERE sca.creature_id = $1
-        GROUP BY sca.shield_id
         ORDER BY name
         ",
     )))
