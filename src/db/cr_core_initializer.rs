@@ -44,7 +44,7 @@ weapon_flags AS (
     SELECT
         creature_id,
         bool_or(UPPER(weapon_type) = 'MELEE')  AS has_melee,
-        bool_or(UPPER(weapon_type) = 'RANGED') AS has_ranged
+        bool_or(ranged IS NOT NULL AND ranged > 0) AS has_ranged
     FROM weapon_avgs
     GROUP BY creature_id
 ),
