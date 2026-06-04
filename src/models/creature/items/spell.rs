@@ -11,8 +11,8 @@ pub struct Spell {
     pub area_value: Option<i32>,
     pub counteraction: bool,
 
-    pub saving_throw_is_basic: Option<bool>,
-    pub saving_throw_statistic: Option<String>,
+    pub basic_saving_throw: Option<bool>,
+    pub saving_throw: Option<String>,
     pub sustained: bool,
 
     pub duration: Option<String>,
@@ -21,7 +21,7 @@ pub struct Spell {
     pub level: i64,
     pub range: String,
     pub target: String,
-    pub action: String,
+    pub actions: String,
 
     pub license: String,
     pub remaster: bool,
