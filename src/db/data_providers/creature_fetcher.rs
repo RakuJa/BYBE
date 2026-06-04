@@ -423,14 +423,16 @@ async fn fetch_quantity(
     entity_id: i64,
     entity: &str,
 ) -> Result<i64> {
-    Ok(sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
-        "SELECT quantity FROM {gs}_{entity}_creature_association_table WHERE
+    Ok(i64::from(
+        sqlx::query_scalar::<_, i32>(sqlx::AssertSqlSafe(format!(
+            "SELECT quantity FROM {gs}_{entity}_creature_association_table WHERE
         creature_id = $1 AND {entity}_id = $2"
-    )))
-    .bind(creature_id)
-    .bind(entity_id)
-    .fetch_one(pool)
-    .await?)
+        )))
+        .bind(creature_id)
+        .bind(entity_id)
+        .fetch_one(pool)
+        .await?,
+    ))
 }
 
 async fn fetch_creature_actions(
