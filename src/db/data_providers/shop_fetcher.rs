@@ -59,12 +59,16 @@ pub async fn fetch_item_by_id(pool: &PgPool, gs: GameSystem, item_id: i64) -> Re
 async fn fetch_weapon_by_item_id(pool: &PgPool, gs: GameSystem, item_id: i64) -> Result<Weapon> {
     let mut weapon: Weapon = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
-        SELECT wt.id AS weapon_id, wt.to_hit_bonus,
-        wt.splash_dmg, wt.n_of_potency_runes,
-        wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
-        it.*
+        SELECT
+            wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
+            wt.n_of_striking_runes, wt.reload, wt.weapon_type, wt.base_item_id,
+            it.*,
+            rt.id AS range_id, rt.value AS range_value,
+            rt.increment AS range_increment, rt.max AS range_max
         FROM {gs}_weapon_table wt
-        LEFT JOIN {gs}_item_table it ON wt.base_item_id = it.id
+        LEFT JOIN {gs}_item_table it                      ON wt.base_item_id = it.id
+        LEFT JOIN {gs}_weapon_range_association_table wr  ON wr.weapon_id = wt.id
+        LEFT JOIN {gs}_range_table rt                     ON rt.id = wr.range_id
         WHERE wt.base_item_id = ($1) AND it.status = 'valid'
         "
     )))
@@ -171,12 +175,18 @@ pub async fn fetch_weapons(
     let pagination = format_pagination_clause(cursor, page_size);
     let weapons: Vec<Weapon> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
-        SELECT wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
-            wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
-            it.*
+        SELECT
+            wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
+            wt.n_of_striking_runes, wt.reload, wt.weapon_type, wt.base_item_id,
+            it.*,
+            rt.id AS range_id, rt.value AS range_value,
+            rt.increment AS range_increment, rt.max AS range_max
         FROM {gs}_weapon_table wt
-        LEFT JOIN {gs}_item_table it ON wt.base_item_id = it.id
-        WHERE it.is_derived = False AND it.status = 'valid'
+        LEFT JOIN {gs}_item_table it                      ON wt.base_item_id = it.id
+        LEFT JOIN {gs}_weapon_range_association_table wr  ON wr.weapon_id = wt.id
+        LEFT JOIN {gs}_range_table rt                     ON rt.id = wr.range_id
+        WHERE it.is_derived = False
+          AND it.status = 'valid'
         GROUP BY it.id
         ORDER BY name {pagination}
     "

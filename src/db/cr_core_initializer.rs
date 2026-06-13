@@ -29,15 +29,18 @@ weapon_avgs AS (
     SELECT
         wca.creature_id,
         wt.weapon_type,
-        wt.range,
+        rt.id AS range_id, rt.value AS range_value,
+        rt.increment AS range_increment, rt.max AS range_max,
         COALESCE(wt.to_hit_bonus::bigint, 0) AS to_hit_bonus,
         COALESCE((
             SELECT SUM(FLOOR(((wd.die_size + 1.0) / 2.0) * wd.number_of_dice + wd.bonus_dmg))
-            FROM   {gs}_weapon_damage_table wd
-            WHERE  wd.weapon_id = wt.id
+            FROM {gs}_weapon_damage_table wd
+            WHERE wd.weapon_id = wt.id
         ), 0)::bigint AS avg_dmg
     FROM {gs}_weapon_creature_association_table wca
-    JOIN {gs}_weapon_table wt ON wt.id = wca.weapon_id
+    JOIN {gs}_weapon_table wt                        ON wt.id = wca.weapon_id
+    LEFT JOIN {gs}_weapon_range_association_table wr ON wr.weapon_id = wt.id
+    LEFT JOIN {gs}_range_table rt                    ON rt.id = wr.range_id
 ),
 
 -- melee / ranged presence
@@ -45,7 +48,7 @@ weapon_flags AS (
     SELECT
         creature_id,
         bool_or(UPPER(weapon_type) = 'MELEE')  AS has_melee,
-        bool_or(range IS NOT NULL AND range > 0) AS has_ranged
+        bool_or(UPPER(weapon_type) = 'RANGED') AS has_ranged
     FROM weapon_avgs
     GROUP BY creature_id
 ),
@@ -78,7 +81,7 @@ weapon_strikes AS (
     FROM weapon_avgs w
     JOIN {gs}_creature_table        c   ON c.id     = w.creature_id
     JOIN strike_bonus_scales_table  atk ON atk.level = c.level
-    JOIN strike_damage_scales_table ds  ON ds.level  = c.level::text
+    JOIN strike_damage_scales_table ds  ON ds.level  = c.level
 ),
 
 -- best (lowest-distance) strike per creature, by flavour
@@ -324,7 +327,7 @@ LEFT JOIN saving_throw_scales_table        st  ON st.level  = t.level
 LEFT JOIN skill_scales_table               sk  ON sk.level  = t.level
 LEFT JOIN spell_dc_and_attack_scales_table sda ON sda.level = t.level
 LEFT JOIN strike_bonus_scales_table        atk ON atk.level = t.level
-LEFT JOIN strike_damage_scales_table       ds  ON ds.level  = t.level::text
+LEFT JOIN strike_damage_scales_table       ds  ON ds.level  = t.level
 LEFT JOIN trait_flags     tf  ON tf.creature_id  = t.id
 LEFT JOIN weapon_flags    wf  ON wf.creature_id  = t.id
 LEFT JOIN spell_stats     ss  ON ss.creature_id  = t.id

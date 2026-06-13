@@ -2,6 +2,7 @@ use crate::models::db::pg_type_helper::{get_i32_as_i64, get_opt_i32_as_i16, get_
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::routers_validator_structs::Dice;
+use crate::models::shared::range_data::RangeData;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
@@ -25,8 +26,7 @@ pub struct WeaponData {
     #[schema(example = 0)]
     pub n_of_striking_runes: i64,
     pub property_runes: Vec<String>,
-    #[schema(example = 10)]
-    pub range: Option<i64>,
+    pub range: Option<RangeData>,
     pub reload: Option<String>,
     pub weapon_type: WeaponTypeEnum,
     #[schema(example = 0)]
@@ -45,7 +45,7 @@ impl<'r> FromRow<'r, PgRow> for Weapon {
                 n_of_potency_runes: get_i32_as_i64(row, "n_of_potency_runes")?,
                 n_of_striking_runes: get_i32_as_i64(row, "n_of_striking_runes")?,
                 property_runes: vec![],
-                range: get_opt_i32_as_i64(row, "range"),
+                range: RangeData::from_row(row).ok(),
                 reload: row.try_get("reload")?,
                 weapon_type: wp_type.unwrap_or(WeaponTypeEnum::Melee),
                 damage_data: vec![],
