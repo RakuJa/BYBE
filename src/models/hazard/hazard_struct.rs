@@ -3,6 +3,7 @@ use crate::models::hazard::hazard_field_filter::{HazardComplexityEnum, HazardFie
 use crate::models::shared::action::Action;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
+use crate::models::shared::trait_data::TraitData;
 use crate::traits::filterable::Filterable;
 use crate::traits::has_complexity::HasComplexity;
 use crate::traits::has_level::HasLevel;
@@ -59,7 +60,7 @@ impl Default for HazardRanges {
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq, Debug, ToSchema)]
 pub struct Hazard {
     pub essential: HazardEssentialData,
-    pub traits: Vec<String>,
+    pub traits: Vec<TraitData>,
     pub actions: Vec<Action>,
     pub game_system: GameSystem,
 }
@@ -144,6 +145,7 @@ impl Filterable for Hazard {
             x.iter().any(|filter_trait| {
                 self.traits.iter().any(|cr_trait| {
                     cr_trait
+                        .name
                         .to_lowercase()
                         .contains(filter_trait.to_lowercase().as_str())
                 })
@@ -152,6 +154,7 @@ impl Filterable for Hazard {
             x.iter().any(|filter_trait| {
                 self.traits.iter().any(|cr_trait| {
                     cr_trait
+                        .name
                         .to_lowercase()
                         .eq(filter_trait.to_lowercase().as_str())
                 })
@@ -204,7 +207,7 @@ impl TraitsEnrichable for Hazard {
     fn entity_id(&self) -> i64 {
         self.essential.id
     }
-    fn set_traits(&mut self, traits: Vec<String>) {
+    fn set_traits(&mut self, traits: Vec<TraitData>) {
         self.traits = traits;
     }
     fn entity_name() -> &'static str {

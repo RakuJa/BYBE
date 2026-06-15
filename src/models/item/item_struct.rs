@@ -6,6 +6,7 @@ use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use crate::models::shared::status_enum::Status;
+use crate::models::shared::trait_data::TraitData;
 use crate::traits::filterable::Filterable;
 use crate::traits::traits_enrichable::TraitsEnrichable;
 use ordered_float::OrderedFloat;
@@ -50,7 +51,7 @@ pub struct Item {
 
     pub rarity: RarityEnum,
     pub size: SizeEnum,
-    pub traits: Vec<String>,
+    pub traits: Vec<TraitData>,
 
     pub status: Status,
 }
@@ -159,6 +160,7 @@ impl Filterable for Item {
             x.iter().any(|filter_trait| {
                 self.traits.iter().any(|item_trait| {
                     item_trait
+                        .name
                         .to_lowercase()
                         .contains(filter_trait.to_lowercase().as_str())
                 })
@@ -167,6 +169,7 @@ impl Filterable for Item {
             x.iter().any(|filter_trait| {
                 self.traits.iter().any(|item_trait| {
                     item_trait
+                        .name
                         .to_lowercase()
                         .eq(filter_trait.to_lowercase().as_str())
                 })
@@ -199,7 +202,7 @@ impl TraitsEnrichable for Item {
     fn entity_id(&self) -> i64 {
         self.id
     }
-    fn set_traits(&mut self, traits: Vec<String>) {
+    fn set_traits(&mut self, traits: Vec<TraitData>) {
         self.traits = traits;
     }
     fn entity_name() -> &'static str {

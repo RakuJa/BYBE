@@ -13,6 +13,7 @@ use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::action::{Action, CoreAction};
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
+use crate::models::shared::trait_data::TraitData;
 use anyhow::Result;
 use sqlx::PgPool;
 
@@ -72,7 +73,7 @@ pub async fn fetch_hazard_traits(
     pool: &PgPool,
     gs: GameSystem,
     hazard_id: i64,
-) -> Result<Vec<String>> {
+) -> Result<Vec<TraitData>> {
     fetch_entity_traits(pool, gs, "hazard", hazard_id).await
 }
 
