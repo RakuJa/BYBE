@@ -5,6 +5,7 @@ use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use crate::models::shared::status_enum::Status;
 use crate::traits::traits_enrichable::TraitsEnrichable;
+use bon::bon;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)]
 use serde_json::json;
@@ -50,6 +51,35 @@ pub struct DerivedData {
     pub role_data: BTreeMap<String, i64>,
 }
 
+#[bon]
+impl DerivedData {
+    #[builder]
+    fn new(
+        aon_data: Option<(i64, CreatureTypeEnum)>,
+        #[builder(default)] attack_data: BTreeMap<String, bool>,
+        #[builder(default)] role_data: BTreeMap<String, i64>,
+    ) -> Self {
+        Self {
+            archive_link: aon_data.map(|x| Self::derive_archive_link(x.0, x.1)),
+            attack_data,
+            role_data,
+        }
+    }
+}
+
+impl DerivedData {
+    fn derive_archive_link(aon_id: i64, creature_type_enum: CreatureTypeEnum) -> String {
+        match creature_type_enum {
+            CreatureTypeEnum::Creature => {
+                format!("https://2e.aonprd.com/MONSTERs.aspx?ID={aon_id}")
+            }
+            CreatureTypeEnum::Npc => {
+                format!("https://2e.aonprd.com/NPCs.aspx?ID={aon_id}")
+            }
+        }
+    }
+}
+
 impl<'r> FromRow<'r, PgRow> for EssentialData {
     fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let rarity: String = row.try_get("rarity")?;
@@ -84,30 +114,25 @@ impl<'r> FromRow<'r, PgRow> for DerivedData {
         attack_list.insert(String::from("spellcaster"), row.try_get("is_spellcaster")?);
 
         let mut role_list = BTreeMap::new();
-        role_list.insert(String::from("brute"), row.try_get("brute_percentage")?);
-        role_list.insert(
-            String::from("magical_striker"),
-            row.try_get("magical_striker_percentage")?,
-        );
-        role_list.insert(
-            String::from("skill_paragon"),
-            row.try_get("skill_paragon_percentage")?,
-        );
-        role_list.insert(
-            String::from("skirmisher"),
-            row.try_get("skirmisher_percentage")?,
-        );
-        role_list.insert(String::from("sniper"), row.try_get("sniper_percentage")?);
-        role_list.insert(String::from("soldier"), row.try_get("soldier_percentage")?);
-        role_list.insert(
-            String::from("spellcaster"),
-            row.try_get("spellcaster_percentage")?,
-        );
-        Ok(Self {
-            archive_link: row.try_get("archive_link").ok(),
-            attack_data: attack_list,
-            role_data: role_list,
-        })
+        for (key, col) in [
+            ("brute", "brute_percentage"),
+            ("magical_striker", "magical_striker_percentage"),
+            ("skill_paragon", "skill_paragon_percentage"),
+            ("skirmisher", "skirmisher_percentage"),
+            ("sniper", "sniper_percentage"),
+            ("soldier", "soldier_percentage"),
+            ("spellcaster", "spellcaster_percentage"),
+        ] {
+            role_list.insert(String::from(key), row.try_get(col)?);
+        }
+        let aon_id = get_opt_i32_as_i64(row, "aon_id");
+        let creature_type = CreatureTypeEnum::from(row.try_get("cr_type").ok());
+        let aon_data = aon_id.map(|x| (x, creature_type));
+        Ok(Self::builder()
+            .attack_data(attack_list)
+            .role_data(role_list)
+            .maybe_aon_data(aon_data)
+            .build())
     }
 }
 
