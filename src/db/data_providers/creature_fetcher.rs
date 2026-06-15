@@ -249,20 +249,22 @@ pub async fn fetch_creature_traits(
     fetch_entity_traits(pool, gs, "creature", creature_id).await
 }
 
-pub async fn fetch_all_creature_trait_names(
+pub async fn fetch_all_creature_traits(
     pool: &PgPool,
     gs: GameSystem,
-) -> Result<HashMap<i64, Vec<String>>> {
-    let rows: Vec<(i64, String)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT a.creature_id, t.name
+) -> Result<HashMap<i64, Vec<TraitData>>> {
+    let rows: Vec<(i64, String, Option<String>)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT a.creature_id, t.name, t.description
          FROM {gs}_trait_creature_association_table a
          JOIN {gs}_trait_table t ON t.name = a.trait_id"
     )))
     .fetch_all(pool)
     .await?;
-    let mut map: HashMap<i64, Vec<String>> = HashMap::new();
-    for (creature_id, trait_name) in rows {
-        map.entry(creature_id).or_default().push(trait_name);
+    let mut map: HashMap<i64, Vec<TraitData>> = HashMap::new();
+    for (creature_id, name, description) in rows {
+        map.entry(creature_id)
+            .or_default()
+            .push(TraitData { name, description });
     }
     Ok(map)
 }
