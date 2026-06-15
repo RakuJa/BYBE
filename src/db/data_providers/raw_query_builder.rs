@@ -223,7 +223,7 @@ where
     in_string.push_str(prepare_case_insensitive_in_statement("tt.name", column_values).as_str());
     if !in_string.is_empty() {
         let select_query = format!("SELECT tcat.{id_column} FROM {gs}_{association_table_name}");
-        let inner_query = format!("SELECT * FROM {gs}_trait_table tt WHERE {in_string}");
+        let inner_query = format!("SELECT name FROM {gs}_trait_table tt WHERE {in_string}");
         return format!(
             "{select_query} tcat RIGHT JOIN ({inner_query}) jt ON tcat.trait_id = jt.name"
         );

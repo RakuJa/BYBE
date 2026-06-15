@@ -1,4 +1,5 @@
 use crate::models::shared::rarity_enum::RarityEnum;
+use crate::models::shared::trait_data::TraitData;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use utoipa::ToSchema;
@@ -25,5 +26,5 @@ pub struct CoreAction {
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq, Debug, ToSchema)]
 pub struct Action {
     pub core_action: CoreAction,
-    pub traits: Vec<String>,
+    pub traits: Vec<TraitData>,
 }
