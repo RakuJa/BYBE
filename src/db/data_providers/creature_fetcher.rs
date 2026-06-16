@@ -492,7 +492,7 @@ pub async fn fetch_creature_spells(
             rt.id AS range_id, rt.value as range_value, rt.increment as range_increment, rt.max AS range_max
         FROM {gs}_spell_table st
         INNER JOIN {gs}_spell_range_association_table sr ON sr.spell_id = st.id
-        INNER JOIN {gs}_range_table rt                   ON rt.id = sr.range_id
+        INNER JOIN {gs}_range_table rt ON rt.id = sr.range_id
         WHERE st.spellcasting_entry_id = $2
           AND st.creature_id = $1;
         "

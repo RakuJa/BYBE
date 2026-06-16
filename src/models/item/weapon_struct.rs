@@ -31,6 +31,7 @@ pub struct WeaponData {
     pub weapon_type: WeaponTypeEnum,
     #[schema(example = 0)]
     pub splash_dmg: Option<i64>,
+    pub attack_effects: Vec<String>,
 }
 
 impl<'r> FromRow<'r, PgRow> for Weapon {
@@ -50,6 +51,7 @@ impl<'r> FromRow<'r, PgRow> for Weapon {
                 weapon_type: wp_type.unwrap_or(WeaponTypeEnum::Melee),
                 damage_data: vec![],
                 splash_dmg: get_opt_i32_as_i64(row, "splash_dmg"),
+                attack_effects: vec![],
             },
         })
     }
