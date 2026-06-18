@@ -55,7 +55,6 @@ use crate::models::shared::trait_data::TraitData;
 use anyhow::Result;
 use futures::future::join_all;
 use sqlx::PgPool;
-use std::collections::HashMap;
 
 async fn fetch_creature_immunities(
     pool: &PgPool,
@@ -247,26 +246,6 @@ pub async fn fetch_creature_traits(
     creature_id: i64,
 ) -> Result<Vec<TraitData>> {
     fetch_entity_traits(pool, gs, "creature", creature_id).await
-}
-
-pub async fn fetch_all_creature_traits(
-    pool: &PgPool,
-    gs: GameSystem,
-) -> Result<HashMap<i64, Vec<TraitData>>> {
-    let rows: Vec<(i64, String, Option<String>)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT a.creature_id, t.name, t.description
-         FROM {gs}_trait_creature_association_table a
-         JOIN {gs}_trait_table t ON t.name = a.trait_id"
-    )))
-    .fetch_all(pool)
-    .await?;
-    let mut map: HashMap<i64, Vec<TraitData>> = HashMap::new();
-    for (creature_id, name, description) in rows {
-        map.entry(creature_id)
-            .or_default()
-            .push(TraitData { name, description });
-    }
-    Ok(map)
 }
 
 async fn fetch_creature_weapons(
@@ -565,7 +544,7 @@ pub async fn fetch_traits_associated_with_creatures(
     Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT
-            tt.name, tt.description
+            tt.name, tt.description, tt.display_name
         FROM {gs}_trait_creature_association_table tcat
             LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name GROUP BY tt.name",
     )))

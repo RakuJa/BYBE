@@ -57,7 +57,7 @@ pub async fn fetch_traits_associated_with_hazards(
     Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT
-            tt.name, tt.description
+            tt.name, tt.description, tt.display_name
         FROM {gs}_trait_hazard_association_table tcat
             LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name GROUP BY tt.name",
     )))

@@ -6,4 +6,5 @@ use utoipa::ToSchema;
 pub struct TraitData {
     pub name: String,
     pub description: Option<String>,
+    pub display_name: Option<String>,
 }
