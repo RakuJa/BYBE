@@ -1,4 +1,5 @@
 use crate::models::item::weapon_struct::DamageData;
+use crate::models::shared::action::{Action, CoreAction};
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::trait_data::TraitData;
@@ -80,6 +81,39 @@ pub async fn fetch_weapon_damage_data(
     .bind(wp_id)
     .fetch_all(pool)
     .await?)
+}
+
+pub async fn fetch_weapon_actions(
+    pool: &PgPool,
+    gs: GameSystem,
+    wp_id: i64,
+) -> Result<Vec<Action>> {
+    let core_actions = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
+        SELECT a.* FROM {gs}_action_table AS a
+        JOIN {gs}_weapon_action_association_table AS wa ON wa.action_id = a.id
+        WHERE wa.weapon_id = $1"
+    )))
+    .bind(wp_id)
+    .fetch_all(pool)
+    .await?;
+    fetch_actions_from_cores(pool, gs, core_actions).await
+}
+
+pub async fn fetch_actions_from_cores(
+    pool: &PgPool,
+    gs: GameSystem,
+    core_actions: Vec<CoreAction>,
+) -> Result<Vec<Action>> {
+    let mut res: Vec<Action> = Vec::with_capacity(core_actions.len());
+    for action in core_actions {
+        let action_id = action.id;
+        res.push(Action {
+            core_action: action,
+            traits: fetch_action_traits(pool, gs, action_id).await?,
+        });
+    }
+    Ok(res)
 }
 
 pub async fn fetch_armor_runes(pool: &PgPool, gs: GameSystem, wp_id: i64) -> Result<Vec<String>> {
