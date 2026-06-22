@@ -1,5 +1,6 @@
 use crate::db::data_providers::generic_fetcher::{
-    enrich_with_traits, fetch_action_traits, fetch_col_range, fetch_entity_traits,
+    enrich_with_traits, fetch_action_traits, fetch_all_with_binds, fetch_col_range,
+    fetch_count_with_binds, fetch_entity_traits,
 };
 use crate::db::data_providers::raw_query_builder::{
     format_pagination_clause, prepare_count_hazards_listing, prepare_filtered_get_hazards,
@@ -98,10 +99,8 @@ pub async fn fetch_hazard_core_data_with_filters(
     gs: GameSystem,
     hazard_filter_query: &HazardFilterQuery,
 ) -> Result<Vec<Hazard>> {
-    let query = prepare_filtered_get_hazards(gs, hazard_filter_query);
-    let core_data: Vec<Hazard> = sqlx::query_as(sqlx::AssertSqlSafe(query))
-        .fetch_all(pool)
-        .await?;
+    let (query, binds) = prepare_filtered_get_hazards(gs, hazard_filter_query);
+    let core_data: Vec<Hazard> = fetch_all_with_binds(pool, query, binds).await?;
     Ok(update_hazards_core_with_traits(pool, gs, core_data).await)
 }
 
@@ -130,11 +129,9 @@ pub async fn fetch_paginated_hazards(
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<Hazard>> {
-    let hazards: Vec<Hazard> = sqlx::query_as(sqlx::AssertSqlSafe(
-        prepare_paginated_get_hazards_listing(gs, filters, sort_by, order_by, cursor, page_size),
-    ))
-    .fetch_all(pool)
-    .await?;
+    let (query, binds) =
+        prepare_paginated_get_hazards_listing(gs, filters, sort_by, order_by, cursor, page_size);
+    let hazards: Vec<Hazard> = fetch_all_with_binds(pool, query, binds).await?;
     Ok(update_hazards_core_with_traits(pool, gs, hazards).await)
 }
 
@@ -143,13 +140,8 @@ pub async fn fetch_hazards_listing_count(
     gs: GameSystem,
     filters: &HazardFieldFilters,
 ) -> Result<i64> {
-    Ok(
-        sqlx::query_scalar(sqlx::AssertSqlSafe(prepare_count_hazards_listing(
-            gs, filters,
-        )))
-        .fetch_one(pool)
-        .await?,
-    )
+    let (query, binds) = prepare_count_hazards_listing(gs, filters);
+    fetch_count_with_binds(pool, query, binds).await
 }
 
 pub async fn fetch_hazard_ranges(pool: &PgPool, gs: GameSystem) -> Result<HazardRanges> {

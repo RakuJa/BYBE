@@ -1,3 +1,4 @@
+use crate::db::data_providers::raw_query_builder::BindValue;
 use crate::models::item::weapon_struct::DamageData;
 use crate::models::shared::action::{Action, CoreAction};
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
@@ -6,6 +7,44 @@ use crate::models::shared::trait_data::TraitData;
 use crate::traits::traits_enrichable::TraitsEnrichable;
 use anyhow::Result;
 use sqlx::PgPool;
+use sqlx::postgres::PgRow;
+
+/// Executes a query built by `raw_query_builder`, binding the values produced
+/// alongside it (in order) before fetching every matching row.
+pub async fn fetch_all_with_binds<O>(
+    pool: &PgPool,
+    sql: String,
+    binds: Vec<BindValue>,
+) -> Result<Vec<O>>
+where
+    O: for<'r> sqlx::FromRow<'r, PgRow> + Send + Unpin,
+{
+    let mut query = sqlx::query_as(sqlx::AssertSqlSafe(sql));
+    for value in binds {
+        query = match value {
+            BindValue::Text(s) => query.bind(s),
+            BindValue::TextArray(values) => query.bind(values),
+        };
+    }
+    Ok(query.fetch_all(pool).await?)
+}
+
+/// Executes a `SELECT COUNT(*)` query built by `raw_query_builder`, binding
+/// the values produced alongside it (in order) before fetching the count.
+pub async fn fetch_count_with_binds(
+    pool: &PgPool,
+    sql: String,
+    binds: Vec<BindValue>,
+) -> Result<i64> {
+    let mut query = sqlx::query_scalar(sqlx::AssertSqlSafe(sql));
+    for value in binds {
+        query = match value {
+            BindValue::Text(s) => query.bind(s),
+            BindValue::TextArray(values) => query.bind(values),
+        };
+    }
+    Ok(query.fetch_one(pool).await?)
+}
 
 /// Fetches traits for any entity using the shared `{gs}_trait_{entity}_association_table` convention.
 pub(crate) async fn fetch_entity_traits(

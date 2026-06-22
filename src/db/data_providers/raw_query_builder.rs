@@ -15,6 +15,41 @@ use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use tracing::debug;
 
+/// A value bound to a query built by this module, paired with a
+/// `BIND_PLACEHOLDER` occurrence in the generated SQL text. These are sent to
+/// the database separately from the query text and substituted in by the
+/// database itself as pure data - never re-parsed as SQL - which is what
+/// makes them immune to injection regardless of their contents.
+#[derive(Debug, Clone)]
+pub enum BindValue {
+    Text(String),
+    TextArray(Vec<String>),
+}
+
+/// Internal marker standing in for a future `$N` positional parameter. Swapped
+/// for real positional parameters by `finalize_placeholders` once the whole
+/// query has been assembled, since a placeholder's final position (and thus
+/// its number) is only known after every sub-query has been concatenated.
+const BIND_PLACEHOLDER: &str = "\u{1}";
+
+/// Replaces every `BIND_PLACEHOLDER` in `sql` with sequential positional
+/// parameters (`$1`, `$2`, ...) in left-to-right order. Must be called exactly
+/// once, on the fully composed query, and paired with a `Vec<BindValue>` built
+/// in the same left-to-right order the placeholders appear in `sql`.
+fn finalize_placeholders(sql: &str) -> String {
+    let mut result = String::with_capacity(sql.len());
+    let mut counter = 0usize;
+    let mut rest = sql;
+    while let Some(pos) = rest.find(BIND_PLACEHOLDER) {
+        result.push_str(&rest[..pos]);
+        counter += 1;
+        result.push_str(&format!("${counter}"));
+        rest = &rest[pos + BIND_PLACEHOLDER.len()..];
+    }
+    result.push_str(rest);
+    result
+}
+
 pub fn format_pagination_clause(cursor: i64, page_size: i16) -> String {
     if page_size < 0 {
         format!("LIMIT ALL OFFSET {cursor}")
@@ -23,7 +58,11 @@ pub fn format_pagination_clause(cursor: i64, page_size: i16) -> String {
     }
 }
 
-pub fn prepare_filtered_get_items(gs: GameSystem, shop_filter_query: &ShopFilterQuery) -> String {
+pub fn prepare_filtered_get_items(
+    gs: GameSystem,
+    shop_filter_query: &ShopFilterQuery,
+) -> (String, Vec<BindValue>) {
+    let mut binds = Vec::new();
     let equipment_query = prepare_item_subquery(
         gs,
         &ItemTypeEnum::Equipment,
@@ -31,6 +70,7 @@ pub fn prepare_filtered_get_items(gs: GameSystem, shop_filter_query: &ShopFilter
         &shop_filter_query.item_table_fields_filter,
         shop_filter_query.trait_whitelist_filter.iter(),
         shop_filter_query.trait_blacklist_filter.iter(),
+        &mut binds,
     );
     let consumable_query = prepare_item_subquery(
         gs,
@@ -39,6 +79,7 @@ pub fn prepare_filtered_get_items(gs: GameSystem, shop_filter_query: &ShopFilter
         &shop_filter_query.item_table_fields_filter,
         shop_filter_query.trait_whitelist_filter.iter(),
         shop_filter_query.trait_blacklist_filter.iter(),
+        &mut binds,
     );
     let weapon_query = prepare_item_subquery(
         gs,
@@ -47,6 +88,7 @@ pub fn prepare_filtered_get_items(gs: GameSystem, shop_filter_query: &ShopFilter
         &shop_filter_query.item_table_fields_filter,
         shop_filter_query.trait_whitelist_filter.iter(),
         shop_filter_query.trait_blacklist_filter.iter(),
+        &mut binds,
     );
     let armor_query = prepare_item_subquery(
         gs,
@@ -55,6 +97,7 @@ pub fn prepare_filtered_get_items(gs: GameSystem, shop_filter_query: &ShopFilter
         &shop_filter_query.item_table_fields_filter,
         shop_filter_query.trait_whitelist_filter.iter(),
         shop_filter_query.trait_blacklist_filter.iter(),
+        &mut binds,
     );
     let shield_query = prepare_item_subquery(
         gs,
@@ -63,30 +106,48 @@ pub fn prepare_filtered_get_items(gs: GameSystem, shop_filter_query: &ShopFilter
         &shop_filter_query.item_table_fields_filter,
         shop_filter_query.trait_whitelist_filter.iter(),
         shop_filter_query.trait_blacklist_filter.iter(),
+        &mut binds,
     );
     let query = format!(
-        "SELECT * FROM {gs}_item_table WHERE status = 'valid' AND id IN ( {equipment_query} ) OR id IN ({consumable_query} )
-        OR id IN ({weapon_query} ) OR id IN ({armor_query} ) OR id IN ({shield_query} )"
+        "SELECT * FROM {gs}_item_table WHERE status = 'valid' AND (
+            id IN ( {equipment_query} ) OR id IN ({consumable_query} )
+            OR id IN ({weapon_query} ) OR id IN ({armor_query} ) OR id IN ({shield_query} )
+        )"
     );
+    let query = finalize_placeholders(&query);
     debug!("{query}");
-    query
+    (query, binds)
 }
+
 pub fn prepare_filtered_get_creatures_core(
     gs: GameSystem,
     bestiary_filter_query: &BestiaryFilterQuery,
-) -> String {
+) -> (String, Vec<BindValue>) {
+    let mut binds = Vec::new();
     let initial_statement = format!("SELECT id FROM {gs}_creature_core");
-    let trait_query_tmp = prepare_trait_filter_statement(
-        &prepare_creature_trait_filter(gs, bestiary_filter_query.trait_whitelist_filter.iter()),
-        &prepare_creature_trait_filter(gs, bestiary_filter_query.trait_blacklist_filter.iter()),
+    // Order matters: these are pushed in the same left-to-right order they
+    // appear in `where_query` below, so that bind values line up with their
+    // placeholders once `finalize_placeholders` numbers them.
+    let creature_fields_filter_query = prepare_creature_filter_statement(
+        &bestiary_filter_query.creature_table_fields_filter,
+        &mut binds,
     );
+    let whitelist_query = prepare_creature_trait_filter(
+        gs,
+        bestiary_filter_query.trait_whitelist_filter.iter(),
+        &mut binds,
+    );
+    let blacklist_query = prepare_creature_trait_filter(
+        gs,
+        bestiary_filter_query.trait_blacklist_filter.iter(),
+        &mut binds,
+    );
+    let trait_query_tmp = prepare_trait_filter_statement(&whitelist_query, &blacklist_query);
     let trait_query = if trait_query_tmp.is_empty() {
         String::new()
     } else {
         format!("AND {trait_query_tmp}")
     };
-    let creature_fields_filter_query =
-        prepare_creature_filter_statement(&bestiary_filter_query.creature_table_fields_filter);
     let where_query = format!(
         "{initial_statement} WHERE status = 'valid' AND {creature_fields_filter_query} {trait_query}"
     );
@@ -103,26 +164,37 @@ pub fn prepare_filtered_get_creatures_core(
     SELECT * FROM CreatureRankedByLevel WHERE rn=1
     "
     );
+    let query = finalize_placeholders(&query);
     debug!("{query}");
-    query
+    (query, binds)
 }
 
 pub fn prepare_filtered_get_hazards(
     gs: GameSystem,
     bestiary_filter_query: &HazardFilterQuery,
-) -> String {
+) -> (String, Vec<BindValue>) {
+    let mut binds = Vec::new();
     let initial_statement = format!("SELECT id FROM {gs}_hazard_table");
-    let trait_query_tmp = prepare_trait_filter_statement(
-        &prepare_hazard_trait_filter(gs, bestiary_filter_query.trait_whitelist_filter.iter()),
-        &prepare_hazard_trait_filter(gs, bestiary_filter_query.trait_blacklist_filter.iter()),
+    let creature_fields_filter_query = prepare_hazard_filter_statement(
+        &bestiary_filter_query.hazard_table_fields_filter,
+        &mut binds,
     );
+    let whitelist_query = prepare_hazard_trait_filter(
+        gs,
+        bestiary_filter_query.trait_whitelist_filter.iter(),
+        &mut binds,
+    );
+    let blacklist_query = prepare_hazard_trait_filter(
+        gs,
+        bestiary_filter_query.trait_blacklist_filter.iter(),
+        &mut binds,
+    );
+    let trait_query_tmp = prepare_trait_filter_statement(&whitelist_query, &blacklist_query);
     let trait_query = if trait_query_tmp.is_empty() {
         String::new()
     } else {
         format!("AND {trait_query_tmp}")
     };
-    let creature_fields_filter_query =
-        prepare_hazard_filter_statement(&bestiary_filter_query.hazard_table_fields_filter);
     let where_query =
         format!("{initial_statement} WHERE {creature_fields_filter_query} {trait_query}");
     let query = format!(
@@ -138,8 +210,9 @@ pub fn prepare_filtered_get_hazards(
     SELECT * FROM HazardRankedByLevel WHERE rn=1
     "
     );
+    let query = finalize_placeholders(&query);
     debug!("{query}");
-    query
+    (query, binds)
 }
 
 /// Prepares a 'bounded AND statement' aka checks if all columns values are in the bound given, ex
@@ -214,13 +287,13 @@ fn prepare_trait_filter<I, S>(
     id_column: &str,
     association_table_name: &str,
     column_values: I,
+    binds: &mut Vec<BindValue>,
 ) -> String
 where
     I: Iterator<Item = S>,
     S: ToString,
 {
-    let mut in_string = String::new();
-    in_string.push_str(prepare_case_insensitive_in_statement("tt.name", column_values).as_str());
+    let in_string = prepare_case_insensitive_in_statement("tt.name", column_values, binds);
     if !in_string.is_empty() {
         let select_query = format!("SELECT tcat.{id_column} FROM {gs}_{association_table_name}");
         let inner_query = format!("SELECT name FROM {gs}_trait_table tt WHERE {in_string}");
@@ -231,63 +304,64 @@ where
     in_string
 }
 
-fn prepare_in_statement_inner<I, S>(
+/// Prepares a case-insensitive equality check against a bound array of
+/// values, e.g. `UPPER(field) = ANY($N)`. The values are sent to the database
+/// as a single array parameter - never interpolated into the query text - so
+/// they cannot affect the query's structure regardless of their contents.
+/// Returns an empty string (and pushes no bind) if `column_values` is empty.
+fn prepare_case_insensitive_in_statement<I, S>(
     column_name: &str,
     column_values: I,
-    case_insensitive: bool,
+    binds: &mut Vec<BindValue>,
 ) -> String
 where
     I: Iterator<Item = S>,
     S: ToString,
 {
-    let mut result_string = String::new();
-    let mut x = column_values.peekable();
-    if x.peek().is_some() {
-        if case_insensitive {
-            result_string.push_str(&format!("UPPER({column_name})"));
-        } else {
-            result_string.push_str(column_name);
-        }
-        result_string.push_str(" IN (");
-        x.for_each(|v| {
-            let s = v.to_string();
-            if case_insensitive {
-                result_string.push_str(&format!("UPPER('{s}')"));
-            } else {
-                result_string.push_str(&s);
-            }
-            result_string.push(',');
-        });
-        if result_string.ends_with(',') {
-            result_string.remove(result_string.len() - 1);
-        }
-        result_string.push(')');
+    let values: Vec<String> = column_values
+        .map(|v| v.to_string().to_uppercase())
+        .collect();
+    if values.is_empty() {
+        return String::new();
     }
-    result_string
+    binds.push(BindValue::TextArray(values));
+    format!("UPPER({column_name}) = ANY({BIND_PLACEHOLDER})")
 }
 
-/// Prepares a case insensitive 'in' statement in the following format. Requires a string value in db
-/// ```SQL
-/// "UPPER(field) in (UPPER('el1'), UPPER('el2'), UPPER('el3'))"
-/// ```
-fn prepare_case_insensitive_in_statement<I, S>(column_name: &str, column_values: I) -> String
-where
-    I: Iterator<Item = S>,
-    S: ToString,
-{
-    prepare_in_statement_inner(column_name, column_values, true)
+/// Prepares a substring match against any of several patterns, e.g.
+/// `column ILIKE ANY($N)`. Each value is wrapped in `%...%` wildcards and the
+/// whole list is bound as a single array parameter. Returns an empty string
+/// (and pushes no bind) if `values` is empty.
+fn prepare_substring_any_statement(
+    column_expression: &str,
+    values: &[String],
+    binds: &mut Vec<BindValue>,
+) -> String {
+    if values.is_empty() {
+        return String::new();
+    }
+    let patterns = values.iter().map(|v| format!("%{v}%")).collect();
+    binds.push(BindValue::TextArray(patterns));
+    format!("{column_expression} ILIKE ANY({BIND_PLACEHOLDER})")
 }
 
 /// Prepares an 'in' statement in the following format
 /// ```SQL
 /// 'field in (el1, el2, el3)'
 /// ```
+/// Values are inlined unquoted and unescaped: only pass values whose `ToString`
+/// output is controlled by us (bools, enums), never raw user-supplied strings.
 fn prepare_in_statement_for_generic_type<I, S>(column_name: &str, column_values: I) -> String
 where
     I: Iterator<Item = S>,
     S: ToString,
 {
-    prepare_in_statement_inner(column_name, column_values, false)
+    let mut values = column_values.peekable();
+    if values.peek().is_none() {
+        return String::new();
+    }
+    let joined = values.map(|v| v.to_string()).collect::<Vec<_>>().join(",");
+    format!("{column_name} IN ({joined})")
 }
 
 fn prepare_item_subquery<I, S>(
@@ -297,6 +371,7 @@ fn prepare_item_subquery<I, S>(
     shop_filter_vectors: &ItemTableFieldsFilter,
     trait_whitelist_filter: I,
     trait_blacklist_filter: I,
+    binds: &mut Vec<BindValue>,
 ) -> String
 where
     I: Iterator<Item = S>,
@@ -304,35 +379,56 @@ where
 {
     let item_type_query = prepare_get_id_matching_item_type_query(item_type, gs);
     let initial_statement = format!("SELECT id FROM {gs}_item_table");
-    let whitelist_query = prepare_item_trait_filter(gs, trait_whitelist_filter);
-    let blacklist_query = prepare_item_trait_filter(gs, trait_blacklist_filter);
+    // Order matters: pushed in the same left-to-right order as they appear below.
+    let item_fields_filter_query = prepare_item_filter_statement(shop_filter_vectors, binds);
+    let whitelist_query = prepare_item_trait_filter(gs, trait_whitelist_filter, binds);
+    let blacklist_query = prepare_item_trait_filter(gs, trait_blacklist_filter, binds);
     let trait_query_tmp = prepare_trait_filter_statement(&whitelist_query, &blacklist_query);
     let trait_query = if trait_query_tmp.is_empty() {
         String::new()
     } else {
         format!("AND {trait_query_tmp}")
     };
-    let item_fields_filter_query = prepare_item_filter_statement(shop_filter_vectors);
     format!(
         "{initial_statement} WHERE {item_fields_filter_query}
          AND id IN ( {item_type_query} ) {trait_query} ORDER BY RANDOM() LIMIT {n_of_item}"
     )
 }
 
-fn prepare_item_filter_statement(shop_filter_vectors: &ItemTableFieldsFilter) -> String {
+fn prepare_item_filter_statement(
+    shop_filter_vectors: &ItemTableFieldsFilter,
+    binds: &mut Vec<BindValue>,
+) -> String {
     let remaster_query = prepare_in_statement_for_generic_type(
         "remaster",
         shop_filter_vectors.supported_version.iter(),
     );
     let filters_query = vec![
-        prepare_case_insensitive_in_statement("size", shop_filter_vectors.size_filter.iter()),
-        prepare_case_insensitive_in_statement("item_type", shop_filter_vectors.type_filter.iter()),
+        prepare_case_insensitive_in_statement(
+            "size",
+            shop_filter_vectors.size_filter.iter(),
+            binds,
+        ),
+        prepare_case_insensitive_in_statement(
+            "item_type",
+            shop_filter_vectors.type_filter.iter(),
+            binds,
+        ),
         prepare_case_insensitive_in_statement(
             "category",
             shop_filter_vectors.category_filter.iter(),
+            binds,
         ),
-        prepare_case_insensitive_in_statement("rarity", shop_filter_vectors.rarity_filter.iter()),
-        prepare_case_insensitive_in_statement("source", shop_filter_vectors.source_filter.iter()),
+        prepare_case_insensitive_in_statement(
+            "rarity",
+            shop_filter_vectors.rarity_filter.iter(),
+            binds,
+        ),
+        prepare_case_insensitive_in_statement(
+            "source",
+            shop_filter_vectors.source_filter.iter(),
+            binds,
+        ),
         prepare_bounded_check(
             &String::from("level"),
             i64::from(shop_filter_vectors.min_level),
@@ -352,6 +448,7 @@ fn prepare_item_filter_statement(shop_filter_vectors: &ItemTableFieldsFilter) ->
 
 fn prepare_creature_filter_statement(
     bestiary_filter_vectors: &CreatureTableFieldsFilter,
+    binds: &mut Vec<BindValue>,
 ) -> String {
     let remaster_query = prepare_in_statement_for_generic_type(
         "remaster",
@@ -361,23 +458,32 @@ fn prepare_creature_filter_statement(
         prepare_case_insensitive_in_statement(
             "source",
             bestiary_filter_vectors.source_filter.iter(),
+            binds,
         ),
         prepare_case_insensitive_in_statement(
             "family",
             bestiary_filter_vectors.family_filter.iter(),
+            binds,
         ),
         prepare_case_insensitive_in_statement(
             "alignment",
             bestiary_filter_vectors.alignment_filter.iter(),
+            binds,
         ),
-        prepare_case_insensitive_in_statement("size", bestiary_filter_vectors.size_filter.iter()),
+        prepare_case_insensitive_in_statement(
+            "size",
+            bestiary_filter_vectors.size_filter.iter(),
+            binds,
+        ),
         prepare_case_insensitive_in_statement(
             "rarity",
             bestiary_filter_vectors.rarity_filter.iter(),
+            binds,
         ),
         prepare_case_insensitive_in_statement(
             "cr_type",
             bestiary_filter_vectors.type_filter.iter(),
+            binds,
         ),
         prepare_in_statement_for_generic_type(
             "is_spellcaster",
@@ -411,16 +517,27 @@ fn prepare_creature_filter_statement(
     }
 }
 
-fn prepare_hazard_filter_statement(hazard_filter_vec: &HazardTableFieldsFilter) -> String {
+fn prepare_hazard_filter_statement(
+    hazard_filter_vec: &HazardTableFieldsFilter,
+    binds: &mut Vec<BindValue>,
+) -> String {
     let remaster_query = prepare_in_statement_for_generic_type(
         "remaster",
         hazard_filter_vec.supported_version.iter(),
     );
 
     let filters_query = vec![
-        prepare_case_insensitive_in_statement("source", hazard_filter_vec.source_filter.iter()),
-        prepare_case_insensitive_in_statement("size", hazard_filter_vec.size_filter.iter()),
-        prepare_case_insensitive_in_statement("rarity", hazard_filter_vec.rarity_filter.iter()),
+        prepare_case_insensitive_in_statement(
+            "source",
+            hazard_filter_vec.source_filter.iter(),
+            binds,
+        ),
+        prepare_case_insensitive_in_statement("size", hazard_filter_vec.size_filter.iter(), binds),
+        prepare_case_insensitive_in_statement(
+            "rarity",
+            hazard_filter_vec.rarity_filter.iter(),
+            binds,
+        ),
         prepare_bounded_check_with_optional_limiters(
             "ac",
             hazard_filter_vec.min_ac,
@@ -524,12 +641,22 @@ fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum, gs: GameSys
 /// (SELECT * FROM TRAIT_TABLE WHERE name IN ('good')) tt
 /// ON tcat.trait_id = tt.name GROUP BY tcat.item_id
 ///```
-fn prepare_item_trait_filter<I, S>(gs: GameSystem, column_values: I) -> String
+fn prepare_item_trait_filter<I, S>(
+    gs: GameSystem,
+    column_values: I,
+    binds: &mut Vec<BindValue>,
+) -> String
 where
     I: Iterator<Item = S>,
     S: ToString,
 {
-    prepare_trait_filter(gs, "item_id", "trait_item_association_table", column_values)
+    prepare_trait_filter(
+        gs,
+        "item_id",
+        "trait_item_association_table",
+        column_values,
+        binds,
+    )
 }
 
 /// Prepares a query that gets all the ids linked with a given list of traits, example
@@ -540,7 +667,11 @@ where
 /// (SELECT * FROM TRAIT_TABLE WHERE name IN ('good')) tt
 /// ON tcat.trait_id = tt.name GROUP BY tcat.creature_id
 ///```
-fn prepare_creature_trait_filter<I, S>(gs: GameSystem, column_values: I) -> String
+fn prepare_creature_trait_filter<I, S>(
+    gs: GameSystem,
+    column_values: I,
+    binds: &mut Vec<BindValue>,
+) -> String
 where
     I: Iterator<Item = S>,
     S: ToString,
@@ -550,6 +681,7 @@ where
         "creature_id",
         "trait_creature_association_table",
         column_values,
+        binds,
     )
 }
 
@@ -561,7 +693,11 @@ where
 /// (SELECT * FROM TRAIT_TABLE WHERE name IN ('good')) tt
 /// ON tcat.trait_id = tt.name GROUP BY tcat.hazard_id
 ///```
-fn prepare_hazard_trait_filter<I, S>(gs: GameSystem, column_values: I) -> String
+fn prepare_hazard_trait_filter<I, S>(
+    gs: GameSystem,
+    column_values: I,
+    binds: &mut Vec<BindValue>,
+) -> String
 where
     I: Iterator<Item = S>,
     S: ToString,
@@ -571,11 +707,8 @@ where
         "hazard_id",
         "trait_hazard_association_table",
         column_values,
+        binds,
     )
-}
-
-fn escape_sql_str(s: &str) -> String {
-    s.replace('\'', "''")
 }
 
 const fn order_direction(order_by: OrderEnum) -> &'static str {
@@ -585,14 +718,19 @@ const fn order_direction(order_by: OrderEnum) -> &'static str {
     }
 }
 
-fn prepare_creature_listing_where(gs: GameSystem, filters: &CreatureFieldFilters) -> String {
+fn prepare_creature_listing_where(
+    gs: GameSystem,
+    filters: &CreatureFieldFilters,
+    binds: &mut Vec<BindValue>,
+) -> String {
     let mut conditions = vec!["status = 'valid'".to_string()];
 
     if let Some(name) = &filters.name_filter {
-        conditions.push(format!("name ILIKE '%{}%'", escape_sql_str(name)));
+        binds.push(BindValue::Text(format!("%{name}%")));
+        conditions.push(format!("name ILIKE {BIND_PLACEHOLDER}"));
     }
     if let Some(sources) = &filters.source_filter {
-        let s = prepare_case_insensitive_in_statement("source", sources.iter());
+        let s = prepare_case_insensitive_in_statement("source", sources.iter(), binds);
         if !s.is_empty() {
             conditions.push(s);
         }
@@ -600,32 +738,31 @@ fn prepare_creature_listing_where(gs: GameSystem, filters: &CreatureFieldFilters
     if let Some(families) = &filters.family_filter
         && !families.is_empty()
     {
-        let parts: Vec<String> = families
-            .iter()
-            .map(|f| format!("family ILIKE '%{}%'", escape_sql_str(f)))
-            .collect();
-        conditions.push(format!("({})", parts.join(" OR ")));
+        let s = prepare_substring_any_statement("family", families, binds);
+        if !s.is_empty() {
+            conditions.push(s);
+        }
     }
     if let Some(rarities) = &filters.rarity_filter {
-        let s = prepare_case_insensitive_in_statement("rarity", rarities.iter());
+        let s = prepare_case_insensitive_in_statement("rarity", rarities.iter(), binds);
         if !s.is_empty() {
             conditions.push(s);
         }
     }
     if let Some(sizes) = &filters.size_filter {
-        let s = prepare_case_insensitive_in_statement("size", sizes.iter());
+        let s = prepare_case_insensitive_in_statement("size", sizes.iter(), binds);
         if !s.is_empty() {
             conditions.push(s);
         }
     }
     if let Some(alignments) = &filters.alignment_filter {
-        let s = prepare_case_insensitive_in_statement("alignment", alignments.iter());
+        let s = prepare_case_insensitive_in_statement("alignment", alignments.iter(), binds);
         if !s.is_empty() {
             conditions.push(s);
         }
     }
     if let Some(types) = &filters.type_filter {
-        let s = prepare_case_insensitive_in_statement("cr_type", types.iter());
+        let s = prepare_case_insensitive_in_statement("cr_type", types.iter(), binds);
         if !s.is_empty() {
             conditions.push(s);
         }
@@ -673,26 +810,22 @@ fn prepare_creature_listing_where(gs: GameSystem, filters: &CreatureFieldFilters
     if let Some(whitelist) = &filters.trait_whitelist_filter
         && !whitelist.is_empty()
     {
-        let parts: Vec<String> = whitelist
-            .iter()
-            .map(|t| format!("UPPER(trait_id) LIKE UPPER('%{}%')", escape_sql_str(t)))
-            .collect();
-        conditions.push(format!(
-            "id IN (SELECT creature_id FROM {gs}_trait_creature_association_table WHERE {})",
-            parts.join(" OR ")
-        ));
+        let s = prepare_substring_any_statement("trait_id", whitelist, binds);
+        if !s.is_empty() {
+            conditions.push(format!(
+                "id IN (SELECT creature_id FROM {gs}_trait_creature_association_table WHERE {s})"
+            ));
+        }
     }
     if let Some(blacklist) = &filters.trait_blacklist_filter
         && !blacklist.is_empty()
     {
-        let parts: Vec<String> = blacklist
-            .iter()
-            .map(|t| format!("UPPER(trait_id) = UPPER('{}')", escape_sql_str(t)))
-            .collect();
-        conditions.push(format!(
-            "id NOT IN (SELECT creature_id FROM {gs}_trait_creature_association_table WHERE {})",
-            parts.join(" OR ")
-        ));
+        let s = prepare_case_insensitive_in_statement("trait_id", blacklist.iter(), binds);
+        if !s.is_empty() {
+            conditions.push(format!(
+                "id NOT IN (SELECT creature_id FROM {gs}_trait_creature_association_table WHERE {s})"
+            ));
+        }
     }
     conditions.join(" AND ")
 }
@@ -734,40 +867,52 @@ pub fn prepare_paginated_get_creatures_listing(
     order_by: OrderEnum,
     cursor: u32,
     page_size: i16,
-) -> String {
-    let where_clause = prepare_creature_listing_where(gs, filters);
+) -> (String, Vec<BindValue>) {
+    let mut binds = Vec::new();
+    let where_clause = prepare_creature_listing_where(gs, filters, &mut binds);
     let order_clause = prepare_creature_listing_order(gs, sort_by, order_by);
     let pagination = format_pagination_clause(i64::from(cursor), page_size);
-    format!(
+    let query = format!(
         "SELECT * FROM {gs}_creature_core WHERE {where_clause} ORDER BY {order_clause} {pagination}"
-    )
+    );
+    (finalize_placeholders(&query), binds)
 }
 
-pub fn prepare_count_creatures_listing(gs: GameSystem, filters: &CreatureFieldFilters) -> String {
-    let where_clause = prepare_creature_listing_where(gs, filters);
-    format!("SELECT COUNT(*) FROM {gs}_creature_core WHERE {where_clause}")
+pub fn prepare_count_creatures_listing(
+    gs: GameSystem,
+    filters: &CreatureFieldFilters,
+) -> (String, Vec<BindValue>) {
+    let mut binds = Vec::new();
+    let where_clause = prepare_creature_listing_where(gs, filters, &mut binds);
+    let query = format!("SELECT COUNT(*) FROM {gs}_creature_core WHERE {where_clause}");
+    (finalize_placeholders(&query), binds)
 }
 
-fn prepare_hazard_listing_where(gs: GameSystem, filters: &HazardFieldFilters) -> String {
+fn prepare_hazard_listing_where(
+    gs: GameSystem,
+    filters: &HazardFieldFilters,
+    binds: &mut Vec<BindValue>,
+) -> String {
     let mut conditions: Vec<String> = vec![];
 
     if let Some(name) = &filters.name_filter {
-        conditions.push(format!("name ILIKE '%{}%'", escape_sql_str(name)));
+        binds.push(BindValue::Text(format!("%{name}%")));
+        conditions.push(format!("name ILIKE {BIND_PLACEHOLDER}"));
     }
     if let Some(sources) = &filters.source_filter {
-        let s = prepare_case_insensitive_in_statement("source", sources.iter());
+        let s = prepare_case_insensitive_in_statement("source", sources.iter(), binds);
         if !s.is_empty() {
             conditions.push(s);
         }
     }
     if let Some(rarities) = &filters.rarity_filter {
-        let s = prepare_case_insensitive_in_statement("rarity", rarities.iter());
+        let s = prepare_case_insensitive_in_statement("rarity", rarities.iter(), binds);
         if !s.is_empty() {
             conditions.push(s);
         }
     }
     if let Some(sizes) = &filters.size_filter {
-        let s = prepare_case_insensitive_in_statement("size", sizes.iter());
+        let s = prepare_case_insensitive_in_statement("size", sizes.iter(), binds);
         if !s.is_empty() {
             conditions.push(s);
         }
@@ -834,26 +979,22 @@ fn prepare_hazard_listing_where(gs: GameSystem, filters: &HazardFieldFilters) ->
     if let Some(whitelist) = &filters.trait_whitelist_filter
         && !whitelist.is_empty()
     {
-        let parts: Vec<String> = whitelist
-            .iter()
-            .map(|t| format!("UPPER(trait_id) LIKE UPPER('%{}%')", escape_sql_str(t)))
-            .collect();
-        conditions.push(format!(
-            "id IN (SELECT hazard_id FROM {gs}_trait_hazard_association_table WHERE {})",
-            parts.join(" OR ")
-        ));
+        let s = prepare_substring_any_statement("trait_id", whitelist, binds);
+        if !s.is_empty() {
+            conditions.push(format!(
+                "id IN (SELECT hazard_id FROM {gs}_trait_hazard_association_table WHERE {s})"
+            ));
+        }
     }
     if let Some(blacklist) = &filters.trait_blacklist_filter
         && !blacklist.is_empty()
     {
-        let parts: Vec<String> = blacklist
-            .iter()
-            .map(|t| format!("UPPER(trait_id) = UPPER('{}')", escape_sql_str(t)))
-            .collect();
-        conditions.push(format!(
-            "id NOT IN (SELECT hazard_id FROM {gs}_trait_hazard_association_table WHERE {})",
-            parts.join(" OR ")
-        ));
+        let s = prepare_case_insensitive_in_statement("trait_id", blacklist.iter(), binds);
+        if !s.is_empty() {
+            conditions.push(format!(
+                "id NOT IN (SELECT hazard_id FROM {gs}_trait_hazard_association_table WHERE {s})"
+            ));
+        }
     }
     if conditions.is_empty() {
         "TRUE".to_string()
@@ -897,61 +1038,71 @@ pub fn prepare_paginated_get_hazards_listing(
     order_by: OrderEnum,
     cursor: u32,
     page_size: i16,
-) -> String {
-    let where_clause = prepare_hazard_listing_where(gs, filters);
+) -> (String, Vec<BindValue>) {
+    let mut binds = Vec::new();
+    let where_clause = prepare_hazard_listing_where(gs, filters, &mut binds);
     let order_clause = prepare_hazard_listing_order(gs, sort_by, order_by);
     let pagination = format_pagination_clause(i64::from(cursor), page_size);
-    format!(
+    let query = format!(
         "SELECT * FROM {gs}_hazard_table WHERE {where_clause} ORDER BY {order_clause} {pagination}"
-    )
+    );
+    (finalize_placeholders(&query), binds)
 }
 
-pub fn prepare_count_hazards_listing(gs: GameSystem, filters: &HazardFieldFilters) -> String {
-    let where_clause = prepare_hazard_listing_where(gs, filters);
-    format!("SELECT COUNT(*) FROM {gs}_hazard_table WHERE {where_clause}")
+pub fn prepare_count_hazards_listing(
+    gs: GameSystem,
+    filters: &HazardFieldFilters,
+) -> (String, Vec<BindValue>) {
+    let mut binds = Vec::new();
+    let where_clause = prepare_hazard_listing_where(gs, filters, &mut binds);
+    let query = format!("SELECT COUNT(*) FROM {gs}_hazard_table WHERE {where_clause}");
+    (finalize_placeholders(&query), binds)
 }
 
-fn prepare_item_listing_where(gs: GameSystem, filters: &ItemFieldFilters) -> String {
+fn prepare_item_listing_where(
+    gs: GameSystem,
+    filters: &ItemFieldFilters,
+    binds: &mut Vec<BindValue>,
+) -> String {
     let mut conditions = vec![
         "is_derived = false".to_string(),
         "status = 'valid'".to_string(),
     ];
 
     if let Some(name) = &filters.name_filter {
-        conditions.push(format!("name ILIKE '%{}%'", escape_sql_str(name)));
+        binds.push(BindValue::Text(format!("%{name}%")));
+        conditions.push(format!("name ILIKE {BIND_PLACEHOLDER}"));
     }
     if let Some(categories) = &filters.category_filter
         && !categories.is_empty()
     {
-        let parts: Vec<String> = categories
-            .iter()
-            .map(|c| format!("COALESCE(category, '') ILIKE '%{}%'", escape_sql_str(c)))
-            .collect();
-        conditions.push(format!("({})", parts.join(" OR ")));
+        let s = prepare_substring_any_statement("COALESCE(category, '')", categories, binds);
+        if !s.is_empty() {
+            conditions.push(s);
+        }
     }
     if let Some(sources) = &filters.source_filter
         && !sources.is_empty()
     {
-        let parts: Vec<String> = sources
-            .iter()
-            .map(|s| format!("source ILIKE '%{}%'", escape_sql_str(s)))
-            .collect();
-        conditions.push(format!("({})", parts.join(" OR ")));
+        let s = prepare_substring_any_statement("source", sources, binds);
+        if !s.is_empty() {
+            conditions.push(s);
+        }
     }
     if let Some(rarities) = &filters.rarity_filter {
-        let s = prepare_case_insensitive_in_statement("rarity", rarities.iter());
+        let s = prepare_case_insensitive_in_statement("rarity", rarities.iter(), binds);
         if !s.is_empty() {
             conditions.push(s);
         }
     }
     if let Some(sizes) = &filters.size_filter {
-        let s = prepare_case_insensitive_in_statement("size", sizes.iter());
+        let s = prepare_case_insensitive_in_statement("size", sizes.iter(), binds);
         if !s.is_empty() {
             conditions.push(s);
         }
     }
     if let Some(types) = &filters.type_filter {
-        let s = prepare_case_insensitive_in_statement("item_type", types.iter());
+        let s = prepare_case_insensitive_in_statement("item_type", types.iter(), binds);
         if !s.is_empty() {
             conditions.push(s);
         }
@@ -1003,26 +1154,22 @@ fn prepare_item_listing_where(gs: GameSystem, filters: &ItemFieldFilters) -> Str
     if let Some(whitelist) = &filters.trait_whitelist_filter
         && !whitelist.is_empty()
     {
-        let parts: Vec<String> = whitelist
-            .iter()
-            .map(|t| format!("UPPER(trait_id) LIKE UPPER('%{}%')", escape_sql_str(t)))
-            .collect();
-        conditions.push(format!(
-            "id IN (SELECT item_id FROM {gs}_trait_item_association_table WHERE {})",
-            parts.join(" OR ")
-        ));
+        let s = prepare_substring_any_statement("trait_id", whitelist, binds);
+        if !s.is_empty() {
+            conditions.push(format!(
+                "id IN (SELECT item_id FROM {gs}_trait_item_association_table WHERE {s})"
+            ));
+        }
     }
     if let Some(blacklist) = &filters.trait_blacklist_filter
         && !blacklist.is_empty()
     {
-        let parts: Vec<String> = blacklist
-            .iter()
-            .map(|t| format!("UPPER(trait_id) = UPPER('{}')", escape_sql_str(t)))
-            .collect();
-        conditions.push(format!(
-            "id NOT IN (SELECT item_id FROM {gs}_trait_item_association_table WHERE {})",
-            parts.join(" OR ")
-        ));
+        let s = prepare_case_insensitive_in_statement("trait_id", blacklist.iter(), binds);
+        if !s.is_empty() {
+            conditions.push(format!(
+                "id NOT IN (SELECT item_id FROM {gs}_trait_item_association_table WHERE {s})"
+            ));
+        }
     }
     conditions.join(" AND ")
 }
@@ -1054,16 +1201,150 @@ pub fn prepare_paginated_get_items_listing(
     order_by: OrderEnum,
     cursor: u32,
     page_size: i16,
-) -> String {
-    let where_clause = prepare_item_listing_where(gs, filters);
+) -> (String, Vec<BindValue>) {
+    let mut binds = Vec::new();
+    let where_clause = prepare_item_listing_where(gs, filters, &mut binds);
     let order_clause = prepare_item_listing_order(gs, sort_by, order_by);
     let pagination = format_pagination_clause(i64::from(cursor), page_size);
-    format!(
+    let query = format!(
         "SELECT * FROM {gs}_item_table WHERE {where_clause} ORDER BY {order_clause} {pagination}"
-    )
+    );
+    (finalize_placeholders(&query), binds)
 }
 
-pub fn prepare_count_items_listing(gs: GameSystem, filters: &ItemFieldFilters) -> String {
-    let where_clause = prepare_item_listing_where(gs, filters);
-    format!("SELECT COUNT(*) FROM {gs}_item_table WHERE {where_clause}")
+pub fn prepare_count_items_listing(
+    gs: GameSystem,
+    filters: &ItemFieldFilters,
+) -> (String, Vec<BindValue>) {
+    let mut binds = Vec::new();
+    let where_clause = prepare_item_listing_where(gs, filters, &mut binds);
+    let query = format!("SELECT COUNT(*) FROM {gs}_item_table WHERE {where_clause}");
+    (finalize_placeholders(&query), binds)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn case_insensitive_in_statement_binds_values_instead_of_inlining() {
+        let malicious = vec!["evil') OR ('1'='1".to_string()];
+        let mut binds = Vec::new();
+        let statement =
+            prepare_case_insensitive_in_statement("source", malicious.iter(), &mut binds);
+        assert_eq!(
+            statement,
+            format!("UPPER(source) = ANY({BIND_PLACEHOLDER})")
+        );
+        match &binds[..] {
+            [BindValue::TextArray(values)] => {
+                assert_eq!(values, &["EVIL') OR ('1'='1".to_string()]);
+            }
+            other => panic!("expected a single TextArray bind, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn case_insensitive_in_statement_empty_input_has_no_text_and_no_binds() {
+        let empty: Vec<String> = vec![];
+        let mut binds = Vec::new();
+        let statement = prepare_case_insensitive_in_statement("source", empty.iter(), &mut binds);
+        assert_eq!(statement, "");
+        assert!(binds.is_empty());
+    }
+
+    #[test]
+    fn substring_any_statement_wraps_values_and_binds_them() {
+        let malicious = vec!["%'); DROP TABLE x; --".to_string()];
+        let mut binds = Vec::new();
+        let statement = prepare_substring_any_statement("trait_id", &malicious, &mut binds);
+        assert_eq!(statement, format!("trait_id ILIKE ANY({BIND_PLACEHOLDER})"));
+        match &binds[..] {
+            [BindValue::TextArray(values)] => {
+                assert_eq!(values, &["%%'); DROP TABLE x; --%".to_string()]);
+            }
+            other => panic!("expected a single TextArray bind, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn finalize_placeholders_numbers_sequentially_in_order() {
+        let sql =
+            format!("a = {BIND_PLACEHOLDER} AND b = {BIND_PLACEHOLDER} AND c = {BIND_PLACEHOLDER}");
+        assert_eq!(finalize_placeholders(&sql), "a = $1 AND b = $2 AND c = $3");
+    }
+
+    #[test]
+    fn creature_filter_statement_binds_match_placeholder_order() {
+        let mut filters = CreatureTableFieldsFilter {
+            source_filter: vec!["Bestiary".to_string()],
+            family_filter: vec![],
+            alignment_filter: vec![],
+            size_filter: vec![],
+            rarity_filter: vec![],
+            type_filter: vec![],
+            role_filter: vec![],
+            role_lower_threshold: CreatureTableFieldsFilter::default_lower_threshold(),
+            role_upper_threshold: CreatureTableFieldsFilter::default_upper_threshold(),
+            is_melee_filter: vec![true, false],
+            is_ranged_filter: vec![true, false],
+            is_spellcaster_filter: vec![true, false],
+            supported_version: vec!["true".to_string()],
+            level_filter: vec![1],
+        };
+        filters.family_filter = vec!["Dragon".to_string(), "Giant".to_string()];
+        let mut binds = Vec::new();
+        let statement = prepare_creature_filter_statement(&filters, &mut binds);
+        let finalized = finalize_placeholders(&statement);
+        // source (TextArray, $1) is textually before family (TextArray, $2);
+        // this filter statement is the exact-match path used by random
+        // encounter/shop generation, distinct from the substring-LIKE path
+        // used by the paginated listing endpoints.
+        assert!(finalized.contains("UPPER(source) = ANY($1)"));
+        assert!(finalized.contains("UPPER(family) = ANY($2)"));
+        match &binds[..] {
+            [BindValue::TextArray(source), BindValue::TextArray(family)] => {
+                assert_eq!(source, &["BESTIARY".to_string()]);
+                assert_eq!(family, &["DRAGON".to_string(), "GIANT".to_string()]);
+            }
+            other => panic!("expected two TextArray binds in order, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn creature_listing_where_binds_match_placeholder_order() {
+        let filters = CreatureFieldFilters {
+            name_filter: Some("o'brien".to_string()),
+            source_filter: Some(vec!["Bestiary".to_string()]),
+            family_filter: Some(vec!["Dragon".to_string()]),
+            trait_whitelist_filter: Some(vec!["go'od".to_string()]),
+            trait_blacklist_filter: Some(vec!["evil".to_string()]),
+            ..Default::default()
+        };
+        let mut binds = Vec::new();
+        let statement =
+            prepare_creature_listing_where(GameSystem::Pathfinder, &filters, &mut binds);
+        let finalized = finalize_placeholders(&statement);
+        assert!(finalized.contains("name ILIKE $1"));
+        assert!(finalized.contains("UPPER(source) = ANY($2)"));
+        assert!(finalized.contains("family ILIKE ANY($3)"));
+        assert!(finalized.contains("trait_id ILIKE ANY($4)"));
+        assert!(finalized.contains("UPPER(trait_id) = ANY($5)"));
+        match &binds[..] {
+            [
+                BindValue::Text(name),
+                BindValue::TextArray(source),
+                BindValue::TextArray(family),
+                BindValue::TextArray(whitelist),
+                BindValue::TextArray(blacklist),
+            ] => {
+                assert_eq!(name, "%o'brien%");
+                assert_eq!(source, &["BESTIARY".to_string()]);
+                assert_eq!(family, &["%Dragon%".to_string()]);
+                assert_eq!(whitelist, &["%go'od%".to_string()]);
+                assert_eq!(blacklist, &["EVIL".to_string()]);
+            }
+            other => panic!("expected five binds in order, got {other:?}"),
+        }
+    }
 }

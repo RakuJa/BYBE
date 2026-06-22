@@ -1,7 +1,8 @@
 use crate::db::data_providers::generic_fetcher::{
-    enrich_with_traits, fetch_actions_from_cores, fetch_armor_runes, fetch_armor_traits,
-    fetch_col_range, fetch_entity_traits, fetch_item_traits, fetch_shield_traits,
-    fetch_weapon_actions, fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
+    enrich_with_traits, fetch_actions_from_cores, fetch_all_with_binds, fetch_armor_runes,
+    fetch_armor_traits, fetch_col_range, fetch_count_with_binds, fetch_entity_traits,
+    fetch_item_traits, fetch_shield_traits, fetch_weapon_actions, fetch_weapon_damage_data,
+    fetch_weapon_runes, fetch_weapon_traits,
 };
 use crate::db::data_providers::raw_query_builder::{
     format_pagination_clause, prepare_count_creatures_listing, prepare_filtered_get_creatures_core,
@@ -598,10 +599,8 @@ pub async fn fetch_creatures_core_data_with_filters(
     gs: GameSystem,
     bestiary_filter_query: &BestiaryFilterQuery,
 ) -> Result<Vec<CreatureCoreData>> {
-    let query = prepare_filtered_get_creatures_core(gs, bestiary_filter_query);
-    let core_data: Vec<CreatureCoreData> = sqlx::query_as(sqlx::AssertSqlSafe(query))
-        .fetch_all(pool)
-        .await?;
+    let (query, binds) = prepare_filtered_get_creatures_core(gs, bestiary_filter_query);
+    let core_data: Vec<CreatureCoreData> = fetch_all_with_binds(pool, query, binds).await?;
     Ok(update_creatures_core_with_traits(pool, gs, core_data).await)
 }
 
@@ -807,11 +806,9 @@ pub async fn fetch_paginated_creatures(
     cursor: u32,
     page_size: i16,
 ) -> Result<Vec<CreatureCoreData>> {
-    let cr_core: Vec<CreatureCoreData> = sqlx::query_as(sqlx::AssertSqlSafe(
-        prepare_paginated_get_creatures_listing(gs, filters, sort_by, order_by, cursor, page_size),
-    ))
-    .fetch_all(pool)
-    .await?;
+    let (query, binds) =
+        prepare_paginated_get_creatures_listing(gs, filters, sort_by, order_by, cursor, page_size);
+    let cr_core: Vec<CreatureCoreData> = fetch_all_with_binds(pool, query, binds).await?;
     Ok(update_creatures_core_with_traits(pool, gs, cr_core).await)
 }
 
@@ -820,13 +817,8 @@ pub async fn fetch_creatures_listing_count(
     gs: GameSystem,
     filters: &CreatureFieldFilters,
 ) -> Result<i64> {
-    Ok(
-        sqlx::query_scalar(sqlx::AssertSqlSafe(prepare_count_creatures_listing(
-            gs, filters,
-        )))
-        .fetch_one(pool)
-        .await?,
-    )
+    let (query, binds) = prepare_count_creatures_listing(gs, filters);
+    fetch_count_with_binds(pool, query, binds).await
 }
 
 pub async fn fetch_creature_ranges(pool: &PgPool, gs: GameSystem) -> Result<BestiaryRanges> {
