@@ -3,6 +3,7 @@ use crate::models::db::resistance::Resistance;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::shield_struct::Shield;
 use crate::models::item::weapon_struct::{DamageData, Weapon};
+use crate::models::shared::condition_data::ConditionData;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)] // it's actually used in the example schema
 use serde_json::json;
@@ -39,6 +40,7 @@ pub struct CreatureCombatData {
     pub saving_throws: SavingThrows,
     #[schema(example = 10)]
     pub ac: i32,
+    pub conditions: Vec<ConditionData>,
 }
 
 impl CreatureCombatData {

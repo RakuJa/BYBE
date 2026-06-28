@@ -1,5 +1,6 @@
 use crate::AppState;
 use crate::db::data_providers::creature_fetcher::fetch_traits_associated_with_creatures;
+use crate::db::data_providers::generic_fetcher::fetch_conditions;
 use crate::db::data_providers::{creature_fetcher, fetch_unique_values_from_db};
 use crate::models::bestiary_structs::{
     BestiaryFilterQuery, BestiaryPaginatedRequest, BestiaryRanges,
@@ -12,6 +13,7 @@ use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::creature::creature_struct::Creature;
 use crate::models::response_data::CreatureResponseDataModifiers;
 use crate::models::shared::alignment_enum::AlignmentEnum;
+use crate::models::shared::condition_data::ConditionData;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use anyhow::Result;
@@ -177,6 +179,13 @@ pub async fn get_bestiary_ranges(app_state: &AppState, gs: GameSystem) -> Option
     creature_fetcher::fetch_creature_ranges(&app_state.pool, gs)
         .await
         .ok()
+}
+
+pub async fn get_conditions_list(
+    app_state: &AppState,
+    gs: GameSystem,
+) -> Result<Vec<ConditionData>> {
+    fetch_conditions(&app_state.pool, gs).await
 }
 
 /// Used to prepare the filters for db communication.
