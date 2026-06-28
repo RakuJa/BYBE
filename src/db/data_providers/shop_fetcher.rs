@@ -1,10 +1,10 @@
 use crate::db::data_providers::generic_fetcher::{
-    fetch_all_with_binds, fetch_armor_runes, fetch_col_range, fetch_col_range_f64,
-    fetch_count_with_binds, fetch_item_traits, fetch_weapon_damage_data, fetch_weapon_runes,
+    enrich_with_traits, fetch_all_with_binds, fetch_all_with_binds_and_count, fetch_armor_runes,
+    fetch_col_range, fetch_col_range_f64, fetch_item_traits, fetch_weapon_damage_data,
+    fetch_weapon_runes,
 };
 use crate::db::data_providers::raw_query_builder::{
-    format_pagination_clause, prepare_count_items_listing, prepare_filtered_get_items,
-    prepare_paginated_get_items_listing,
+    format_pagination_clause, prepare_filtered_get_items, prepare_paginated_get_items_listing,
 };
 use crate::models::item::armor_struct::{Armor, ArmorData};
 use crate::models::item::item_field_filter::ItemFieldFilters;
@@ -308,6 +308,10 @@ fn fill_item_vec_to_len(item_vec: &[&Item], desired_len: i64) -> Vec<Item> {
     og_vec
 }
 
+/// Returns the requested page of items alongside their total count, in a single round trip.
+///
+/// Uses `COUNT(*) OVER()` for the total and batches the page's traits into one query instead of
+/// one per item. Per-item weapon/armor/shield sub-data is fetched one row at a time
 pub async fn fetch_paginated_items(
     pool: &PgPool,
     gs: GameSystem,
@@ -316,16 +320,15 @@ pub async fn fetch_paginated_items(
     order_by: OrderEnum,
     cursor: u32,
     page_size: i16,
-) -> Result<Vec<ResponseItem>> {
+) -> Result<(Vec<ResponseItem>, i64)> {
     let (query, binds) =
         prepare_paginated_get_items_listing(gs, filters, sort_by, order_by, cursor, page_size);
-    let items: Vec<Item> = fetch_all_with_binds(pool, query, binds).await?;
+    let (items, total_count): (Vec<Item>, i64) =
+        fetch_all_with_binds_and_count(pool, query, binds).await?;
+    let items = enrich_with_traits(pool, gs, items, false).await;
     let mut result = Vec::with_capacity(items.len());
-    for mut item in items {
+    for item in items {
         let item_id = item.id;
-        item.traits = fetch_item_traits(pool, gs, item_id)
-            .await
-            .unwrap_or_default();
         let response_item = match item.item_type {
             ItemTypeEnum::Weapon => ResponseItem {
                 core_item: item,
@@ -358,16 +361,7 @@ pub async fn fetch_paginated_items(
         };
         result.push(response_item);
     }
-    Ok(result)
-}
-
-pub async fn fetch_items_listing_count(
-    pool: &PgPool,
-    gs: GameSystem,
-    filters: &ItemFieldFilters,
-) -> Result<i64> {
-    let (query, binds) = prepare_count_items_listing(gs, filters);
-    fetch_count_with_binds(pool, query, binds).await
+    Ok((result, total_count))
 }
 
 pub async fn fetch_shop_ranges(pool: &PgPool, gs: GameSystem) -> Result<ShopRanges> {

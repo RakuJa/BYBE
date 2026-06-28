@@ -873,18 +873,9 @@ pub fn prepare_paginated_get_creatures_listing(
     let order_clause = prepare_creature_listing_order(gs, sort_by, order_by);
     let pagination = format_pagination_clause(i64::from(cursor), page_size);
     let query = format!(
-        "SELECT * FROM {gs}_creature_core WHERE {where_clause} ORDER BY {order_clause} {pagination}"
+        "SELECT *, COUNT(*) OVER() AS total_count FROM {gs}_creature_core
+         WHERE {where_clause} ORDER BY {order_clause} {pagination}"
     );
-    (finalize_placeholders(&query), binds)
-}
-
-pub fn prepare_count_creatures_listing(
-    gs: GameSystem,
-    filters: &CreatureFieldFilters,
-) -> (String, Vec<BindValue>) {
-    let mut binds = Vec::new();
-    let where_clause = prepare_creature_listing_where(gs, filters, &mut binds);
-    let query = format!("SELECT COUNT(*) FROM {gs}_creature_core WHERE {where_clause}");
     (finalize_placeholders(&query), binds)
 }
 
@@ -1044,18 +1035,9 @@ pub fn prepare_paginated_get_hazards_listing(
     let order_clause = prepare_hazard_listing_order(gs, sort_by, order_by);
     let pagination = format_pagination_clause(i64::from(cursor), page_size);
     let query = format!(
-        "SELECT * FROM {gs}_hazard_table WHERE {where_clause} ORDER BY {order_clause} {pagination}"
+        "SELECT *, COUNT(*) OVER() AS total_count FROM {gs}_hazard_table
+         WHERE {where_clause} ORDER BY {order_clause} {pagination}"
     );
-    (finalize_placeholders(&query), binds)
-}
-
-pub fn prepare_count_hazards_listing(
-    gs: GameSystem,
-    filters: &HazardFieldFilters,
-) -> (String, Vec<BindValue>) {
-    let mut binds = Vec::new();
-    let where_clause = prepare_hazard_listing_where(gs, filters, &mut binds);
-    let query = format!("SELECT COUNT(*) FROM {gs}_hazard_table WHERE {where_clause}");
     (finalize_placeholders(&query), binds)
 }
 
@@ -1207,18 +1189,9 @@ pub fn prepare_paginated_get_items_listing(
     let order_clause = prepare_item_listing_order(gs, sort_by, order_by);
     let pagination = format_pagination_clause(i64::from(cursor), page_size);
     let query = format!(
-        "SELECT * FROM {gs}_item_table WHERE {where_clause} ORDER BY {order_clause} {pagination}"
+        "SELECT *, COUNT(*) OVER() AS total_count FROM {gs}_item_table
+         WHERE {where_clause} ORDER BY {order_clause} {pagination}"
     );
-    (finalize_placeholders(&query), binds)
-}
-
-pub fn prepare_count_items_listing(
-    gs: GameSystem,
-    filters: &ItemFieldFilters,
-) -> (String, Vec<BindValue>) {
-    let mut binds = Vec::new();
-    let where_clause = prepare_item_listing_where(gs, filters, &mut binds);
-    let query = format!("SELECT COUNT(*) FROM {gs}_item_table WHERE {where_clause}");
     (finalize_placeholders(&query), binds)
 }
 

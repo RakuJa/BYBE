@@ -1,10 +1,9 @@
 use crate::db::data_providers::generic_fetcher::{
-    enrich_with_traits, fetch_action_traits, fetch_all_with_binds, fetch_col_range,
-    fetch_count_with_binds, fetch_entity_traits,
+    enrich_with_traits, fetch_action_traits, fetch_all_with_binds, fetch_all_with_binds_and_count,
+    fetch_col_range, fetch_entity_traits,
 };
 use crate::db::data_providers::raw_query_builder::{
-    format_pagination_clause, prepare_count_hazards_listing, prepare_filtered_get_hazards,
-    prepare_paginated_get_hazards_listing,
+    format_pagination_clause, prepare_filtered_get_hazards, prepare_paginated_get_hazards_listing,
 };
 use crate::models::hazard::hazard_field_filter::HazardFieldFilters;
 use crate::models::hazard::hazard_listing_struct::{HazardFilterQuery, HazardSortEnum};
@@ -120,6 +119,8 @@ pub async fn fetch_hazards_data(
     Ok(update_hazards_core_with_traits(pool, gs, cr_core).await)
 }
 
+/// Returns the requested page of hazards alongside the total count of hazards matching
+/// `filters` (ignoring pagination), fetched in a single round trip via `COUNT(*) OVER()`.
 pub async fn fetch_paginated_hazards(
     pool: &PgPool,
     gs: GameSystem,
@@ -128,20 +129,15 @@ pub async fn fetch_paginated_hazards(
     order_by: OrderEnum,
     cursor: u32,
     page_size: i16,
-) -> Result<Vec<Hazard>> {
+) -> Result<(Vec<Hazard>, i64)> {
     let (query, binds) =
         prepare_paginated_get_hazards_listing(gs, filters, sort_by, order_by, cursor, page_size);
-    let hazards: Vec<Hazard> = fetch_all_with_binds(pool, query, binds).await?;
-    Ok(update_hazards_core_with_traits(pool, gs, hazards).await)
-}
-
-pub async fn fetch_hazards_listing_count(
-    pool: &PgPool,
-    gs: GameSystem,
-    filters: &HazardFieldFilters,
-) -> Result<i64> {
-    let (query, binds) = prepare_count_hazards_listing(gs, filters);
-    fetch_count_with_binds(pool, query, binds).await
+    let (hazards, total_count): (Vec<Hazard>, i64) =
+        fetch_all_with_binds_and_count(pool, query, binds).await?;
+    Ok((
+        update_hazards_core_with_traits(pool, gs, hazards).await,
+        total_count,
+    ))
 }
 
 pub async fn fetch_hazard_ranges(pool: &PgPool, gs: GameSystem) -> Result<HazardRanges> {

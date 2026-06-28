@@ -1,11 +1,11 @@
 use crate::db::data_providers::generic_fetcher::{
-    enrich_with_traits, fetch_actions_from_cores, fetch_all_with_binds, fetch_armor_runes,
-    fetch_armor_traits, fetch_col_range, fetch_count_with_binds, fetch_entity_traits,
-    fetch_item_traits, fetch_shield_traits, fetch_weapon_actions, fetch_weapon_damage_data,
-    fetch_weapon_runes, fetch_weapon_traits,
+    enrich_with_traits, fetch_actions_from_cores, fetch_all_with_binds,
+    fetch_all_with_binds_and_count, fetch_armor_runes, fetch_armor_traits, fetch_col_range,
+    fetch_entity_traits, fetch_item_traits, fetch_shield_traits, fetch_weapon_actions,
+    fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
 };
 use crate::db::data_providers::raw_query_builder::{
-    format_pagination_clause, prepare_count_creatures_listing, prepare_filtered_get_creatures_core,
+    format_pagination_clause, prepare_filtered_get_creatures_core,
     prepare_paginated_get_creatures_listing,
 };
 use crate::models::bestiary_structs::{BestiaryFilterQuery, BestiaryRanges, CreatureSortEnum};
@@ -126,20 +126,14 @@ async fn fetch_creature_resistances_vs(
     gs: GameSystem,
     res_id: i64,
 ) -> Result<(Vec<String>, Vec<String>)> {
-    Ok((
-        sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-            "SELECT vs_name FROM {gs}_resistance_double_vs_table WHERE resistance_id = $1"
-        )))
-        .bind(res_id)
-        .fetch_all(pool)
-        .await?,
-        sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-            "SELECT vs_name FROM {gs}_resistance_exception_vs_table WHERE resistance_id = $1"
-        )))
-        .bind(res_id)
-        .fetch_all(pool)
-        .await?,
-    ))
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT
+            ARRAY(SELECT vs_name FROM {gs}_resistance_double_vs_table WHERE resistance_id = $1) AS double_vs,
+            ARRAY(SELECT vs_name FROM {gs}_resistance_exception_vs_table WHERE resistance_id = $1) AS exception_vs"
+    )))
+    .bind(res_id)
+    .fetch_one(pool)
+    .await?)
 }
 
 async fn fetch_creature_senses(
@@ -797,6 +791,8 @@ pub async fn fetch_creature_scales(pool: &PgPool) -> Result<CreatureScales> {
     })
 }
 
+/// Returns the requested page of creatures alongside the total count of creatures matching
+/// `filters` (ignoring pagination), fetched in a single round trip via `COUNT(*) OVER()`.
 pub async fn fetch_paginated_creatures(
     pool: &PgPool,
     gs: GameSystem,
@@ -805,20 +801,15 @@ pub async fn fetch_paginated_creatures(
     order_by: OrderEnum,
     cursor: u32,
     page_size: i16,
-) -> Result<Vec<CreatureCoreData>> {
+) -> Result<(Vec<CreatureCoreData>, i64)> {
     let (query, binds) =
         prepare_paginated_get_creatures_listing(gs, filters, sort_by, order_by, cursor, page_size);
-    let cr_core: Vec<CreatureCoreData> = fetch_all_with_binds(pool, query, binds).await?;
-    Ok(update_creatures_core_with_traits(pool, gs, cr_core).await)
-}
-
-pub async fn fetch_creatures_listing_count(
-    pool: &PgPool,
-    gs: GameSystem,
-    filters: &CreatureFieldFilters,
-) -> Result<i64> {
-    let (query, binds) = prepare_count_creatures_listing(gs, filters);
-    fetch_count_with_binds(pool, query, binds).await
+    let (cr_core, total_count): (Vec<CreatureCoreData>, i64) =
+        fetch_all_with_binds_and_count(pool, query, binds).await?;
+    Ok((
+        update_creatures_core_with_traits(pool, gs, cr_core).await,
+        total_count,
+    ))
 }
 
 pub async fn fetch_creature_ranges(pool: &PgPool, gs: GameSystem) -> Result<BestiaryRanges> {
