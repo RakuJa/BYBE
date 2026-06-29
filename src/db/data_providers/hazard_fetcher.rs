@@ -5,6 +5,8 @@ use crate::db::data_providers::generic_fetcher::{
 use crate::db::data_providers::raw_query_builder::{
     format_pagination_clause, prepare_filtered_get_hazards, prepare_paginated_get_hazards_listing,
 };
+use crate::models::db::resistance::{CoreResistanceData, Resistance};
+use crate::models::db::weakness::Weakness;
 use crate::models::hazard::hazard_field_filter::HazardFieldFilters;
 use crate::models::hazard::hazard_listing_struct::{HazardFilterQuery, HazardSortEnum};
 use crate::models::hazard::hazard_struct::{Hazard, HazardRanges};
@@ -15,6 +17,7 @@ use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::trait_data::TraitData;
 use anyhow::Result;
+use futures::future::join_all;
 use sqlx::PgPool;
 
 async fn fetch_hazard_actions(
@@ -86,6 +89,16 @@ pub async fn fetch_hazard_by_id(pool: &PgPool, gs: GameSystem, id: i64) -> Resul
     .await?;
     core_hazard.traits = fetch_entity_traits(pool, gs, "hazard", id).await?;
     core_hazard.actions = fetch_hazard_actions(pool, gs, id).await?;
+    core_hazard.resistances = fetch_hazard_resistances(pool, gs, id)
+        .await
+        .unwrap_or_default();
+    core_hazard.immunities = fetch_hazard_immunities(pool, gs, id)
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .flatten()
+        .collect();
+    core_hazard.weaknesses = fetch_hazard_weaknesses(pool, gs, id).await?;
 
     Ok(ResponseHazard {
         core_hazard,
@@ -111,12 +124,12 @@ pub async fn fetch_hazards_data(
     page_size: i16,
 ) -> Result<Vec<Hazard>> {
     let pagination = format_pagination_clause(cursor, page_size);
-    let cr_core: Vec<Hazard> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+    let hz_core: Vec<Hazard> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT * FROM {gs}_hazard_table ORDER BY name {pagination}"
     )))
     .fetch_all(pool)
     .await?;
-    Ok(update_hazards_core_with_traits(pool, gs, cr_core).await)
+    Ok(update_hazards_core_with_traits(pool, gs, hz_core).await)
 }
 
 /// Returns the requested page of hazards alongside the total count of hazards matching
@@ -168,4 +181,84 @@ pub async fn fetch_hazard_ranges(pool: &PgPool, gs: GameSystem) -> Result<Hazard
         min_fortitude,
         max_fortitude,
     })
+}
+
+async fn fetch_hazard_resistances(
+    pool: &PgPool,
+    gs: GameSystem,
+    hazard_id: i64,
+) -> Result<Vec<Resistance>> {
+    Ok(join_all(
+        fetch_hazard_resistances_core(pool, gs, hazard_id)
+            .await?
+            .iter()
+            .map(async |x| {
+                let (double_vs, exception_vs) = fetch_hazard_resistances_vs(pool, gs, x.id)
+                    .await
+                    .unwrap_or_default();
+                Resistance {
+                    core: x.clone(),
+                    double_vs,
+                    exception_vs,
+                }
+            }),
+    )
+    .await)
+}
+
+async fn fetch_hazard_resistances_core(
+    pool: &PgPool,
+    gs: GameSystem,
+    hazard_id: i64,
+) -> Result<Vec<CoreResistanceData>> {
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT id, name, value FROM {gs}_hazard_resistance_association_table JOIN
+        {gs}_resistance_table ON resistance_id = id WHERE hazard_id = $1"
+    )))
+    .bind(hazard_id)
+    .fetch_all(pool)
+    .await?)
+}
+
+async fn fetch_hazard_resistances_vs(
+    pool: &PgPool,
+    gs: GameSystem,
+    res_id: i64,
+) -> Result<(Vec<String>, Vec<String>)> {
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT
+            ARRAY(SELECT vs_name FROM {gs}_resistance_double_vs_table WHERE resistance_id = $1) AS double_vs,
+            ARRAY(SELECT vs_name FROM {gs}_resistance_exception_vs_table WHERE resistance_id = $1) AS exception_vs"
+    )))
+        .bind(res_id)
+        .fetch_one(pool)
+        .await?)
+}
+
+async fn fetch_hazard_immunities(
+    pool: &PgPool,
+    gs: GameSystem,
+    hazard_id: i64,
+) -> Result<Vec<Option<String>>> {
+    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+        "SELECT name FROM {gs}_immunity_table INTERSECT SELECT immunity_id
+         FROM {gs}_hazard_immunity_association_table WHERE hazard_id = $1"
+    )))
+    .bind(hazard_id)
+    .fetch_all(pool)
+    .await?)
+}
+
+async fn fetch_hazard_weaknesses(
+    pool: &PgPool,
+    gs: GameSystem,
+    hazard_id: i64,
+) -> Result<Vec<Weakness>> {
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT id, name, value FROM {gs}_hazard_weakness_association_table JOIN
+         pf_weakness_table ON weakness_id = id WHERE hazard_id = $1"
+    )))
+    .bind(hazard_id)
+    .fetch_all(pool)
+    .await?)
 }

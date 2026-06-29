@@ -1,3 +1,5 @@
+use crate::models::db::resistance::Resistance;
+use crate::models::db::weakness::Weakness;
 use crate::models::hazard::hazard_component::hazard_core::HazardEssentialData;
 use crate::models::hazard::hazard_field_filter::{HazardComplexityEnum, HazardFieldFilters};
 use crate::models::shared::action::Action;
@@ -62,6 +64,9 @@ pub struct Hazard {
     pub essential: HazardEssentialData,
     pub traits: Vec<TraitData>,
     pub actions: Vec<Action>,
+    pub immunities: Vec<String>,
+    pub resistances: Vec<Resistance>,
+    pub weaknesses: Vec<Weakness>,
     pub game_system: GameSystem,
 }
 
@@ -73,6 +78,9 @@ impl From<(Self, GameSystem)> for Hazard {
             traits: hazard.traits,
             game_system: value.1,
             actions: hazard.actions,
+            immunities: hazard.immunities,
+            resistances: hazard.resistances,
+            weaknesses: hazard.weaknesses,
         }
     }
 }
@@ -90,11 +98,15 @@ impl HasComplexity for Hazard {
 impl Filterable for Hazard {
     type FilterImpl = HazardFieldFilters;
     fn does_it_pass_ub_filters(&self, filters: &Self::FilterImpl) -> bool {
-        filters.max_ac_filter.is_none_or(|m| self.essential.ac <= m)
+        filters
+            .max_ac_filter
+            .is_none_or(|m| self.essential.ac.is_none_or(|x| x <= m))
             && filters
                 .max_hardness_filter
                 .is_none_or(|m| self.essential.hardness <= m)
-            && filters.max_hp_filter.is_none_or(|m| self.essential.hp <= m)
+            && filters
+                .max_hp_filter
+                .is_none_or(|m| self.essential.hp.is_none_or(|x| x <= m))
             && filters
                 .max_level_filter
                 .is_none_or(|m| self.essential.level <= m)
@@ -113,11 +125,15 @@ impl Filterable for Hazard {
     }
 
     fn does_it_pass_lb_filters(&self, filters: &Self::FilterImpl) -> bool {
-        filters.min_ac_filter.is_none_or(|m| self.essential.ac >= m)
+        filters
+            .min_ac_filter
+            .is_none_or(|m| self.essential.ac.is_none_or(|x| x >= m))
             && filters
                 .min_hardness_filter
                 .is_none_or(|m| self.essential.hardness >= m)
-            && filters.min_hp_filter.is_none_or(|m| self.essential.hp >= m)
+            && filters
+                .min_hp_filter
+                .is_none_or(|m| self.essential.hp.is_none_or(|x| x >= m))
             && filters
                 .min_level_filter
                 .is_none_or(|m| self.essential.level >= m)
@@ -198,6 +214,9 @@ impl<'r> FromRow<'r, PgRow> for Hazard {
             essential: HazardEssentialData::from_row(row)?,
             traits: vec![],
             actions: vec![],
+            immunities: vec![],
+            resistances: vec![],
+            weaknesses: Default::default(),
             game_system: Default::default(),
         })
     }
