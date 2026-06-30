@@ -51,6 +51,7 @@ use crate::models::scales_struct::strike_bonus_scales::StrikeBonusScales;
 use crate::models::scales_struct::strike_dmg_scales::StrikeDmgScales;
 use crate::models::shared::action::{Action, CoreAction};
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
+use crate::models::shared::condition_data::ConditionData;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::trait_data::TraitData;
 use anyhow::Result;
@@ -243,6 +244,22 @@ pub async fn fetch_creature_traits(
     fetch_entity_traits(pool, gs, "creature", creature_id).await
 }
 
+async fn fetch_creature_conditions(
+    pool: &PgPool,
+    gs: GameSystem,
+    creature_id: i64,
+) -> Result<Vec<ConditionData>> {
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
+        SELECT DISTINCT ct.* FROM {gs}_creature_condition_association_table
+        LEFT JOIN {gs}_condition_table ct ON condition_id = name
+        WHERE creature_id = $1
+        "
+    )))
+    .bind(creature_id)
+    .fetch_all(pool)
+    .await?)
+}
 async fn fetch_creature_weapons(
     pool: &PgPool,
     gs: GameSystem,
@@ -689,6 +706,7 @@ pub async fn fetch_creature_combat_data(
             .collect(),
         saving_throws: fetch_creature_saving_throws(pool, gs, creature_id).await?,
         ac: fetch_creature_scalar(pool, gs, creature_id, "ac").await?,
+        conditions: fetch_creature_conditions(pool, gs, creature_id).await?,
     })
 }
 

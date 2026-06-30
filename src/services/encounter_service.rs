@@ -1,4 +1,5 @@
 use crate::AppState;
+use crate::db::bestiary_proxy;
 use crate::models::bestiary_structs::{BestiaryFilterQuery, CreatureTableFieldsFilter};
 use crate::models::encounter_structs::{
     AdventureGroupEnum, CreatureEncounterParams, EncounterChallengeEnum, EncounterParams, ExpRange,
@@ -10,6 +11,7 @@ use crate::models::response_data::{
     EncounterContent, EncounterInfoResponse, RandomEncounterGeneratorResponse, ResponseCreature,
     ResponseHazard,
 };
+use crate::models::shared::condition_data::ConditionData;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::services::bestiary_service::get_filtered_creatures;
 use crate::services::encounter_handler::encounter_calculator::{
@@ -33,6 +35,12 @@ struct RandomCreatureGeneratorResponse {
 struct RandomHazardGeneratorResponse {
     results: Option<Vec<ResponseHazard>>,
     count: usize,
+}
+
+pub async fn get_conditions_list(app_state: &AppState, gs: GameSystem) -> Vec<ConditionData> {
+    bestiary_proxy::get_conditions_list(app_state, gs)
+        .await
+        .unwrap_or_default()
 }
 
 pub async fn generate_random_encounter(

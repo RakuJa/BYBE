@@ -2,6 +2,7 @@ use crate::db::data_providers::raw_query_builder::BindValue;
 use crate::models::item::weapon_struct::DamageData;
 use crate::models::shared::action::{Action, CoreAction};
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
+use crate::models::shared::condition_data::ConditionData;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::trait_data::TraitData;
 use crate::traits::traits_enrichable::TraitsEnrichable;
@@ -298,4 +299,12 @@ pub async fn enrich_with_traits<T: TraitsEnrichable>(
         item.set_traits(traits);
     }
     entities
+}
+
+pub async fn fetch_conditions(pool: &PgPool, gs: GameSystem) -> Result<Vec<ConditionData>> {
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT DISTINCT * FROM {gs}_condition_table"
+    )))
+    .fetch_all(pool)
+    .await?)
 }
