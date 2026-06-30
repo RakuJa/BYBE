@@ -1,10 +1,12 @@
 use async_compression::tokio::bufread::ZstdDecoder;
+use async_trait::async_trait;
 use base64ct::{Base64Url, Encoding};
 use postcard::from_bytes;
 use serde::de::DeserializeOwned;
 use std::io::Cursor;
 use tokio::io::AsyncReadExt;
 
+#[async_trait]
 pub trait Base64Decode: DeserializeOwned {
     async fn decode(base64_data: String) -> anyhow::Result<Self> {
         let compressed_binary = Base64Url::decode_vec(base64_data.as_str())?;

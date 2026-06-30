@@ -11,7 +11,7 @@ use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::traits::filterable::Filterable;
 use anyhow::Result;
-use cached::proc_macro::cached;
+use cached::cached;
 
 pub async fn get_hazard_by_id(
     app_state: &AppState,

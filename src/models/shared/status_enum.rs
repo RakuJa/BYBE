@@ -1,8 +1,10 @@
 use serde::{Deserialize, Serialize};
+use sqlx::Type;
 use std::fmt::{Display, Formatter};
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default, Eq, Hash, ToSchema)]
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, Default, Eq, Hash, ToSchema, Type)]
+#[sqlx(rename_all = "lowercase")]
 pub enum Status {
     #[default]
     Valid,

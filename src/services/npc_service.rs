@@ -1,6 +1,7 @@
 use crate::AppState;
 use crate::models::npc::request_npc_struct::{AncestryData, RandomNameData, RandomNpcData};
 use anyhow::bail;
+use cached::cached;
 use itertools::Itertools;
 use nanorand::Rng;
 use nanorand::WyRand;
@@ -27,7 +28,6 @@ use crate::traits::origin::context_size::ContextSize;
 use crate::traits::origin::culture::Culture;
 use crate::traits::origin::has_valid_genders::HasValidGenders;
 use crate::traits::random_enum::RandomEnum;
-use cached::proc_macro::cached;
 use tracing::error;
 
 pub fn generate_random_npc<C, NF, J>(

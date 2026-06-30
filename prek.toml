@@ -2,7 +2,7 @@
 repo = "https://github.com/crate-ci/typos"
 rev = "v1.38.1"
 hooks = [
-    {id = "typos", args = ["--config=typos.toml"], pass_filenames = false}
+    {id = "typos", pass_filenames = false}
 ]
 
 [[repos]]

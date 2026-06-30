@@ -1,4 +1,5 @@
 use async_compression::tokio::write::ZstdEncoder;
+use async_trait::async_trait;
 use base64ct::{Base64Url, Encoding};
 use postcard::to_allocvec;
 use serde::Serialize;
@@ -6,6 +7,7 @@ use tokio::io::{
     AsyncWriteExt as _, // for `write_all` and `shutdown`
 };
 
+#[async_trait]
 pub trait Base64Encode: Serialize {
     async fn encode(&self) -> anyhow::Result<String> {
         let raw_binary = to_allocvec(&self)?;

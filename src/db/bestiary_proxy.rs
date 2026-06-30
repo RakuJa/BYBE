@@ -18,7 +18,7 @@ use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::traits::filterable::Filterable;
 use anyhow::Result;
-use cached::proc_macro::cached;
+use cached::cached;
 use itertools::Itertools;
 use strum::IntoEnumIterator;
 
