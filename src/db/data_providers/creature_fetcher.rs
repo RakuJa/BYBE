@@ -1,7 +1,7 @@
 use crate::db::data_providers::generic_fetcher::{
-    enrich_with_traits, fetch_action_traits, fetch_armor_runes, fetch_armor_traits,
+    enrich_with_traits, fetch_actions_from_cores, fetch_armor_runes, fetch_armor_traits,
     fetch_col_range, fetch_entity_traits, fetch_item_traits, fetch_shield_traits,
-    fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
+    fetch_weapon_actions, fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
 };
 use crate::db::data_providers::raw_query_builder::{
     format_pagination_clause, prepare_count_creatures_listing, prepare_filtered_get_creatures_core,
@@ -310,6 +310,9 @@ async fn fetch_creature_weapons(
             el.weapon_data.damage_data = fetch_weapon_damage_data(&pool, gs, el.weapon_data.id)
                 .await
                 .unwrap_or_default();
+            el.weapon_data.attack_effects = fetch_weapon_actions(&pool, gs, el.weapon_data.id)
+                .await
+                .unwrap_or_default();
             el
         }
     }))
@@ -455,15 +458,7 @@ async fn fetch_creature_actions(
     .bind(creature_id)
     .fetch_all(pool)
     .await?;
-    let mut res: Vec<Action> = Vec::with_capacity(core_actions.len());
-    for action in core_actions {
-        let action_id = action.id;
-        res.push(Action {
-            core_action: action,
-            traits: fetch_action_traits(pool, gs, action_id).await?,
-        });
-    }
-    Ok(res)
+    fetch_actions_from_cores(pool, gs, core_actions).await
 }
 
 async fn fetch_creature_skills(
@@ -492,7 +487,7 @@ pub async fn fetch_creature_spells(
             rt.id AS range_id, rt.value as range_value, rt.increment as range_increment, rt.max AS range_max
         FROM {gs}_spell_table st
         INNER JOIN {gs}_spell_range_association_table sr ON sr.spell_id = st.id
-        INNER JOIN {gs}_range_table rt                   ON rt.id = sr.range_id
+        INNER JOIN {gs}_range_table rt ON rt.id = sr.range_id
         WHERE st.spellcasting_entry_id = $2
           AND st.creature_id = $1;
         "

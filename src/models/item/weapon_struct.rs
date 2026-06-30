@@ -2,6 +2,7 @@ use crate::models::db::pg_type_helper::{get_i32_as_i64, get_opt_i32_as_i16, get_
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::routers_validator_structs::Dice;
+use crate::models::shared::action::Action;
 use crate::models::shared::range_data::RangeData;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
@@ -31,6 +32,7 @@ pub struct WeaponData {
     pub weapon_type: WeaponTypeEnum,
     #[schema(example = 0)]
     pub splash_dmg: Option<i64>,
+    pub attack_effects: Vec<Action>,
 }
 
 impl<'r> FromRow<'r, PgRow> for Weapon {
@@ -50,6 +52,7 @@ impl<'r> FromRow<'r, PgRow> for Weapon {
                 weapon_type: wp_type.unwrap_or(WeaponTypeEnum::Melee),
                 damage_data: vec![],
                 splash_dmg: get_opt_i32_as_i64(row, "splash_dmg"),
+                attack_effects: vec![],
             },
         })
     }
