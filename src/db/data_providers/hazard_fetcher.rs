@@ -1,6 +1,7 @@
 use crate::db::data_providers::generic_fetcher::{
     enrich_with_traits, fetch_action_traits, fetch_all_with_binds, fetch_all_with_binds_and_count,
-    fetch_col_range, fetch_entity_traits,
+    fetch_col_range, fetch_entity_traits, fetch_weapon_actions, fetch_weapon_damage_data,
+    fetch_weapon_runes, fetch_weapon_traits,
 };
 use crate::db::data_providers::raw_query_builder::{
     format_pagination_clause, prepare_filtered_get_hazards, prepare_paginated_get_hazards_listing,
@@ -10,6 +11,7 @@ use crate::models::db::weakness::Weakness;
 use crate::models::hazard::hazard_field_filter::HazardFieldFilters;
 use crate::models::hazard::hazard_listing_struct::{HazardFilterQuery, HazardSortEnum};
 use crate::models::hazard::hazard_struct::{Hazard, HazardRanges};
+use crate::models::item::weapon_struct::Weapon;
 use crate::models::response_data::ResponseHazard;
 use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::action::{Action, CoreAction};
@@ -99,6 +101,7 @@ pub async fn fetch_hazard_by_id(pool: &PgPool, gs: GameSystem, id: i64) -> Resul
         .flatten()
         .collect();
     core_hazard.weaknesses = fetch_hazard_weaknesses(pool, gs, id).await?;
+    core_hazard.weapons = fetch_hazard_weapons(pool, gs, id).await?;
 
     Ok(ResponseHazard {
         core_hazard,
@@ -261,4 +264,73 @@ async fn fetch_hazard_weaknesses(
     .bind(hazard_id)
     .fetch_all(pool)
     .await?)
+}
+
+async fn fetch_hazard_weapons(
+    pool: &PgPool,
+    gs: GameSystem,
+    hazard_id: i64,
+) -> Result<Vec<Weapon>> {
+    let weapons: Vec<Weapon> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "
+        SELECT DISTINCT
+            wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
+            wt.n_of_striking_runes, wt.reload, wt.weapon_type, wt.base_item_id,
+            it.*,
+            rt.id AS range_id, rt.value AS range_value, rt.increment AS range_increment,
+            rt.max AS range_max
+        FROM {gs}_weapon_hazard_association_table ica
+        LEFT JOIN {gs}_weapon_table wt                      ON wt.id = ica.weapon_id
+        LEFT JOIN {gs}_item_table it                        ON it.id = wt.base_item_id
+        LEFT JOIN {gs}_weapon_range_association_table wr    ON wr.weapon_id = wt.id
+        LEFT JOIN {gs}_range_table rt                       ON rt.id = wr.range_id
+        WHERE ica.hazard_id = $1
+        ORDER BY name
+        "
+    )))
+    .bind(hazard_id)
+    .fetch_all(pool)
+    .await?;
+    Ok(join_all(weapons.into_iter().map(|mut el| {
+        let pool = pool.clone();
+        async move {
+            el.item_core.traits = fetch_weapon_traits(&pool, gs, el.weapon_data.id)
+                .await
+                .unwrap_or_default();
+            el.item_core.quantity =
+                fetch_quantity(&pool, gs, hazard_id, el.weapon_data.id, "weapon")
+                    .await
+                    .unwrap_or(1);
+            el.weapon_data.property_runes = fetch_weapon_runes(&pool, gs, el.weapon_data.id)
+                .await
+                .unwrap_or_default();
+            el.weapon_data.damage_data = fetch_weapon_damage_data(&pool, gs, el.weapon_data.id)
+                .await
+                .unwrap_or_default();
+            el.weapon_data.attack_effects = fetch_weapon_actions(&pool, gs, el.weapon_data.id)
+                .await
+                .unwrap_or_default();
+            el
+        }
+    }))
+    .await)
+}
+
+async fn fetch_quantity(
+    pool: &PgPool,
+    gs: GameSystem,
+    hazard_id: i64,
+    entity_id: i64,
+    entity: &str,
+) -> Result<i64> {
+    Ok(i64::from(
+        sqlx::query_scalar::<_, i32>(sqlx::AssertSqlSafe(format!(
+            "SELECT quantity FROM {gs}_{entity}_hazard_association_table WHERE
+        hazard_id = $1 AND {entity}_id = $2"
+        )))
+        .bind(hazard_id)
+        .bind(entity_id)
+        .fetch_one(pool)
+        .await?,
+    ))
 }

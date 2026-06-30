@@ -2,6 +2,7 @@ use crate::models::db::resistance::Resistance;
 use crate::models::db::weakness::Weakness;
 use crate::models::hazard::hazard_component::hazard_core::HazardEssentialData;
 use crate::models::hazard::hazard_field_filter::{HazardComplexityEnum, HazardFieldFilters};
+use crate::models::item::weapon_struct::Weapon;
 use crate::models::shared::action::Action;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
@@ -67,6 +68,7 @@ pub struct Hazard {
     pub immunities: Vec<String>,
     pub resistances: Vec<Resistance>,
     pub weaknesses: Vec<Weakness>,
+    pub weapons: Vec<Weapon>,
     pub game_system: GameSystem,
 }
 
@@ -81,6 +83,7 @@ impl From<(Self, GameSystem)> for Hazard {
             immunities: hazard.immunities,
             resistances: hazard.resistances,
             weaknesses: hazard.weaknesses,
+            weapons: hazard.weapons,
         }
     }
 }
@@ -217,6 +220,7 @@ impl<'r> FromRow<'r, PgRow> for Hazard {
             immunities: vec![],
             resistances: vec![],
             weaknesses: Default::default(),
+            weapons: vec![],
             game_system: Default::default(),
         })
     }
