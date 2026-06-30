@@ -10,4 +10,5 @@ pub mod origin;
 pub mod random_enum;
 pub mod response;
 pub mod template_enum;
+pub mod traits_enrichable;
 pub mod url;

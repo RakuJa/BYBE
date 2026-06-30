@@ -4,6 +4,7 @@ use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use crate::models::shared::status_enum::Status;
+use crate::traits::traits_enrichable::TraitsEnrichable;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)]
 use serde_json::json;
@@ -117,5 +118,17 @@ impl<'r> FromRow<'r, PgRow> for CreatureCoreData {
             derived: DerivedData::from_row(row)?,
             traits: vec![],
         })
+    }
+}
+
+impl TraitsEnrichable for CreatureCoreData {
+    fn entity_id(&self) -> i64 {
+        self.essential.id
+    }
+    fn set_traits(&mut self, traits: Vec<String>) {
+        self.traits = traits;
+    }
+    fn entity_name() -> &'static str {
+        "creature"
     }
 }

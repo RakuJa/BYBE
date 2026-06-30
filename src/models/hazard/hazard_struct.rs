@@ -6,6 +6,7 @@ use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::traits::filterable::Filterable;
 use crate::traits::has_complexity::HasComplexity;
 use crate::traits::has_level::HasLevel;
+use crate::traits::traits_enrichable::TraitsEnrichable;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow};
@@ -196,5 +197,17 @@ impl<'r> FromRow<'r, PgRow> for Hazard {
             actions: vec![],
             game_system: Default::default(),
         })
+    }
+}
+
+impl TraitsEnrichable for Hazard {
+    fn entity_id(&self) -> i64 {
+        self.essential.id
+    }
+    fn set_traits(&mut self, traits: Vec<String>) {
+        self.traits = traits;
+    }
+    fn entity_name() -> &'static str {
+        "hazard"
     }
 }

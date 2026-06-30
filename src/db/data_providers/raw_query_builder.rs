@@ -1,9 +1,18 @@
-use crate::models::bestiary_structs::{BestiaryFilterQuery, CreatureTableFieldsFilter};
+use crate::models::bestiary_structs::{
+    BestiaryFilterQuery, CreatureSortEnum, CreatureTableFieldsFilter,
+};
+use crate::models::creature::creature_field_filter::CreatureFieldFilters;
 use crate::models::creature::creature_metadata::creature_role::CreatureRoleEnum;
-use crate::models::hazard::hazard_listing_struct::{HazardFilterQuery, HazardTableFieldsFilter};
+use crate::models::hazard::hazard_field_filter::{HazardComplexityEnum, HazardFieldFilters};
+use crate::models::hazard::hazard_listing_struct::{
+    HazardFilterQuery, HazardSortEnum, HazardTableFieldsFilter,
+};
+use crate::models::item::item_field_filter::ItemFieldFilters;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
-use crate::models::item::shop_structs::{ItemTableFieldsFilter, ShopFilterQuery};
+use crate::models::item::shop_structs::{ItemSortEnum, ItemTableFieldsFilter, ShopFilterQuery};
+use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::game_system_enum::GameSystem;
+use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use tracing::debug;
 
 pub fn format_pagination_clause(cursor: i64, page_size: i16) -> String {
@@ -563,4 +572,498 @@ where
         "trait_hazard_association_table",
         column_values,
     )
+}
+
+fn escape_sql_str(s: &str) -> String {
+    s.replace('\'', "''")
+}
+
+const fn order_direction(order_by: OrderEnum) -> &'static str {
+    match order_by {
+        OrderEnum::Ascending => "ASC",
+        OrderEnum::Descending => "DESC",
+    }
+}
+
+fn prepare_creature_listing_where(gs: GameSystem, filters: &CreatureFieldFilters) -> String {
+    let mut conditions = vec!["status = 'valid'".to_string()];
+
+    if let Some(name) = &filters.name_filter {
+        conditions.push(format!("name ILIKE '%{}%'", escape_sql_str(name)));
+    }
+    if let Some(sources) = &filters.source_filter {
+        let s = prepare_case_insensitive_in_statement("source", sources.iter());
+        if !s.is_empty() {
+            conditions.push(s);
+        }
+    }
+    if let Some(families) = &filters.family_filter
+        && !families.is_empty()
+    {
+        let parts: Vec<String> = families
+            .iter()
+            .map(|f| format!("family ILIKE '%{}%'", escape_sql_str(f)))
+            .collect();
+        conditions.push(format!("({})", parts.join(" OR ")));
+    }
+    if let Some(rarities) = &filters.rarity_filter {
+        let s = prepare_case_insensitive_in_statement("rarity", rarities.iter());
+        if !s.is_empty() {
+            conditions.push(s);
+        }
+    }
+    if let Some(sizes) = &filters.size_filter {
+        let s = prepare_case_insensitive_in_statement("size", sizes.iter());
+        if !s.is_empty() {
+            conditions.push(s);
+        }
+    }
+    if let Some(alignments) = &filters.alignment_filter {
+        let s = prepare_case_insensitive_in_statement("alignment", alignments.iter());
+        if !s.is_empty() {
+            conditions.push(s);
+        }
+    }
+    if let Some(types) = &filters.type_filter {
+        let s = prepare_case_insensitive_in_statement("cr_type", types.iter());
+        if !s.is_empty() {
+            conditions.push(s);
+        }
+    }
+    if let Some(v) = filters.min_hp_filter {
+        conditions.push(format!("hp >= {v}"));
+    }
+    if let Some(v) = filters.max_hp_filter {
+        conditions.push(format!("hp <= {v}"));
+    }
+    if let Some(v) = filters.min_level_filter {
+        conditions.push(format!("level >= {v}"));
+    }
+    if let Some(v) = filters.max_level_filter {
+        conditions.push(format!("level <= {v}"));
+    }
+    if let Some(attacks) = &filters.attack_data_filter {
+        for (attack, has_attack) in attacks {
+            if let Some(has) = has_attack {
+                let col = match attack.as_str() {
+                    "melee" => "is_melee",
+                    "ranged" => "is_ranged",
+                    "spellcaster" => "is_spellcaster",
+                    _ => continue,
+                };
+                conditions.push(format!("{col} = {has}"));
+            }
+        }
+    }
+    if let Some(roles) = &filters.role_filter
+        && !roles.is_empty()
+    {
+        let threshold = filters.role_threshold.unwrap_or(0);
+        let parts: Vec<String> = roles
+            .iter()
+            .map(|r| format!("{} >= {threshold}", r.to_db_column()))
+            .collect();
+        conditions.push(format!("({})", parts.join(" OR ")));
+    }
+    match filters.game_system_version.unwrap_or_default() {
+        GameSystemVersionEnum::Legacy => conditions.push("remaster = false".to_string()),
+        GameSystemVersionEnum::Remaster => conditions.push("remaster = true".to_string()),
+        GameSystemVersionEnum::Any => {}
+    }
+    if let Some(whitelist) = &filters.trait_whitelist_filter
+        && !whitelist.is_empty()
+    {
+        let parts: Vec<String> = whitelist
+            .iter()
+            .map(|t| format!("UPPER(trait_id) LIKE UPPER('%{}%')", escape_sql_str(t)))
+            .collect();
+        conditions.push(format!(
+            "id IN (SELECT creature_id FROM {gs}_trait_creature_association_table WHERE {})",
+            parts.join(" OR ")
+        ));
+    }
+    if let Some(blacklist) = &filters.trait_blacklist_filter
+        && !blacklist.is_empty()
+    {
+        let parts: Vec<String> = blacklist
+            .iter()
+            .map(|t| format!("UPPER(trait_id) = UPPER('{}')", escape_sql_str(t)))
+            .collect();
+        conditions.push(format!(
+            "id NOT IN (SELECT creature_id FROM {gs}_trait_creature_association_table WHERE {})",
+            parts.join(" OR ")
+        ));
+    }
+    conditions.join(" AND ")
+}
+
+fn prepare_creature_listing_order(
+    gs: GameSystem,
+    sort_by: CreatureSortEnum,
+    order_by: OrderEnum,
+) -> String {
+    let dir = order_direction(order_by);
+    match sort_by {
+        CreatureSortEnum::Id => format!("id {dir}"),
+        CreatureSortEnum::Name => format!("name {dir}"),
+        CreatureSortEnum::Level => format!("level {dir}"),
+        CreatureSortEnum::Trait => format!(
+            "(SELECT STRING_AGG(trait_id, ', ' ORDER BY trait_id) \
+             FROM {gs}_trait_creature_association_table WHERE creature_id = id) {dir} NULLS LAST"
+        ),
+        CreatureSortEnum::Size => format!("size {dir}"),
+        CreatureSortEnum::Type => format!("cr_type {dir}"),
+        CreatureSortEnum::Hp => format!("hp {dir}"),
+        CreatureSortEnum::Rarity => format!("rarity {dir}"),
+        CreatureSortEnum::Family => format!("family {dir}"),
+        CreatureSortEnum::Alignment => format!("alignment {dir}"),
+        CreatureSortEnum::Attack => {
+            format!("is_melee {dir}, is_ranged {dir}, is_spellcaster {dir}")
+        }
+        CreatureSortEnum::Role => format!(
+            "GREATEST(brute_percentage, magical_striker_percentage, skill_paragon_percentage, \
+             skirmisher_percentage, sniper_percentage, soldier_percentage, spellcaster_percentage) {dir}"
+        ),
+    }
+}
+
+pub fn prepare_paginated_get_creatures_listing(
+    gs: GameSystem,
+    filters: &CreatureFieldFilters,
+    sort_by: CreatureSortEnum,
+    order_by: OrderEnum,
+    cursor: u32,
+    page_size: i16,
+) -> String {
+    let where_clause = prepare_creature_listing_where(gs, filters);
+    let order_clause = prepare_creature_listing_order(gs, sort_by, order_by);
+    let pagination = format_pagination_clause(i64::from(cursor), page_size);
+    format!(
+        "SELECT * FROM {gs}_creature_core WHERE {where_clause} ORDER BY {order_clause} {pagination}"
+    )
+}
+
+pub fn prepare_count_creatures_listing(gs: GameSystem, filters: &CreatureFieldFilters) -> String {
+    let where_clause = prepare_creature_listing_where(gs, filters);
+    format!("SELECT COUNT(*) FROM {gs}_creature_core WHERE {where_clause}")
+}
+
+fn prepare_hazard_listing_where(gs: GameSystem, filters: &HazardFieldFilters) -> String {
+    let mut conditions: Vec<String> = vec![];
+
+    if let Some(name) = &filters.name_filter {
+        conditions.push(format!("name ILIKE '%{}%'", escape_sql_str(name)));
+    }
+    if let Some(sources) = &filters.source_filter {
+        let s = prepare_case_insensitive_in_statement("source", sources.iter());
+        if !s.is_empty() {
+            conditions.push(s);
+        }
+    }
+    if let Some(rarities) = &filters.rarity_filter {
+        let s = prepare_case_insensitive_in_statement("rarity", rarities.iter());
+        if !s.is_empty() {
+            conditions.push(s);
+        }
+    }
+    if let Some(sizes) = &filters.size_filter {
+        let s = prepare_case_insensitive_in_statement("size", sizes.iter());
+        if !s.is_empty() {
+            conditions.push(s);
+        }
+    }
+    match filters.complexity_filter.unwrap_or_default() {
+        HazardComplexityEnum::Simple => conditions.push("is_complex = false".to_string()),
+        HazardComplexityEnum::Complex => conditions.push("is_complex = true".to_string()),
+        HazardComplexityEnum::Any => {}
+    }
+    if let Some(v) = filters.min_ac_filter {
+        conditions.push(format!("ac >= {v}"));
+    }
+    if let Some(v) = filters.max_ac_filter {
+        conditions.push(format!("ac <= {v}"));
+    }
+    if let Some(v) = filters.min_hardness_filter {
+        conditions.push(format!("hardness >= {v}"));
+    }
+    if let Some(v) = filters.max_hardness_filter {
+        conditions.push(format!("hardness <= {v}"));
+    }
+    if let Some(v) = filters.min_hp_filter {
+        conditions.push(format!("hp >= {v}"));
+    }
+    if let Some(v) = filters.max_hp_filter {
+        conditions.push(format!("hp <= {v}"));
+    }
+    if let Some(v) = filters.min_level_filter {
+        conditions.push(format!("level >= {v}"));
+    }
+    if let Some(v) = filters.max_level_filter {
+        conditions.push(format!("level <= {v}"));
+    }
+    if let Some(v) = filters.min_stealth_filter {
+        conditions.push(format!("stealth >= {v}"));
+    }
+    if let Some(v) = filters.max_stealth_filter {
+        conditions.push(format!("stealth <= {v}"));
+    }
+    // NULL passes bounds for optional columns
+    if let Some(v) = filters.min_will_filter {
+        conditions.push(format!("(will IS NULL OR will >= {v})"));
+    }
+    if let Some(v) = filters.max_will_filter {
+        conditions.push(format!("(will IS NULL OR will <= {v})"));
+    }
+    if let Some(v) = filters.min_reflex_filter {
+        conditions.push(format!("(reflex IS NULL OR reflex >= {v})"));
+    }
+    if let Some(v) = filters.max_reflex_filter {
+        conditions.push(format!("(reflex IS NULL OR reflex <= {v})"));
+    }
+    if let Some(v) = filters.min_fortitude_filter {
+        conditions.push(format!("(fortitude IS NULL OR fortitude >= {v})"));
+    }
+    if let Some(v) = filters.max_fortitude_filter {
+        conditions.push(format!("(fortitude IS NULL OR fortitude <= {v})"));
+    }
+    match filters.game_system_version.unwrap_or_default() {
+        GameSystemVersionEnum::Legacy => conditions.push("remaster = false".to_string()),
+        GameSystemVersionEnum::Remaster => conditions.push("remaster = true".to_string()),
+        GameSystemVersionEnum::Any => {}
+    }
+    if let Some(whitelist) = &filters.trait_whitelist_filter
+        && !whitelist.is_empty()
+    {
+        let parts: Vec<String> = whitelist
+            .iter()
+            .map(|t| format!("UPPER(trait_id) LIKE UPPER('%{}%')", escape_sql_str(t)))
+            .collect();
+        conditions.push(format!(
+            "id IN (SELECT hazard_id FROM {gs}_trait_hazard_association_table WHERE {})",
+            parts.join(" OR ")
+        ));
+    }
+    if let Some(blacklist) = &filters.trait_blacklist_filter
+        && !blacklist.is_empty()
+    {
+        let parts: Vec<String> = blacklist
+            .iter()
+            .map(|t| format!("UPPER(trait_id) = UPPER('{}')", escape_sql_str(t)))
+            .collect();
+        conditions.push(format!(
+            "id NOT IN (SELECT hazard_id FROM {gs}_trait_hazard_association_table WHERE {})",
+            parts.join(" OR ")
+        ));
+    }
+    if conditions.is_empty() {
+        "TRUE".to_string()
+    } else {
+        conditions.join(" AND ")
+    }
+}
+
+fn prepare_hazard_listing_order(
+    gs: GameSystem,
+    sort_by: HazardSortEnum,
+    order_by: OrderEnum,
+) -> String {
+    let dir = order_direction(order_by);
+    match sort_by {
+        HazardSortEnum::Id => format!("id {dir}"),
+        HazardSortEnum::Name => format!("name {dir}"),
+        HazardSortEnum::Ac => format!("ac {dir}"),
+        HazardSortEnum::Hardness => format!("hardness {dir}"),
+        HazardSortEnum::Hp => format!("hp {dir}"),
+        HazardSortEnum::Complexity => format!("is_complex {dir}"),
+        HazardSortEnum::Level => format!("level {dir}"),
+        HazardSortEnum::Trait => format!(
+            "(SELECT STRING_AGG(trait_id, ', ' ORDER BY trait_id) \
+             FROM {gs}_trait_hazard_association_table WHERE hazard_id = id) {dir} NULLS LAST"
+        ),
+        HazardSortEnum::Rarity => format!("rarity {dir}"),
+        HazardSortEnum::Size => format!("size {dir}"),
+        HazardSortEnum::Source => format!("source {dir}"),
+        HazardSortEnum::Fortitude => format!("fortitude {dir} NULLS LAST"),
+        HazardSortEnum::Reflex => format!("reflex {dir} NULLS LAST"),
+        HazardSortEnum::Will => format!("will {dir} NULLS LAST"),
+        HazardSortEnum::Stealth => format!("stealth {dir}"),
+    }
+}
+
+pub fn prepare_paginated_get_hazards_listing(
+    gs: GameSystem,
+    filters: &HazardFieldFilters,
+    sort_by: HazardSortEnum,
+    order_by: OrderEnum,
+    cursor: u32,
+    page_size: i16,
+) -> String {
+    let where_clause = prepare_hazard_listing_where(gs, filters);
+    let order_clause = prepare_hazard_listing_order(gs, sort_by, order_by);
+    let pagination = format_pagination_clause(i64::from(cursor), page_size);
+    format!(
+        "SELECT * FROM {gs}_hazard_table WHERE {where_clause} ORDER BY {order_clause} {pagination}"
+    )
+}
+
+pub fn prepare_count_hazards_listing(gs: GameSystem, filters: &HazardFieldFilters) -> String {
+    let where_clause = prepare_hazard_listing_where(gs, filters);
+    format!("SELECT COUNT(*) FROM {gs}_hazard_table WHERE {where_clause}")
+}
+
+fn prepare_item_listing_where(gs: GameSystem, filters: &ItemFieldFilters) -> String {
+    let mut conditions = vec![
+        "is_derived = false".to_string(),
+        "status = 'valid'".to_string(),
+    ];
+
+    if let Some(name) = &filters.name_filter {
+        conditions.push(format!("name ILIKE '%{}%'", escape_sql_str(name)));
+    }
+    if let Some(categories) = &filters.category_filter
+        && !categories.is_empty()
+    {
+        let parts: Vec<String> = categories
+            .iter()
+            .map(|c| format!("COALESCE(category, '') ILIKE '%{}%'", escape_sql_str(c)))
+            .collect();
+        conditions.push(format!("({})", parts.join(" OR ")));
+    }
+    if let Some(sources) = &filters.source_filter
+        && !sources.is_empty()
+    {
+        let parts: Vec<String> = sources
+            .iter()
+            .map(|s| format!("source ILIKE '%{}%'", escape_sql_str(s)))
+            .collect();
+        conditions.push(format!("({})", parts.join(" OR ")));
+    }
+    if let Some(rarities) = &filters.rarity_filter {
+        let s = prepare_case_insensitive_in_statement("rarity", rarities.iter());
+        if !s.is_empty() {
+            conditions.push(s);
+        }
+    }
+    if let Some(sizes) = &filters.size_filter {
+        let s = prepare_case_insensitive_in_statement("size", sizes.iter());
+        if !s.is_empty() {
+            conditions.push(s);
+        }
+    }
+    if let Some(types) = &filters.type_filter {
+        let s = prepare_case_insensitive_in_statement("item_type", types.iter());
+        if !s.is_empty() {
+            conditions.push(s);
+        }
+    }
+    if let Some(v) = filters.min_hp_filter {
+        conditions.push(format!("hp >= {v}"));
+    }
+    if let Some(v) = filters.max_hp_filter {
+        conditions.push(format!("hp <= {v}"));
+    }
+    if let Some(v) = filters.min_level_filter {
+        conditions.push(format!("level >= {v}"));
+    }
+    if let Some(v) = filters.max_level_filter {
+        conditions.push(format!("level <= {v}"));
+    }
+    if let Some(v) = filters.min_price_filter {
+        conditions.push(format!("price >= {v}"));
+    }
+    if let Some(v) = filters.max_price_filter {
+        conditions.push(format!("price <= {v}"));
+    }
+    if let Some(v) = filters.min_hardness_filter {
+        conditions.push(format!("hardness >= {v}"));
+    }
+    if let Some(v) = filters.max_hardness_filter {
+        conditions.push(format!("hardness <= {v}"));
+    }
+    if let Some(v) = filters.min_bulk_filter {
+        conditions.push(format!("bulk >= {v}"));
+    }
+    if let Some(v) = filters.max_bulk_filter {
+        conditions.push(format!("bulk <= {v}"));
+    }
+    // min uses requires NOT NULL; max uses allows NULL (item without uses passes)
+    if let Some(v) = filters.min_n_of_uses_filter {
+        conditions.push(format!(
+            "(number_of_uses IS NOT NULL AND number_of_uses >= {v})"
+        ));
+    }
+    if let Some(v) = filters.max_n_of_uses_filter {
+        conditions.push(format!("(number_of_uses IS NULL OR number_of_uses <= {v})"));
+    }
+    match filters.game_system_version.unwrap_or_default() {
+        GameSystemVersionEnum::Legacy => conditions.push("remaster = false".to_string()),
+        GameSystemVersionEnum::Remaster => conditions.push("remaster = true".to_string()),
+        GameSystemVersionEnum::Any => {}
+    }
+    if let Some(whitelist) = &filters.trait_whitelist_filter
+        && !whitelist.is_empty()
+    {
+        let parts: Vec<String> = whitelist
+            .iter()
+            .map(|t| format!("UPPER(trait_id) LIKE UPPER('%{}%')", escape_sql_str(t)))
+            .collect();
+        conditions.push(format!(
+            "id IN (SELECT item_id FROM {gs}_trait_item_association_table WHERE {})",
+            parts.join(" OR ")
+        ));
+    }
+    if let Some(blacklist) = &filters.trait_blacklist_filter
+        && !blacklist.is_empty()
+    {
+        let parts: Vec<String> = blacklist
+            .iter()
+            .map(|t| format!("UPPER(trait_id) = UPPER('{}')", escape_sql_str(t)))
+            .collect();
+        conditions.push(format!(
+            "id NOT IN (SELECT item_id FROM {gs}_trait_item_association_table WHERE {})",
+            parts.join(" OR ")
+        ));
+    }
+    conditions.join(" AND ")
+}
+
+fn prepare_item_listing_order(
+    gs: GameSystem,
+    sort_by: ItemSortEnum,
+    order_by: OrderEnum,
+) -> String {
+    let dir = order_direction(order_by);
+    match sort_by {
+        ItemSortEnum::Id => format!("id {dir}"),
+        ItemSortEnum::Name => format!("name {dir}"),
+        ItemSortEnum::Level => format!("level {dir}"),
+        ItemSortEnum::Trait => format!(
+            "(SELECT STRING_AGG(trait_id, ', ' ORDER BY trait_id) \
+             FROM {gs}_trait_item_association_table WHERE item_id = id) {dir} NULLS LAST"
+        ),
+        ItemSortEnum::Type => format!("item_type {dir}"),
+        ItemSortEnum::Rarity => format!("rarity {dir}"),
+        ItemSortEnum::Source => format!("source {dir}"),
+    }
+}
+
+pub fn prepare_paginated_get_items_listing(
+    gs: GameSystem,
+    filters: &ItemFieldFilters,
+    sort_by: ItemSortEnum,
+    order_by: OrderEnum,
+    cursor: u32,
+    page_size: i16,
+) -> String {
+    let where_clause = prepare_item_listing_where(gs, filters);
+    let order_clause = prepare_item_listing_order(gs, sort_by, order_by);
+    let pagination = format_pagination_clause(i64::from(cursor), page_size);
+    format!(
+        "SELECT * FROM {gs}_item_table WHERE {where_clause} ORDER BY {order_clause} {pagination}"
+    )
+}
+
+pub fn prepare_count_items_listing(gs: GameSystem, filters: &ItemFieldFilters) -> String {
+    let where_clause = prepare_item_listing_where(gs, filters);
+    format!("SELECT COUNT(*) FROM {gs}_item_table WHERE {where_clause}")
 }

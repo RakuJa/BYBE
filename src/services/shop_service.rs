@@ -53,7 +53,7 @@ pub async fn get_shop_listing(
 }
 
 pub async fn get_shop_ranges(app_state: &AppState, gs: GameSystem) -> Option<ShopRanges> {
-    shop_proxy::get_shop_ranges(app_state, gs).await.ok()
+    shop_proxy::get_shop_ranges(app_state, gs).await
 }
 
 pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(

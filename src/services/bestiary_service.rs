@@ -109,7 +109,5 @@ pub async fn get_filtered_creatures(
 }
 
 pub async fn get_bestiary_ranges(app_state: &AppState, gs: GameSystem) -> Option<BestiaryRanges> {
-    bestiary_proxy::get_bestiary_ranges(app_state, gs)
-        .await
-        .ok()
+    bestiary_proxy::get_bestiary_ranges(app_state, gs).await
 }

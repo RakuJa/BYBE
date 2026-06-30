@@ -62,5 +62,5 @@ pub async fn get_filtered_hazards(
 }
 
 pub async fn get_hazard_ranges(app_state: &AppState, gs: GameSystem) -> Option<HazardRanges> {
-    hazard_proxy::get_hazard_ranges(app_state, gs).await.ok()
+    hazard_proxy::get_hazard_ranges(app_state, gs).await
 }

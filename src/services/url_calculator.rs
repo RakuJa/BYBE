@@ -1,13 +1,11 @@
 use crate::traits::url::paginated_request_ext::PaginatedRequestExt;
-use cached::cached;
 use std::env;
-#[cached]
 fn get_website_url() -> String {
     env::var("BACKEND_URL").unwrap_or_else(|_| "http://api.bybe.app".to_string())
 }
 
 pub fn next_url<T: PaginatedRequestExt>(pagination: &T, next_cursor: u32) -> String {
-    let base_url = format!("{}/{}/", get_website_url(), T::base_path());
+    let base_url = format!("{}/{}", get_website_url(), T::base_path());
     let pagination_query = prepare_pagination_path(
         next_cursor,
         pagination.page_size(),
@@ -24,7 +22,7 @@ fn prepare_pagination_path(
     order_by_key: &str,
 ) -> String {
     format!(
-        "&cursor={}&page_size={}&sort_by={}&order_by{}",
+        "?cursor={}&page_size={}&sort_by={}&order_by={}",
         next_cursor, page_size, sort_by_key, order_by_key
     )
 }

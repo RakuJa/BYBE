@@ -1,4 +1,5 @@
 use crate::models::npc::gender_enum::Gender;
+use crate::models::npc::name_loader_struct::Names;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::traits::filter::Filter;
 use crate::traits::origin::ancestry::Ancestry;
@@ -53,6 +54,6 @@ pub trait NameOrigin: RandomEnum + ContextSize + AverageNameLength {
 
     fn get_name_builder(
         &self,
-        json_path: &str,
+        names: &Names,
     ) -> HashMap<(String, Gender), HashMap<String, Vec<char>>>;
 }

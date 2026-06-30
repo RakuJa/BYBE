@@ -1,11 +1,13 @@
 use crate::db::data_providers::generic_fetcher::{
-    fetch_action_traits, fetch_armor_runes, fetch_armor_traits, fetch_item_traits,
-    fetch_shield_traits, fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
+    enrich_with_traits, fetch_action_traits, fetch_armor_runes, fetch_armor_traits,
+    fetch_col_range, fetch_entity_traits, fetch_item_traits, fetch_shield_traits,
+    fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
 };
 use crate::db::data_providers::raw_query_builder::{
-    format_pagination_clause, prepare_filtered_get_creatures_core,
+    format_pagination_clause, prepare_count_creatures_listing, prepare_filtered_get_creatures_core,
+    prepare_paginated_get_creatures_listing,
 };
-use crate::models::bestiary_structs::BestiaryFilterQuery;
+use crate::models::bestiary_structs::{BestiaryFilterQuery, BestiaryRanges, CreatureSortEnum};
 use crate::models::creature::creature_component::creature_combat::{
     CreatureCombatData, SavingThrows,
 };
@@ -15,6 +17,7 @@ use crate::models::creature::creature_component::creature_extra::{
 };
 use crate::models::creature::creature_component::creature_spellcaster::CreatureSpellcasterData;
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
+use crate::models::creature::creature_field_filter::CreatureFieldFilters;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
 use crate::models::creature::creature_struct::Creature;
 use crate::models::creature::items::skill::Skill;
@@ -31,6 +34,7 @@ use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::Shield;
 use crate::models::item::weapon_struct::Weapon;
 use crate::models::response_data::CreatureResponseDataModifiers;
+use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::scales_struct::ability_scales::AbilityScales;
 use crate::models::scales_struct::ac_scales::AcScales;
 use crate::models::scales_struct::area_dmg_scales::AreaDmgScales;
@@ -205,79 +209,31 @@ async fn fetch_creature_ability_scores(
     .await?)
 }
 
-async fn fetch_creature_ac(pool: &PgPool, gs: GameSystem, creature_id: i64) -> Result<i32> {
+async fn fetch_creature_scalar<T>(
+    pool: &PgPool,
+    gs: GameSystem,
+    creature_id: i64,
+    col: &str,
+) -> Result<T>
+where
+    T: for<'r> sqlx::Decode<'r, sqlx::Postgres> + sqlx::Type<sqlx::Postgres> + Send + Unpin,
+{
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT ac FROM {gs}_creature_table WHERE id = $1"
+        "SELECT {col} FROM {gs}_creature_table WHERE id = $1"
     )))
     .bind(creature_id)
     .fetch_one(pool)
     .await?)
 }
 
-async fn fetch_creature_ac_detail(
+async fn fetch_creature_scalar_opt(
     pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
+    col: &str,
 ) -> Result<Option<String>> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT ac_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
-    )))
-    .bind(creature_id)
-    .fetch_optional(pool)
-    .await?)
-}
-
-async fn fetch_creature_hp_detail(
-    pool: &PgPool,
-    gs: GameSystem,
-    creature_id: i64,
-) -> Result<Option<String>> {
-    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT hp_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
-    )))
-    .bind(creature_id)
-    .fetch_optional(pool)
-    .await?)
-}
-
-async fn fetch_creature_language_detail(
-    pool: &PgPool,
-    gs: GameSystem,
-    creature_id: i64,
-) -> Result<Option<String>> {
-    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT language_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
-    )))
-    .bind(creature_id)
-    .fetch_optional(pool)
-    .await?)
-}
-
-async fn fetch_creature_perception(pool: &PgPool, gs: GameSystem, creature_id: i64) -> Result<i32> {
-    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT perception FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
-    )))
-    .bind(creature_id)
-    .fetch_one(pool)
-    .await?)
-}
-
-async fn fetch_creature_vision(pool: &PgPool, gs: GameSystem, creature_id: i64) -> Result<bool> {
-    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT vision FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
-    )))
-    .bind(creature_id)
-    .fetch_one(pool)
-    .await?)
-}
-
-async fn fetch_creature_perception_detail(
-    pool: &PgPool,
-    gs: GameSystem,
-    creature_id: i64,
-) -> Result<Option<String>> {
-    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT perception_detail FROM {gs}_creature_table WHERE id = $1 LIMIT 1"
+        "SELECT {col} FROM {gs}_creature_table WHERE id = $1"
     )))
     .bind(creature_id)
     .fetch_optional(pool)
@@ -289,13 +245,7 @@ pub async fn fetch_creature_traits(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT name FROM {gs}_trait_table INTERSECT SELECT trait_id
-             FROM {gs}_trait_creature_association_table WHERE creature_id = $1"
-    )))
-    .bind(creature_id)
-    .fetch_all(pool)
-    .await?)
+    fetch_entity_traits(pool, gs, "creature", creature_id).await
 }
 
 pub async fn fetch_all_creature_traits(
@@ -338,23 +288,26 @@ async fn fetch_creature_weapons(
     .bind(creature_id)
     .fetch_all(pool)
     .await?;
-    let mut result_vec = Vec::new();
-    for mut el in weapons {
-        el.item_core.traits = fetch_weapon_traits(pool, gs, el.weapon_data.id)
-            .await
-            .unwrap_or(vec![]);
-        el.item_core.quantity = fetch_weapon_quantity(pool, gs, creature_id, el.weapon_data.id)
-            .await
-            .unwrap_or(1);
-        el.weapon_data.property_runes = fetch_weapon_runes(pool, gs, el.weapon_data.id)
-            .await
-            .unwrap_or(vec![]);
-        el.weapon_data.damage_data = fetch_weapon_damage_data(pool, gs, el.weapon_data.id)
-            .await
-            .unwrap_or(vec![]);
-        result_vec.push(el);
-    }
-    Ok(result_vec)
+    Ok(join_all(weapons.into_iter().map(|mut el| {
+        let pool = pool.clone();
+        async move {
+            el.item_core.traits = fetch_weapon_traits(&pool, gs, el.weapon_data.id)
+                .await
+                .unwrap_or_default();
+            el.item_core.quantity =
+                fetch_quantity(&pool, gs, creature_id, el.weapon_data.id, "weapon")
+                    .await
+                    .unwrap_or(1);
+            el.weapon_data.property_runes = fetch_weapon_runes(&pool, gs, el.weapon_data.id)
+                .await
+                .unwrap_or_default();
+            el.weapon_data.damage_data = fetch_weapon_damage_data(&pool, gs, el.weapon_data.id)
+                .await
+                .unwrap_or_default();
+            el
+        }
+    }))
+    .await)
 }
 
 async fn fetch_creature_armors(
@@ -378,20 +331,23 @@ async fn fetch_creature_armors(
     .bind(creature_id)
     .fetch_all(pool)
     .await?;
-    let mut result_vec = Vec::new();
-    for mut el in armors {
-        el.item_core.traits = fetch_armor_traits(pool, gs, el.armor_data.id)
-            .await
-            .unwrap_or(vec![]);
-        el.item_core.quantity = fetch_armor_quantity(pool, gs, creature_id, el.armor_data.id)
-            .await
-            .unwrap_or(1);
-        el.armor_data.property_runes = fetch_armor_runes(pool, gs, el.armor_data.id)
-            .await
-            .unwrap_or(vec![]);
-        result_vec.push(el);
-    }
-    Ok(result_vec)
+    Ok(join_all(armors.into_iter().map(|mut el| {
+        let pool = pool.clone();
+        async move {
+            el.item_core.traits = fetch_armor_traits(&pool, gs, el.armor_data.id)
+                .await
+                .unwrap_or_default();
+            el.item_core.quantity =
+                fetch_quantity(&pool, gs, creature_id, el.armor_data.id, "armor")
+                    .await
+                    .unwrap_or(1);
+            el.armor_data.property_runes = fetch_armor_runes(&pool, gs, el.armor_data.id)
+                .await
+                .unwrap_or_default();
+            el
+        }
+    }))
+    .await)
 }
 
 async fn fetch_creature_shields(
@@ -414,17 +370,20 @@ async fn fetch_creature_shields(
     .bind(creature_id)
     .fetch_all(pool)
     .await?;
-    let mut result_vec = Vec::new();
-    for mut el in shields {
-        el.item_core.traits = fetch_shield_traits(pool, gs, el.shield_data.id)
-            .await
-            .unwrap_or(vec![]);
-        el.item_core.quantity = fetch_shield_quantity(pool, gs, creature_id, el.shield_data.id)
-            .await
-            .unwrap_or(1);
-        result_vec.push(el);
-    }
-    Ok(result_vec)
+    Ok(join_all(shields.into_iter().map(|mut el| {
+        let pool = pool.clone();
+        async move {
+            el.item_core.traits = fetch_shield_traits(&pool, gs, el.shield_data.id)
+                .await
+                .unwrap_or_default();
+            el.item_core.quantity =
+                fetch_quantity(&pool, gs, creature_id, el.shield_data.id, "shield")
+                    .await
+                    .unwrap_or(1);
+            el
+        }
+    }))
+    .await)
 }
 
 async fn fetch_creature_items(
@@ -444,85 +403,35 @@ async fn fetch_creature_items(
     .bind(creature_id)
     .fetch_all(pool)
     .await?;
-    let mut result_vec = Vec::new();
-    for mut el in items {
-        el.traits = fetch_item_traits(pool, gs, el.id).await.unwrap_or(vec![]);
-        el.quantity = fetch_item_quantity(pool, gs, creature_id, el.id)
-            .await
-            .unwrap_or(1);
-        result_vec.push(el);
-    }
-    Ok(result_vec)
+    Ok(join_all(items.into_iter().map(|mut el| {
+        let pool = pool.clone();
+        async move {
+            el.traits = fetch_item_traits(&pool, gs, el.id)
+                .await
+                .unwrap_or_default();
+            el.quantity = fetch_quantity(&pool, gs, creature_id, el.id, "item")
+                .await
+                .unwrap_or(1);
+            el
+        }
+    }))
+    .await)
 }
 
-/// Quantities are present ONLY for creature's item.
-/// It needs to be fetched from the association table.
-async fn fetch_item_quantity(
+/// Quantities exist only in creature association tables, fetched generically by entity name.
+async fn fetch_quantity(
     pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
-    item_id: i64,
+    entity_id: i64,
+    entity: &str,
 ) -> Result<i64> {
     Ok(sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
-        "SELECT quantity FROM {gs}_item_creature_association_table WHERE
-        creature_id = $1 AND item_id = $2"
+        "SELECT quantity FROM {gs}_{entity}_creature_association_table WHERE
+        creature_id = $1 AND {entity}_id = $2"
     )))
     .bind(creature_id)
-    .bind(item_id)
-    .fetch_one(pool)
-    .await?)
-}
-
-/// Quantities are present ONLY for creature's weapons.
-/// It needs to be fetched from the association table.
-async fn fetch_weapon_quantity(
-    pool: &PgPool,
-    gs: GameSystem,
-    creature_id: i64,
-    weapon_id: i64,
-) -> Result<i64> {
-    Ok(sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
-        "SELECT quantity FROM {gs}_weapon_creature_association_table WHERE
-        creature_id = $1 AND weapon_id = $2"
-    )))
-    .bind(creature_id)
-    .bind(weapon_id)
-    .fetch_one(pool)
-    .await?)
-}
-
-/// Quantities are present ONLY for creature's shields.
-/// It needs to be fetched from the association table.
-async fn fetch_shield_quantity(
-    pool: &PgPool,
-    gs: GameSystem,
-    creature_id: i64,
-    shield_id: i64,
-) -> Result<i64> {
-    Ok(sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
-        "SELECT quantity FROM {gs}_shield_creature_association_table WHERE
-        creature_id = $1 AND shield_id = $2"
-    )))
-    .bind(creature_id)
-    .bind(shield_id)
-    .fetch_one(pool)
-    .await?)
-}
-
-/// Quantities are present ONLY for creature's armors.
-/// It needs to be fetched from the association table.
-async fn fetch_armor_quantity(
-    pool: &PgPool,
-    gs: GameSystem,
-    creature_id: i64,
-    armor_id: i64,
-) -> Result<i64> {
-    Ok(sqlx::query_scalar::<_, i64>(sqlx::AssertSqlSafe(format!(
-        "SELECT quantity FROM {gs}_armor_creature_association_table WHERE
-        creature_id = $1 AND armor_id = $2"
-    )))
-    .bind(creature_id)
-    .bind(armor_id)
+    .bind(entity_id)
     .fetch_one(pool)
     .await?)
 }
@@ -617,12 +526,11 @@ async fn fetch_creature_core_data(
     .bind(creature_id)
     .fetch_one(pool)
     .await?;
-    cr_core.traits = fetch_creature_traits(pool, gs, creature_id)
+    cr_core.traits = fetch_entity_traits(pool, gs, "creature", creature_id)
         .await
         .unwrap_or_default()
-        .iter()
+        .into_iter()
         .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.as_str().to_uppercase()))
-        .cloned()
         .collect();
     Ok(cr_core)
 }
@@ -630,18 +538,9 @@ async fn fetch_creature_core_data(
 async fn update_creatures_core_with_traits(
     pool: &PgPool,
     gs: GameSystem,
-    mut creature_core_data: Vec<CreatureCoreData>,
+    creature_core_data: Vec<CreatureCoreData>,
 ) -> Vec<CreatureCoreData> {
-    for core in &mut creature_core_data {
-        core.traits = fetch_creature_traits(pool, gs, core.essential.id)
-            .await
-            .unwrap_or_default()
-            .iter()
-            .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.as_str().to_uppercase()))
-            .cloned()
-            .collect();
-    }
-    creature_core_data
+    enrich_with_traits(pool, gs, creature_core_data, true).await
 }
 
 pub async fn fetch_traits_associated_with_creatures(
@@ -739,41 +638,40 @@ pub async fn fetch_creature_extra_data(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<CreatureExtraData> {
-    let items = fetch_creature_items(pool, gs, creature_id).await;
-    let actions = fetch_creature_actions(pool, gs, creature_id).await;
-    let skills = fetch_creature_skills(pool, gs, creature_id).await;
-    let languages = fetch_creature_languages(pool, gs, creature_id).await;
-    let senses = fetch_creature_senses(pool, gs, creature_id).await;
-    let speeds = fetch_creature_speeds(pool, gs, creature_id).await;
-    let ability_scores = fetch_creature_ability_scores(pool, gs, creature_id).await;
-    let hp_detail = fetch_creature_hp_detail(pool, gs, creature_id).await;
-    let ac_detail = fetch_creature_ac_detail(pool, gs, creature_id).await;
-    let language_detail = fetch_creature_language_detail(pool, gs, creature_id).await;
-    let perception = fetch_creature_perception(pool, gs, creature_id).await;
-    let has_vision = fetch_creature_vision(pool, gs, creature_id).await;
-    let perception_detail = fetch_creature_perception_detail(pool, gs, creature_id).await;
     Ok(CreatureExtraData {
-        actions: actions.unwrap_or_default(),
-        skills: skills.unwrap_or_default(),
-        items: items.unwrap_or_default(),
-        languages: languages
+        actions: fetch_creature_actions(pool, gs, creature_id)
+            .await
+            .unwrap_or_default(),
+        skills: fetch_creature_skills(pool, gs, creature_id)
+            .await
+            .unwrap_or_default(),
+        items: fetch_creature_items(pool, gs, creature_id)
+            .await
+            .unwrap_or_default(),
+        languages: fetch_creature_languages(pool, gs, creature_id)
+            .await
             .unwrap_or_default()
-            .iter()
-            .filter_map(|x| x.name.clone())
+            .into_iter()
+            .filter_map(|x| x.name)
             .collect(),
-        senses: senses.unwrap_or_default(),
-        speeds: speeds
+        senses: fetch_creature_senses(pool, gs, creature_id)
+            .await
+            .unwrap_or_default(),
+        speeds: fetch_creature_speeds(pool, gs, creature_id)
+            .await
             .unwrap_or_default()
-            .iter()
-            .map(|x| (x.name.clone(), x.value as i16))
+            .into_iter()
+            .map(|x| (x.name, x.value as i16))
             .collect(),
-        ability_scores: ability_scores?,
-        hp_detail: hp_detail?,
-        ac_detail: ac_detail?,
-        language_detail: language_detail?,
-        perception: perception?,
-        perception_detail: perception_detail?,
-        has_vision: has_vision?,
+        ability_scores: fetch_creature_ability_scores(pool, gs, creature_id).await?,
+        hp_detail: fetch_creature_scalar_opt(pool, gs, creature_id, "hp_detail").await?,
+        ac_detail: fetch_creature_scalar_opt(pool, gs, creature_id, "ac_detail").await?,
+        language_detail: fetch_creature_scalar_opt(pool, gs, creature_id, "language_detail")
+            .await?,
+        perception: fetch_creature_scalar(pool, gs, creature_id, "perception").await?,
+        perception_detail: fetch_creature_scalar_opt(pool, gs, creature_id, "perception_detail")
+            .await?,
+        has_vision: fetch_creature_scalar(pool, gs, creature_id, "vision").await?,
     })
 }
 
@@ -782,33 +680,33 @@ pub async fn fetch_creature_combat_data(
     gs: GameSystem,
     creature_id: i64,
 ) -> Result<CreatureCombatData> {
-    let weapons = fetch_creature_weapons(pool, gs, creature_id).await;
-    let armors = fetch_creature_armors(pool, gs, creature_id).await;
-    let shields = fetch_creature_shields(pool, gs, creature_id).await;
-    let resistances = fetch_creature_resistances(pool, gs, creature_id).await;
-    let immunities = fetch_creature_immunities(pool, gs, creature_id).await;
-    let weaknesses = fetch_creature_weaknesses(pool, gs, creature_id).await;
-    let saving_throws = fetch_creature_saving_throws(pool, gs, creature_id).await;
-    let creature_ac = fetch_creature_ac(pool, gs, creature_id).await;
-
     Ok(CreatureCombatData {
-        weapons: weapons.unwrap_or_default(),
-        armors: armors.unwrap_or_default(),
-        shields: shields.unwrap_or_default(),
-        resistances: resistances.unwrap_or_default(),
-        immunities: immunities
+        weapons: fetch_creature_weapons(pool, gs, creature_id)
+            .await
+            .unwrap_or_default(),
+        armors: fetch_creature_armors(pool, gs, creature_id)
+            .await
+            .unwrap_or_default(),
+        shields: fetch_creature_shields(pool, gs, creature_id)
+            .await
+            .unwrap_or_default(),
+        resistances: fetch_creature_resistances(pool, gs, creature_id)
+            .await
+            .unwrap_or_default(),
+        immunities: fetch_creature_immunities(pool, gs, creature_id)
+            .await
             .unwrap_or_default()
-            .iter()
+            .into_iter()
             .flatten()
-            .cloned()
             .collect(),
-        weaknesses: weaknesses
+        weaknesses: fetch_creature_weaknesses(pool, gs, creature_id)
+            .await
             .unwrap_or_default()
-            .iter()
-            .map(|x| (x.name.clone(), i16::try_from(x.value).unwrap_or(0)))
+            .into_iter()
+            .map(|x| (x.name, i16::try_from(x.value).unwrap_or(0)))
             .collect(),
-        saving_throws: saving_throws?,
-        ac: creature_ac?,
+        saving_throws: fetch_creature_saving_throws(pool, gs, creature_id).await?,
+        ac: fetch_creature_scalar(pool, gs, creature_id, "ac").await?,
     })
 }
 
@@ -908,5 +806,51 @@ pub async fn fetch_creature_scales(pool: &PgPool) -> Result<CreatureScales> {
         .into_iter()
         .map(|n| (n.level, n))
         .collect(),
+    })
+}
+
+pub async fn fetch_paginated_creatures(
+    pool: &PgPool,
+    gs: GameSystem,
+    filters: &CreatureFieldFilters,
+    sort_by: CreatureSortEnum,
+    order_by: OrderEnum,
+    cursor: u32,
+    page_size: i16,
+) -> Result<Vec<CreatureCoreData>> {
+    let cr_core: Vec<CreatureCoreData> = sqlx::query_as(sqlx::AssertSqlSafe(
+        prepare_paginated_get_creatures_listing(gs, filters, sort_by, order_by, cursor, page_size),
+    ))
+    .fetch_all(pool)
+    .await?;
+    Ok(update_creatures_core_with_traits(pool, gs, cr_core).await)
+}
+
+pub async fn fetch_creatures_listing_count(
+    pool: &PgPool,
+    gs: GameSystem,
+    filters: &CreatureFieldFilters,
+) -> Result<i64> {
+    Ok(
+        sqlx::query_scalar(sqlx::AssertSqlSafe(prepare_count_creatures_listing(
+            gs, filters,
+        )))
+        .fetch_one(pool)
+        .await?,
+    )
+}
+
+pub async fn fetch_creature_ranges(pool: &PgPool, gs: GameSystem) -> Result<BestiaryRanges> {
+    let from = format!("FROM {gs}_creature_core WHERE status = 'valid'");
+    let (min_hp, max_hp) = fetch_col_range(pool, "hp", &from).await?;
+    let (min_level, max_level) = fetch_col_range(pool, "level", &from).await?;
+    let (min_focus_points, max_focus_points) = fetch_col_range(pool, "focus_points", &from).await?;
+    Ok(BestiaryRanges {
+        min_hp,
+        max_hp,
+        min_level,
+        max_level,
+        min_focus_points,
+        max_focus_points,
     })
 }

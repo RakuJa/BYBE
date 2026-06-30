@@ -7,6 +7,7 @@ use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use crate::models::shared::status_enum::Status;
 use crate::traits::filterable::Filterable;
+use crate::traits::traits_enrichable::TraitsEnrichable;
 use ordered_float::OrderedFloat;
 use ordered_float_to_schema::ordered_float_to_schema;
 use serde::{Deserialize, Serialize};
@@ -191,5 +192,17 @@ impl Filterable for Item {
                 GameSystemVersionEnum::Remaster => self.remaster,
                 GameSystemVersionEnum::Any => true,
             }
+    }
+}
+
+impl TraitsEnrichable for Item {
+    fn entity_id(&self) -> i64 {
+        self.id
+    }
+    fn set_traits(&mut self, traits: Vec<String>) {
+        self.traits = traits;
+    }
+    fn entity_name() -> &'static str {
+        "item"
     }
 }
