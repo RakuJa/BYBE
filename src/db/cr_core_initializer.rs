@@ -17,8 +17,6 @@ async fn create_and_populate_core_table(pool: &PgPool, gs: GameSystem) -> Result
     .execute(&mut *conn)
     .await?;
 
-    // ---------------------------------------------------------------------
-    // Scoring model (unchanged from the original Rust logic):
     // score  = sum of distance terms (lower = closer to the ideal role)
     // result = ROUND(EXP(-0.2 * score) * 100)
     sqlx::query(AssertSqlSafe(format!(r#"
