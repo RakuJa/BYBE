@@ -164,7 +164,10 @@ async fn get_all_keys(app_state: &AppState, gs: GameSystem) -> FieldsUniqueValue
             .await,
         list_of_traits: fetch_traits_associated_with_creatures(&app_state.pool, gs)
             .await
-            .unwrap_or_default(),
+            .unwrap_or_default()
+            .into_iter()
+            .map(|x| x.name)
+            .collect(),
         list_of_sources: fetch_unique_values_from_db(app_state, table.clone(), "source".into())
             .await,
         list_of_sizes: fetch_unique_values_from_db(app_state, table.clone(), "size".into()).await,

@@ -149,6 +149,7 @@ impl Filterable for Creature {
             x.iter().any(|filter_trait| {
                 self.core_data.traits.iter().any(|cr_trait| {
                     cr_trait
+                        .name
                         .to_lowercase()
                         .contains(filter_trait.to_lowercase().as_str())
                 })
@@ -157,6 +158,7 @@ impl Filterable for Creature {
             x.iter().any(|filter_trait| {
                 self.core_data.traits.iter().any(|cr_trait| {
                     cr_trait
+                        .name
                         .to_lowercase()
                         .eq(filter_trait.to_lowercase().as_str())
                 })

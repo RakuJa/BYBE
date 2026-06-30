@@ -13,6 +13,7 @@ use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::action::{Action, CoreAction};
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
+use crate::models::shared::trait_data::TraitData;
 use anyhow::Result;
 use sqlx::PgPool;
 
@@ -52,18 +53,18 @@ async fn update_hazards_core_with_traits(
 pub async fn fetch_traits_associated_with_hazards(
     pool: &PgPool,
     gs: GameSystem,
-) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+) -> Result<Vec<TraitData>> {
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT
-            tt.name
+            tt.name, tt.description
         FROM {gs}_trait_hazard_association_table tcat
             LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name GROUP BY tt.name",
     )))
     .fetch_all(pool)
     .await?
     .iter()
-    .filter(|x: &&String| !ALIGNMENT_TRAITS.contains(&&*x.to_uppercase()))
+    .filter(|x: &&TraitData| !ALIGNMENT_TRAITS.contains(&&*x.name.to_uppercase()))
     .cloned()
     .collect())
 }
@@ -72,7 +73,7 @@ pub async fn fetch_hazard_traits(
     pool: &PgPool,
     gs: GameSystem,
     hazard_id: i64,
-) -> Result<Vec<String>> {
+) -> Result<Vec<TraitData>> {
     fetch_entity_traits(pool, gs, "hazard", hazard_id).await
 }
 

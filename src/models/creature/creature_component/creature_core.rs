@@ -4,6 +4,7 @@ use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
 use crate::models::shared::status_enum::Status;
+use crate::models::shared::trait_data::TraitData;
 use crate::traits::traits_enrichable::TraitsEnrichable;
 use bon::bon;
 use serde::{Deserialize, Serialize};
@@ -18,7 +19,7 @@ use utoipa::ToSchema;
 pub struct CreatureCoreData {
     pub essential: EssentialData,
     pub derived: DerivedData,
-    pub traits: Vec<String>,
+    pub traits: Vec<TraitData>,
 }
 #[derive(Serialize, Deserialize, Clone, ToSchema, Eq, Hash, PartialEq, Debug)]
 pub struct EssentialData {
@@ -150,7 +151,7 @@ impl TraitsEnrichable for CreatureCoreData {
     fn entity_id(&self) -> i64 {
         self.essential.id
     }
-    fn set_traits(&mut self, traits: Vec<String>) {
+    fn set_traits(&mut self, traits: Vec<TraitData>) {
         self.traits = traits;
     }
     fn entity_name() -> &'static str {

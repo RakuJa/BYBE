@@ -51,6 +51,7 @@ use crate::models::scales_struct::strike_dmg_scales::StrikeDmgScales;
 use crate::models::shared::action::{Action, CoreAction};
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
+use crate::models::shared::trait_data::TraitData;
 use anyhow::Result;
 use futures::future::join_all;
 use sqlx::PgPool;
@@ -244,25 +245,26 @@ pub async fn fetch_creature_traits(
     pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
-) -> Result<Vec<String>> {
+) -> Result<Vec<TraitData>> {
     fetch_entity_traits(pool, gs, "creature", creature_id).await
 }
 
 pub async fn fetch_all_creature_traits(
     pool: &PgPool,
     gs: GameSystem,
-) -> Result<HashMap<i64, Vec<String>>> {
-    let rows: Vec<(i64, String)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT a.creature_id, t.name
+) -> Result<HashMap<i64, Vec<TraitData>>> {
+    let rows: Vec<(i64, String, Option<String>)> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT a.creature_id, t.name, t.description
          FROM {gs}_trait_creature_association_table a
          JOIN {gs}_trait_table t ON t.name = a.trait_id"
     )))
     .fetch_all(pool)
     .await?;
-
-    let mut map: HashMap<i64, Vec<String>> = HashMap::new();
-    for (creature_id, trait_name) in rows {
-        map.entry(creature_id).or_default().push(trait_name);
+    let mut map: HashMap<i64, Vec<TraitData>> = HashMap::new();
+    for (creature_id, name, description) in rows {
+        map.entry(creature_id)
+            .or_default()
+            .push(TraitData { name, description });
     }
     Ok(map)
 }
@@ -543,7 +545,7 @@ async fn fetch_creature_core_data(
         .await
         .unwrap_or_default()
         .into_iter()
-        .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.as_str().to_uppercase()))
+        .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.name.as_str().to_uppercase()))
         .collect();
     Ok(cr_core)
 }
@@ -559,18 +561,18 @@ async fn update_creatures_core_with_traits(
 pub async fn fetch_traits_associated_with_creatures(
     pool: &PgPool,
     gs: GameSystem,
-) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
+) -> Result<Vec<TraitData>> {
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT
-            tt.name
+            tt.name, tt.description
         FROM {gs}_trait_creature_association_table tcat
             LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name GROUP BY tt.name",
     )))
     .fetch_all(pool)
     .await?
     .iter()
-    .filter(|x: &&String| !ALIGNMENT_TRAITS.contains(&&*x.to_uppercase()))
+    .filter(|x: &&TraitData| !ALIGNMENT_TRAITS.contains(&&*x.name.to_uppercase()))
     .cloned()
     .collect())
 }

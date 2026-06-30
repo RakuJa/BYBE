@@ -6,3 +6,4 @@ pub mod range_data;
 pub mod rarity_enum;
 pub mod size_enum;
 pub mod status_enum;
+pub mod trait_data;

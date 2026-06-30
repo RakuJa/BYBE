@@ -81,6 +81,9 @@ pub async fn get_all_traits(app_state: &AppState, gs: GameSystem) -> Vec<String>
     fetch_traits_associated_with_hazards(&app_state.pool, gs)
         .await
         .unwrap_or_default()
+        .into_iter()
+        .map(|x| x.name)
+        .collect()
 }
 #[cfg_attr(feature = "cache", cached(key = "i64", convert = r##"{ gs.into() }"##))]
 pub async fn get_hazard_ranges(app_state: &AppState, gs: GameSystem) -> Option<HazardRanges> {

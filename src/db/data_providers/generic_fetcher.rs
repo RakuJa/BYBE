@@ -1,6 +1,7 @@
 use crate::models::item::weapon_struct::DamageData;
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
 use crate::models::shared::game_system_enum::GameSystem;
+use crate::models::shared::trait_data::TraitData;
 use crate::traits::traits_enrichable::TraitsEnrichable;
 use anyhow::Result;
 use sqlx::PgPool;
@@ -11,18 +12,22 @@ pub(crate) async fn fetch_entity_traits(
     gs: GameSystem,
     entity: &str,
     entity_id: i64,
-) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT name FROM {gs}_trait_table INTERSECT
-         SELECT trait_id FROM {gs}_trait_{entity}_association_table WHERE {entity}_id = $1
-         ORDER BY name"
+) -> Result<Vec<TraitData>> {
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT t.name, t.description FROM {gs}_trait_table t JOIN
+        {gs}_trait_{entity}_association_table a ON a.trait_id = t.name
+        WHERE a.{entity}_id = $1 ORDER BY t.name"
     )))
     .bind(entity_id)
     .fetch_all(pool)
     .await?)
 }
 
-pub async fn fetch_item_traits(pool: &PgPool, gs: GameSystem, item_id: i64) -> Result<Vec<String>> {
+pub async fn fetch_item_traits(
+    pool: &PgPool,
+    gs: GameSystem,
+    item_id: i64,
+) -> Result<Vec<TraitData>> {
     fetch_entity_traits(pool, gs, "item", item_id).await
 }
 
@@ -30,7 +35,7 @@ pub async fn fetch_weapon_traits(
     pool: &PgPool,
     gs: GameSystem,
     weapon_id: i64,
-) -> Result<Vec<String>> {
+) -> Result<Vec<TraitData>> {
     fetch_entity_traits(pool, gs, "weapon", weapon_id).await
 }
 
@@ -38,7 +43,7 @@ pub async fn fetch_shield_traits(
     pool: &PgPool,
     gs: GameSystem,
     shield_id: i64,
-) -> Result<Vec<String>> {
+) -> Result<Vec<TraitData>> {
     fetch_entity_traits(pool, gs, "shield", shield_id).await
 }
 
@@ -46,7 +51,7 @@ pub async fn fetch_armor_traits(
     pool: &PgPool,
     gs: GameSystem,
     armor_id: i64,
-) -> Result<Vec<String>> {
+) -> Result<Vec<TraitData>> {
     fetch_entity_traits(pool, gs, "armor", armor_id).await
 }
 
@@ -92,9 +97,9 @@ pub async fn fetch_action_traits(
     pool: &PgPool,
     gs: GameSystem,
     action_id: i64,
-) -> Result<Vec<String>> {
-    Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
-        "SELECT tt.name
+) -> Result<Vec<TraitData>> {
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT tt.name, tt.description
         FROM {gs}_trait_action_association_table tcat
             LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name WHERE action_id = $1 GROUP BY tt.name",
     ))).bind(action_id)
@@ -165,7 +170,7 @@ pub async fn enrich_with_traits<T: TraitsEnrichable>(
         let traits = if filter_alignment {
             traits
                 .into_iter()
-                .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.as_str().to_uppercase()))
+                .filter(|x| !ALIGNMENT_TRAITS.contains(&&*x.name.as_str().to_uppercase()))
                 .collect()
         } else {
             traits
