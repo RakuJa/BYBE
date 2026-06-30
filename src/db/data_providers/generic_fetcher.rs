@@ -15,7 +15,7 @@ pub(crate) async fn fetch_entity_traits(
     entity_id: i64,
 ) -> Result<Vec<TraitData>> {
     Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT t.name, t.description FROM {gs}_trait_table t JOIN
+        "SELECT t.name, t.description, t.display_name FROM {gs}_trait_table t JOIN
         {gs}_trait_{entity}_association_table a ON a.trait_id = t.name
         WHERE a.{entity}_id = $1 ORDER BY t.name"
     )))
@@ -133,7 +133,7 @@ pub async fn fetch_action_traits(
     action_id: i64,
 ) -> Result<Vec<TraitData>> {
     Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT tt.name, tt.description
+        "SELECT tt.name, tt.description, tt.display_name
         FROM {gs}_trait_action_association_table tcat
             LEFT JOIN {gs}_trait_table tt ON tcat.trait_id = tt.name WHERE action_id = $1 GROUP BY tt.name",
     ))).bind(action_id)
