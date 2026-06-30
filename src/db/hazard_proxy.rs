@@ -36,10 +36,7 @@ pub async fn get_paginated_hazards(
     filters: &HazardFieldFilters,
     pagination: &HazardListingPaginatedRequest,
 ) -> Result<(u32, Vec<ResponseHazard>)> {
-    let count = hazard_fetcher::fetch_hazards_listing_count(&app_state.pool, gs, filters)
-        .await
-        .unwrap_or(0) as u32;
-    let hazards = hazard_fetcher::fetch_paginated_hazards(
+    let (hazards, count) = hazard_fetcher::fetch_paginated_hazards(
         &app_state.pool,
         gs,
         filters,
@@ -53,6 +50,7 @@ pub async fn get_paginated_hazards(
         pagination.paginated_request.page_size,
     )
     .await?;
+    let count = count as u32;
     let response_hazards = hazards
         .into_iter()
         .map(|h| ResponseHazard {

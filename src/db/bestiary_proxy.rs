@@ -56,10 +56,7 @@ pub async fn get_paginated_creatures(
     filters: &CreatureFieldFilters,
     pagination: &BestiaryPaginatedRequest,
 ) -> Result<(u32, Vec<Creature>)> {
-    let count = creature_fetcher::fetch_creatures_listing_count(&app_state.pool, gs, filters)
-        .await
-        .unwrap_or(0) as u32;
-    let core_data = creature_fetcher::fetch_paginated_creatures(
+    let (core_data, count) = creature_fetcher::fetch_paginated_creatures(
         &app_state.pool,
         gs,
         filters,
@@ -69,6 +66,7 @@ pub async fn get_paginated_creatures(
         pagination.paginated_request.page_size,
     )
     .await?;
+    let count = count as u32;
     let creatures = core_data
         .into_iter()
         .map(|x| Creature::from_core(x, gs))

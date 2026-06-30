@@ -29,10 +29,7 @@ pub async fn get_paginated_items(
     filters: &ItemFieldFilters,
     pagination: &ShopPaginatedRequest,
 ) -> Result<(u32, Vec<ResponseItem>)> {
-    let count = shop_fetcher::fetch_items_listing_count(&app_state.pool, gs, filters)
-        .await
-        .unwrap_or(0) as u32;
-    let items = shop_fetcher::fetch_paginated_items(
+    let (items, count) = shop_fetcher::fetch_paginated_items(
         &app_state.pool,
         gs,
         filters,
@@ -42,7 +39,7 @@ pub async fn get_paginated_items(
         pagination.paginated_request.page_size,
     )
     .await?;
-    Ok((count, items))
+    Ok((count as u32, items))
 }
 
 #[cfg_attr(feature = "cache", cached(key = "i64", convert = r##"{ gs.into() }"##))]
