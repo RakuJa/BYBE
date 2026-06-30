@@ -1,6 +1,7 @@
 use crate::AppState;
 use crate::models::npc::request_npc_struct::{AncestryData, RandomNameData, RandomNpcData};
 use anyhow::bail;
+#[cfg(feature = "cache")]
 use cached::cached;
 use itertools::Itertools;
 use nanorand::Rng;

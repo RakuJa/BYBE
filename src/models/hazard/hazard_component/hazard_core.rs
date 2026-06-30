@@ -13,10 +13,11 @@ pub struct HazardEssentialData {
     pub name: String,
 
     // Attributes
-    pub ac: i64,
+    pub ac: Option<i64>,
     pub hardness: i64,
     pub has_health: bool,
-    pub hp: i64,
+    pub hp: Option<i64>,
+    pub hp_details: Option<String>,
     pub stealth: i64,
     pub stealth_detail: String,
 
@@ -46,10 +47,11 @@ impl<'r> FromRow<'r, PgRow> for HazardEssentialData {
         Ok(Self {
             id: row.try_get("id")?,
             name: row.try_get("name")?,
-            ac: get_i32_as_i64(row, "ac")?,
+            ac: get_opt_i32_as_i64(row, "ac"),
             hardness: get_i32_as_i64(row, "hardness")?,
             has_health: row.try_get("has_health")?,
-            hp: get_i32_as_i64(row, "hp")?,
+            hp: get_opt_i32_as_i64(row, "hp"),
+            hp_details: row.try_get("hp_details").ok(),
             stealth: get_i32_as_i64(row, "stealth")?,
             stealth_detail: row.try_get("stealth_detail")?,
             description: row.try_get("description")?,
