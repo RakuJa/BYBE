@@ -1,7 +1,9 @@
 use crate::db::data_providers::generic_fetcher::{
     fetch_armor_runes, fetch_item_traits, fetch_weapon_damage_data, fetch_weapon_runes,
 };
-use crate::db::data_providers::raw_query_builder::prepare_filtered_get_items;
+use crate::db::data_providers::raw_query_builder::{
+    format_pagination_clause, prepare_filtered_get_items,
+};
 use crate::models::item::armor_struct::{Armor, ArmorData};
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_struct::Item;
@@ -12,26 +14,22 @@ use crate::models::response_data::ResponseItem;
 use crate::models::shared::game_system_enum::GameSystem;
 use anyhow::Result;
 use nanorand::{Rng, WyRand};
-use sqlx::{Pool, Sqlite, query_as};
+use sqlx::{PgPool, query_as};
 use tracing::debug;
 
-pub async fn fetch_item_by_id(
-    conn: &Pool<Sqlite>,
-    gs: GameSystem,
-    item_id: i64,
-) -> Result<ResponseItem> {
+pub async fn fetch_item_by_id(pool: &PgPool, gs: GameSystem, item_id: i64) -> Result<ResponseItem> {
     let mut item: Item = sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT * FROM {gs}_item_table WHERE status = 'valid' AND id = ? ORDER BY name LIMIT 1"
+        "SELECT * FROM {gs}_item_table WHERE status = 'valid' AND id = $1 ORDER BY name LIMIT 1"
     )))
     .bind(item_id)
-    .fetch_one(conn)
+    .fetch_one(pool)
     .await?;
-    item.traits = fetch_item_traits(conn, gs, item_id).await?;
+    item.traits = fetch_item_traits(pool, gs, item_id).await?;
     Ok(match item.item_type {
         ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => ResponseItem::from((item, gs)),
         ItemTypeEnum::Weapon => ResponseItem {
             core_item: item,
-            weapon_data: fetch_weapon_data_by_item_id(conn, gs, item_id).await.ok(),
+            weapon_data: fetch_weapon_data_by_item_id(pool, gs, item_id).await.ok(),
             armor_data: None,
             shield_data: None,
             game: gs,
@@ -39,7 +37,7 @@ pub async fn fetch_item_by_id(
         ItemTypeEnum::Armor => ResponseItem {
             core_item: item,
             weapon_data: None,
-            armor_data: fetch_armor_data_by_item_id(conn, gs, item_id).await.ok(),
+            armor_data: fetch_armor_data_by_item_id(pool, gs, item_id).await.ok(),
             shield_data: None,
             game: gs,
         },
@@ -47,17 +45,13 @@ pub async fn fetch_item_by_id(
             core_item: item,
             weapon_data: None,
             armor_data: None,
-            shield_data: fetch_shield_data_by_item_id(conn, gs, item_id).await.ok(),
+            shield_data: fetch_shield_data_by_item_id(pool, gs, item_id).await.ok(),
             game: gs,
         },
     })
 }
 
-async fn fetch_weapon_by_item_id(
-    conn: &Pool<Sqlite>,
-    gs: GameSystem,
-    item_id: i64,
-) -> Result<Weapon> {
+async fn fetch_weapon_by_item_id(pool: &PgPool, gs: GameSystem, item_id: i64) -> Result<Weapon> {
     let mut weapon: Weapon = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT wt.id AS weapon_id, wt.to_hit_bonus,
@@ -70,20 +64,16 @@ async fn fetch_weapon_by_item_id(
         "
     )))
     .bind(item_id)
-    .fetch_one(conn)
+    .fetch_one(pool)
     .await?;
-    weapon.item_core.traits = fetch_item_traits(conn, gs, item_id).await?;
-    weapon.weapon_data.property_runes = fetch_weapon_runes(conn, gs, weapon.weapon_data.id).await?;
+    weapon.item_core.traits = fetch_item_traits(pool, gs, item_id).await?;
+    weapon.weapon_data.property_runes = fetch_weapon_runes(pool, gs, weapon.weapon_data.id).await?;
     weapon.weapon_data.damage_data =
-        fetch_weapon_damage_data(conn, gs, weapon.weapon_data.id).await?;
+        fetch_weapon_damage_data(pool, gs, weapon.weapon_data.id).await?;
     Ok(weapon)
 }
 
-async fn fetch_armor_by_item_id(
-    conn: &Pool<Sqlite>,
-    gs: GameSystem,
-    item_id: i64,
-) -> Result<Armor> {
+async fn fetch_armor_by_item_id(pool: &PgPool, gs: GameSystem, item_id: i64) -> Result<Armor> {
     let mut armor: Armor = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
@@ -95,18 +85,14 @@ async fn fetch_armor_by_item_id(
         "
     )))
     .bind(item_id)
-    .fetch_one(conn)
+    .fetch_one(pool)
     .await?;
-    armor.item_core.traits = fetch_item_traits(conn, gs, item_id).await?;
-    armor.armor_data.property_runes = fetch_armor_runes(conn, gs, armor.armor_data.id).await?;
+    armor.item_core.traits = fetch_item_traits(pool, gs, item_id).await?;
+    armor.armor_data.property_runes = fetch_armor_runes(pool, gs, armor.armor_data.id).await?;
     Ok(armor)
 }
 
-async fn fetch_shield_by_item_id(
-    conn: &Pool<Sqlite>,
-    gs: GameSystem,
-    item_id: i64,
-) -> Result<Shield> {
+async fn fetch_shield_by_item_id(pool: &PgPool, gs: GameSystem, item_id: i64) -> Result<Shield> {
     let mut shield: Shield = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty,
@@ -117,67 +103,67 @@ async fn fetch_shield_by_item_id(
         "
     )))
     .bind(item_id)
-    .fetch_one(conn)
+    .fetch_one(pool)
     .await?;
-    shield.item_core.traits = fetch_item_traits(conn, gs, item_id).await?;
+    shield.item_core.traits = fetch_item_traits(pool, gs, item_id).await?;
     Ok(shield)
 }
 
 async fn fetch_weapon_data_by_item_id(
-    conn: &Pool<Sqlite>,
+    pool: &PgPool,
     gs: GameSystem,
     item_id: i64,
 ) -> Result<WeaponData> {
-    Ok(fetch_weapon_by_item_id(conn, gs, item_id)
+    Ok(fetch_weapon_by_item_id(pool, gs, item_id)
         .await?
         .weapon_data)
 }
 
 async fn fetch_armor_data_by_item_id(
-    conn: &Pool<Sqlite>,
+    pool: &PgPool,
     gs: GameSystem,
     item_id: i64,
 ) -> Result<ArmorData> {
-    Ok(fetch_armor_by_item_id(conn, gs, item_id).await?.armor_data)
+    Ok(fetch_armor_by_item_id(pool, gs, item_id).await?.armor_data)
 }
 
 async fn fetch_shield_data_by_item_id(
-    conn: &Pool<Sqlite>,
+    pool: &PgPool,
     gs: GameSystem,
     item_id: i64,
 ) -> Result<ShieldData> {
-    Ok(fetch_shield_by_item_id(conn, gs, item_id)
+    Ok(fetch_shield_by_item_id(pool, gs, item_id)
         .await?
         .shield_data)
 }
 
 pub async fn fetch_items(
-    conn: &Pool<Sqlite>,
+    pool: &PgPool,
     gs: GameSystem,
-    cursor: u32,
+    cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Item>> {
+    let pagination = format_pagination_clause(cursor, page_size);
     let items: Vec<Item> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT * FROM {gs}_item_table
         WHERE is_derived = False AND status = 'valid'
-            AND UPPER(item_type) == 'EQUIPMENT' OR UPPER(item_type) == 'CONSUMABLE'
+            AND UPPER(item_type) = 'EQUIPMENT' OR UPPER(item_type) = 'CONSUMABLE'
         GROUP BY id
-        ORDER BY name LIMIT ?,?"
+        ORDER BY name {pagination}"
     )))
-    .bind(cursor)
-    .bind(page_size)
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?;
-    Ok(update_items_with_traits(conn, gs, items).await)
+    Ok(update_items_with_traits(pool, gs, items).await)
 }
 
 pub async fn fetch_weapons(
-    conn: &Pool<Sqlite>,
+    pool: &PgPool,
     gs: GameSystem,
-    cursor: u32,
+    cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Weapon>> {
+    let pagination = format_pagination_clause(cursor, page_size);
     let x: Vec<Weapon> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
@@ -187,29 +173,28 @@ pub async fn fetch_weapons(
         LEFT JOIN {gs}_item_table it ON wt.base_item_id = it.id
         WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
-        ORDER BY name LIMIT ?,?
+        ORDER BY name {pagination}
     "
     )))
-    .bind(cursor)
-    .bind(page_size)
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?;
     let mut result_vec = Vec::new();
     for mut el in x {
-        el.item_core.traits = fetch_item_traits(conn, gs, el.item_core.id).await?;
-        el.weapon_data.property_runes = fetch_weapon_runes(conn, gs, el.weapon_data.id).await?;
-        el.weapon_data.damage_data = fetch_weapon_damage_data(conn, gs, el.weapon_data.id).await?;
+        el.item_core.traits = fetch_item_traits(pool, gs, el.item_core.id).await?;
+        el.weapon_data.property_runes = fetch_weapon_runes(pool, gs, el.weapon_data.id).await?;
+        el.weapon_data.damage_data = fetch_weapon_damage_data(pool, gs, el.weapon_data.id).await?;
         result_vec.push(el);
     }
     Ok(result_vec)
 }
 
 pub async fn fetch_armors(
-    conn: &Pool<Sqlite>,
+    pool: &PgPool,
     gs: GameSystem,
-    cursor: u32,
+    cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Armor>> {
+    let pagination = format_pagination_clause(cursor, page_size);
     let x: Vec<Armor> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
@@ -218,28 +203,27 @@ pub async fn fetch_armors(
         LEFT JOIN {gs}_item_table it ON at.base_item_id = it.id
         WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
-        ORDER BY name LIMIT ?,?
+        ORDER BY name {pagination}
     "
     )))
-    .bind(cursor)
-    .bind(page_size)
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?;
     let mut result_vec = Vec::new();
     for mut el in x {
-        el.item_core.traits = fetch_item_traits(conn, gs, el.item_core.id).await?;
-        el.armor_data.property_runes = fetch_armor_runes(conn, gs, el.armor_data.id).await?;
+        el.item_core.traits = fetch_item_traits(pool, gs, el.item_core.id).await?;
+        el.armor_data.property_runes = fetch_armor_runes(pool, gs, el.armor_data.id).await?;
         result_vec.push(el);
     }
     Ok(result_vec)
 }
 
 pub async fn fetch_shields(
-    conn: &Pool<Sqlite>,
+    pool: &PgPool,
     gs: GameSystem,
-    cursor: u32,
+    cursor: i64,
     page_size: i16,
 ) -> Result<Vec<Shield>> {
+    let pagination = format_pagination_clause(cursor, page_size);
     let x: Vec<Shield> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT st.id AS shield_id, st.bonus_ac, st.n_of_reinforcing_runes, st.speed_penalty, it.*
@@ -247,39 +231,37 @@ pub async fn fetch_shields(
         LEFT JOIN {gs}_item_table it ON st.base_item_id = it.id
         WHERE it.is_derived = False AND it.status = 'valid'
         GROUP BY it.id
-        ORDER BY name LIMIT ?,?
+        ORDER BY name {pagination}
     "
     )))
-    .bind(cursor)
-    .bind(page_size)
-    .fetch_all(conn)
+    .fetch_all(pool)
     .await?;
     let mut result_vec = Vec::new();
     for mut el in x {
-        el.item_core.traits = fetch_item_traits(conn, gs, el.item_core.id).await?;
+        el.item_core.traits = fetch_item_traits(pool, gs, el.item_core.id).await?;
         result_vec.push(el);
     }
     Ok(result_vec)
 }
 
 async fn update_items_with_traits(
-    conn: &Pool<Sqlite>,
+    pool: &PgPool,
     gs: GameSystem,
     mut items: Vec<Item>,
 ) -> Vec<Item> {
     for item in &mut items {
-        item.traits = fetch_item_traits(conn, gs, item.id).await.unwrap_or(vec![]);
+        item.traits = fetch_item_traits(pool, gs, item.id).await.unwrap_or(vec![]);
     }
     items
 }
 
 pub async fn fetch_items_with_filters(
-    conn: &Pool<Sqlite>,
+    pool: &PgPool,
     gs: GameSystem,
     filters: &ShopFilterQuery,
 ) -> Result<Vec<Item>> {
     let items: Vec<Item> = query_as(sqlx::AssertSqlSafe(prepare_filtered_get_items(gs, filters)))
-        .fetch_all(conn)
+        .fetch_all(pool)
         .await?;
     let equipment: Vec<&Item> = items
         .iter()

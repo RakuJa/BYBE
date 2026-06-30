@@ -1,3 +1,4 @@
+pub mod pg_type_helper;
 pub mod raw_language;
 pub mod raw_speed;
 pub mod raw_weakness;

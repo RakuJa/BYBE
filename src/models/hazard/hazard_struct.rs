@@ -7,7 +7,7 @@ use crate::traits::filterable::Filterable;
 use crate::traits::has_complexity::HasComplexity;
 use crate::traits::has_level::HasLevel;
 use serde::{Deserialize, Serialize};
-use sqlx::sqlite::SqliteRow;
+use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow};
 use utoipa::ToSchema;
 
@@ -188,8 +188,8 @@ impl Filterable for Hazard {
     }
 }
 
-impl<'r> FromRow<'r, SqliteRow> for Hazard {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for Hazard {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         Ok(Self {
             essential: HazardEssentialData::from_row(row)?,
             traits: vec![],

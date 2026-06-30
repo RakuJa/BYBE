@@ -17,7 +17,7 @@ use cached::cached;
 use itertools::Itertools;
 
 pub async fn get_item_by_id(app_state: &AppState, gs: GameSystem, id: i64) -> Option<ResponseItem> {
-    shop_fetcher::fetch_item_by_id(&app_state.conn, gs, id)
+    shop_fetcher::fetch_item_by_id(&app_state.pool, gs, id)
         .await
         .ok()
 }
@@ -27,7 +27,7 @@ pub async fn get_filtered_items(
     gs: GameSystem,
     filters: &ShopFilterQuery,
 ) -> Result<Vec<Item>> {
-    shop_fetcher::fetch_items_with_filters(&app_state.conn, gs, filters).await
+    shop_fetcher::fetch_items_with_filters(&app_state.pool, gs, filters).await
 }
 
 pub async fn get_paginated_items(
@@ -77,70 +77,78 @@ pub async fn get_paginated_items(
 
 /// Gets all the items from the DB.
 async fn get_all_items_from_db(app_state: &AppState, gs: GameSystem) -> Result<Vec<Item>> {
-    shop_fetcher::fetch_items(&app_state.conn, gs, 0, -1).await
+    shop_fetcher::fetch_items(&app_state.pool, gs, 0, -1).await
 }
 
 /// Gets all the weapons from the DB.
 async fn get_all_weapons_from_db(app_state: &AppState, gs: GameSystem) -> Result<Vec<Weapon>> {
-    shop_fetcher::fetch_weapons(&app_state.conn, gs, 0, -1).await
+    shop_fetcher::fetch_weapons(&app_state.pool, gs, 0, -1).await
 }
 
 /// Gets all the armors from the DB.
 async fn get_all_armors_from_db(app_state: &AppState, gs: GameSystem) -> Result<Vec<Armor>> {
-    shop_fetcher::fetch_armors(&app_state.conn, gs, 0, -1).await
+    shop_fetcher::fetch_armors(&app_state.pool, gs, 0, -1).await
 }
 
 /// Gets all the shields from the DB.
 async fn get_all_shields_from_db(app_state: &AppState, gs: GameSystem) -> Result<Vec<Shield>> {
-    shop_fetcher::fetch_shields(&app_state.conn, gs, 0, -1).await
+    shop_fetcher::fetch_shields(&app_state.pool, gs, 0, -1).await
 }
 
 /// Infallible method, it will expose a vector representing the values fetched from db or empty vec
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 async fn get_list(app_state: &AppState, gs: GameSystem) -> Vec<ResponseItem> {
-    let mut response_vec = Vec::new();
-    for el in get_all_items_from_db(app_state, gs).await.unwrap_or(vec![]) {
-        response_vec.push(ResponseItem {
+    let mut response_vec: Vec<ResponseItem> = get_all_items_from_db(app_state, gs)
+        .await
+        .unwrap_or_default()
+        .into_iter()
+        .map(|el| ResponseItem {
             core_item: el,
             weapon_data: None,
             armor_data: None,
             shield_data: None,
             game: gs,
-        });
-    }
-    for el in get_all_weapons_from_db(app_state, gs)
-        .await
-        .unwrap_or(vec![])
-    {
-        response_vec.push(ResponseItem {
-            core_item: el.item_core,
-            weapon_data: Some(el.weapon_data),
-            armor_data: None,
-            shield_data: None,
-            game: gs,
-        });
-    }
-    for el in get_all_armors_from_db(app_state, gs)
-        .await
-        .unwrap_or(vec![])
-    {
-        response_vec.push(ResponseItem {
-            core_item: el.item_core,
-            weapon_data: None,
-            armor_data: Some(el.armor_data),
-            shield_data: None,
-            game: gs,
-        });
-    }
-    for el in get_all_shields_from_db(app_state, gs).await.unwrap() {
-        response_vec.push(ResponseItem {
-            core_item: el.item_core,
-            weapon_data: None,
-            armor_data: None,
-            shield_data: Some(el.shield_data),
-            game: gs,
-        });
-    }
+        })
+        .collect();
+    response_vec.extend(
+        get_all_weapons_from_db(app_state, gs)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|el| ResponseItem {
+                core_item: el.item_core,
+                weapon_data: Some(el.weapon_data),
+                armor_data: None,
+                shield_data: None,
+                game: gs,
+            }),
+    );
+    response_vec.extend(
+        get_all_armors_from_db(app_state, gs)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|el| ResponseItem {
+                core_item: el.item_core,
+                weapon_data: None,
+                armor_data: Some(el.armor_data),
+                shield_data: None,
+                game: gs,
+            }),
+    );
+    response_vec.extend(
+        get_all_shields_from_db(app_state, gs)
+            .await
+            .unwrap_or_default()
+            .into_iter()
+            .map(|el| ResponseItem {
+                core_item: el.item_core,
+                weapon_data: None,
+                armor_data: None,
+                shield_data: Some(el.shield_data),
+                game: gs,
+            }),
+    );
     response_vec
 }
 

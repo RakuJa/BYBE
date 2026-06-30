@@ -76,7 +76,7 @@ pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(
             .consumable_dices
             .iter()
             .map(Dice::roll)
-            .sum::<u16>(),
+            .sum::<u32>(),
     );
     let n_of_equippables = shop_data.equippable_dices.iter().map(Dice::roll).sum();
     // The request is correct, but will result in an empty list.
@@ -167,7 +167,7 @@ pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(
 /// Gets the n of: equipment, weapons, armors, shields (in this order).
 /// Changing order is considered a BREAKING CHANGE.
 pub fn calculate_n_of_equippable_values(
-    n_of_equippables: u16,
+    n_of_equippables: u32,
     percentages: (u8, u8, u8, u8),
 ) -> anyhow::Result<(i64, i64, i64, i64)> {
     let (e_p, w_p, a_p, s_p) = percentages;
@@ -279,7 +279,7 @@ mod tests {
     #[case(8, (10,20,20,30), (1,2,2,3))]
     #[case(8, (20,20,30,10), (2,2,3,1))]
     fn calculate_equippable_values_rounded_over_desired_total_case(
-        #[case] input_n_of_equippables: u16,
+        #[case] input_n_of_equippables: u32,
         #[case] input_percentages: (u8, u8, u8, u8),
         #[case] expected: (i64, i64, i64, i64),
     ) {
@@ -291,7 +291,7 @@ mod tests {
     #[rstest]
     #[case(0, (0,0,0,0), (25, 25, 25, 25))]
     fn calculate_equippable_values_with_all_0(
-        #[case] input_n_of_equippables: u16,
+        #[case] input_n_of_equippables: u32,
         #[case] input_percentages: (u8, u8, u8, u8),
         #[case] expected: (i64, i64, i64, i64),
     ) {
@@ -304,7 +304,7 @@ mod tests {
     #[case(0, (10,10,10,10), (0,0,0,0))]
     #[case(0, (10,20,10,0), (0,0,0,0))]
     fn calculate_equippable_values_zero_as_n_of_equippables(
-        #[case] input_n_of_equippables: u16,
+        #[case] input_n_of_equippables: u32,
         #[case] input_percentages: (u8, u8, u8, u8),
         #[case] expected: (i64, i64, i64, i64),
     ) {
@@ -318,7 +318,7 @@ mod tests {
     #[case(10, (10,10,0,0), (5,5,0,0))]
     #[case(10, (10,10,10,0), (4,3,3,0))]
     fn calculate_equippable_values_with_missing_percentages(
-        #[case] input_n_of_equippables: u16,
+        #[case] input_n_of_equippables: u32,
         #[case] input_percentages: (u8, u8, u8, u8),
         #[case] expected: (i64, i64, i64, i64),
     ) {

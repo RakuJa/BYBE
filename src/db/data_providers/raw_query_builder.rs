@@ -6,6 +6,14 @@ use crate::models::item::shop_structs::{ItemTableFieldsFilter, ShopFilterQuery};
 use crate::models::shared::game_system_enum::GameSystem;
 use tracing::debug;
 
+pub fn format_pagination_clause(cursor: i64, page_size: i16) -> String {
+    if page_size < 0 {
+        format!("LIMIT ALL OFFSET {cursor}")
+    } else {
+        format!("LIMIT {page_size} OFFSET {cursor}")
+    }
+}
+
 pub fn prepare_filtered_get_items(gs: GameSystem, shop_filter_query: &ShopFilterQuery) -> String {
     let equipment_query = prepare_item_subquery(
         gs,
@@ -214,6 +222,41 @@ where
     in_string
 }
 
+fn prepare_in_statement_inner<I, S>(
+    column_name: &str,
+    column_values: I,
+    case_insensitive: bool,
+) -> String
+where
+    I: Iterator<Item = S>,
+    S: ToString,
+{
+    let mut result_string = String::new();
+    let mut x = column_values.peekable();
+    if x.peek().is_some() {
+        if case_insensitive {
+            result_string.push_str(&format!("UPPER({column_name})"));
+        } else {
+            result_string.push_str(column_name);
+        }
+        result_string.push_str(" IN (");
+        x.for_each(|v| {
+            let s = v.to_string();
+            if case_insensitive {
+                result_string.push_str(&format!("UPPER('{s}')"));
+            } else {
+                result_string.push_str(&s);
+            }
+            result_string.push(',');
+        });
+        if result_string.ends_with(',') {
+            result_string.remove(result_string.len() - 1);
+        }
+        result_string.push(')');
+    }
+    result_string
+}
+
 /// Prepares a case insensitive 'in' statement in the following format. Requires a string value in db
 /// ```SQL
 /// "UPPER(field) in (UPPER('el1'), UPPER('el2'), UPPER('el3'))"
@@ -223,22 +266,7 @@ where
     I: Iterator<Item = S>,
     S: ToString,
 {
-    let mut result_string = String::new();
-    let mut x = column_values.peekable();
-    if x.peek().is_some() {
-        result_string.push_str(format!("UPPER({column_name})").as_str());
-        result_string.push_str(" IN (");
-        x.for_each(|x| {
-            let str = x.to_string();
-            result_string.push_str(format!("UPPER('{str}')").as_str());
-            result_string.push(',');
-        });
-        if result_string.ends_with(',') {
-            result_string.remove(result_string.len() - 1);
-        }
-        result_string.push(')');
-    }
-    result_string
+    prepare_in_statement_inner(column_name, column_values, true)
 }
 
 /// Prepares an 'in' statement in the following format
@@ -250,21 +278,7 @@ where
     I: Iterator<Item = S>,
     S: ToString,
 {
-    let mut result_string = String::new();
-    let mut x = column_values.peekable();
-    if x.peek().is_some() {
-        result_string.push_str(column_name);
-        result_string.push_str(" IN (");
-        x.for_each(|x| {
-            result_string.push_str(x.to_string().as_str());
-            result_string.push(',');
-        });
-        if result_string.ends_with(',') {
-            result_string.remove(result_string.len() - 1);
-        }
-        result_string.push(')');
-    }
-    result_string
+    prepare_in_statement_inner(column_name, column_values, false)
 }
 
 fn prepare_item_subquery<I, S>(

@@ -1,6 +1,7 @@
+use crate::models::db::pg_type_helper::{get_i32_as_i64, get_opt_i32_as_i64};
 use crate::models::item::item_struct::Item;
 use serde::{Deserialize, Serialize};
-use sqlx::sqlite::SqliteRow;
+use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
 use utoipa::ToSchema;
 
@@ -30,21 +31,21 @@ pub struct ArmorData {
     pub strength_required: Option<i64>,
 }
 
-impl<'r> FromRow<'r, SqliteRow> for Armor {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for Armor {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let item_core = Item::from_row(row)?;
         Ok(Self {
             item_core,
             armor_data: ArmorData {
                 id: row.try_get("armor_id")?,
-                ac_bonus: row.try_get("bonus_ac")?,
-                check_penalty: row.try_get("check_penalty")?,
-                dex_cap: row.try_get("dex_cap")?,
-                n_of_potency_runes: row.try_get("n_of_potency_runes")?,
+                ac_bonus: get_i32_as_i64(row, "bonus_ac")?,
+                check_penalty: get_i32_as_i64(row, "check_penalty")?,
+                dex_cap: get_i32_as_i64(row, "dex_cap")?,
+                n_of_potency_runes: get_i32_as_i64(row, "n_of_potency_runes")?,
                 property_runes: vec![],
-                n_of_resilient_runes: row.try_get("n_of_resilient_runes")?,
-                speed_penalty: row.try_get("speed_penalty")?,
-                strength_required: row.try_get("strength_required").ok(),
+                n_of_resilient_runes: get_i32_as_i64(row, "n_of_resilient_runes")?,
+                speed_penalty: get_i32_as_i64(row, "speed_penalty")?,
+                strength_required: get_opt_i32_as_i64(row, "strength_required"),
             },
         })
     }

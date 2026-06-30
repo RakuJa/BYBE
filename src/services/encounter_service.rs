@@ -20,7 +20,7 @@ use crate::services::hazard_service::get_filtered_hazards;
 use anyhow::{bail, ensure};
 use itertools::Itertools;
 use std::collections::BTreeMap;
-use tracing::log::info;
+use tracing::log::debug;
 use tracing::warn;
 
 #[derive(Debug)]
@@ -261,30 +261,30 @@ async fn calculate_random_encounter(
         upper_bound: exp_range.upper_bound * pct / 100,
     };
 
-    let (creature_result, hazard_result) = tokio::join!(
-        calculate_random_creature_encounter(
-            app_state,
-            cr_encounter_data,
-            &enc_data.party_levels,
-            scale(cr_percentage),
-            adventure_group,
-            gs
-        ),
-        calculate_random_hazard_encounter(
-            app_state,
-            hz_encounter_data,
-            &enc_data.party_levels,
-            scale(hz_percentage),
-            gs
-        ),
-    );
+    let creature_result = calculate_random_creature_encounter(
+        app_state,
+        cr_encounter_data,
+        &enc_data.party_levels,
+        scale(cr_percentage),
+        adventure_group,
+        gs,
+    )
+    .await;
+    let hazard_result = calculate_random_hazard_encounter(
+        app_state,
+        hz_encounter_data,
+        &enc_data.party_levels,
+        scale(hz_percentage),
+        gs,
+    )
+    .await;
 
     let (creatures, cr_count) = creature_result
-        .inspect_err(|e| info!("Failed to calculate create encounter: {e}"))
+        .inspect_err(|e| debug!("Failed to calculate create encounter: {e}"))
         .map_or((None, 0), |e| (e.results, e.count));
 
     let (hazards, hz_count) = hazard_result
-        .inspect_err(|e| info!("Failed to calculate hazard encounter: {e}"))
+        .inspect_err(|e| debug!("Failed to calculate hazard encounter: {e}"))
         .map_or((None, 0), |e| (e.results, e.count));
 
     if creatures.is_none() && hazards.is_none() {

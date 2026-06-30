@@ -34,20 +34,20 @@ impl Default for PaginatedRequest {
 #[derive(Serialize, Deserialize, ToSchema, Eq, PartialEq, Hash, Clone, Debug)]
 pub struct Dice {
     #[schema(minimum = 0, maximum = 255, example = 1)]
-    pub n_of_dices: u8,
+    pub n_of_dices: i16,
     // 1 needs to be an option, to allow 100d1 => 100
     #[schema(minimum = 0, maximum = 255, example = 20)]
-    pub dice_size: u8,
+    pub dice_size: i16,
 }
 
 impl Dice {
     /// Dice roll will roll n dices with each roll in the range of 1<=result<=`dice_size`.
     /// It returns the sum of `n_of_dices` rolls.
     /// IT SHOULD NEVER BE <1, OTHERWISE WE BREAK THE CONTRACT OF THE METHOD.
-    pub fn roll(&self) -> u16 {
-        let mut roll_result = 0_u16;
-        let n_of_dices = u16::from(self.n_of_dices);
-        let dice_size = u16::from(self.dice_size);
+    pub fn roll(&self) -> u32 {
+        let mut roll_result = 0_u32;
+        let n_of_dices = u32::try_from(self.n_of_dices).unwrap_or(1);
+        let dice_size = u32::try_from(self.dice_size).unwrap_or(1);
         for _ in 0..n_of_dices {
             roll_result += WyRand::new().generate_range(1..=dice_size);
         }
@@ -69,8 +69,8 @@ impl Dice {
     }
 
     pub const fn from_optional_dice_number_and_size(
-        n_of_dices: Option<u8>,
-        dice_size: Option<u8>,
+        n_of_dices: Option<i16>,
+        dice_size: Option<i16>,
     ) -> Option<Self> {
         match (n_of_dices, dice_size) {
             (Some(n), Some(s)) => Some(Self {
@@ -106,6 +106,7 @@ impl LevelData {
 mod tests {
     use super::*;
     use rstest::rstest;
+    use std::u32;
 
     #[rstest]
     #[case(4, 1, 4)]
@@ -115,7 +116,11 @@ mod tests {
     #[case(255, 1, 255)]
     #[case(0, 1, 0)]
     #[case(1, 1, 1)]
-    fn roll_with_lots_of_d1(#[case] n_of_dices: u8, #[case] dice_size: u8, #[case] expected: u16) {
+    fn roll_with_lots_of_d1(
+        #[case] n_of_dices: i16,
+        #[case] dice_size: i16,
+        #[case] expected: u32,
+    ) {
         let dice = Dice {
             n_of_dices,
             dice_size,
@@ -137,12 +142,13 @@ mod tests {
     #[case(4, 4)]
     #[case(4, 8)]
     #[case(3, 20)]
-    fn roll_with_different_dices_and_sizes(#[case] n_of_dices: u8, #[case] dice_size: u8) {
+    fn roll_with_different_dices_and_sizes(#[case] n_of_dices: i16, #[case] dice_size: i16) {
         let dice = Dice {
             n_of_dices,
             dice_size,
         };
-        let max_value = u16::from(n_of_dices) * u16::from(dice_size);
+        let max_value =
+            u32::try_from(n_of_dices).unwrap_or(0) * u32::try_from(dice_size).unwrap_or(0);
         for _ in 0..1000 {
             let res = dice.roll();
             assert!(res > 0 && res <= max_value);

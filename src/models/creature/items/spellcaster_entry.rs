@@ -10,10 +10,13 @@ pub struct SpellcasterData {
     pub is_spellcasting_flexible: Option<bool>,
     pub type_of_spellcaster: String,
     #[schema(example = 10)]
+    #[sqlx(try_from = "i32")]
     pub spellcasting_dc_mod: i64,
     #[schema(example = 10)]
+    #[sqlx(try_from = "i32")]
     pub spellcasting_atk_mod: i64,
     pub spellcasting_tradition: String,
+    #[sqlx(try_from = "i32")]
     pub heighten_level: i64,
 }
 

@@ -29,7 +29,7 @@ pub async fn get_creature_by_id(
     variant: CreatureVariant,
     response_data_mods: &CreatureResponseDataModifiers,
 ) -> Option<Creature> {
-    creature_fetcher::fetch_creature_by_id(&app_state.conn, gs, variant, response_data_mods, id)
+    creature_fetcher::fetch_creature_by_id(&app_state.pool, gs, variant, response_data_mods, id)
         .await
         .ok()
 }
@@ -168,7 +168,7 @@ pub async fn get_creatures_passing_all_filters(
         );
 
     for core in creature_fetcher::fetch_creatures_core_data_with_filters(
-        &app_state.conn,
+        &app_state.pool,
         gs,
         &modified_filters,
     )
@@ -230,38 +230,38 @@ pub async fn get_all_possible_values_of_filter(
 async fn get_all_keys(app_state: &AppState, gs: GameSystem) -> FieldsUniqueValuesStruct {
     FieldsUniqueValuesStruct {
         list_of_levels: generic_fetcher::fetch_unique_values_of_field(
-            &app_state.conn,
+            &app_state.pool,
             format!("{gs}_creature_core").as_str(),
             "level",
         )
         .await
         .unwrap_or_default(),
         list_of_families: generic_fetcher::fetch_unique_values_of_field(
-            &app_state.conn,
+            &app_state.pool,
             format!("{gs}_creature_core").as_str(),
             "family",
         )
         .await
         .unwrap(),
-        list_of_traits: fetch_traits_associated_with_creatures(&app_state.conn, gs)
+        list_of_traits: fetch_traits_associated_with_creatures(&app_state.pool, gs)
             .await
             .unwrap_or_default(),
         list_of_sources: generic_fetcher::fetch_unique_values_of_field(
-            &app_state.conn,
+            &app_state.pool,
             format!("{gs}_creature_core").as_str(),
             "source",
         )
         .await
         .unwrap_or_default(),
         list_of_sizes: generic_fetcher::fetch_unique_values_of_field(
-            &app_state.conn,
+            &app_state.pool,
             format!("{gs}_creature_core").as_str(),
             "size",
         )
         .await
         .unwrap_or_default(),
         list_of_rarities: generic_fetcher::fetch_unique_values_of_field(
-            &app_state.conn,
+            &app_state.pool,
             format!("{gs}_creature_core").as_str(),
             "rarity",
         )
@@ -274,7 +274,7 @@ async fn get_all_keys(app_state: &AppState, gs: GameSystem) -> FieldsUniqueValue
 /// It will cache result
 #[cached(key = "i64", convert = r##"{ gs.into() }"##)]
 async fn get_list(app_state: &AppState, gs: GameSystem) -> Vec<Creature> {
-    creature_fetcher::fetch_creatures_core_data(&app_state.conn, gs, 0, -1)
+    creature_fetcher::fetch_creatures_core_data(&app_state.pool, gs, 0, -1)
         .await
         .map(|creatures| {
             creatures

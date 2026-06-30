@@ -49,6 +49,18 @@ impl CreatureRoleEnum {
             Self::Spellcaster => String::from("spellcaster_percentage"),
         }
     }
+
+    pub const fn to_role_key(&self) -> &'static str {
+        match self {
+            Self::Brute => "brute",
+            Self::MagicalStriker => "magical_striker",
+            Self::SkillParagon => "skill_paragon",
+            Self::Skirmisher => "skirmisher",
+            Self::Sniper => "sniper",
+            Self::Soldier => "soldier",
+            Self::Spellcaster => "spellcaster",
+        }
+    }
     pub fn from_creature_with_given_scales(
         cr_core: &EssentialData,
         cr_extra: &CreatureExtraData,

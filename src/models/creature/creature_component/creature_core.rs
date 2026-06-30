@@ -1,4 +1,5 @@
 use crate::models::creature::creature_metadata::type_enum::CreatureTypeEnum;
+use crate::models::db::pg_type_helper::{get_i32_as_i64, get_opt_i32_as_i64};
 use crate::models::shared::alignment_enum::AlignmentEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
@@ -6,7 +7,7 @@ use crate::models::shared::status_enum::Status;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)]
 use serde_json::json;
-use sqlx::sqlite::SqliteRow;
+use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
 use std::collections::BTreeMap;
 use utoipa::ToSchema;
@@ -48,18 +49,18 @@ pub struct DerivedData {
     pub role_data: BTreeMap<String, i64>,
 }
 
-impl<'r> FromRow<'r, SqliteRow> for EssentialData {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for EssentialData {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let rarity: String = row.try_get("rarity")?;
         let size: String = row.try_get("size")?;
         let alignment: String = row.try_get("alignment")?;
         let status_str: String = row.try_get("status").unwrap_or_default();
         Ok(Self {
             id: row.try_get("id")?,
-            aon_id: row.try_get("aon_id").ok(),
+            aon_id: get_opt_i32_as_i64(row, "aon_id"),
             name: row.try_get("name")?,
-            hp: row.try_get("hp")?,
-            base_level: row.try_get("level")?,
+            hp: get_i32_as_i64(row, "hp")?,
+            base_level: get_i32_as_i64(row, "level")?,
             size: SizeEnum::from(size),
             family: row.try_get("family").unwrap_or_else(|_| String::from("-")),
             rarity: RarityEnum::from(rarity),
@@ -68,14 +69,14 @@ impl<'r> FromRow<'r, SqliteRow> for EssentialData {
             source: row.try_get("source")?,
             cr_type: CreatureTypeEnum::from(row.try_get("cr_type").ok()),
             alignment: AlignmentEnum::from(alignment),
-            focus_points: row.try_get("focus_points")?,
+            focus_points: get_i32_as_i64(row, "focus_points")?,
             status: status_str.into(),
         })
     }
 }
 
-impl<'r> FromRow<'r, SqliteRow> for DerivedData {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for DerivedData {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let mut attack_list = BTreeMap::new();
         attack_list.insert(String::from("melee"), row.try_get("is_melee")?);
         attack_list.insert(String::from("ranged"), row.try_get("is_ranged")?);
@@ -109,8 +110,8 @@ impl<'r> FromRow<'r, SqliteRow> for DerivedData {
     }
 }
 
-impl<'r> FromRow<'r, SqliteRow> for CreatureCoreData {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for CreatureCoreData {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         Ok(Self {
             essential: EssentialData::from_row(row)?,
             derived: DerivedData::from_row(row)?,

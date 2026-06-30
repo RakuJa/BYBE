@@ -1,8 +1,9 @@
+use crate::models::db::pg_type_helper::{get_i32_as_i64, get_opt_i32_as_i16, get_opt_i32_as_i64};
 use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::routers_validator_structs::Dice;
 use serde::{Deserialize, Serialize};
-use sqlx::sqlite::SqliteRow;
+use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
 use std::str::FromStr;
 use utoipa::ToSchema;
@@ -32,23 +33,23 @@ pub struct WeaponData {
     pub splash_dmg: Option<i64>,
 }
 
-impl<'r> FromRow<'r, SqliteRow> for Weapon {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for Weapon {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let item_core = Item::from_row(row)?;
         let wp_type = WeaponTypeEnum::from_str(row.try_get("weapon_type")?);
         Ok(Self {
             item_core,
             weapon_data: WeaponData {
                 id: row.try_get("weapon_id")?,
-                to_hit_bonus: row.try_get("to_hit_bonus")?,
-                n_of_potency_runes: row.try_get("n_of_potency_runes")?,
-                n_of_striking_runes: row.try_get("n_of_striking_runes")?,
+                to_hit_bonus: get_opt_i32_as_i64(row, "to_hit_bonus"),
+                n_of_potency_runes: get_i32_as_i64(row, "n_of_potency_runes")?,
+                n_of_striking_runes: get_i32_as_i64(row, "n_of_striking_runes")?,
                 property_runes: vec![],
-                range: row.try_get("range")?,
+                range: get_opt_i32_as_i64(row, "range"),
                 reload: row.try_get("reload")?,
                 weapon_type: wp_type.unwrap_or(WeaponTypeEnum::Melee),
                 damage_data: vec![],
-                splash_dmg: row.try_get("splash_dmg").ok(),
+                splash_dmg: get_opt_i32_as_i64(row, "splash_dmg"),
             },
         })
     }
@@ -76,15 +77,15 @@ pub struct DamageData {
     pub dice: Option<Dice>,
 }
 
-impl<'r> FromRow<'r, SqliteRow> for DamageData {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for DamageData {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         Ok(Self {
             id: row.try_get("id")?,
-            bonus_dmg: row.try_get("bonus_dmg")?,
+            bonus_dmg: get_i32_as_i64(row, "bonus_dmg")?,
             dmg_type: row.try_get("dmg_type").ok(),
             dice: Dice::from_optional_dice_number_and_size(
-                row.try_get("number_of_dice").ok(),
-                row.try_get("die_size").ok(),
+                get_opt_i32_as_i16(row, "number_of_dice"),
+                get_opt_i32_as_i16(row, "die_size"),
             ),
         })
     }

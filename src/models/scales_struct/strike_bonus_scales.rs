@@ -1,10 +1,14 @@
 use sqlx::FromRow;
 #[derive(Default, Eq, PartialEq, Clone, FromRow)]
 pub struct StrikeBonusScales {
-    pub id: i64,
+    #[sqlx(try_from = "i32")]
     pub level: i64,
+    #[sqlx(try_from = "i32")]
     pub extreme: i64,
+    #[sqlx(try_from = "i32")]
     pub high: i64,
+    #[sqlx(try_from = "i32")]
     pub moderate: i64,
+    #[sqlx(try_from = "i32")]
     pub low: i64,
 }

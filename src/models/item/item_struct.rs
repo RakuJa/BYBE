@@ -1,3 +1,4 @@
+use crate::models::db::pg_type_helper::{get_i32_as_i64, get_opt_i32_as_i64};
 use crate::models::item::item_field_filter::ItemFieldFilters;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::ordered_float_to_schema;
@@ -9,7 +10,7 @@ use crate::traits::filterable::Filterable;
 use ordered_float::OrderedFloat;
 use ordered_float_to_schema::ordered_float_to_schema;
 use serde::{Deserialize, Serialize};
-use sqlx::sqlite::SqliteRow;
+use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
 use std::str::FromStr;
 use utoipa::ToSchema;
@@ -53,8 +54,8 @@ pub struct Item {
     pub status: Status,
 }
 
-impl<'r> FromRow<'r, SqliteRow> for Item {
-    fn from_row(row: &'r SqliteRow) -> Result<Self, Error> {
+impl<'r> FromRow<'r, PgRow> for Item {
+    fn from_row(row: &'r PgRow) -> Result<Self, Error> {
         let rarity: String = row.try_get("rarity")?;
         let size: String = row.try_get("size")?;
         let type_str: String = row.try_get("item_type")?;
@@ -70,10 +71,10 @@ impl<'r> FromRow<'r, SqliteRow> for Item {
             base_item: row.try_get("base_item")?,
             category: row.try_get("category").ok(),
             description: row.try_get("description")?,
-            hardness: row.try_get("hardness")?,
-            hp: row.try_get("hp")?,
-            level: row.try_get("level")?,
-            price: row.try_get("price")?,
+            hardness: get_i32_as_i64(row, "hardness")?,
+            hp: get_i32_as_i64(row, "hp")?,
+            level: get_i32_as_i64(row, "level")?,
+            price: get_i32_as_i64(row, "price")?,
             size: SizeEnum::from(size),
             rarity: RarityEnum::from(rarity),
             license: row.try_get("license")?,
@@ -84,7 +85,7 @@ impl<'r> FromRow<'r, SqliteRow> for Item {
             material_type: row.try_get("material_type").ok(),
             traits: vec![],
             usage: row.try_get("usage")?,
-            number_of_uses: row.try_get("number_of_uses").ok(),
+            number_of_uses: get_opt_i32_as_i64(row, "number_of_uses"),
             group: row.try_get("item_group")?,
             status: status_str.into(),
         })

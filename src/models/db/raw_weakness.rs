@@ -4,5 +4,6 @@ use sqlx::FromRow;
 #[derive(Serialize, Deserialize, FromRow, PartialEq, Eq, Hash, Clone)]
 pub struct RawWeakness {
     pub name: String,
+    #[sqlx(try_from = "i32")]
     pub value: i64,
 }
