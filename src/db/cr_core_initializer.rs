@@ -29,6 +29,7 @@ weapon_avgs AS (
     SELECT
         wca.creature_id,
         wt.weapon_type,
+        wt.range,
         COALESCE(wt.to_hit_bonus::bigint, 0) AS to_hit_bonus,
         COALESCE((
             SELECT SUM(FLOOR(((wd.die_size + 1.0) / 2.0) * wd.number_of_dice + wd.bonus_dmg))
@@ -44,7 +45,7 @@ weapon_flags AS (
     SELECT
         creature_id,
         bool_or(UPPER(weapon_type) = 'MELEE')  AS has_melee,
-        bool_or(UPPER(weapon_type) = 'RANGED') AS has_ranged
+        bool_or(range IS NOT NULL AND range > 0) AS has_ranged
     FROM weapon_avgs
     GROUP BY creature_id
 ),
