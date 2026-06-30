@@ -274,12 +274,17 @@ async fn fetch_creature_weapons(
 ) -> Result<Vec<Weapon>> {
     let weapons: Vec<Weapon> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
-        SELECT DISTINCT wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
-        wt.n_of_striking_runes, wt.range, wt.reload, wt.weapon_type, wt.base_item_id,
-        it.*
+        SELECT DISTINCT
+            wt.id AS weapon_id, wt.to_hit_bonus, wt.splash_dmg, wt.n_of_potency_runes,
+            wt.n_of_striking_runes, wt.reload, wt.weapon_type, wt.base_item_id,
+            it.*,
+            rt.id AS range_id, rt.value AS range_value, rt.increment AS range_increment,
+            rt.max AS range_max
         FROM {gs}_weapon_creature_association_table ica
-        LEFT JOIN {gs}_weapon_table wt ON wt.id = ica.weapon_id
-        LEFT JOIN {gs}_item_table it ON it.id = wt.base_item_id
+        LEFT JOIN {gs}_weapon_table wt                      ON wt.id = ica.weapon_id
+        LEFT JOIN {gs}_item_table it                        ON it.id = wt.base_item_id
+        LEFT JOIN {gs}_weapon_range_association_table wr    ON wr.weapon_id = wt.id
+        LEFT JOIN {gs}_range_table rt                       ON rt.id = wr.range_id
         WHERE ica.creature_id = $1
         ORDER BY name
         "
@@ -479,7 +484,16 @@ pub async fn fetch_creature_spells(
     spellcaster_entry_id: i64,
 ) -> Result<Vec<Spell>> {
     Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT * FROM {gs}_spell_table WHERE creature_id = $1 AND spellcasting_entry_id = $2"
+        "
+        SELECT
+            st.*,
+            rt.id AS range_id, rt.value as range_value, rt.increment as range_increment, rt.max AS range_max
+        FROM {gs}_spell_table st
+        INNER JOIN {gs}_spell_range_association_table sr ON sr.spell_id = st.id
+        INNER JOIN {gs}_range_table rt                   ON rt.id = sr.range_id
+        WHERE st.spellcasting_entry_id = $2
+          AND st.creature_id = $1;
+        "
     )))
     .bind(creature_id)
     .bind(spellcaster_entry_id)

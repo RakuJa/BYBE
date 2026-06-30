@@ -1,3 +1,4 @@
+use crate::models::shared::range_data::RangeData;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use utoipa::ToSchema;
@@ -19,7 +20,7 @@ pub struct Spell {
     #[schema(example = 1)]
     #[sqlx(try_from = "i32")]
     pub level: i64,
-    pub range: String,
+    pub range: Option<RangeData>,
     pub target: String,
     pub actions: String,
 
