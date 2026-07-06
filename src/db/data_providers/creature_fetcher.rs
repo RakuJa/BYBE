@@ -237,14 +237,6 @@ async fn fetch_creature_scalar_opt(
     .await?)
 }
 
-pub async fn fetch_creature_traits(
-    pool: &PgPool,
-    gs: GameSystem,
-    creature_id: i64,
-) -> Result<Vec<TraitData>> {
-    fetch_entity_traits(pool, gs, "creature", creature_id).await
-}
-
 async fn fetch_creature_conditions(
     pool: &PgPool,
     gs: GameSystem,

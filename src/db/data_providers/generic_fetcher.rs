@@ -80,7 +80,7 @@ pub(crate) async fn fetch_entity_traits(
 
 #[derive(sqlx::FromRow)]
 struct EntityTraitRow {
-    entity_id: i64,
+    entity_id: i32,
     name: String,
     description: Option<String>,
     display_name: Option<String>,
@@ -107,11 +107,14 @@ async fn fetch_entity_traits_batch(
     .await?;
     let mut by_id: HashMap<i64, Vec<TraitData>> = HashMap::new();
     for row in rows {
-        by_id.entry(row.entity_id).or_default().push(TraitData {
-            name: row.name,
-            description: row.description,
-            display_name: row.display_name,
-        });
+        by_id
+            .entry(i64::from(row.entity_id))
+            .or_default()
+            .push(TraitData {
+                name: row.name,
+                description: row.description,
+                display_name: row.display_name,
+            });
     }
     Ok(by_id)
 }
