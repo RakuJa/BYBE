@@ -13,5 +13,6 @@ pub struct ConditionData {
     pub source: String,
     pub is_perpetual: bool,
     pub is_stackable: bool,
+    pub value: Option<i32>,
     pub condition_group: Option<String>,
 }

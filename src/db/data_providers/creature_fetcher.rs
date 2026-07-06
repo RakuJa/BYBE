@@ -26,10 +26,10 @@ use crate::models::creature::items::spell::Spell;
 use crate::models::creature::items::spellcaster_entry::{SpellcasterData, SpellcasterEntry};
 use crate::models::db::raw_language::RawLanguage;
 use crate::models::db::raw_speed::RawSpeed;
-use crate::models::db::raw_weakness::RawWeakness;
 use crate::models::db::resistance::CoreResistanceData;
 use crate::models::db::resistance::Resistance;
 use crate::models::db::sense::Sense;
+use crate::models::db::weakness::Weakness;
 use crate::models::item::armor_struct::Armor;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::Shield;
@@ -65,7 +65,7 @@ async fn fetch_creature_immunities(
 ) -> Result<Vec<Option<String>>> {
     Ok(sqlx::query_scalar(sqlx::AssertSqlSafe(format!(
         "SELECT name FROM {gs}_immunity_table INTERSECT SELECT immunity_id
-         FROM {gs}_immunity_creature_association_table WHERE creature_id = $1"
+         FROM {gs}_creature_immunity_association_table WHERE creature_id = $1"
     )))
     .bind(creature_id)
     .fetch_all(pool)
@@ -115,7 +115,8 @@ async fn fetch_creature_resistances_core(
     creature_id: i64,
 ) -> Result<Vec<CoreResistanceData>> {
     Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT id, name, value FROM {gs}_resistance_table WHERE creature_id = $1"
+        "SELECT id, name, value FROM {gs}_creature_resistance_association_table JOIN
+        {gs}_resistance_table ON resistance_id = id WHERE creature_id = $1"
     )))
     .bind(creature_id)
     .fetch_all(pool)
@@ -168,7 +169,7 @@ async fn fetch_creature_weaknesses(
     pool: &PgPool,
     gs: GameSystem,
     creature_id: i64,
-) -> Result<Vec<RawWeakness>> {
+) -> Result<Vec<Weakness>> {
     Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "SELECT name, value FROM {gs}_weakness_table WHERE creature_id = $1"
     )))
@@ -700,10 +701,7 @@ pub async fn fetch_creature_combat_data(
             .collect(),
         weaknesses: fetch_creature_weaknesses(pool, gs, creature_id)
             .await
-            .unwrap_or_default()
-            .into_iter()
-            .map(|x| (x.name, i16::try_from(x.value).unwrap_or(0)))
-            .collect(),
+            .unwrap_or_default(),
         saving_throws: fetch_creature_saving_throws(pool, gs, creature_id).await?,
         ac: fetch_creature_scalar(pool, gs, creature_id, "ac").await?,
         conditions: fetch_creature_conditions(pool, gs, creature_id).await?,
