@@ -171,7 +171,10 @@ async fn fetch_creature_weaknesses(
     creature_id: i64,
 ) -> Result<Vec<Weakness>> {
     Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
-        "SELECT name, value FROM {gs}_weakness_table WHERE creature_id = $1"
+        "SELECT id, name, value FROM {gs}_weakness_table WHERE id IN (
+            SELECT weakness_id FROM {gs}_creature_weakness_association_table
+            where creature_id = $1
+        )"
     )))
     .bind(creature_id)
     .fetch_all(pool)
