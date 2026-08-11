@@ -55,8 +55,8 @@ impl<'r> FromRow<'r, PgRow> for Spell {
             source: row.try_get("source")?,
             rarity: row.try_get("rarity")?,
             slot: get_i32_as_i64(row, "slot")?,
-            creature_id: row.try_get("creature_id")?,
-            spellcasting_entry_id: row.try_get("spellcasting_entry_id")?,
+            creature_id: get_i32_as_i64(row, "creature_id")?,
+            spellcasting_entry_id: get_i32_as_i64(row, "spellcasting_entry_id")?,
             range: RangeData::from_row(row).ok(),
         })
     }
