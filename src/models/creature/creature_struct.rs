@@ -5,10 +5,12 @@ use crate::models::creature::creature_component::creature_spellcaster::CreatureS
 use crate::models::creature::creature_component::creature_variant::CreatureVariantData;
 use crate::models::creature::creature_field_filter::CreatureFieldFilters;
 use crate::models::creature::creature_metadata::variant_enum::CreatureVariant;
+use crate::models::shared::description::TagContext;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::traits::filterable::Filterable;
 use crate::traits::has_level::HasLevel;
+use crate::traits::resolve_tags::ResolveTags;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Eq, Hash, PartialEq)]
@@ -211,5 +213,12 @@ impl Filterable for Creature {
                 GameSystemVersionEnum::Remaster => self.core_data.essential.remaster,
                 GameSystemVersionEnum::Any => true,
             }
+    }
+}
+
+impl ResolveTags for Creature {
+    fn resolve_tags(&mut self, ctx: &TagContext) {
+        self.combat_data.resolve_tags(ctx);
+        self.extra_data.resolve_tags(ctx);
     }
 }

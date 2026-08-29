@@ -3,7 +3,9 @@ use crate::models::item::item_metadata::type_enum::WeaponTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::routers_validator_structs::Dice;
 use crate::models::shared::action::Action;
+use crate::models::shared::description::TagContext;
 use crate::models::shared::range_data::RangeData;
+use crate::traits::resolve_tags::ResolveTags;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
@@ -91,5 +93,11 @@ impl<'r> FromRow<'r, PgRow> for DamageData {
                 get_opt_i32_as_i16(row, "die_size"),
             ),
         })
+    }
+}
+
+impl ResolveTags for Weapon {
+    fn resolve_tags(&mut self, ctx: &TagContext) {
+        self.weapon_data.attack_effects.resolve_tags(ctx);
     }
 }

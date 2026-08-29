@@ -1,8 +1,8 @@
 use crate::db::data_providers::generic_fetcher::{
     enrich_with_traits, fetch_actions_from_cores, fetch_all_with_binds,
     fetch_all_with_binds_and_count, fetch_armor_runes, fetch_armor_traits, fetch_col_range,
-    fetch_entity_traits, fetch_item_traits, fetch_shield_traits, fetch_weapon_actions,
-    fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
+    fetch_entity_traits, fetch_item_traits, fetch_shield_traits, fetch_spell_damage_data,
+    fetch_weapon_actions, fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
 };
 use crate::db::data_providers::raw_query_builder::{
     format_pagination_clause, prepare_filtered_get_creatures_core,
@@ -467,7 +467,7 @@ pub async fn fetch_creature_spells(
     creature_id: i64,
     spellcaster_entry_id: i64,
 ) -> Result<Vec<Spell>> {
-    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+    let spells: Vec<Spell> = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
         SELECT
             st.*,
@@ -482,7 +482,17 @@ pub async fn fetch_creature_spells(
     .bind(creature_id)
     .bind(spellcaster_entry_id)
     .fetch_all(pool)
-    .await?)
+    .await?;
+    Ok(join_all(spells.into_iter().map(|mut spell| {
+        let pool = pool.clone();
+        async move {
+            spell.damage = fetch_spell_damage_data(&pool, gs, spell.id)
+                .await
+                .unwrap_or_default();
+            spell
+        }
+    }))
+    .await)
 }
 
 async fn fetch_creature_spellcaster_entries(
@@ -667,6 +677,9 @@ pub async fn fetch_creature_extra_data(
         perception_detail: fetch_creature_scalar_opt(pool, gs, creature_id, "perception_detail")
             .await?,
         has_vision: fetch_creature_scalar(pool, gs, creature_id, "vision").await?,
+        description: fetch_creature_scalar(pool, gs, creature_id, "description").await?,
+        blurb: fetch_creature_scalar(pool, gs, creature_id, "blurb").await?,
+        speed_details: fetch_creature_scalar(pool, gs, creature_id, "speed_details").await?,
     })
 }
 
