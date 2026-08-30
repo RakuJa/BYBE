@@ -608,9 +608,11 @@ where
 
 fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum, gs: GameSystem) -> String {
     let (item_id_field, type_query) = match item_type {
-        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => {
-            ("id", format!("AND UPPER(item_type) = UPPER('{item_type}')"))
-        }
+        ItemTypeEnum::Consumable
+        | ItemTypeEnum::Equipment
+        | ItemTypeEnum::Ammo
+        | ItemTypeEnum::Backpack
+        | ItemTypeEnum::Treasure => ("id", format!("AND UPPER(item_type) = UPPER('{item_type}')")),
         // There is no need for an and statement here, we already fetch from the "private" table.
         // Item instead contains a lot of item_type (it's the base for weapon/shield/etc)
         ItemTypeEnum::Weapon | ItemTypeEnum::Armor | ItemTypeEnum::Shield => {
@@ -618,7 +620,11 @@ fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum, gs: GameSys
         }
     };
     let tass_item_id_field = match item_type {
-        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => "item_id",
+        ItemTypeEnum::Consumable
+        | ItemTypeEnum::Equipment
+        | ItemTypeEnum::Ammo
+        | ItemTypeEnum::Backpack
+        | ItemTypeEnum::Treasure => "item_id",
         ItemTypeEnum::Weapon => "weapon_id",
         ItemTypeEnum::Armor => "armor_id",
         ItemTypeEnum::Shield => "shield_id",

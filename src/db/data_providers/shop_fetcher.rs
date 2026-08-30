@@ -31,7 +31,11 @@ pub async fn fetch_item_by_id(pool: &PgPool, gs: GameSystem, item_id: i64) -> Re
     .await?;
     item.traits = fetch_item_traits(pool, gs, item_id).await?;
     Ok(match item.item_type {
-        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => ResponseItem::from((item, gs)),
+        ItemTypeEnum::Consumable
+        | ItemTypeEnum::Equipment
+        | ItemTypeEnum::Ammo
+        | ItemTypeEnum::Backpack
+        | ItemTypeEnum::Treasure => ResponseItem::from((item, gs)),
         ItemTypeEnum::Weapon => ResponseItem {
             core_item: item,
             weapon_data: fetch_weapon_data_by_item_id(pool, gs, item_id).await.ok(),

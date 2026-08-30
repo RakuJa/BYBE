@@ -20,6 +20,12 @@ pub enum ItemTypeEnum {
     Armor,
     #[serde(alias = "shield", alias = "SHIELD")]
     Shield,
+    #[serde(alias = "ammo", alias = "AMMO")]
+    Ammo,
+    #[serde(alias = "treasure", alias = "TREASURE")]
+    Treasure,
+    #[serde(alias = "backpack", alias = "BACKPACK")]
+    Backpack,
 }
 
 impl ItemTypeEnum {
@@ -42,6 +48,9 @@ impl ItemTypeEnum {
             Self::Weapon => "WEAPON",
             Self::Armor => "ARMOR",
             Self::Shield => "SHIELD",
+            Self::Ammo => "AMMO",
+            Self::Treasure => "TREASURE",
+            Self::Backpack => "BACKPACK",
         })
     }
 }
@@ -54,6 +63,9 @@ impl Clone for ItemTypeEnum {
             Self::Armor => Self::Armor,
             Self::Weapon => Self::Weapon,
             Self::Shield => Self::Shield,
+            Self::Ammo => Self::Ammo,
+            Self::Treasure => Self::Treasure,
+            Self::Backpack => Self::Backpack,
         }
     }
 }
@@ -67,6 +79,9 @@ impl FromStr for ItemTypeEnum {
             "WEAPON" => Ok(Self::Weapon),
             "ARMOR" => Ok(Self::Armor),
             "SHIELD" => Ok(Self::Shield),
+            "AMMO" => Ok(Self::Ammo),
+            "TREASURE" => Ok(Self::Treasure),
+            "BACKPACK" => Ok(Self::Backpack),
             _ => Err(()),
         }
     }
@@ -89,6 +104,15 @@ impl Display for ItemTypeEnum {
             }
             Self::Shield => {
                 write!(f, "shield")
+            }
+            Self::Ammo => {
+                write!(f, "ammo")
+            }
+            Self::Treasure => {
+                write!(f, "treasure")
+            }
+            Self::Backpack => {
+                write!(f, "backpack")
             }
         }
     }
