@@ -32,14 +32,14 @@ impl RequestedEquippablePercentages {
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
 pub struct RequestedConsumablePercentages {
     #[schema(minimum = 0, maximum = 100, example = 14)]
-    pub generic_consumable_percentage: Option<u8>,
+    pub generic_percentage: Option<u8>,
     #[schema(minimum = 0, maximum = 100, example = 14)]
     pub ammunition_percentage: Option<u8>,
 }
 
 impl RequestedConsumablePercentages {
     pub const fn is_empty(&self) -> bool {
-        self.generic_consumable_percentage.is_none() && self.ammunition_percentage.is_none()
+        self.generic_percentage.is_none() && self.ammunition_percentage.is_none()
     }
 }
 #[derive(Serialize, Deserialize, ToSchema, Clone)]
