@@ -85,7 +85,7 @@ impl FromStr for ItemTypeEnum {
             "WEAPON" => Ok(Self::Weapon),
             "ARMOR" => Ok(Self::Armor),
             "SHIELD" => Ok(Self::Shield),
-            "AMMO" => Ok(Self::Ammunition),
+            "AMMUNITION" => Ok(Self::Ammunition),
             "TREASURE" => Ok(Self::Treasure),
             "BACKPACK" => Ok(Self::Backpack),
             _ => Err(()),
