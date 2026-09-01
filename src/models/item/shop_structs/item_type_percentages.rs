@@ -3,7 +3,7 @@ use anyhow::bail;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 
-#[derive(Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Serialize, Deserialize, ToSchema, Clone, Copy)]
 pub struct RequestedEquippablePercentages {
     #[schema(minimum = 0, maximum = 100, example = 14)]
     pub equipment_percentage: Option<u8>,
@@ -29,7 +29,7 @@ impl RequestedEquippablePercentages {
             && self.backpack_percentage.is_none()
     }
 }
-#[derive(Serialize, Deserialize, ToSchema, Clone)]
+#[derive(Serialize, Deserialize, ToSchema, Clone, Copy)]
 pub struct RequestedConsumablePercentages {
     #[schema(minimum = 0, maximum = 100, example = 14)]
     pub generic_percentage: Option<u8>,
@@ -90,6 +90,15 @@ impl TryFrom<Vec<u8>> for ConsumablePercentages {
     }
 }
 
+impl From<RequestedConsumablePercentages> for ConsumablePercentages {
+    fn from(value: RequestedConsumablePercentages) -> Self {
+        Self {
+            generic_percentage: value.generic_percentage.unwrap_or(0),
+            ammunition_percentage: value.ammunition_percentage.unwrap_or(0),
+        }
+    }
+}
+
 impl GenericPercentage for EquippablePercentages {
     fn to_vec(self) -> Vec<u8> {
         vec![
@@ -119,6 +128,19 @@ impl TryFrom<Vec<u8>> for EquippablePercentages {
                 treasure_percentage: value[4],
                 backpack_percentage: value[5],
             })
+        }
+    }
+}
+
+impl From<RequestedEquippablePercentages> for EquippablePercentages {
+    fn from(value: RequestedEquippablePercentages) -> Self {
+        Self {
+            equipment_percentage: value.equipment_percentage.unwrap_or(0),
+            weapon_percentage: value.weapon_percentage.unwrap_or(0),
+            armor_percentage: value.armor_percentage.unwrap_or(0),
+            shield_percentage: value.shield_percentage.unwrap_or(0),
+            treasure_percentage: value.treasure_percentage.unwrap_or(0),
+            backpack_percentage: value.backpack_percentage.unwrap_or(0),
         }
     }
 }

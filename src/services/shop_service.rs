@@ -78,7 +78,7 @@ pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(
         |x| (x.get_allowed_item_types(), x.get_allowed_rarities()),
     );
     let shop_type = shop_data.shop_template.clone().unwrap_or_default();
-    let n_of_consumables = shop_data.equippable_dices.iter().map(Dice::roll).sum();
+    let n_of_consumables = shop_data.consumable_dices.iter().map(Dice::roll).sum();
     let n_of_equippables = shop_data.equippable_dices.iter().map(Dice::roll).sum();
     // The request is correct, but will result in an empty list.
     if n_of_consumables == 0 && n_of_equippables == 0 {
@@ -90,7 +90,7 @@ pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(
         &if shop_data.percentages.equippable_percentages.is_empty() {
             shop_type.get_equippable_percentages()
         } else {
-            EquippablePercentages::default()
+            EquippablePercentages::from(shop_data.percentages.equippable_percentages)
         }
         .to_vec(),
     );
@@ -100,7 +100,7 @@ pub async fn generate_random_shop_listing<T: GenericTemplate + ItemTemplate>(
         &if shop_data.percentages.consumable_percentages.is_empty() {
             shop_type.get_consumable_percentages()
         } else {
-            ConsumablePercentages::default()
+            ConsumablePercentages::from(shop_data.percentages.consumable_percentages)
         }
         .to_vec(),
     );

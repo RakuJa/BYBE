@@ -112,7 +112,7 @@ impl Display for ItemTypeEnum {
                 write!(f, "shield")
             }
             Self::Ammunition => {
-                write!(f, "ammo")
+                write!(f, "ammunition")
             }
             Self::Treasure => {
                 write!(f, "treasure")

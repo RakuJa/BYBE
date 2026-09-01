@@ -259,7 +259,6 @@ pub async fn fetch_items_with_filters(
     filters: &ShopFilterQuery,
 ) -> Result<Vec<Item>> {
     let (query, binds) = prepare_filtered_get_items(gs, filters);
-    println!("{}", query);
     let items: Vec<Item> = fetch_all_with_binds(pool, query, binds).await.unwrap();
     let equipment: Vec<&Item> = items
         .iter()
