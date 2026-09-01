@@ -38,7 +38,7 @@ impl<'r> FromRow<'r, PgRow> for Armor {
             item_core,
             armor_data: ArmorData {
                 id: row.try_get("armor_id")?,
-                ac_bonus: get_i32_as_i64(row, "bonus_ac")?,
+                ac_bonus: get_i32_as_i64(row, "ac_bonus")?,
                 check_penalty: get_i32_as_i64(row, "check_penalty")?,
                 dex_cap: get_i32_as_i64(row, "dex_cap")?,
                 n_of_potency_runes: get_i32_as_i64(row, "n_of_potency_runes")?,

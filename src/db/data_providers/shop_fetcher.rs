@@ -91,7 +91,7 @@ async fn fetch_weapon_by_item_id(pool: &PgPool, gs: GameSystem, item_id: i64) ->
 async fn fetch_armor_by_item_id(pool: &PgPool, gs: GameSystem, item_id: i64) -> Result<Armor> {
     let mut armor: Armor = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
-        SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
+        SELECT at.id AS armor_id, at.ac_bonus, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
         at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id,
         it.*
         FROM {gs}_armor_table at
