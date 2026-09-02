@@ -185,10 +185,17 @@ impl ItemTemplate for SfShopTemplateEnum {
                     ItemTypeEnum::Weapon,
                     ItemTypeEnum::Consumable,
                     ItemTypeEnum::Equipment,
+                    ItemTypeEnum::Ammunition,
+                    ItemTypeEnum::Backpack,
                 ]
             }
             Self::Biochemist => {
-                vec![ItemTypeEnum::Consumable, ItemTypeEnum::Equipment]
+                vec![
+                    ItemTypeEnum::Consumable,
+                    ItemTypeEnum::Equipment,
+                    ItemTypeEnum::Ammunition,
+                    ItemTypeEnum::Backpack,
+                ]
             }
         }
     }
