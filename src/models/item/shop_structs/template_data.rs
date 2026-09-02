@@ -302,10 +302,17 @@ impl ItemTemplate for PfShopTemplateEnum {
                     ItemTypeEnum::Weapon,
                     ItemTypeEnum::Consumable,
                     ItemTypeEnum::Equipment,
+                    ItemTypeEnum::Ammunition,
+                    ItemTypeEnum::Backpack,
                 ]
             }
             Self::Alchemist => {
-                vec![ItemTypeEnum::Consumable, ItemTypeEnum::Equipment]
+                vec![
+                    ItemTypeEnum::Consumable,
+                    ItemTypeEnum::Equipment,
+                    ItemTypeEnum::Ammunition,
+                    ItemTypeEnum::Backpack,
+                ]
             }
         }
     }
