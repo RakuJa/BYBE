@@ -9,7 +9,9 @@ use crate::models::hazard::hazard_listing_struct::{
 };
 use crate::models::item::item_field_filter::ItemFieldFilters;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
-use crate::models::item::shop_structs::{ItemSortEnum, ItemTableFieldsFilter, ShopFilterQuery};
+use crate::models::item::shop_structs::filter_query::ShopFilterQuery;
+use crate::models::item::shop_structs::item_sort_enum::ItemSortEnum;
+use crate::models::item::shop_structs::item_table_fields_filter::ItemTableFieldsFilter;
 use crate::models::routers_validator_structs::OrderEnum;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
@@ -75,7 +77,34 @@ pub fn prepare_filtered_get_items(
     let consumable_query = prepare_item_subquery(
         gs,
         &ItemTypeEnum::Consumable,
-        shop_filter_query.n_of_consumables,
+        shop_filter_query.n_of_generic_consumables,
+        &shop_filter_query.item_table_fields_filter,
+        shop_filter_query.trait_whitelist_filter.iter(),
+        shop_filter_query.trait_blacklist_filter.iter(),
+        &mut binds,
+    );
+    let ammo_query = prepare_item_subquery(
+        gs,
+        &ItemTypeEnum::Ammunition,
+        shop_filter_query.n_of_ammunition,
+        &shop_filter_query.item_table_fields_filter,
+        shop_filter_query.trait_whitelist_filter.iter(),
+        shop_filter_query.trait_blacklist_filter.iter(),
+        &mut binds,
+    );
+    let backpack_query = prepare_item_subquery(
+        gs,
+        &ItemTypeEnum::Backpack,
+        shop_filter_query.n_of_backpacks,
+        &shop_filter_query.item_table_fields_filter,
+        shop_filter_query.trait_whitelist_filter.iter(),
+        shop_filter_query.trait_blacklist_filter.iter(),
+        &mut binds,
+    );
+    let treasure_query = prepare_item_subquery(
+        gs,
+        &ItemTypeEnum::Treasure,
+        shop_filter_query.n_of_treasures,
         &shop_filter_query.item_table_fields_filter,
         shop_filter_query.trait_whitelist_filter.iter(),
         shop_filter_query.trait_blacklist_filter.iter(),
@@ -110,7 +139,8 @@ pub fn prepare_filtered_get_items(
     );
     let query = format!(
         "SELECT * FROM {gs}_item_table WHERE status = 'valid' AND (
-            id IN ( {equipment_query} ) OR id IN ({consumable_query} )
+            id IN ( {equipment_query} ) OR id IN ( {consumable_query} )
+            OR id in ( {backpack_query} ) OR id in ( {treasure_query} ) OR id in ( {ammo_query} )
             OR id IN ({weapon_query} ) OR id IN ({armor_query} ) OR id IN ({shield_query} )
         )"
     );
@@ -608,9 +638,11 @@ where
 
 fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum, gs: GameSystem) -> String {
     let (item_id_field, type_query) = match item_type {
-        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => {
-            ("id", format!("AND UPPER(item_type) = UPPER('{item_type}')"))
-        }
+        ItemTypeEnum::Consumable
+        | ItemTypeEnum::Equipment
+        | ItemTypeEnum::Ammunition
+        | ItemTypeEnum::Backpack
+        | ItemTypeEnum::Treasure => ("id", format!("AND UPPER(item_type) = UPPER('{item_type}')")),
         // There is no need for an and statement here, we already fetch from the "private" table.
         // Item instead contains a lot of item_type (it's the base for weapon/shield/etc)
         ItemTypeEnum::Weapon | ItemTypeEnum::Armor | ItemTypeEnum::Shield => {
@@ -618,7 +650,11 @@ fn prepare_get_id_matching_item_type_query(item_type: &ItemTypeEnum, gs: GameSys
         }
     };
     let tass_item_id_field = match item_type {
-        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => "item_id",
+        ItemTypeEnum::Consumable
+        | ItemTypeEnum::Equipment
+        | ItemTypeEnum::Ammunition
+        | ItemTypeEnum::Backpack
+        | ItemTypeEnum::Treasure => "item_id",
         ItemTypeEnum::Weapon => "weapon_id",
         ItemTypeEnum::Armor => "armor_id",
         ItemTypeEnum::Shield => "shield_id",

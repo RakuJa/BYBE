@@ -20,6 +20,17 @@ pub enum ItemTypeEnum {
     Armor,
     #[serde(alias = "shield", alias = "SHIELD")]
     Shield,
+    #[serde(
+        alias = "ammo",
+        alias = "AMMO",
+        alias = "ammunition",
+        alias = "AMMUNITION"
+    )]
+    Ammunition,
+    #[serde(alias = "treasure", alias = "TREASURE")]
+    Treasure,
+    #[serde(alias = "backpack", alias = "BACKPACK")]
+    Backpack,
 }
 
 impl ItemTypeEnum {
@@ -38,7 +49,11 @@ impl ItemTypeEnum {
     /// It returns the generic table name of the given item type.
     fn to_db_table_name(&self) -> String {
         String::from(match self {
-            Self::Consumable | Self::Equipment => "ITEM",
+            Self::Consumable
+            | Self::Equipment
+            | Self::Ammunition
+            | Self::Treasure
+            | Self::Backpack => "ITEM",
             Self::Weapon => "WEAPON",
             Self::Armor => "ARMOR",
             Self::Shield => "SHIELD",
@@ -54,6 +69,9 @@ impl Clone for ItemTypeEnum {
             Self::Armor => Self::Armor,
             Self::Weapon => Self::Weapon,
             Self::Shield => Self::Shield,
+            Self::Ammunition => Self::Ammunition,
+            Self::Treasure => Self::Treasure,
+            Self::Backpack => Self::Backpack,
         }
     }
 }
@@ -67,6 +85,9 @@ impl FromStr for ItemTypeEnum {
             "WEAPON" => Ok(Self::Weapon),
             "ARMOR" => Ok(Self::Armor),
             "SHIELD" => Ok(Self::Shield),
+            "AMMUNITION" => Ok(Self::Ammunition),
+            "TREASURE" => Ok(Self::Treasure),
+            "BACKPACK" => Ok(Self::Backpack),
             _ => Err(()),
         }
     }
@@ -89,6 +110,15 @@ impl Display for ItemTypeEnum {
             }
             Self::Shield => {
                 write!(f, "shield")
+            }
+            Self::Ammunition => {
+                write!(f, "ammunition")
+            }
+            Self::Treasure => {
+                write!(f, "treasure")
+            }
+            Self::Backpack => {
+                write!(f, "backpack")
             }
         }
     }

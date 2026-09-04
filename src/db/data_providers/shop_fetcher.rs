@@ -11,7 +11,9 @@ use crate::models::item::item_field_filter::ItemFieldFilters;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::{Shield, ShieldData};
-use crate::models::item::shop_structs::{ItemSortEnum, ShopFilterQuery, ShopRanges};
+use crate::models::item::shop_structs::filter_query::ShopFilterQuery;
+use crate::models::item::shop_structs::item_sort_enum::ItemSortEnum;
+use crate::models::item::shop_structs::ranges::ShopRanges;
 use crate::models::item::weapon_struct::{Weapon, WeaponData};
 use crate::models::response_data::ResponseItem;
 use crate::models::routers_validator_structs::OrderEnum;
@@ -31,7 +33,11 @@ pub async fn fetch_item_by_id(pool: &PgPool, gs: GameSystem, item_id: i64) -> Re
     .await?;
     item.traits = fetch_item_traits(pool, gs, item_id).await?;
     Ok(match item.item_type {
-        ItemTypeEnum::Consumable | ItemTypeEnum::Equipment => ResponseItem::from((item, gs)),
+        ItemTypeEnum::Consumable
+        | ItemTypeEnum::Equipment
+        | ItemTypeEnum::Ammunition
+        | ItemTypeEnum::Backpack
+        | ItemTypeEnum::Treasure => ResponseItem::from((item, gs)),
         ItemTypeEnum::Weapon => ResponseItem {
             core_item: item,
             weapon_data: fetch_weapon_data_by_item_id(pool, gs, item_id).await.ok(),
@@ -85,7 +91,7 @@ async fn fetch_weapon_by_item_id(pool: &PgPool, gs: GameSystem, item_id: i64) ->
 async fn fetch_armor_by_item_id(pool: &PgPool, gs: GameSystem, item_id: i64) -> Result<Armor> {
     let mut armor: Armor = sqlx::query_as(sqlx::AssertSqlSafe(format!(
         "
-        SELECT at.id AS armor_id, at.bonus_ac, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
+        SELECT at.id AS armor_id, at.ac_bonus, at.check_penalty, at.dex_cap, at.n_of_potency_runes,
         at.n_of_resilient_runes, at.speed_penalty, at.strength_required, at.base_item_id,
         it.*
         FROM {gs}_armor_table at
@@ -253,7 +259,7 @@ pub async fn fetch_items_with_filters(
     filters: &ShopFilterQuery,
 ) -> Result<Vec<Item>> {
     let (query, binds) = prepare_filtered_get_items(gs, filters);
-    let items: Vec<Item> = fetch_all_with_binds(pool, query, binds).await?;
+    let items: Vec<Item> = fetch_all_with_binds(pool, query, binds).await.unwrap();
     let equipment: Vec<&Item> = items
         .iter()
         .filter(|x| x.item_type == ItemTypeEnum::Equipment)
@@ -274,12 +280,27 @@ pub async fn fetch_items_with_filters(
         .iter()
         .filter(|x| x.item_type == ItemTypeEnum::Consumable)
         .collect();
+    let ammos: Vec<&Item> = items
+        .iter()
+        .filter(|x| x.item_type == ItemTypeEnum::Ammunition)
+        .collect();
+    let treasures: Vec<&Item> = items
+        .iter()
+        .filter(|x| x.item_type == ItemTypeEnum::Treasure)
+        .collect();
+    let backpacks: Vec<&Item> = items
+        .iter()
+        .filter(|x| x.item_type == ItemTypeEnum::Backpack)
+        .collect();
 
     let n_of_items_to_return = filters.n_of_equipment
         + filters.n_of_shields
         + filters.n_of_weapons
         + filters.n_of_armors
-        + filters.n_of_consumables;
+        + filters.n_of_treasures
+        + filters.n_of_backpacks
+        + filters.n_of_generic_consumables
+        + filters.n_of_ammunition;
     Ok(
         if i64::try_from(items.len()).unwrap_or(i64::MAX) >= n_of_items_to_return {
             debug!("Result vector is the correct size, no more operations needed");
@@ -288,10 +309,16 @@ pub async fn fetch_items_with_filters(
             debug!("Result vector is not the correct size, duplicating random elements..");
 
             let mut item_vec = fill_item_vec_to_len(&equipment, filters.n_of_equipment);
-            item_vec.extend(fill_item_vec_to_len(&consumables, filters.n_of_consumables));
+            item_vec.extend(fill_item_vec_to_len(
+                &consumables,
+                filters.n_of_generic_consumables,
+            ));
             item_vec.extend(fill_item_vec_to_len(&weapons, filters.n_of_weapons));
             item_vec.extend(fill_item_vec_to_len(&armors, filters.n_of_armors));
             item_vec.extend(fill_item_vec_to_len(&shields, filters.n_of_shields));
+            item_vec.extend(fill_item_vec_to_len(&backpacks, filters.n_of_backpacks));
+            item_vec.extend(fill_item_vec_to_len(&treasures, filters.n_of_treasures));
+            item_vec.extend(fill_item_vec_to_len(&ammos, filters.n_of_ammunition));
 
             item_vec
         },
