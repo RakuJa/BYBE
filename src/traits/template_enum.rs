@@ -26,7 +26,6 @@ pub trait GenericPercentage:
 pub trait GenericTemplate:
     Serialize + ToSchema + Default + Eq + PartialEq + Hash + Ord + PartialOrd + Clone + Debug
 {
-    /// Returns percentage of equipment, weapons, armor, shield, treasure, backpack, ammunition for the given template
     fn get_equippable_percentages(&self) -> EquippablePercentages;
 
     fn get_consumable_percentages(&self) -> ConsumablePercentages;
