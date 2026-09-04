@@ -1,7 +1,7 @@
 use crate::db::data_providers::generic_fetcher::{
-    enrich_with_traits, fetch_action_traits, fetch_all_with_binds, fetch_all_with_binds_and_count,
-    fetch_col_range, fetch_entity_traits, fetch_weapon_actions, fetch_weapon_damage_data,
-    fetch_weapon_runes, fetch_weapon_traits,
+    enrich_with_traits, fetch_actions_from_cores, fetch_all_with_binds,
+    fetch_all_with_binds_and_count, fetch_col_range, fetch_entity_traits, fetch_weapon_actions,
+    fetch_weapon_damage_data, fetch_weapon_runes, fetch_weapon_traits,
 };
 use crate::db::data_providers::raw_query_builder::{
     format_pagination_clause, prepare_filtered_get_hazards, prepare_paginated_get_hazards_listing,
@@ -35,16 +35,7 @@ async fn fetch_hazard_actions(
     .bind(hazard_id)
     .fetch_all(pool)
     .await?;
-    let mut res: Vec<Action> = Vec::with_capacity(core_actions.len());
-    for action in core_actions {
-        let action_id = action.id;
-        res.push(Action {
-            core_action: action,
-            traits: fetch_action_traits(pool, gs, action_id).await?,
-        });
-    }
-
-    Ok(res)
+    fetch_actions_from_cores(pool, gs, core_actions).await
 }
 
 async fn update_hazards_core_with_traits(

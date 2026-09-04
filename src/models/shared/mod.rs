@@ -1,6 +1,7 @@
 pub mod action;
 pub mod alignment_enum;
 pub mod condition_data;
+pub mod description;
 pub mod game_system_enum;
 pub mod pf_version_enum;
 pub mod range_data;

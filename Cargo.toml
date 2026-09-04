@@ -43,7 +43,9 @@ nursery = { level = "warn", priority = 1 }
 
 
 [features]
+default = ["cache", "evalexpr"]
 cache = ["dep:cached"]
+evalexpr = ["dep:evalexpr"]
 
 [dependencies]
 async-trait = "0.1.89"
@@ -75,6 +77,8 @@ futures = "0.3"
 regex = "1.12"
 
 tracing = "0.1.44"
+
+evalexpr = { version = "13.1.0", optional = true }
 
 
 [build-dependencies]

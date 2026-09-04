@@ -27,12 +27,16 @@ pub enum CreatureVariant {
 }
 
 impl CreatureVariant {
-    pub const fn to_adjustment_modifier(self) -> i64 {
+    const fn to_adjustment_modifier(self) -> i64 {
         match self {
             Self::Weak => -2,
             Self::Elite => 2,
             Self::Base => 0,
         }
+    }
+
+    pub const fn to_dmg_adjustment_modifier(self, has_limited_usage: bool) -> i64 {
+        self.to_adjustment_modifier() * if has_limited_usage { 2 } else { 1 }
     }
 
     pub const fn get_variant_level(self, base_lvl: i64) -> i64 {
@@ -97,5 +101,48 @@ fn hp_decrease_by_level() -> HashMap<i64, i64> {
         3 => -15,
         6 => -20,
         21 => -30
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use rstest::rstest;
+
+    #[rstest]
+    #[case(CreatureVariant::Weak, -2)]
+    #[case(CreatureVariant::Base, 0)]
+    #[case(CreatureVariant::Elite, 2)]
+    fn to_adjustment_modifier_is_always_two(
+        #[case] variant: CreatureVariant,
+        #[case] expected: i64,
+    ) {
+        assert_eq!(expected, variant.to_adjustment_modifier());
+    }
+
+    #[rstest]
+    #[case(CreatureVariant::Weak, -4)]
+    #[case(CreatureVariant::Base, 0)]
+    #[case(CreatureVariant::Elite, 4)]
+    fn to_limited_dmg_adjustment_modifier_is_always_four(
+        #[case] variant: CreatureVariant,
+        #[case] expected: i64,
+    ) {
+        assert_eq!(expected, variant.to_dmg_adjustment_modifier(true));
+    }
+
+    #[rstest]
+    #[case(CreatureVariant::Elite, true, 4)]
+    #[case(CreatureVariant::Elite, false, 2)]
+    #[case(CreatureVariant::Weak, true, -4)]
+    #[case(CreatureVariant::Weak, false, -2)]
+    #[case(CreatureVariant::Base, true, 0)]
+    #[case(CreatureVariant::Base, false, 0)]
+    fn to_dmg_adjustment_modifier_picks_based_on_limited_use(
+        #[case] variant: CreatureVariant,
+        #[case] is_limited_use: bool,
+        #[case] expected: i64,
+    ) {
+        assert_eq!(expected, variant.to_dmg_adjustment_modifier(is_limited_use));
     }
 }

@@ -10,8 +10,10 @@ use crate::models::item::armor_struct::ArmorData;
 use crate::models::item::item_struct::Item;
 use crate::models::item::shield_struct::ShieldData;
 use crate::models::item::weapon_struct::WeaponData;
+use crate::models::shared::description::TagContext;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::services::url_calculator::next_url;
+use crate::traits::resolve_tags::ResolveTags;
 use crate::traits::response::listing_response::ListingResponse;
 use crate::traits::url::paginated_request_ext::PaginatedRequestExt;
 use serde::{Deserialize, Serialize};
@@ -72,7 +74,13 @@ pub struct ResponseCreature {
 }
 
 impl From<Creature> for ResponseCreature {
-    fn from(cr: Creature) -> Self {
+    fn from(mut cr: Creature) -> Self {
+        let actor_level = cr.variant_data.level;
+        cr.resolve_tags(&TagContext {
+            actor_level: Some(actor_level),
+            creature_variant: cr.variant_data.variant,
+            variant_damage: None,
+        });
         Self {
             core_data: cr.core_data,
             variant_data: cr.variant_data,

@@ -8,6 +8,7 @@ pub mod job_enum;
 pub mod name_system;
 pub mod origin;
 pub mod random_enum;
+pub mod resolve_tags;
 pub mod response;
 pub mod template_enum;
 pub mod traits_enrichable;

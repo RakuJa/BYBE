@@ -1,4 +1,5 @@
 use crate::db::data_providers::raw_query_builder::BindValue;
+use crate::models::creature::items::spell::SpellDamageData;
 use crate::models::item::weapon_struct::DamageData;
 use crate::models::shared::action::{Action, CoreAction};
 use crate::models::shared::alignment_enum::ALIGNMENT_TRAITS;
@@ -174,6 +175,22 @@ pub async fn fetch_weapon_damage_data(
              ) wt ON wt.wp_id = dm.weapon_id",
     )))
     .bind(wp_id)
+    .fetch_all(pool)
+    .await?)
+}
+
+pub async fn fetch_spell_damage_data(
+    pool: &PgPool,
+    gs: GameSystem,
+    spell_id: i64,
+) -> Result<Vec<SpellDamageData>> {
+    Ok(sqlx::query_as(sqlx::AssertSqlSafe(format!(
+        "SELECT id, bonus_dmg, dmg_type, category, kinds, number_of_dice, die_size
+             FROM {gs}_spell_damage_table sd RIGHT JOIN (
+             SELECT id AS sp_id FROM {gs}_spell_table WHERE id = $1
+             ) st ON st.sp_id = sd.spell_id",
+    )))
+    .bind(spell_id)
     .fetch_all(pool)
     .await?)
 }

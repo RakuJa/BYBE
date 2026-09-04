@@ -2,6 +2,7 @@ use crate::models::db::pg_type_helper::{get_i32_as_i64, get_opt_i32_as_i64};
 use crate::models::item::item_field_filter::ItemFieldFilters;
 use crate::models::item::item_metadata::type_enum::ItemTypeEnum;
 use crate::models::ordered_float_to_schema;
+use crate::models::shared::description::Description;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
@@ -27,7 +28,7 @@ pub struct Item {
     pub quantity: i64,
     pub base_item: Option<String>,
     pub category: Option<String>,
-    pub description: String,
+    pub description: Description,
     #[schema(example = 0)]
     pub hardness: i64,
     #[schema(example = 0)]

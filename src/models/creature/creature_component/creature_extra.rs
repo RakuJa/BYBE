@@ -3,6 +3,8 @@ use crate::models::creature::items::skill::Skill;
 use crate::models::db::sense::Sense;
 use crate::models::item::item_struct::Item;
 use crate::models::shared::action::Action;
+use crate::models::shared::description::{Description, TagContext};
+use crate::traits::resolve_tags::ResolveTags;
 use serde::{Deserialize, Serialize};
 #[allow(unused_imports)] // it's actually used in the example schema
 use serde_json::json;
@@ -49,6 +51,9 @@ pub struct CreatureExtraData {
     pub perception: i32,
     pub perception_detail: Option<String>,
     pub has_vision: bool,
+    pub description: Description,
+    pub blurb: String,
+    pub speed_details: String,
 }
 
 impl CreatureExtraData {
@@ -73,8 +78,17 @@ impl CreatureExtraData {
         self.add_mod_to_perception_and_skill_mods(-i64::try_from(pwl_mod).unwrap_or(i64::MAX))
     }
 
-    /// Increase/Decrease Perception, and skill modifiers by 2.
+    /// Adjust key stats (e.g. Perception, skill modifies, damage) according to pf2e rules.
+    /// Currently pf2e and sf2e rules are the same but should split the logic.
+    /// https://2e.aonprd.com/Rules.aspx?ID=3262
+    /// https://2e.aonsrd.com/rules/1267-adjusting-creatures
     pub fn convert_from_base_to_variant(self, variant: CreatureVariant) -> Self {
-        self.add_mod_to_perception_and_skill_mods(variant.to_adjustment_modifier())
+        self.add_mod_to_perception_and_skill_mods(variant.to_dmg_adjustment_modifier(false))
+    }
+}
+
+impl ResolveTags for CreatureExtraData {
+    fn resolve_tags(&mut self, ctx: &TagContext) {
+        self.actions.resolve_tags(ctx);
     }
 }

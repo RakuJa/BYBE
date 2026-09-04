@@ -5,6 +5,8 @@ use crate::models::item::armor_struct::Armor;
 use crate::models::item::shield_struct::Shield;
 use crate::models::item::weapon_struct::{DamageData, Weapon};
 use crate::models::shared::condition_data::ConditionData;
+use crate::models::shared::description::TagContext;
+use crate::traits::resolve_tags::ResolveTags;
 use serde::{Deserialize, Serialize};
 use sqlx::FromRow;
 use utoipa::ToSchema;
@@ -97,8 +99,14 @@ impl CreatureCombatData {
     /// (such as a spellcaster’s spells or a dragon’s breath), decrease the damage by 4 instead.
     /// Increase/Decrease the creature’s AC, attack modifiers, DCs, saving throws by 2.
     pub fn convert_from_base_to_variant(self, variant: CreatureVariant) -> Self {
-        let modifier = variant.to_adjustment_modifier();
+        let modifier = variant.to_dmg_adjustment_modifier(false);
         self.add_mod_to_saving_throws_and_ac_and_wp_to_hit(modifier)
             .add_mod_to_dmg(modifier)
+    }
+}
+
+impl ResolveTags for CreatureCombatData {
+    fn resolve_tags(&mut self, ctx: &TagContext) {
+        self.weapons.resolve_tags(ctx);
     }
 }

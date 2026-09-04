@@ -1,7 +1,9 @@
 use crate::models::db::pg_type_helper::{get_i32_as_i64, get_opt_i32_as_i64};
 use crate::models::hazard::hazard_field_filter::HazardComplexityEnum;
+use crate::models::shared::description::{Description, TagContext};
 use crate::models::shared::rarity_enum::RarityEnum;
 use crate::models::shared::size_enum::SizeEnum;
+use crate::traits::resolve_tags::ResolveTags;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
 use sqlx::{Error, FromRow, Row};
@@ -22,10 +24,10 @@ pub struct HazardEssentialData {
     pub stealth_detail: String,
 
     // Details
-    pub description: String,
-    pub disable_description: String,
-    pub reset_description: String,
-    pub routine_description: String,
+    pub description: Description,
+    pub disable_description: Description,
+    pub reset_description: Description,
+    pub routine_description: Description,
     pub complexity: HazardComplexityEnum,
     pub level: i64,
     pub license: String,
@@ -69,5 +71,14 @@ impl<'r> FromRow<'r, PgRow> for HazardEssentialData {
             level: get_i32_as_i64(row, "level")?,
             fortitude: get_opt_i32_as_i64(row, "fortitude"),
         })
+    }
+}
+
+impl ResolveTags for HazardEssentialData {
+    fn resolve_tags(&mut self, ctx: &TagContext) {
+        self.description = Description::new(self.description.resolve(ctx));
+        self.disable_description = Description::new(self.disable_description.resolve(ctx));
+        self.reset_description = Description::new(self.reset_description.resolve(ctx));
+        self.routine_description = Description::new(self.routine_description.resolve(ctx));
     }
 }

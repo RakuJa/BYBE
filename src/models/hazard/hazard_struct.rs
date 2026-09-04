@@ -4,12 +4,14 @@ use crate::models::hazard::hazard_component::hazard_core::HazardEssentialData;
 use crate::models::hazard::hazard_field_filter::{HazardComplexityEnum, HazardFieldFilters};
 use crate::models::item::weapon_struct::Weapon;
 use crate::models::shared::action::Action;
+use crate::models::shared::description::TagContext;
 use crate::models::shared::game_system_enum::GameSystem;
 use crate::models::shared::pf_version_enum::GameSystemVersionEnum;
 use crate::models::shared::trait_data::TraitData;
 use crate::traits::filterable::Filterable;
 use crate::traits::has_complexity::HasComplexity;
 use crate::traits::has_level::HasLevel;
+use crate::traits::resolve_tags::ResolveTags;
 use crate::traits::traits_enrichable::TraitsEnrichable;
 use serde::{Deserialize, Serialize};
 use sqlx::postgres::PgRow;
@@ -235,5 +237,11 @@ impl TraitsEnrichable for Hazard {
     }
     fn entity_name() -> &'static str {
         "hazard"
+    }
+}
+
+impl ResolveTags for Hazard {
+    fn resolve_tags(&mut self, ctx: &TagContext) {
+        self.essential.resolve_tags(ctx);
     }
 }
